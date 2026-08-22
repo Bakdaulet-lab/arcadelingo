@@ -18,6 +18,8 @@
 // Чего здесь нет: правил начисления очков и переходов фаз — они не требуют
 // дерева и живут в falling_words_run_test.dart. Голдены — задача 0.9.
 
+import 'dart:math' as math;
+
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_views.dart';
@@ -111,6 +113,18 @@ AnswerButton _button(WidgetTester tester, String label) =>
     tester.widget<AnswerButton>(
       find.ancestor(of: find.text(label), matching: find.byType(AnswerButton)),
     );
+
+/// Высота, которую занимает связка «слово — перевод» в фазе подсветки:
+/// от верха верхнего текста до низа нижнего.
+double _pairSpan(WidgetTester tester) {
+  final word = tester.getRect(find.byKey(FallingWordsKeys.word));
+  final answer = tester.getRect(find.byKey(FallingWordsKeys.revealAnswer));
+  return math.max(word.bottom, answer.bottom) - math.min(word.top, answer.top);
+}
+
+/// Высота экрана в логических пикселях.
+double _screenHeight(WidgetTester tester) =>
+    tester.view.physicalSize.height / tester.view.devicePixelRatio;
 
 /// Сколько жизней показывает HUD.
 int _lives(WidgetTester tester) =>
@@ -410,7 +424,9 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await _tap(tester, _distractor(1, 1));
       await tester.pump(const Duration(milliseconds: 400));
-      await _tap(tester, _translation(1), expectHit: false);
+      // По погасшей кнопке, а не по переводу: перевод в фазе подсветки есть
+      // и в паре, и на кнопке, и find.text нашёл бы два виджета.
+      await _tap(tester, _distractor(1, 2), expectHit: false);
 
       expect(session.reports, hasLength(1), reason: 'SPEC, кейс 3');
 
@@ -548,7 +564,7 @@ void main() {
       expect(_lives(tester), 2);
     });
 
-    testWidgets('подсветка ошибки: верный и нажатый различимы не цветом', (
+    testWidgets('промах: пара «слово → перевод» в поле, кнопки гаснут', (
       tester,
     ) async {
       await _pumpGame(tester);
@@ -556,35 +572,69 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await _tap(tester, _distractor(1, 1));
 
-      expect(_button(tester, _translation(1)).state, AnswerState.correct);
-      expect(_button(tester, _distractor(1, 1)).state, AnswerState.wrong);
-      expect(_button(tester, _distractor(1, 2)).state, AnswerState.dimmed);
       expect(
-        find.byIcon(Icons.check),
+        find.byKey(FallingWordsKeys.revealAnswer),
         findsOneWidget,
-        reason: 'верный вариант помечен иконкой, а не только цветом',
+        reason: 'верный перевод показан в поле, а не только на кнопке',
       );
+      expect(
+        tester.widget<Text>(find.byKey(FallingWordsKeys.revealAnswer)).data,
+        _translation(1),
+      );
+      expect(
+        _button(tester, _distractor(1, 1)).state,
+        AnswerState.wrong,
+        reason: '«что я нажал» — часть ответа, эта кнопка остаётся помеченной',
+      );
+      expect(
+        _button(tester, _translation(1)).state,
+        AnswerState.dimmed,
+        reason: 'верный вариант теперь в паре; кнопка не тянет взгляд вниз',
+      );
+      expect(_button(tester, _distractor(1, 2)).state, AnswerState.dimmed);
       expect(
         find.byIcon(Icons.close),
         findsNWidgets(2),
-        reason: 'нажатая кнопка и само слово',
+        reason: 'слово в паре и нажатая кнопка — не только цветом',
       );
     });
 
-    testWidgets('таймаут подсвечивает верный вариант, нажатых нет', (
-      tester,
-    ) async {
+    testWidgets('таймаут: та же пара, нажатых кнопок нет', (tester) async {
       await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 6));
 
-      expect(_button(tester, _translation(1)).state, AnswerState.correct);
+      expect(
+        tester.widget<Text>(find.byKey(FallingWordsKeys.revealAnswer)).data,
+        _translation(1),
+      );
+      expect(_button(tester, _translation(1)).state, AnswerState.dimmed);
       expect(_button(tester, _distractor(1, 1)).state, AnswerState.dimmed);
-      expect(find.byIcon(Icons.check), findsOneWidget);
       expect(
         find.byIcon(Icons.close),
         findsOneWidget,
-        reason: 'только у слова: кнопку не нажимали',
+        reason: 'только у слова в паре: кнопку не нажимали',
+      );
+    });
+
+    testWidgets('связка читается одним взглядом: промах', (tester) async {
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _distractor(1, 1));
+
+      expect(_pairSpan(tester), lessThan(_screenHeight(tester) / 3));
+    });
+
+    testWidgets('связка читается одним взглядом: таймаут', (tester) async {
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 6));
+
+      expect(
+        _pairSpan(tester),
+        lessThan(_screenHeight(tester) / 3),
+        reason: 'слово упало к низу, но пара всё равно собрана вместе',
       );
     });
 

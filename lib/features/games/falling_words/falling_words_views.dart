@@ -21,6 +21,9 @@ abstract final class FallingWordsKeys {
   /// Падающее слово. По нему же тест меряет, сдвинулось ли оно.
   static const Key word = Key('falling_words.word');
 
+  /// Верный перевод в паре, которая показывается на промахе и таймауте.
+  static const Key revealAnswer = Key('falling_words.reveal_answer');
+
   static const Key score = Key('falling_words.score');
 
   static const Key combo = Key('falling_words.combo');
