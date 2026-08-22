@@ -44,7 +44,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./scripts/hook_guard_generated.sh"
+            "command": "CLAUDE_FILE_PATHS=\"$(python -c \"import sys,json;print(json.load(sys.stdin).get('tool_input',{}).get('file_path',''))\" 2>/dev/null)\" bash \"$CLAUDE_PROJECT_DIR/scripts/hook_guard_generated.sh\"",
+            "timeout": 30,
+            "statusMessage": "Проверка защищённых файлов..."
           }
         ]
       }
@@ -55,7 +57,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./scripts/hook_format.sh"
+            "command": "CLAUDE_FILE_PATHS=\"$(python -c \"import sys,json;print(json.load(sys.stdin).get('tool_input',{}).get('file_path',''))\" 2>/dev/null)\" bash \"$CLAUDE_PROJECT_DIR/scripts/hook_format.sh\"",
+            "timeout": 60,
+            "statusMessage": "dart format..."
           }
         ]
       }
@@ -65,7 +69,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./scripts/arch_check.sh || exit 2"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/arch_check.sh\" || exit 2",
+            "timeout": 120,
+            "statusMessage": "Проверка архитектурных границ..."
           }
         ]
       }
