@@ -121,6 +121,12 @@ class _FallingWordsGameState extends State<FallingWordsGame>
   }
 
   void _onTap(int index) {
+    // На паузе кнопка остаётся живой: окно бывает интерактивным и без
+    // фокуса (split-screen, системный диалог, баннер звонка). Принятый
+    // здесь тап перезапустил бы контроллеры и снял бы паузу де-факто —
+    // при `_paused == true` игра поехала бы дальше, а ядру ушёл бы
+    // таймаут по слову, которого никто не видел.
+    if (_paused) return;
     if (!_run.choose(index, _elapsed)) return;
     _fall.stop();
     setState(() {});

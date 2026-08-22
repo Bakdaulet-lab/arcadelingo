@@ -355,6 +355,30 @@ void main() {
       expect(session.reports, hasLength(1));
     });
 
+    testWidgets('тап на паузе не принимается и не снимает паузу', (
+      tester,
+    ) async {
+      final session = await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 2));
+      await _lifecycle(tester, AppLifecycleState.inactive);
+      await _tap(tester, _translation(1));
+      await tester.pump(const Duration(seconds: 6));
+
+      expect(
+        session.reports,
+        isEmpty,
+        reason:
+            'кнопка на паузе живая (окно интерактивно в split-screen), '
+            'но ответ не считается',
+      );
+      expect(
+        find.text(_id(1)),
+        findsOneWidget,
+        reason: 'игра не уехала на следующее слово мимо паузы',
+      );
+    });
+
     testWidgets('системное «убрать анимации» не ускоряет таймер игры', (
       tester,
     ) async {
