@@ -12,7 +12,12 @@ check() {
   local label="$1" dir="$2" pattern="$3"
   [ -d "$dir" ] || return 0
   local hits
-  hits=$(grep -rnE --include='*.dart' "$pattern" "$dir" 2>/dev/null || true)
+  # Второй grep отбрасывает строки, где сразу после «путь:номер:» идёт //, *
+  # или /* — то есть само правило, описанное словами в комментарии или доке,
+  # больше не считается его нарушением. Код с хвостовым комментарием
+  # (`final x = DateTime.now(); // ...`) при этом ловится: до // идёт код.
+  hits=$(grep -rnE --include='*.dart' "$pattern" "$dir" 2>/dev/null \
+    | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)' || true)
   if [ -n "$hits" ]; then
     printf 'ARCH VIOLATION — %s\n%s\n\n' "$label" "$hits" >&2
     fail=1
