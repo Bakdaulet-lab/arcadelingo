@@ -114,6 +114,14 @@ class FallingWordsRun {
   /// Текущая серия верных ответов подряд.
   int get combo => _combo;
 
+  /// На что умножатся очки за следующий верный ответ.
+  ///
+  /// Серия плюс один, а не серия: SPEC говорит «+очки × множитель комбо,
+  /// комбо +1», то есть очки считаются до инкремента. Формула живёт здесь
+  /// одна: HUD, показывающий голое [combo], обещал бы игроку ×0 за ответ,
+  /// который принесёт 10 очков.
+  int get scoreMultiplier => _combo + 1;
+
   int get bestCombo => _bestCombo;
 
   int get correctCount => _correctCount;
@@ -218,9 +226,9 @@ class FallingWordsRun {
     _verdict = verdict;
     _answeredCount++;
     if (verdict == Verdict.correct) {
+      _score += pointsPerCombo * scoreMultiplier;
       _combo++;
       if (_combo > _bestCombo) _bestCombo = _combo;
-      _score += pointsPerCombo * _combo;
       _correctCount++;
     } else {
       _combo = 0;

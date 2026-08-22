@@ -511,6 +511,13 @@ void main() {
         '1/15',
         reason: 'первое слово из пятнадцати запланированных',
       );
+      expect(
+        _hud(tester, FallingWordsKeys.combo),
+        '×1',
+        reason:
+            'на экране множитель, который применится: первый верный '
+            'ответ даёт 10 очков, а не ноль',
+      );
 
       await _answerCorrectly(tester, 1);
 
@@ -520,7 +527,25 @@ void main() {
         reason: 'на втором слове прогресс не отстаёт на единицу',
       );
       expect(_hud(tester, FallingWordsKeys.score), '10');
-      expect(_hud(tester, FallingWordsKeys.combo), '×1');
+      expect(
+        _hud(tester, FallingWordsKeys.combo),
+        '×2',
+        reason: 'серия 1 — следующий верный ответ принесёт 20',
+      );
+
+      await _answerCorrectly(tester, 2);
+
+      expect(_hud(tester, FallingWordsKeys.score), '30', reason: '10 + 20');
+      expect(_hud(tester, FallingWordsKeys.combo), '×3');
+
+      await _answerWrongly(tester, 3);
+
+      expect(
+        _hud(tester, FallingWordsKeys.combo),
+        '×1',
+        reason: 'промах сбрасывает серию',
+      );
+      expect(_lives(tester), 2);
     });
 
     testWidgets('подсветка ошибки: верный и нажатый различимы не цветом', (

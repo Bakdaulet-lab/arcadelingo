@@ -203,7 +203,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
             lives: _run.lives,
             maxLives: FallingWordsRun.startLives,
             score: _run.score,
-            combo: _run.combo,
+            multiplier: _run.scoreMultiplier,
             // В фазе подсветки ответ уже доложен, и answered его считает;
             // в падении текущее слово ещё впереди счётчика.
             current: widget.session.answered + (revealing ? 0 : 1),

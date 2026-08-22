@@ -58,7 +58,7 @@ class GameHud extends StatelessWidget {
     required this.lives,
     required this.maxLives,
     required this.score,
-    required this.combo,
+    required this.multiplier,
     required this.current,
     required this.total,
     super.key,
@@ -67,7 +67,10 @@ class GameHud extends StatelessWidget {
   final int lives;
   final int maxLives;
   final int score;
-  final int combo;
+
+  /// На что умножатся очки за следующий верный ответ — не длина серии:
+  /// «×0» на старте обещало бы ноль очков за ответ, который даёт десять.
+  final int multiplier;
 
   /// Какое по счёту слово показывается сейчас.
   final int current;
@@ -108,7 +111,7 @@ class GameHud extends StatelessWidget {
             style: textTheme.titleMedium,
           ),
           Text(
-            '×$combo',
+            '×$multiplier',
             key: FallingWordsKeys.combo,
             style: textTheme.titleMedium,
           ),
