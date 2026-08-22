@@ -31,6 +31,15 @@ abstract final class FallingWordsKeys {
 
   static const Key summary = Key('falling_words.summary');
 
+  /// Строка под статистикой итогов; её текст считает хост.
+  static const Key summaryFooter = Key('falling_words.summary_footer');
+
+  /// «Ещё раз» — новую сессию строит хост, не игра.
+  static const Key playAgain = Key('falling_words.play_again');
+
+  /// «Выйти» — есть и на итогах, и на «на сегодня всё».
+  static const Key exit = Key('falling_words.exit');
+
   static const Key nothingToday = Key('falling_words.nothing_today');
 }
 
@@ -333,13 +342,22 @@ class AnswerButton extends StatelessWidget {
 }
 
 /// Итоги партии.
+///
+/// [footer] — строка «что дальше», её считает хост: остались ли слова к
+/// повторению, знает он, а не игра. Игра про размер сессии (`target`)
+/// ничего не знает по SPEC и обещать «возвращайся завтра» от своего имени
+/// не может.
 class SummaryView extends StatelessWidget {
   const SummaryView({
     required this.score,
     required this.bestCombo,
     required this.correctCount,
     required this.answeredCount,
+    required this.outOfLives,
+    required this.onPlayAgain,
+    required this.onExit,
     super.key,
+    this.footer,
   });
 
   final int score;
@@ -347,9 +365,22 @@ class SummaryView extends StatelessWidget {
   final int correctCount;
   final int answeredCount;
 
+  /// Партия оборвана жизнями, а не исчерпанной очередью. Заголовок разный:
+  /// пройденная сессия и проигранная — разные исходы, и одинаковое
+  /// «Раунд окончен» на обоих скрывало бы, что именно случилось.
+  final bool outOfLives;
+
+  /// Текст «что дальше» от хоста; null — строки нет.
+  final String? footer;
+
+  final VoidCallback onPlayAgain;
+  final VoidCallback onExit;
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    final note = footer;
     return Center(
       key: FallingWordsKeys.summary,
       child: Padding(
@@ -357,7 +388,11 @@ class SummaryView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Раунд окончен', style: textTheme.headlineMedium),
+            Text(
+              outOfLives ? 'Жизни кончились' : 'Раунд окончен',
+              textAlign: TextAlign.center,
+              style: textTheme.headlineMedium,
+            ),
             const SizedBox(height: 24),
             Text('Счёт: $score', style: textTheme.titleLarge),
             const SizedBox(height: 8),
@@ -367,6 +402,30 @@ class SummaryView extends StatelessWidget {
               'Верных ответов: $correctCount из $answeredCount',
               style: textTheme.titleLarge,
             ),
+            if (note != null) ...[
+              const SizedBox(height: 16),
+              Text(
+                note,
+                key: FallingWordsKeys.summaryFooter,
+                textAlign: TextAlign.center,
+                style: textTheme.bodyLarge?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            const SizedBox(height: 32),
+            EndButton(
+              key: FallingWordsKeys.playAgain,
+              label: 'Ещё раз',
+              onPressed: onPlayAgain,
+            ),
+            const SizedBox(height: 8),
+            EndButton(
+              key: FallingWordsKeys.exit,
+              label: 'Выйти',
+              primary: false,
+              onPressed: onExit,
+            ),
           ],
         ),
       ),
@@ -374,12 +433,51 @@ class SummaryView extends StatelessWidget {
   }
 }
 
+/// Кнопка на экране конца партии.
+///
+/// Столбцом друг под другом, а не в строку: при системном шрифте 2× две
+/// кнопки рядом в ширину телефона не помещаются. Высота 56 — тот же
+/// минимум, что у кнопок ответа, и он же покрывает требование к размеру
+/// цели нажатия.
+class EndButton extends StatelessWidget {
+  const EndButton({
+    required this.label,
+    required this.onPressed,
+    super.key,
+    this.primary = true,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+
+  /// Главное действие экрана; остальные — тише.
+  final bool primary;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = ButtonStyle(
+      minimumSize: WidgetStateProperty.all(const Size(220, 56)),
+      textStyle: WidgetStateProperty.all(
+        Theme.of(context).textTheme.titleMedium,
+      ),
+    );
+    final text = Text(label, textAlign: TextAlign.center);
+    return primary
+        ? FilledButton(onPressed: onPressed, style: style, child: text)
+        : OutlinedButton(onPressed: onPressed, style: style, child: text);
+  }
+}
+
 /// Сессия не дала ни одного слова.
 ///
 /// Это награда, а не ошибка: слова на сегодня кончились, потому что
 /// человек их повторил.
+/// Кнопки «Ещё раз» здесь нет намеренно: сессия не дала ни одного слова, и
+/// переигрывать нечего — вторая попытка дала бы этот же экран.
 class NothingTodayView extends StatelessWidget {
-  const NothingTodayView({super.key});
+  const NothingTodayView({required this.onExit, super.key});
+
+  final VoidCallback onExit;
 
   @override
   Widget build(BuildContext context) {
@@ -400,6 +498,12 @@ class NothingTodayView extends StatelessWidget {
               'Слова к повторению кончились. Возвращайся завтра.',
               textAlign: TextAlign.center,
               style: textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 32),
+            EndButton(
+              key: FallingWordsKeys.exit,
+              label: 'Выйти',
+              onPressed: onExit,
             ),
           ],
         ),

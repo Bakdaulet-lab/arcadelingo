@@ -29,10 +29,30 @@ class FallingWordsGame extends StatefulWidget {
   /// Сессию создаёт хост (задача 0.8): игра её не строит и не сохраняет.
   /// [seed] делает порядок вариантов воспроизводимым в тестах и голденах;
   /// null — обычная игра со случайным порядком.
-  const FallingWordsGame({required this.session, super.key, this.seed});
+  const FallingWordsGame({
+    required this.session,
+    required this.onPlayAgain,
+    required this.onExit,
+    super.key,
+    this.seed,
+    this.summaryFooter,
+  });
 
   final ReviewSession session;
   final int? seed;
+
+  /// «Ещё раз»: новую сессию строит хост — игра не знает ни про хранилище,
+  /// ни про размер сессии.
+  final VoidCallback onPlayAgain;
+
+  /// «Выйти» с итогов и с «на сегодня всё».
+  final VoidCallback onExit;
+
+  /// Строка «что дальше» под статистикой итогов; null — строки нет.
+  /// Спрашивается один раз, в момент перехода к итогам: остались ли слова к
+  /// повторению — вопрос к хосту, и ответ на него к этому моменту уже
+  /// учитывает последний доклад.
+  final String Function()? summaryFooter;
 
   @override
   State<FallingWordsGame> createState() => _FallingWordsGameState();
@@ -49,6 +69,11 @@ class _FallingWordsGameState extends State<FallingWordsGame>
   /// paused` и обратно), поэтому пауза и возврат обязаны быть
   /// идемпотентными.
   bool _paused = false;
+
+  /// Ответ хоста на «что дальше», взятый на входе в итоги. Не в `build`:
+  /// на итогах ничего не меняется, а хост считал бы очередь заново на
+  /// каждую перестройку экрана.
+  String? _footer;
 
   @override
   void initState() {
@@ -116,6 +141,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     if (_run.phase != FallingPhase.reveal || _reveal.value < 1) return;
     _reveal.stop();
     _run.advance();
+    if (_run.phase == FallingPhase.over) _footer = widget.summaryFooter?.call();
     setState(() {});
     if (_run.phase == FallingPhase.falling) _startFall();
   }
@@ -189,12 +215,18 @@ class _FallingWordsGameState extends State<FallingWordsGame>
       maxScaleFactor: 2,
       child: Scaffold(
         body: switch (_run.phase) {
-          FallingPhase.nothingToday => const NothingTodayView(),
+          FallingPhase.nothingToday => NothingTodayView(onExit: widget.onExit),
           FallingPhase.over => SummaryView(
             score: _run.score,
             bestCombo: _run.bestCombo,
             correctCount: _run.correctCount,
             answeredCount: _run.answeredCount,
+            // Партия оборвана жизнями: advance() уходит в итоги по нулю
+            // жизней раньше, чем спрашивает следующее слово.
+            outOfLives: _run.lives == 0,
+            footer: _footer,
+            onPlayAgain: widget.onPlayAgain,
+            onExit: widget.onExit,
           ),
           FallingPhase.falling || FallingPhase.reveal => _playfield(),
         },
