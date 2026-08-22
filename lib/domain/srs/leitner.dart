@@ -4,6 +4,11 @@
 /// на которых компилируются тесты задачи 0.3. Тело появляется в задаче 0.4,
 /// тесты в этот момент не трогаются.
 ///
+/// Коробка 1 означает «показать снова в этой же сессии»: `due == now`.
+/// Правило «не раньше чем через 3 других карточки» — это порядок очереди,
+/// а не расписание, и живёт оно в `ReviewSession` (задача 0.6). Планировщик
+/// про размер и порядок сессии не знает.
+///
 /// ЗАКОН (CLAUDE.md → «Архитектурный закон», п. 3): текущее время приходит
 /// параметром `now`. `DateTime.now()` в этом каталоге запрещён и ловится
 /// `scripts/arch_check.sh`. Таблица интервалов и переходов —
@@ -17,11 +22,7 @@ import 'review_grade.dart';
 /// Значимый объект: сравнивается по полям, чтобы «одинаковый вход даёт
 /// одинаковый выход» можно было проверить одним `expect`.
 class LeitnerCard {
-  const LeitnerCard({
-    required this.box,
-    required this.due,
-    this.sessionGap = 0,
-  });
+  const LeitnerCard({required this.box, required this.due});
 
   /// Номер коробки, 1..5. Новая карточка начинает с первой.
   final int box;
@@ -29,27 +30,16 @@ class LeitnerCard {
   /// Момент, начиная с которого карточку снова можно показывать.
   final DateTime due;
 
-  /// Сколько других карточек должно пройти до повтора внутри текущей сессии.
-  ///
-  /// Ненулевой только у коробки 1: её повтор назначается не на дату, а на
-  /// позицию в очереди — «в этой же сессии, но не раньше чем через 3 других
-  /// карточки». У коробок 2–5 повтор привязан к [due], поэтому здесь 0.
-  final int sessionGap;
-
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is LeitnerCard &&
-          box == other.box &&
-          due == other.due &&
-          sessionGap == other.sessionGap;
+      other is LeitnerCard && box == other.box && due == other.due;
 
   @override
-  int get hashCode => Object.hash(box, due, sessionGap);
+  int get hashCode => Object.hash(box, due);
 
   @override
-  String toString() =>
-      'LeitnerCard(box: $box, due: $due, sessionGap: $sessionGap)';
+  String toString() => 'LeitnerCard(box: $box, due: $due)';
 }
 
 /// Новое состояние карточки после ответа с оценкой [grade] в момент [now].

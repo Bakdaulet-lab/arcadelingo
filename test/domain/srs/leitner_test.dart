@@ -20,7 +20,7 @@ void main() {
   group('Лейтнер: переходы коробок', () {
     test('кейс 1: новая карточка + good → коробка 2, due = now + 1 день', () {
       // Новая карточка живёт в первой коробке и готова к показу немедленно.
-      final card = LeitnerCard(box: 1, due: _now, sessionGap: 3);
+      final card = LeitnerCard(box: 1, due: _now);
 
       final next = schedule(card, ReviewGrade.good, now: _now);
 
@@ -58,25 +58,19 @@ void main() {
         reason: 'забытое слово возвращается в эту же сессию, а не через сутки',
       );
       expect(
-        next.sessionGap,
-        3,
-        reason: 'коробка 1: не раньше чем через 3 других карточки',
+        next.due.isAtSameMomentAs(_now),
+        isTrue,
+        reason: 'коробка 1 показывается в этой же сессии: due == now',
       );
     });
 
     test('кейс 5: коробка 1 + easy → коробка 3, а не 2', () {
-      final card = LeitnerCard(box: 1, due: _now, sessionGap: 3);
+      final card = LeitnerCard(box: 1, due: _now);
 
       final next = schedule(card, ReviewGrade.easy, now: _now);
 
       expect(next.box, 3, reason: 'easy = +2 коробки');
       expect(next.due, _now.add(const Duration(days: 3)));
-      expect(
-        next.sessionGap,
-        0,
-        reason:
-            'карточка вышла из первой коробки — в этой сессии её больше нет',
-      );
     });
 
     test('кейс 6: коробка 3 + hard → коробка 3, due = now + 3 дня от now', () {
@@ -125,7 +119,7 @@ void main() {
       // дня, иначе перелёт со сменой зоны начнёт двигать коробки.
       final beforeMidnight = DateTime.utc(2026, 3, 8, 23, 59, 59, 999);
       final midday = DateTime.utc(2026, 3, 8, 12);
-      final card = LeitnerCard(box: 1, due: beforeMidnight, sessionGap: 3);
+      final card = LeitnerCard(box: 1, due: beforeMidnight);
 
       expect(
         schedule(card, ReviewGrade.good, now: beforeMidnight).box,
