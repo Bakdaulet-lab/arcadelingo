@@ -34,13 +34,14 @@ check 'lib/domain/ импортирует data/ или features/' \
 check 'игра импортирует domain/srs напрямую (должна работать через ReviewSession)' \
   lib/features/games "^[[:space:]]*import[[:space:]]+'.*domain/srs"
 
-# 3. SRS детерминирован: без обращения к часам и без несидированного рандома.
-check 'domain/srs вызывает DateTime.now() — время должно приходить параметром now' \
-  lib/domain/srs 'DateTime\.now\(\)'
+# 3. domain детерминирован: ни часов, ни несидированного рандома. Время приходит
+#    параметром now — с 0.6 это нужно и сессии, не только srs.
+check 'domain/ вызывает DateTime.now() — время должно приходить параметром now' \
+  lib/domain 'DateTime\.now\(\)'
 # Random.secure() тоже недетерминирован, а под старый паттерн не попадал.
 # Random(42) проходит намеренно: сидированный генератор воспроизводим.
-check 'domain/srs использует Random без seed' \
-  lib/domain/srs 'Random\.secure\(|Random\([[:space:]]*\)'
+check 'domain/ использует Random без seed' \
+  lib/domain 'Random\.secure\(|Random\([[:space:]]*\)'
 
 if [ "$fail" -ne 0 ]; then
   echo 'Архитектурный гейт не пройден. Правила: CLAUDE.md → «Архитектурный закон».' >&2
