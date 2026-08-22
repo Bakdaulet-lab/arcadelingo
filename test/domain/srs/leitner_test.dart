@@ -113,6 +113,43 @@ void main() {
       );
     });
 
+    test(
+      'due нормализуется в UTC: локальный и UTC-вход дают равные карточки',
+      () {
+        // Инвариант типа, а не функции: карточка приходит и из десериализации
+        // (задача 0.5), конструктор — единственная точка, через которую проходят
+        // все. DateTime.== чувствителен к флагу isUtc, поэтому без нормализации
+        // два представления одного момента дают неравные карточки.
+        final local = DateTime(2026, 3, 8, 12);
+        final utc = local.toUtc();
+
+        final fromLocal = LeitnerCard(box: 2, due: local);
+        final fromUtc = LeitnerCard(box: 2, due: utc);
+
+        expect(fromLocal.due.isUtc, isTrue, reason: 'due всегда в UTC');
+        expect(fromLocal, fromUtc, reason: 'один момент — одна карточка');
+        expect(
+          fromLocal.hashCode,
+          fromUtc.hashCode,
+          reason: 'иначе промах по ключу в HashMap при равном ==',
+        );
+      },
+    );
+
+    test('schedule() отдаёт due в UTC, даже если now локальный', () {
+      final localNow = DateTime(2026, 3, 8, 12);
+      final card = LeitnerCard(box: 1, due: localNow);
+
+      final next = schedule(card, ReviewGrade.good, now: localNow);
+
+      expect(next.due.isUtc, isTrue);
+      expect(
+        next.due.isAtSameMomentAs(localNow.add(const Duration(days: 1))),
+        isTrue,
+        reason: 'нормализация меняет представление, а не момент',
+      );
+    });
+
     test('кейс 8: граница суток и смена зоны не меняют номер коробки', () {
       // DateTime в Dart — это момент времени; часовой пояс лишь способ его
       // записать. Планировщик обязан считать от момента, а не от календарного
