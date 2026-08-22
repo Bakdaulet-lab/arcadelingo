@@ -809,6 +809,39 @@ void main() {
       expect(playAgain, 1);
     });
 
+    testWidgets('итоги при шрифте 2× на коротком экране: выход достижим', (
+      tester,
+    ) async {
+      await _pumpGame(
+        tester,
+        items: _items(1),
+        summaryFooter: () => 'Ещё есть слова — сыграй ещё раунд',
+      );
+      // Бюджетный телефон 16:9 — 360×640 dp. На 360×780 итоги при 2×
+      // занимают 779 dp, то есть впритык; на коротком экране они уже не
+      // помещаются, и это FlutterError, а не просто некрасиво.
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+
+      await _answerCorrectly(tester, 1);
+
+      expect(find.byKey(FallingWordsKeys.summary), findsOneWidget);
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'ничего не переполнилось: overflow — это FlutterError',
+      );
+
+      await tester.ensureVisible(find.byKey(FallingWordsKeys.exit));
+      await tester.pump();
+
+      expect(
+        find.byKey(FallingWordsKeys.exit).hitTestable(),
+        findsOneWidget,
+        reason: 'уйти с экрана можно и при крупном системном шрифте',
+      );
+    });
+
     testWidgets('«на сегодня всё» → тоже есть выход', (tester) async {
       var exit = 0;
       await _pumpGame(tester, items: const [], onExit: () => exit++);
