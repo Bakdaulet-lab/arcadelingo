@@ -1,0 +1,42 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+.vscode/*
+!.vscode/settings.json
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+*.keystore
+*.jks
+
+# iOS / macOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+**/*.mobileprovision
+**/*.p12
+.DS_Store
+
+# Секреты и локальное окружение
+.env
+.env.*
+!.env.example
+
+# Артефакты тестов
+test/**/failures/
+coverage/
+
+# Claude Code: локальные настройки не коммитим, проектные — коммитим
+.claude/settings.local.json

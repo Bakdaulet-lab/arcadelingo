@@ -1,0 +1,6 @@
+# Неверсионируемые файлы, которые нужно копировать в новые git worktrees,
+# чтобы параллельная сессия сразу собиралась.
+.env
+android/local.properties
+android/key.properties
+.claude/settings.local.json
