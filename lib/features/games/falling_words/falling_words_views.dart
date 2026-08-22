@@ -13,8 +13,6 @@ library;
 
 import 'package:flutter/material.dart';
 
-import 'falling_words_run.dart';
-
 /// Ключи частей экрана. Тест ищет по ним то, что не опознать по тексту:
 /// падающее слово (текст у него меняется каждый раунд) и счётчики HUD.
 abstract final class FallingWordsKeys {
@@ -133,56 +131,38 @@ class GameHud extends StatelessWidget {
 /// Поле, по которому падает слово.
 ///
 /// [progress] — доля прожитого времени: 0 — слово вверху, 1 — коснулось
-/// низа. [revealProgress] нужен только верному ответу: слово растёт и
-/// растворяется.
+/// низа. [fadeProgress] — рассыпание верного ответа: слово растёт и
+/// растворяется. Промах и таймаут сюда не приходят, там поле занимает
+/// [RevealPair].
 class FallingField extends StatelessWidget {
   const FallingField({
     required this.text,
     required this.progress,
-    required this.verdict,
-    required this.revealProgress,
+    required this.fadeProgress,
     super.key,
   });
 
   final String text;
   final double progress;
-  final Verdict? verdict;
-  final double revealProgress;
+  final double fadeProgress;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final failed = verdict == Verdict.wrong || verdict == Verdict.timeout;
-    Widget word = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (failed) ...[
-          Icon(
-            Icons.close,
-            color: scheme.error,
-            size: 32,
-            applyTextScaling: true,
-          ),
-          const SizedBox(width: 8),
-        ],
-        Flexible(
-          child: Text(
-            text,
-            key: FallingWordsKeys.word,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: failed ? scheme.error : scheme.onSurface,
-            ),
-          ),
-        ),
-      ],
+    Widget word = Text(
+      text,
+      key: FallingWordsKeys.word,
+      textAlign: TextAlign.center,
+      maxLines: 2,
+      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+        fontWeight: FontWeight.bold,
+        color: scheme.onSurface,
+      ),
     );
-    if (verdict == Verdict.correct) {
+    if (fadeProgress > 0) {
       word = Opacity(
-        opacity: (1 - revealProgress).clamp(0.0, 1.0),
-        child: Transform.scale(scale: 1 + 0.3 * revealProgress, child: word),
+        opacity: (1 - fadeProgress).clamp(0.0, 1.0),
+        child: Transform.scale(scale: 1 + 0.3 * fadeProgress, child: word),
       );
     }
     return Padding(
@@ -190,6 +170,74 @@ class FallingField extends StatelessWidget {
       child: Align(
         alignment: Alignment(0, -1 + 2 * progress.clamp(0.0, 1.0)),
         child: word,
+      ),
+    );
+  }
+}
+
+/// Связка «слово → перевод» на промахе и таймауте.
+///
+/// Занимает всё поле и стоит по центру. Это единственный момент, когда
+/// человек чему-то учится, и связка обязана читаться одним взглядом:
+/// подсветка одной из кнопок внизу требовала саккады через две трети
+/// экрана и обратно, а времени на всё 800 мс (SPEC, «Механика»).
+///
+/// Столбцом, а не строкой: девятибуквенный перевод рядом с английским
+/// словом при системном шрифте 2× в ширину телефона не помещается.
+class RevealPair extends StatelessWidget {
+  const RevealPair({required this.word, required this.answer, super.key});
+
+  final String word;
+  final String answer;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final style = Theme.of(
+      context,
+    ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.close,
+                  color: scheme.error,
+                  size: 32,
+                  applyTextScaling: true,
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    word,
+                    key: FallingWordsKeys.word,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    style: style?.copyWith(color: scheme.error),
+                  ),
+                ),
+              ],
+            ),
+            Icon(
+              Icons.arrow_downward,
+              color: scheme.outline,
+              size: 28,
+              applyTextScaling: true,
+            ),
+            Text(
+              answer,
+              key: FallingWordsKeys.revealAnswer,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              style: style?.copyWith(color: scheme.primary),
+            ),
+          ],
+        ),
       ),
     );
   }

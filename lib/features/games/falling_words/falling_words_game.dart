@@ -167,7 +167,15 @@ class _FallingWordsGameState extends State<FallingWordsGame>
 
   AnswerState _stateFor(int index, {required bool revealing}) {
     if (!revealing) return AnswerState.idle;
-    if (index == _run.correctIndex) return AnswerState.correct;
+    if (_run.verdict == Verdict.correct) {
+      return index == _run.correctIndex
+          ? AnswerState.correct
+          : AnswerState.dimmed;
+    }
+    // Промах и таймаут: верный вариант показан парой в поле, и подсвечивать
+    // его ещё и внизу значило бы тянуть взгляд туда, откуда мы его увели.
+    // Помеченной остаётся только ошибочно нажатая кнопка: что именно нажал
+    // игрок — часть ответа.
     if (index == _run.chosenIndex) return AnswerState.wrong;
     return AnswerState.dimmed;
   }
@@ -210,16 +218,21 @@ class _FallingWordsGameState extends State<FallingWordsGame>
             total: widget.session.total,
           ),
           Expanded(
-            child: AnimatedBuilder(
-              animation: Listenable.merge([_fall, _reveal]),
-              builder:
-                  (context, _) => FallingField(
-                    text: _run.item!.word.text,
-                    progress: _fall.value,
-                    verdict: revealing ? _run.verdict : null,
-                    revealProgress: _reveal.value,
-                  ),
-            ),
+            child:
+                revealing && _run.verdict != Verdict.correct
+                    ? RevealPair(
+                      word: _run.item!.word.text,
+                      answer: _run.item!.word.translation,
+                    )
+                    : AnimatedBuilder(
+                      animation: Listenable.merge([_fall, _reveal]),
+                      builder:
+                          (context, _) => FallingField(
+                            text: _run.item!.word.text,
+                            progress: _fall.value,
+                            fadeProgress: revealing ? _reveal.value : 0,
+                          ),
+                    ),
           ),
           Padding(
             padding: const EdgeInsets.all(16),
