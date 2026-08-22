@@ -52,10 +52,18 @@ List<ReviewItem> _items(int n) => [for (var i = 1; i <= n; i++) _item(i)];
 /// Экран задан явно: размер кнопок и переносы строк зависят от него, а
 /// умолчание 800×600 — не телефон. seed фиксирован, иначе порядок кнопок
 /// менялся бы от запуска к запуску.
+///
+/// Колбэки хоста по умолчанию пустые: большинству тестов важен контракт с
+/// ядром, а не навигация. Обязательными они сделаны в игре намеренно —
+/// необязательные тихо дали бы экран итогов без кнопок, если хост забудет
+/// их передать (задача 0.8).
 Future<FakeReviewSession> _pumpGame(
   WidgetTester tester, {
   List<ReviewItem>? items,
   int? total,
+  String Function()? summaryFooter,
+  VoidCallback? onPlayAgain,
+  VoidCallback? onExit,
 }) async {
   final session = FakeReviewSession(items ?? _items(3), total: total);
   tester.view.physicalSize = const Size(1080, 2340);
@@ -63,7 +71,15 @@ Future<FakeReviewSession> _pumpGame(
   addTearDown(tester.view.reset);
   addTearDown(tester.platformDispatcher.clearAllTestValues);
   await tester.pumpWidget(
-    MaterialApp(home: FallingWordsGame(session: session, seed: 1)),
+    MaterialApp(
+      home: FallingWordsGame(
+        session: session,
+        seed: 1,
+        summaryFooter: summaryFooter,
+        onPlayAgain: onPlayAgain ?? () {},
+        onExit: onExit ?? () {},
+      ),
+    ),
   );
   return session;
 }
@@ -676,6 +692,120 @@ void main() {
       expect(find.text('Лучшая серия: 2'), findsOneWidget);
       expect(find.text('Верных ответов: 3 из 4'), findsOneWidget);
       expect(session.reports, hasLength(4));
+    });
+  });
+
+  group('Конец партии', () {
+    testWidgets('очередь кончилась → «Раунд окончен» и обе кнопки', (
+      tester,
+    ) async {
+      await _pumpGame(tester, items: _items(1));
+
+      await _answerCorrectly(tester, 1);
+
+      expect(find.text('Раунд окончен'), findsOneWidget);
+      expect(find.byKey(FallingWordsKeys.playAgain), findsOneWidget);
+      expect(
+        find.byKey(FallingWordsKeys.exit),
+        findsOneWidget,
+        reason: 'уйти системным «назад» — не единственный выход',
+      );
+    });
+
+    testWidgets('жизни кончились → заголовок про жизни, а не «Раунд окончен»', (
+      tester,
+    ) async {
+      await _pumpGame(tester, items: _items(8));
+
+      await _answerWrongly(tester, 1);
+      await _answerWrongly(tester, 2);
+      await _answerWrongly(tester, 3);
+
+      expect(find.text('Жизни кончились'), findsOneWidget);
+      expect(
+        find.text('Раунд окончен'),
+        findsNothing,
+        reason: 'пройденная сессия и проигранная — разные исходы',
+      );
+    });
+
+    testWidgets('строка хоста показана и считается один раз', (tester) async {
+      var calls = 0;
+      await _pumpGame(
+        tester,
+        items: _items(1),
+        summaryFooter: () {
+          calls++;
+          return 'Возвращайся завтра';
+        },
+      );
+
+      await _answerCorrectly(tester, 1);
+
+      expect(
+        tester.widget<Text>(find.byKey(FallingWordsKeys.summaryFooter)).data,
+        'Возвращайся завтра',
+      );
+      await tester.pump();
+      expect(
+        calls,
+        1,
+        reason: 'строку берут на входе в итоги, а не на каждой перестройке',
+      );
+    });
+
+    testWidgets('строки хоста нет → итоги без неё', (tester) async {
+      await _pumpGame(tester, items: _items(1));
+
+      await _answerCorrectly(tester, 1);
+
+      expect(find.byKey(FallingWordsKeys.summary), findsOneWidget);
+      expect(find.byKey(FallingWordsKeys.summaryFooter), findsNothing);
+    });
+
+    testWidgets('кнопки итогов зовут хост, а не игру', (tester) async {
+      var playAgain = 0;
+      var exit = 0;
+      await _pumpGame(
+        tester,
+        items: _items(1),
+        onPlayAgain: () => playAgain++,
+        onExit: () => exit++,
+      );
+      await _answerCorrectly(tester, 1);
+
+      await tester.tap(find.byKey(FallingWordsKeys.playAgain));
+      await tester.pump();
+
+      expect(
+        playAgain,
+        1,
+        reason: 'новую сессию строит хост: игра её не умеет',
+      );
+      expect(exit, 0);
+
+      await tester.tap(find.byKey(FallingWordsKeys.exit));
+      await tester.pump();
+
+      expect(exit, 1);
+      expect(playAgain, 1);
+    });
+
+    testWidgets('«на сегодня всё» → тоже есть выход', (tester) async {
+      var exit = 0;
+      await _pumpGame(tester, items: const [], onExit: () => exit++);
+
+      expect(find.byKey(FallingWordsKeys.nothingToday), findsOneWidget);
+      expect(
+        find.byKey(FallingWordsKeys.playAgain),
+        findsNothing,
+        reason: 'переигрывать нечего: сессия не дала ни одного слова',
+      );
+
+      await tester.tap(find.byKey(FallingWordsKeys.exit));
+      await tester.pump();
+
+      expect(exit, 1);
     });
   });
 
