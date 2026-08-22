@@ -53,4 +53,8 @@ class LeitnerPrefsStore {
   /// Возвращает ответ платформы: `false` — запись не удалась.
   Future<bool> save(Map<String, LeitnerCard> cards) =>
       _prefs.setString(key, encodeLeitnerState(cards));
+
+  /// Удаляет документ состояния: следующий [load] — первый запуск.
+  Future<bool> reset() =>
+      throw UnimplementedError('сброс состояния не реализован — задача 0.6');
 }

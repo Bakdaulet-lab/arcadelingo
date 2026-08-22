@@ -68,4 +68,36 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(_key), '{bad', reason: 'улики должны остаться');
   });
+
+  test('reset() удаляет документ: следующий load() — первый запуск', () async {
+    final store = await _storeWith({_key: '{bad'});
+
+    expect(await store.reset(), isTrue);
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(
+      prefs.getString(_key),
+      isNull,
+      reason: 'ключа нет, не пустая строка',
+    );
+    expect(ok(store.load()), isEmpty);
+  });
+
+  test(
+    'save() кодирует карту до первого await: поздняя мутация не попадает',
+    () async {
+      // Сессия отдаёт хосту живую карту, а хост делает unawaited(save(cards)).
+      // Это безопасно, только пока кодирование идёт синхронно, до первого
+      // await: иначе следующий report() успеет изменить карту до записи.
+      final store = await _storeWith({});
+      final cards = {'apple': LeitnerCard(box: 2, due: _now)};
+
+      final pending = store.save(cards);
+      cards['apple'] = LeitnerCard(box: 5, due: _now);
+      cards['bread'] = LeitnerCard(box: 1, due: _now);
+      await pending;
+
+      expect(ok(store.load()), {'apple': LeitnerCard(box: 2, due: _now)});
+    },
+  );
 }
