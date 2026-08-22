@@ -7,7 +7,7 @@
 
 - [ ] **0.1** `flutter create`, комплект стартовых файлов на месте, `./scripts/verify.sh`
       отрабатывает (тесты пока пустые — это ожидаемо на этом шаге)
-- [ ] **0.2** `assets/words_seed.json` — 50 слов: `text`, `translation`,
+- [x] **0.2** `assets/words_seed.json` — 50 слов: `text`, `translation`,
       `part_of_speech`, три дистрактора руками. Именно руками: это калибровка того,
       какими обманки вообще должны быть
 - [ ] **0.3** Тесты Лейтнера по кейсам 1–7 из `.claude/skills/srs-engine/SKILL.md`.
