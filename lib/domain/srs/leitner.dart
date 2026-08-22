@@ -13,11 +13,9 @@ library;
 
 import 'review_grade.dart';
 
-const int _minBox = 1;
-const int _maxBox = 5;
-
 /// Через сколько после ответа карточка всплывёт снова, по номеру коробки.
-/// Индекс — `box - 1`. Единственное место в коде, где живут эти числа.
+/// Индекс — `box - 1`, длина — [LeitnerCard.maxBox]. Единственное место
+/// в коде, где живут эти числа.
 const List<Duration> _boxIntervals = [
   Duration.zero, // 1 — в этой же сессии
   Duration(days: 1), // 2
@@ -31,23 +29,31 @@ const List<Duration> _boxIntervals = [
 /// Значимый объект: сравнивается по полям, чтобы «одинаковый вход даёт
 /// одинаковый выход» можно было проверить одним `expect`.
 class LeitnerCard {
-  /// Бросает [ArgumentError], если [box] вне 1..5.
+  /// Первая коробка: с неё начинает новая карточка, в неё возвращает `again`.
+  static const int minBox = 1;
+
+  /// Последняя коробка: потолок для `good` и `easy`.
+  static const int maxBox = 5;
+
+  /// Бросает [ArgumentError], если [box] вне [minBox]..[maxBox].
   ///
   /// Это единственное место в domain/, которое кидает, а не возвращает
   /// `Failure` по CLAUDE.md, и отступление намеренное: коробка вне диапазона —
   /// не исход работы, а повреждённое состояние, из которого нет осмысленного
   /// продолжения. Разбирать битые данные обязан тот, кто их читает: в задаче
-  /// 0.5 десериализация проверяет значение ДО конструктора и отдаёт `Failure`
-  /// наружу. Сюда невалидное число уже не доходит.
+  /// 0.5 десериализация проверяет значение ДО конструктора — по тем же
+  /// [minBox] и [maxBox], чтобы границы жили в одном месте, — и отдаёт
+  /// `Failure` наружу. Сюда невалидное число уже не доходит.
   ///
   /// [due] нормализуется: см. одноимённое поле.
   LeitnerCard({required this.box, required DateTime due}) : due = due.toUtc() {
-    if (box < _minBox || box > _maxBox) {
-      throw ArgumentError.value(box, 'box', 'коробка вне $_minBox..$_maxBox');
+    if (box < minBox || box > maxBox) {
+      throw ArgumentError.value(box, 'box', 'коробка вне $minBox..$maxBox');
     }
   }
 
-  /// Номер коробки, гарантированно 1..5. Новая карточка начинает с первой.
+  /// Номер коробки, гарантированно [minBox]..[maxBox]. Новая карточка
+  /// начинает с первой.
   final int box;
 
   /// Момент, начиная с которого карточку снова можно показывать.
@@ -84,7 +90,7 @@ LeitnerCard schedule(
 }) {
   final target = switch (grade) {
     // Забыл — обратно в первую коробку, как бы высоко ни забрался до этого.
-    ReviewGrade.again => _minBox,
+    ReviewGrade.again => LeitnerCard.minBox,
     // Вспомнил с трудом — коробка та же, но срок отсчитывается заново от now,
     // а не от старого due: иначе просроченная карточка вернулась бы сразу.
     ReviewGrade.hard => card.box,
@@ -101,4 +107,4 @@ LeitnerCard schedule(
 /// Нижняя граница здесь не нужна и убрана намеренно: `box` не бывает меньше 1
 /// по инварианту конструктора, `again` даёт ровно 1, а остальные оценки только
 /// прибавляют. Это же закрывает переполнение `int`: слагаемое не больше 5.
-int _capBox(int box) => box > _maxBox ? _maxBox : box;
+int _capBox(int box) => box > LeitnerCard.maxBox ? LeitnerCard.maxBox : box;
