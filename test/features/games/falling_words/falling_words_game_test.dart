@@ -729,13 +729,18 @@ void main() {
       );
     });
 
-    testWidgets('строка хоста показана и считается один раз', (tester) async {
+    testWidgets('строка хоста берётся один раз, после последнего доклада', (
+      tester,
+    ) async {
+      late final FakeReviewSession session;
       var calls = 0;
-      await _pumpGame(
+      var reportsWhenAsked = -1;
+      session = await _pumpGame(
         tester,
         items: _items(1),
         summaryFooter: () {
           calls++;
+          reportsWhenAsked = session.reports.length;
           return 'Возвращайся завтра';
         },
       );
@@ -746,7 +751,20 @@ void main() {
         tester.widget<Text>(find.byKey(FallingWordsKeys.summaryFooter)).data,
         'Возвращайся завтра',
       );
+      expect(
+        reportsWhenAsked,
+        1,
+        reason:
+            'хост считает строку по состоянию после последнего ответа: '
+            'спрошенный раньше, он ответил бы по устаревшей карте',
+      );
+
+      // Пустой pump сюда не годится: на итогах ничего не меняется, экран
+      // сам не перестраивается, и счётчик остался бы единицей при любой
+      // реализации. Перестройку приходится заказывать явно.
+      tester.element(find.byType(FallingWordsGame)).markNeedsBuild();
       await tester.pump();
+
       expect(
         calls,
         1,
