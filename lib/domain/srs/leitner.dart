@@ -31,10 +31,23 @@ const List<Duration> _boxIntervals = [
 /// Значимый объект: сравнивается по полям, чтобы «одинаковый вход даёт
 /// одинаковый выход» можно было проверить одним `expect`.
 class LeitnerCard {
+  /// Бросает [ArgumentError], если [box] вне 1..5.
+  ///
+  /// Это единственное место в domain/, которое кидает, а не возвращает
+  /// `Failure` по CLAUDE.md, и отступление намеренное: коробка вне диапазона —
+  /// не исход работы, а повреждённое состояние, из которого нет осмысленного
+  /// продолжения. Разбирать битые данные обязан тот, кто их читает: в задаче
+  /// 0.5 десериализация проверяет значение ДО конструктора и отдаёт `Failure`
+  /// наружу. Сюда невалидное число уже не доходит.
+  ///
   /// [due] нормализуется: см. одноимённое поле.
-  LeitnerCard({required this.box, required DateTime due}) : due = due.toUtc();
+  LeitnerCard({required this.box, required DateTime due}) : due = due.toUtc() {
+    if (box < _minBox || box > _maxBox) {
+      throw ArgumentError.value(box, 'box', 'коробка вне $_minBox..$_maxBox');
+    }
+  }
 
-  /// Номер коробки, 1..5. Новая карточка начинает с первой.
+  /// Номер коробки, гарантированно 1..5. Новая карточка начинает с первой.
   final int box;
 
   /// Момент, начиная с которого карточку снова можно показывать.
@@ -78,14 +91,14 @@ LeitnerCard schedule(
     ReviewGrade.good => card.box + 1,
     ReviewGrade.easy => card.box + 2,
   };
-  final box = _clampBox(target);
+  final box = _capBox(target);
   return LeitnerCard(box: box, due: now.add(_boxIntervals[box - 1]));
 }
 
-/// Номер коробки, зажатый в границы таблицы: шестой коробки не существует,
-/// поэтому `easy` из пятой не уводит за потолок, а даёт ту же пятую.
-int _clampBox(int box) {
-  if (box < _minBox) return _minBox;
-  if (box > _maxBox) return _maxBox;
-  return box;
-}
+/// Потолок таблицы: шестой коробки не существует, поэтому `easy` из четвёртой
+/// и пятой даёт пятую.
+///
+/// Нижняя граница здесь не нужна и убрана намеренно: `box` не бывает меньше 1
+/// по инварианту конструктора, `again` даёт ровно 1, а остальные оценки только
+/// прибавляют. Это же закрывает переполнение `int`: слагаемое не больше 5.
+int _capBox(int box) => box > _maxBox ? _maxBox : box;

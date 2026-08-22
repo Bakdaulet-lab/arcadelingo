@@ -113,6 +113,21 @@ void main() {
       );
     });
 
+    test('коробка вне 1..5 — карточка не строится', () {
+      // Битое хранилище (0.5: null -> 0 из shared_preferences) не должно
+      // притворяться рабочим состоянием. Раньше box: 0 + easy тихо давал
+      // коробку 2: 0 + 2 попадало в диапазон, и зажим не срабатывал.
+      expect(() => LeitnerCard(box: 0, due: _now), throwsArgumentError);
+      expect(() => LeitnerCard(box: 6, due: _now), throwsArgumentError);
+      expect(() => LeitnerCard(box: -1, due: _now), throwsArgumentError);
+    });
+
+    test('границы диапазона 1 и 5 — карточка строится', () {
+      // Сторож не должен отрезать лишнего: обе крайние коробки валидны.
+      expect(LeitnerCard(box: 1, due: _now).box, 1);
+      expect(LeitnerCard(box: 5, due: _now).box, 5);
+    });
+
     test(
       'due нормализуется в UTC: локальный и UTC-вход дают равные карточки',
       () {
