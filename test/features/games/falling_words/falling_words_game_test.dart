@@ -636,6 +636,7 @@ void main() {
       await _pumpGame(tester);
       await tester.pump(const Duration(seconds: 1));
       final normal = tester.getSize(find.text(_translation(1)));
+      final normalHeart = tester.getSize(find.byIcon(Icons.favorite).first);
 
       tester.platformDispatcher.textScaleFactorTestValue = 2;
       await tester.pump();
@@ -645,6 +646,13 @@ void main() {
         doubled.height,
         greaterThan(normal.height),
         reason: 'масштаб честный, без FittedBox',
+      );
+      expect(
+        tester.getSize(find.byIcon(Icons.favorite).first).height,
+        greaterThan(normalHeart.height),
+        reason:
+            'иконки растут вместе с текстом: жизни — главный сигнал '
+            '«скоро конец», и мельчать рядом с крупными цифрами им нельзя',
       );
       expect(
         tester.takeException(),

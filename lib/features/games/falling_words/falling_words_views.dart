@@ -101,6 +101,7 @@ class GameHud extends StatelessWidget {
                     i < lives ? Icons.favorite : Icons.favorite_border,
                     color: i < lives ? scheme.error : scheme.outline,
                     size: 24,
+                    applyTextScaling: true,
                   ),
               ],
             ),
@@ -153,7 +154,12 @@ class FallingField extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (failed) ...[
-          Icon(Icons.close, color: scheme.error, size: 32),
+          Icon(
+            Icons.close,
+            color: scheme.error,
+            size: 32,
+            applyTextScaling: true,
+          ),
           const SizedBox(width: 8),
         ],
         Flexible(
@@ -248,7 +254,12 @@ class AnswerButton extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (icon != null) ...[
-                  Icon(icon, color: foreground, size: 24),
+                  Icon(
+                    icon,
+                    color: foreground,
+                    size: 24,
+                    applyTextScaling: true,
+                  ),
                   const SizedBox(width: 8),
                 ],
                 Flexible(
