@@ -8,6 +8,13 @@
 // состояния приложения, — встаёт на часы только следующим кадром, поэтому
 // хелперы _tap и _lifecycle заканчиваются пустым pump().
 //
+// Пауза проверяется на inactive (шторка, звонок, переключатель приложений),
+// а не только на paused. Причина: на paused фреймворк выключает кадры сам,
+// и игра, которая ничего не паузит, прошла бы такой тест — тикер всё равно
+// не тикает. На inactive кадры идут, и тест видит разницу между «время
+// остановлено» и «время идёт». Отдельный тест на paused остаётся: он
+// проверяет буквальный кейс 2 SPEC — возврат из фона с той же точки.
+//
 // Чего здесь нет: правил начисления очков и переходов фаз — они не требуют
 // дерева и живут в falling_words_run_test.dart. Голдены — задача 0.9.
 
@@ -234,7 +241,7 @@ void main() {
       expect(second.responseTime, second.timeLimit);
     });
 
-    testWidgets('свёрнуто во время падения → время на паузе не идёт', (
+    testWidgets('шторка во время падения → кадры идут, а время стоит', (
       tester,
     ) async {
       final session = await _pumpGame(tester);
@@ -242,7 +249,7 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
       final beforePause = tester.getTopLeft(find.byKey(FallingWordsKeys.word));
 
-      await _lifecycle(tester, AppLifecycleState.paused);
+      await _lifecycle(tester, AppLifecycleState.inactive);
       await tester.pump(const Duration(seconds: 10));
 
       expect(session.reports, isEmpty, reason: 'на паузе таймер не тикает');
@@ -272,13 +279,41 @@ void main() {
       );
     });
 
+    testWidgets('свёрнуто во время падения → возврат с той же точки', (
+      tester,
+    ) async {
+      final session = await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 2));
+      final beforePause = tester.getTopLeft(find.byKey(FallingWordsKeys.word));
+
+      await _lifecycle(tester, AppLifecycleState.paused);
+      await tester.pump(const Duration(seconds: 10));
+      await _lifecycle(tester, AppLifecycleState.resumed);
+
+      expect(
+        tester.getTopLeft(find.byKey(FallingWordsKeys.word)),
+        beforePause,
+        reason: 'падение продолжается с той же точки — SPEC, кейс 2',
+      );
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _translation(1));
+
+      expect(
+        session.reports.single.outcome.responseTime,
+        const Duration(seconds: 3),
+        reason: '2 с до сворачивания плюс 1 с после',
+      );
+    });
+
     testWidgets('таймаут переживает паузу: срабатывает через остаток', (
       tester,
     ) async {
       final session = await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 2));
-      await _lifecycle(tester, AppLifecycleState.paused);
+      await _lifecycle(tester, AppLifecycleState.inactive);
       await tester.pump(const Duration(seconds: 10));
       await _lifecycle(tester, AppLifecycleState.resumed);
 
@@ -303,7 +338,7 @@ void main() {
       await _tap(tester, _distractor(1, 1));
       await tester.pump(const Duration(milliseconds: 300));
 
-      await _lifecycle(tester, AppLifecycleState.paused);
+      await _lifecycle(tester, AppLifecycleState.inactive);
       await tester.pump(const Duration(seconds: 10));
       await _lifecycle(tester, AppLifecycleState.resumed);
 
