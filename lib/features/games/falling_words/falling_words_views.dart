@@ -381,9 +381,13 @@ class SummaryView extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
     final note = footer;
+    // Прокрутка, а не фиксированная колонка: при системном шрифте 2×
+    // заголовок, три строки статистики, строка хоста и две кнопки занимают
+    // 779 dp — на 360×780 впритык, на 360×640 переполнение. Пока содержимое
+    // помещается, Center держит его по центру, как и раньше.
     return Center(
       key: FallingWordsKeys.summary,
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,

@@ -817,15 +817,19 @@ void main() {
         items: _items(1),
         summaryFooter: () => 'Ещё есть слова — сыграй ещё раунд',
       );
+      await _answerCorrectly(tester, 1);
+      expect(find.byKey(FallingWordsKeys.summary), findsOneWidget);
+
       // Бюджетный телефон 16:9 — 360×640 dp. На 360×780 итоги при 2×
       // занимают 779 dp, то есть впритык; на коротком экране они уже не
       // помещаются, и это FlutterError, а не просто некрасиво.
+      //
+      // Экран уменьшается после ответа, а не до: на падении при 2× на
+      // 360×640 переполняется само игровое поле, и тест ловил бы его
+      // вместо итогов. Поле — отдельная находка (Р7 в tasks.md).
       tester.view.physicalSize = const Size(1080, 1920);
       tester.platformDispatcher.textScaleFactorTestValue = 2;
-
-      await _answerCorrectly(tester, 1);
-
-      expect(find.byKey(FallingWordsKeys.summary), findsOneWidget);
+      await tester.pump();
       expect(
         tester.takeException(),
         isNull,
