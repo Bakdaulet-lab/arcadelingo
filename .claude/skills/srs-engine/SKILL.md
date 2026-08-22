@@ -34,7 +34,8 @@ ratio = responseTime.inMilliseconds / timeLimit.inMilliseconds
 `hintsUsed > 0` понижает оценку на одну ступень, но не ниже `hard`.
 Правильный ответ никогда не даёт `again`.
 
-Крайние случаи: `timeLimit == Duration.zero` → трактуем как `hard` (делить нельзя);
+Крайние случаи — только для верного ответа, неверный остаётся `again`:
+`timeLimit == Duration.zero` → трактуем как `hard` (делить нельзя);
 `responseTime > timeLimit` → ratio зажимаем в 1.0.
 
 ## Шаг 2 (v1). Лейтнер, 5 коробок
