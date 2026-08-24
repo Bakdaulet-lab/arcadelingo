@@ -14,6 +14,8 @@ import 'dart:math';
 
 import 'package:arcadelingo/domain/review/review_contract.dart';
 
+import 'falling_words_juice.dart';
+
 /// Что происходит на экране прямо сейчас.
 enum FallingPhase {
   /// Слово падает, кнопки живые.
@@ -79,6 +81,8 @@ class FallingWordsRun {
   int _bestCombo = 0;
   int _correctCount = 0;
   int _answeredCount = 0;
+  bool _nearMiss = false;
+  int _lastPoints = 0;
 
   FallingPhase get phase => _phase;
 
@@ -132,15 +136,11 @@ class FallingWordsRun {
   /// Был ли последний ответ дан в последние 15% лимита. Промах и таймаут
   /// последним моментом не считаются, каким бы поздним ни был ответ:
   /// бонус — награда за верный ответ, а не за то, что время вышло.
-  bool get nearMiss {
-    throw UnimplementedError();
-  }
+  bool get nearMiss => _nearMiss;
 
   /// Сколько очков принёс последний ответ; ноль при промахе и таймауте.
   /// Нужен экрану: `+N` показывает именно прирост, а не весь счёт.
-  int get lastPoints {
-    throw UnimplementedError();
-  }
+  int get lastPoints => _lastPoints;
 
   /// Берёт первое слово. Пустая сессия → [FallingPhase.nothingToday].
   void start() {
@@ -219,6 +219,8 @@ class FallingWordsRun {
     _timeLimit = _fallTime();
     _verdict = null;
     _chosenIndex = null;
+    _nearMiss = false;
+    _lastPoints = 0;
     _phase = FallingPhase.falling;
   }
 
@@ -239,7 +241,17 @@ class FallingWordsRun {
     _verdict = verdict;
     _answeredCount++;
     if (verdict == Verdict.correct) {
-      _score += pointsPerCombo * scoreMultiplier;
+      // Бонус только верному ответу: промах и таймаут бывают сколь угодно
+      // поздними, и награждать за вышедшее время игра не станет.
+      _nearMiss = isNearMiss(responseTime: elapsed, timeLimit: _timeLimit);
+      final earned = pointsPerCombo * scoreMultiplier;
+      // Целочисленно и от очков с множителем, а не от базовых десяти:
+      // умножение идёт до деления, поэтому остатка здесь не бывает вовсе.
+      _lastPoints =
+          _nearMiss
+              ? earned * nearMissBonusNumerator ~/ nearMissBonusDenominator
+              : earned;
+      _score += _lastPoints;
       _combo++;
       if (_combo > _bestCombo) _bestCombo = _combo;
       _correctCount++;

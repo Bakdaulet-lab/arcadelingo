@@ -1,0 +1,44 @@
+[
+  {
+    "name": "бонус не начисляется вовсе",
+    "file": "lib/features/games/falling_words/falling_words_run.dart",
+    "old": "      _lastPoints =\n          _nearMiss\n              ? earned * nearMissBonusNumerator ~/ nearMissBonusDenominator\n              : earned;",
+    "new": "      _lastPoints = earned;"
+  },
+  {
+    "name": "бонус получает и промах, и таймаут",
+    "file": "lib/features/games/falling_words/falling_words_run.dart",
+    "old": "    if (verdict == Verdict.correct) {\n      // Бонус только верному ответу: промах и таймаут бывают сколь угодно\n      // поздними, и награждать за вышедшее время игра не станет.\n      _nearMiss = isNearMiss(responseTime: elapsed, timeLimit: _timeLimit);",
+    "new": "    _nearMiss = isNearMiss(responseTime: elapsed, timeLimit: _timeLimit);\n    if (verdict == Verdict.correct) {"
+  },
+  {
+    "name": "бонус считается от базовых десяти, а не от очков с множителем",
+    "file": "lib/features/games/falling_words/falling_words_run.dart",
+    "old": "              ? earned * nearMissBonusNumerator ~/ nearMissBonusDenominator",
+    "new": "              ? pointsPerCombo * nearMissBonusNumerator ~/ nearMissBonusDenominator"
+  },
+  {
+    "name": "бонус и прирост не обнуляются на новом слове",
+    "file": "lib/features/games/falling_words/falling_words_run.dart",
+    "old": "    _nearMiss = false;\n    _lastPoints = 0;\n",
+    "new": ""
+  },
+  {
+    "name": "бонус подмешан в responseTime — ядро видит не то время",
+    "file": "lib/features/games/falling_words/falling_words_run.dart",
+    "old": "    _report(correct: verdict == Verdict.correct, elapsed: elapsed);",
+    "new": "    _report(\n      correct: verdict == Verdict.correct,\n      elapsed: _nearMiss ? _timeLimit : elapsed,\n    );"
+  },
+  {
+    "name": "бонус заодно накручивает серию",
+    "file": "lib/features/games/falling_words/falling_words_run.dart",
+    "old": "      _score += _lastPoints;\n      _combo++;",
+    "new": "      _score += _lastPoints;\n      _combo += _nearMiss ? 2 : 1;"
+  },
+  {
+    "name": "прирост не запоминается: экрану нечего показать",
+    "file": "lib/features/games/falling_words/falling_words_run.dart",
+    "old": "      _score += _lastPoints;\n      _combo++;",
+    "new": "      _score += _lastPoints;\n      _lastPoints = 0;\n      _combo++;"
+  }
+]
