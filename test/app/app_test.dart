@@ -11,6 +11,8 @@
 // нельзя — он домотает падение до таймаута, поэтому переход маршрута
 // проматывается явным `pump(Δ)`.
 
+import 'dart:io';
+
 import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/data/srs/leitner_codec.dart';
@@ -21,6 +23,7 @@ import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_views.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -65,10 +68,13 @@ Future<LeitnerPrefsStore> _pumpApp(
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
-    WordarcadeApp(
-      store: store,
-      seed: seed ?? Ok(_items(3)),
-      now: now ?? () => _t0,
+    DefaultAssetBundle(
+      bundle: _DiskBundle(),
+      child: WordarcadeApp(
+        store: store,
+        seed: seed ?? Ok(_items(3)),
+        now: now ?? () => _t0,
+      ),
     ),
   );
   return store;
@@ -76,6 +82,20 @@ Future<LeitnerPrefsStore> _pumpApp(
 
 /// Документ состояния из карточек по id слова.
 String _stateOf(Map<String, LeitnerCard> cards) => encodeLeitnerState(cards);
+
+/// Бандл, читающий ассеты прямо с диска.
+///
+/// Настоящий `rootBundle` в widget-тесте не годится: чтение ассета — это
+/// настоящий ввод-вывод, а `pump()` его не дожидается, и экран остаётся
+/// пустым. Подмена идёт через штатный `DefaultAssetBundle`, а содержимое
+/// берётся то же самое — файл из репозитория, а не выдуманная строка.
+class _DiskBundle extends CachingAssetBundle {
+  @override
+  Future<ByteData> load(String key) async {
+    final bytes = File(key).readAsBytesSync();
+    return ByteData.view(Uint8List.fromList(bytes).buffer);
+  }
+}
 
 /// Весь текст, который сейчас нарисован на экране.
 ///
@@ -292,6 +312,9 @@ void main() {
       await _pumpApp(tester);
       await _tapAndSettleRoute(tester, AppKeys.sources);
 
+      // Кнопка внизу документа, на телефонный экран сразу не попадает.
+      await tester.ensureVisible(find.byKey(AppKeys.licenses));
+      await tester.pump();
       await _tapAndSettleRoute(tester, AppKeys.licenses);
 
       expect(

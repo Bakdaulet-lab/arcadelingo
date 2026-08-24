@@ -155,6 +155,31 @@ void main() {
     }
   });
 
+  group('Файл доезжает до приложения', () {
+    // Widget-тест экрана подсовывает бандл, читающий с диска: настоящий
+    // ввод-вывод внутри pump() не успевает. Значит незарегистрированный
+    // ассет он не поймает — на экране всё будет, а в приложении пусто.
+    // Ловит это здесь.
+    test('ATTRIBUTION.md зарегистрирован в pubspec.yaml', () {
+      final pubspec = File('pubspec.yaml').readAsStringSync();
+
+      expect(
+        pubspec,
+        contains('assets/ATTRIBUTION.md'),
+        reason:
+            'файл есть в репозитории, но в бандл не попадёт: экран покажет '
+            'ошибку чтения, а условие лицензии останется невыполненным',
+      );
+    });
+
+    test('файл на месте и не пуст', () {
+      final file = File('assets/ATTRIBUTION.md');
+
+      expect(file.existsSync(), isTrue);
+      expect(file.readAsStringSync().trim(), isNotEmpty);
+    });
+  });
+
   group('Сторож на настоящем файле', () {
     test('разбирается целиком, без единой незнакомой конструкции', () {
       final unsupported =
