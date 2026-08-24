@@ -1,7 +1,8 @@
 // Проверка формы и инвариантов сида слов.
 //
 // Качество обманок (не синоним, не однокоренное) тест не ловит — это ручная
-// вычитка. Здесь только то, что можно проверить механически.
+// вычитка. Соответствие `level` источнику (CEFR-J) — тоже: здесь проверяется
+// только закрытый набор значений. Зелёный тест не означает «контент выверен».
 
 import 'dart:convert';
 
@@ -10,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 const _assetPath = 'assets/words_seed.json';
 const _partsOfSpeech = {'noun', 'verb', 'adj', 'adv'};
+const _levels = {'a1', 'a2', 'b1', 'b2', 'c1', 'c2'};
 
 final _cyrillic = RegExp(r'^[а-яё][а-яё -]*$');
 final _latin = RegExp(r'^[a-z]+$');
@@ -69,6 +71,12 @@ void main() {
         contains(w['part_of_speech']),
         reason: 'слово ${w['id']}',
       );
+    }
+  });
+
+  test('level присутствует и из закрытого набора', () {
+    for (final w in words) {
+      expect(_levels, contains(w['level']), reason: 'слово ${w['id']}');
     }
   });
 
