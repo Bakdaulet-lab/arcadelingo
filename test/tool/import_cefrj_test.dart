@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../tool/import_cefrj.dart';
+import '../../tool/rejected.dart';
 
 /// Шапка настоящего файла: шесть колонок, нужны первые три.
 const _header = 'headword,pos,CEFR,CoreInventory 1,CoreInventory 2,Threshold';
@@ -488,6 +489,54 @@ void main() {
     test('обычный каталог вывода разрешён', () {
       expect(() => assertOutDirAllowed('tool/out'), returnsNormally);
       expect(() => assertOutDirAllowed(r'tool\out'), returnsNormally);
+    });
+  });
+
+  group('что импортёр не предлагает заново', () {
+    const seed =
+        '{"version":1,"source_lang":"en","target_lang":"ru","words":['
+        '{"id":"apple","text":"apple","translation":"яблоко",'
+        '"part_of_speech":"noun","level":"a1","distractors":["а","б","в"]}]}';
+    final rejected = encodeRejected(const [
+      RejectedEntry(
+        id: 'adult',
+        reason: 'нет одного главного значения',
+        date: '2026-08-25',
+        portion: 7,
+      ),
+    ]);
+
+    test('слова сида и отклонённые при вычитке — одним множеством', () {
+      // Отказ должен исключать так же, как сид: иначе выброшенное на порции 3
+      // слово вернётся в порцию 30 и будет разобрано заново.
+      expect(excludedFrom(seedJson: seed, rejectedJson: rejected), {
+        'apple',
+        'adult',
+      });
+    });
+
+    test('первый прогон: файла отказов ещё нет', () {
+      expect(excludedFrom(seedJson: seed), {'apple'});
+      expect(excludedFrom(), isEmpty);
+    });
+
+    test(
+      'битый файл отказов роняет прогон, а не исключает пустое множество',
+      () {
+        expect(
+          () => excludedFrom(seedJson: seed, rejectedJson: '{'),
+          throwsA(isA<FormatException>()),
+        );
+      },
+    );
+
+    test('исключённое до порций не доходит', () {
+      final result = importCefrj(
+        _csv([_row('apple', 'noun', 'A1'), _row('adult', 'noun', 'A2')]),
+        excludedIds: excludedFrom(seedJson: seed, rejectedJson: rejected),
+      );
+
+      expect(result.portions, isEmpty);
     });
   });
 }

@@ -1,122 +1,88 @@
 // Проверка формы и инвариантов сида слов.
 //
+// Сами правила живут в `tool/seed_rules.dart` и здесь только применяются к
+// живому ассету: второй список правил, набранный отдельно в тесте, разошёлся
+// бы с тем, по которому сводятся порции, — и разошёлся бы молча.
+//
+// Тест на правило — по тесту: «сид сломан» без указания, чем именно, ничего не
+// говорит тому, кто вычитывал порцию вечером.
+//
 // Качество обманок (не синоним, не однокоренное) тест не ловит — это ручная
-// вычитка. Соответствие `level` источнику (CEFR-J) — тоже: здесь проверяется
-// только закрытый набор значений. Зелёный тест не означает «контент выверен».
+// вычитка. Соответствие `level` источнику (CEFR-J) — тоже. Зелёный прогон
+// означает «форма и инварианты в порядке», а не «контент выверен».
 
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const _assetPath = 'assets/words_seed.json';
-const _partsOfSpeech = {'noun', 'verb', 'adj', 'adv'};
-const _levels = {'a1', 'a2', 'b1', 'b2', 'c1', 'c2'};
+import '../../tool/seed_rules.dart';
 
-final _cyrillic = RegExp(r'^[а-яё][а-яё -]*$');
-final _latin = RegExp(r'^[a-z]+$');
+const _assetPath = 'assets/words_seed.json';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late Map<String, dynamic> root;
-  late List<Map<String, dynamic>> words;
+  late Object? root;
+  late List<SeedProblem> problems;
+  late List<Object?> words;
 
   // rootBundle, а не dart:io: заодно проверяет регистрацию ассета в pubspec.yaml.
   setUpAll(() async {
-    final raw = await rootBundle.loadString(_assetPath);
-    root = jsonDecode(raw) as Map<String, dynamic>;
-    words = (root['words'] as List).cast<Map<String, dynamic>>();
+    root = jsonDecode(await rootBundle.loadString(_assetPath));
+    problems = validateSeed(root);
+    // Защитно: со сломанным корнем счётчик слов обязан упасть сам, а не
+    // уронить в setUpAll все тесты сразу ошибкой приведения типа.
+    words = switch (root) {
+      {'words': final List<Object?> list} => list,
+      _ => const [],
+    };
   });
 
-  test('корень: version 1, en → ru', () {
-    expect(root['version'], 1);
-    expect(root['source_lang'], 'en');
-    expect(root['target_lang'], 'ru');
-  });
+  void ruleTest(String name, SeedRule rule) {
+    test(name, () {
+      expect(problems.where((problem) => problem.rule == rule), isEmpty);
+    });
+  }
+
+  ruleTest('корень: version 1, en → ru', SeedRule.document);
+  ruleTest('id, text, translation непустые; id == text', SeedRule.identity);
+  ruleTest('id и text уникальны', SeedRule.uniqueIds);
+  ruleTest('part_of_speech из закрытого набора', SeedRule.partOfSpeech);
+  ruleTest('level присутствует и из закрытого набора', SeedRule.level);
+  ruleTest(
+    'ровно три дистрактора, уникальны, не равны переводу',
+    SeedRule.distractors,
+  );
+  ruleTest(
+    'перевод и дистракторы — кириллица, text — латиница',
+    SeedRule.script,
+  );
+  ruleTest(
+    'два слова с одним переводом: игрок наказан за верный ответ',
+    SeedRule.translationCollision,
+  );
+  ruleTest(
+    'у двух слов совпал весь набор из четырёх вариантов',
+    SeedRule.identicalOptions,
+  );
 
   test('ровно 50 слов', () {
-    // Жёсткость намеренная: сид — калибровочный набор фиксированного размера.
-    // Добавил слова — осознанно поправь число здесь.
+    // Жёсткость намеренная: правка числа — часть коммита порции, набранная
+    // руками. Сведение порции её не автоматизирует и автоматизировать не будет.
     expect(words, hasLength(50));
   });
 
-  test('id и text уникальны', () {
-    final ids = words.map((w) => w['id']).toSet();
-    final texts = words.map((w) => w['text']).toSet();
-    expect(ids, hasLength(words.length), reason: 'дубли id');
-    expect(texts, hasLength(words.length), reason: 'дубли text');
-  });
+  test('зеркальные пары известны и не запрещены', () {
+    // `open` ↔ `close` в сиде сделаны намеренно. Лечит их правило сессии
+    // «не показывать оба слова пары в один день» (Б1), а не запрет в контенте.
+    final pairs = findMirrorPairs(root);
 
-  test('id, text, translation непустые; id == text в нижнем регистре', () {
-    for (final w in words) {
-      final id = w['id'];
-      final text = w['text'];
-      final translation = w['translation'];
-      expect(id, isA<String>().having((s) => s.isNotEmpty, 'непустой', true));
-      expect(text, isA<String>().having((s) => s.isNotEmpty, 'непустой', true));
-      expect(
-        translation,
-        isA<String>().having((s) => s.isNotEmpty, 'непустой', true),
-        reason: 'слово $id',
-      );
-      expect(id, (text as String).toLowerCase(), reason: 'слово $id');
-    }
-  });
-
-  test('part_of_speech из закрытого набора', () {
-    for (final w in words) {
-      expect(
-        _partsOfSpeech,
-        contains(w['part_of_speech']),
-        reason: 'слово ${w['id']}',
-      );
-    }
-  });
-
-  test('level присутствует и из закрытого набора', () {
-    for (final w in words) {
-      expect(_levels, contains(w['level']), reason: 'слово ${w['id']}');
-    }
-  });
-
-  test('ровно три дистрактора, уникальны, не равны переводу', () {
-    String norm(Object? s) => (s as String).trim().toLowerCase();
-
-    for (final w in words) {
-      final id = w['id'];
-      final distractors = (w['distractors'] as List).cast<String>();
-      expect(distractors, hasLength(3), reason: 'слово $id');
-      expect(
-        distractors.every((d) => d.trim().isNotEmpty),
-        isTrue,
-        reason: 'слово $id: пустой дистрактор',
-      );
-      expect(
-        distractors.map(norm).toSet(),
-        hasLength(3),
-        reason: 'слово $id: дистракторы повторяются',
-      );
-      expect(
-        distractors.map(norm),
-        isNot(contains(norm(w['translation']))),
-        reason: 'слово $id: дистрактор совпадает с переводом',
-      );
-    }
-  });
-
-  test('перевод и дистракторы — кириллица, text — латиница', () {
-    for (final w in words) {
-      final id = w['id'];
-      expect(w['text'], matches(_latin), reason: 'слово $id: text');
-      expect(
-        w['translation'],
-        matches(_cyrillic),
-        reason: 'слово $id: translation',
-      );
-      for (final d in (w['distractors'] as List).cast<String>()) {
-        expect(d, matches(_cyrillic), reason: 'слово $id: дистрактор "$d"');
-      }
-    }
+    expect(pairs.map((pair) => pair.toString()), contains('open ↔ close'));
+    expect(
+      problems,
+      isEmpty,
+      reason: 'зеркальная пара не имеет права быть нарушением',
+    );
   });
 }
