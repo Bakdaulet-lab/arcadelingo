@@ -13,10 +13,13 @@ const Color wordarcadeSeed = Colors.deepPurple;
 
 /// Тема приложения.
 ///
-/// [platform] нужен голденам. `Typography` выбирает семейство шрифта по
-/// платформе: на Windows это Segoe UI, на Android — Roboto. Эталон обязан
-/// сниматься в той конфигурации, в которой игра живёт, а не в той, на
-/// которой её сегодня собирают. Приложение параметр не передаёт — там
+/// [platform] нужен голденам: `Typography` выбирает семейство шрифта по
+/// платформе, и эталон обязан сниматься в той конфигурации, в которой игра
+/// живёт. Сегодня это ничего не меняет — `flutter test` выставляет
+/// `FLUTTER_TEST`, и `defaultTargetPlatform` из-за этого и так равен
+/// `android`, — так что мутацией пин не поймать. Он остаётся как явно
+/// названная цель съёмки: то поведение живёт внутри `assert` и держится на
+/// том, что тесты идут в debug. Приложение параметр не передаёт — там
 /// платформа настоящая.
 ThemeData wordarcadeTheme({TargetPlatform? platform}) => ThemeData(
   colorScheme: ColorScheme.fromSeed(seedColor: wordarcadeSeed),

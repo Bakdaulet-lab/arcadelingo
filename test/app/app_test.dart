@@ -182,6 +182,22 @@ void main() {
   });
 
   group('Сессия по тапу', () {
+    testWidgets('debug-баннера нет: он перекрывает счёт (задача 0.9)', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+
+      expect(
+        tester
+            .widget<MaterialApp>(find.byType(MaterialApp))
+            .debugShowCheckedModeBanner,
+        isFalse,
+        reason:
+            'баннер садится в верхний правый угол — ровно туда, где HUD '
+            'держит счёт; голдены его отключают у себя, а приложение — тут',
+      );
+    });
+
     testWidgets('до тапа «Играть» игры нет', (tester) async {
       await _pumpApp(tester);
 

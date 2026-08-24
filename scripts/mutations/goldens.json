@@ -1,0 +1,44 @@
+[
+  {
+    "name": "тон серии почти незаметен",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "const double comboTintMax = 0.35;",
+    "new": "const double comboTintMax = 0.10;"
+  },
+  {
+    "name": "тряски нет: амплитуда ноль",
+    "file": "lib/features/games/falling_words/falling_words_juice.dart",
+    "old": "const double shakeAmplitude = 8;",
+    "new": "const double shakeAmplitude = 0;"
+  },
+  {
+    "name": "метка ×1.5 у прилетевших очков пропала",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "                      progress: _reveal.value,\n                      nearMiss: _run.nearMiss,",
+    "new": "                      progress: _reveal.value,\n                      nearMiss: false,"
+  },
+  {
+    "name": "debug-баннер вернулся в кадр",
+    "file": "test/support/golden_harness.dart",
+    "old": "      debugShowCheckedModeBanner: false,\n",
+    "new": ""
+  },
+  {
+    "name": "Roboto не загружен: буквы стали прямоугольниками",
+    "file": "test/golden/flutter_test_config.dart",
+    "old": "  await _loadRoboto();\n",
+    "new": ""
+  },
+  {
+    "name": "MaterialIcons не загружены: сердца стали прямоугольниками",
+    "file": "test/golden/flutter_test_config.dart",
+    "old": "  await _loadBundledFonts();\n",
+    "new": ""
+  },
+  {
+    "name": "зерно перемешивания уплыло: кнопки в другом порядке",
+    "file": "test/support/golden_harness.dart",
+    "old": "        seed: 1,",
+    "new": "        seed: 2,"
+  }
+]
