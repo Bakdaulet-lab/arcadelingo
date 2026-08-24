@@ -29,6 +29,36 @@ def write(path, text, eol='\n'):
     io.open(path, 'w', encoding='utf-8', newline=eol).write(text)
 
 
+def assert_committed(paths):
+    """Мутировать можно только закоммиченный файл.
+
+    Файл восстанавливается в finally, но finally не спасает от внешнего
+    убийства процесса: прогон, снятый по таймауту, оставляет в файле
+    применённую мутацию. Если при этом в файле лежала незакоммиченная
+    правка, отличить её от остатка мутации нечем и восстановить неоткуда —
+    копии нет нигде.
+
+    Проверяется именно `git diff` (рабочая копия против индекса), а не
+    `git diff HEAD`: заиндексированную правку `git checkout -- <файл>`
+    вернёт из индекса, а неотслеживаемую — уже ниоткуда.
+    """
+    dirty = []
+    for path in sorted(set(paths)):
+        done = subprocess.run(['git', 'diff', '--exit-code', '--', path],
+                              capture_output=True, shell=True)
+        if done.returncode != 0:
+            dirty.append(path)
+    if not dirty:
+        return
+    print('Мутации не запущены: целевые файлы изменены и не закоммичены.')
+    for path in dirty:
+        print('  %s' % path)
+    print('')
+    print('Прогон, убитый по таймауту, оставил бы в них мутацию, а вернуть')
+    print('правку было бы неоткуда. Закоммить их и запусти снова.')
+    sys.exit(2)
+
+
 def main():
     # Консоль Windows по умолчанию cp1251, и одна стрелка в названии мутации
     # роняла бы прогон уже после того, как файл восстановлен, — то есть
@@ -39,6 +69,7 @@ def main():
         pass
     plan = json.loads(read(sys.argv[1]))
     target = sys.argv[2]
+    assert_committed(case['file'] for case in plan)
     failures = []
 
     for case in plan:
