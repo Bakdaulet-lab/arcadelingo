@@ -289,4 +289,88 @@ void main() {
       );
     });
   });
+
+  group('отчёт: что будет, если свести', () {
+    String report(List<Map<String, Object?>> words, {String seed = _seed}) =>
+        dryRunReport(seedText: seed, portionJson: _portion(words), now: _now);
+
+    test('готовая порция: принято, отклонено, каким станет сид', () {
+      final text = report([
+        _word('pear', translation: 'груша'),
+        _word('plum', translation: 'слива'),
+        _word('adult', reject: 'нет одного главного значения'),
+      ]);
+
+      expect(text, contains('принято 2'));
+      expect(text, contains('отклонено 1'));
+      expect(text, contains('2 → 4'), reason: 'каким станет сид');
+      expect(
+        text,
+        contains('ничего не записано'),
+        reason: 'отчёт обязан сказать, что он только отчёт',
+      );
+    });
+
+    test('нерешённые ничьи — свой список, с кандидатами', () {
+      // Их решает человек, и это не ошибка вычитки, а незакрытый вопрос.
+      final text = report([
+        _word(
+          'answer',
+          translation: '',
+          partOfSpeech: '',
+          ambiguousPos: ['noun', 'verb'],
+        ),
+        _word('pear', translation: 'груша'),
+      ]);
+
+      expect(text, contains('ничь'));
+      expect(text, contains('answer'));
+      expect(text, contains('noun'));
+      expect(text, contains('verb'));
+    });
+
+    test('заполненная наполовину запись не путается с ничьёй', () {
+      final text = report([
+        _word('pear', translation: ''),
+        _word('plum', translation: 'слива', distractors: ['один']),
+      ]);
+
+      expect(text, contains('pear'));
+      expect(text, contains('plum'));
+      expect(text, isNot(contains('ничь')), reason: 'ничьих здесь нет');
+    });
+
+    test('нарушения правил видны и когда порцию ещё нельзя свести', () {
+      // Иначе вычитка узнаёт о столкновении переводов только после того, как
+      // человек разберёт все ничьи, — то есть через вечер.
+      final text = report([
+        _word(
+          'answer',
+          translation: '',
+          partOfSpeech: '',
+          ambiguousPos: ['noun', 'verb'],
+        ),
+        _word('pear', translation: 'яблоко'),
+      ]);
+
+      expect(text, contains('answer'));
+      expect(text, contains('яблоко'), reason: 'столкновение с apple');
+    });
+
+    test('новые зеркальные пары названы, старые не повторяются', () {
+      final text = report([
+        _word(
+          'pear',
+          translation: 'груша',
+          distractors: ['яблоко', 'персик', 'вишня'],
+        ),
+      ]);
+
+      // apple → «груша» в обманках, pear → «яблоко»: пара взаимная и новая.
+      // Обманки нарочно не совпадают целиком — это было бы другое нарушение.
+      expect(text, contains('apple'));
+      expect(text, contains('pear'));
+      expect(text, contains('зеркал'));
+    });
+  });
 }
