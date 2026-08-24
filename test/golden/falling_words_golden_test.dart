@@ -115,7 +115,7 @@ void main() {
     );
   });
 
-  testWidgets('падение', (tester) async {
+  testWidgets('падение', tags: 'golden', (tester) async {
     await pumpGolden(tester, total: 15);
 
     await tester.pump(const Duration(seconds: 2));
@@ -123,7 +123,9 @@ void main() {
     await expectGolden(tester, 'falling');
   });
 
-  testWidgets('промах: пара по центру, тряска улеглась', (tester) async {
+  testWidgets('промах: пара по центру, тряска улеглась', tags: 'golden', (
+    tester,
+  ) async {
     await pumpGolden(tester, total: 15);
 
     await tester.pump(const Duration(seconds: 1));
@@ -137,7 +139,9 @@ void main() {
   // Отличается от предыдущего кадра ровно одним: HUD и ряд кнопок уехали на
   // −6.7 dp, а пара осталась по центру. Если однажды поедет и пара, это
   // будет видно сравнением двух PNG рядом.
-  testWidgets('промах: 50 мс, тряска в разгаре', (tester) async {
+  testWidgets('промах: 50 мс, тряска в разгаре', tags: 'golden', (
+    tester,
+  ) async {
     await pumpGolden(tester, total: 15);
 
     await tester.pump(const Duration(seconds: 1));
@@ -147,40 +151,48 @@ void main() {
     await expectGolden(tester, 'shake');
   });
 
-  testWidgets('серия 8: поле подкрашено, кнопки на чистом фоне', (
-    tester,
-  ) async {
-    await pumpGolden(tester, items: wordItems(12), total: 15);
+  testWidgets(
+    'серия 8: поле подкрашено, кнопки на чистом фоне',
+    tags: 'golden',
+    (tester) async {
+      await pumpGolden(tester, items: wordItems(12), total: 15);
 
-    for (var i = 1; i <= 8; i++) {
-      await answerGolden(tester, i);
-    }
-    // 400 мс — полный перелив тона; девятое слово к этому моменту прошло
-    // десятую часть пути.
-    await tester.pump(const Duration(milliseconds: 400));
+      for (var i = 1; i <= 8; i++) {
+        await answerGolden(tester, i);
+      }
+      // 400 мс — полный перелив тона; девятое слово к этому моменту прошло
+      // десятую часть пути.
+      await tester.pump(const Duration(milliseconds: 400));
 
-    await expectGolden(tester, 'combo_tint');
-  });
+      await expectGolden(tester, 'combo_tint');
+    },
+  );
 
   // Кадр успеха, ради которого затевалась 0.11: до неё верный ответ ничем не
   // помечался вовсе. Снимается вариант «в последний момент» — он визуальное
   // надмножество обычного: то же «плюс очки в полёте» плюс метка ×1.5.
-  testWidgets('верный ответ в последний момент: очки в полёте', (tester) async {
-    await pumpGolden(tester, total: 15);
+  testWidgets(
+    'верный ответ в последний момент: очки в полёте',
+    tags: 'golden',
+    (tester) async {
+      await pumpGolden(tester, total: 15);
 
-    // 5500 из 6000 — это 92% лимита, окно бонуса начинается с 85%.
-    await tester.pump(const Duration(milliseconds: 5500));
-    await tapGolden(tester, wordTranslation(1));
-    // 225 мс из 300 — пик пульса счёта; «+15» прошёл 98% пути и ещё виден.
-    await tester.pump(const Duration(milliseconds: 225));
+      // 5500 из 6000 — это 92% лимита, окно бонуса начинается с 85%.
+      await tester.pump(const Duration(milliseconds: 5500));
+      await tapGolden(tester, wordTranslation(1));
+      // 225 мс из 300 — пик пульса счёта; «+15» прошёл 98% пути и ещё виден.
+      await tester.pump(const Duration(milliseconds: 225));
 
-    await expectGolden(tester, 'score_pop');
-  });
+      await expectGolden(tester, 'score_pop');
+    },
+  );
 
   // Запрос ревьюера 0.7: какой остаётся зазор между словом и верхней кнопкой.
   // 5950 мс — 99% пути и уже внутри окна «в последний момент», так что кадр
   // заодно показывает, где эта зона проходит относительно ряда кнопок.
-  testWidgets('слово у самого низа, таймаут ещё не сработал', (tester) async {
+  testWidgets('слово у самого низа, таймаут ещё не сработал', tags: 'golden', (
+    tester,
+  ) async {
     await pumpGolden(tester, total: 15);
 
     await tester.pump(const Duration(milliseconds: 5950));
@@ -193,7 +205,7 @@ void main() {
     await expectGolden(tester, 'word_at_bottom');
   });
 
-  testWidgets('итоги', (tester) async {
+  testWidgets('итоги', tags: 'golden', (tester) async {
     await pumpGolden(tester, items: wordItems(3), footer: goldenFooter);
 
     await answerGolden(tester, 1);
@@ -203,7 +215,7 @@ void main() {
     await expectGolden(tester, 'summary');
   });
 
-  testWidgets('на сегодня всё', (tester) async {
+  testWidgets('на сегодня всё', tags: 'golden', (tester) async {
     await pumpGolden(tester, items: const []);
 
     await expectGolden(tester, 'nothing_today');
