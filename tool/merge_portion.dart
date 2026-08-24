@@ -7,7 +7,10 @@
 /// Запуск:
 ///
 ///     dart run tool/merge_portion.dart <NN | путь к portion_NN.json>
-///         [--seed assets/words_seed.json] [--out tool/out]
+///         [--dry-run] [--seed assets/words_seed.json] [--out tool/out]
+///
+/// `--dry-run` — отчёт «что будет, если свести»: тот же код, ни одной записи
+/// на диск. Гоняется до вычитки и после каждой правки порции.
 ///
 /// Что делает:
 ///
@@ -239,7 +242,124 @@ String dryRunReport({
   required String portionJson,
   required DateTime now,
 }) {
-  throw UnimplementedError();
+  final portionRoot = _decode(portionJson, 'порция');
+  if (portionRoot is! Map<String, Object?>) {
+    throw const FormatException('порция: корень не объект');
+  }
+  final portion = portionRoot['portion'];
+  if (portion is! int) {
+    throw const FormatException(
+      'порция: поле portion отсутствует или не число',
+    );
+  }
+
+  final ties = <String>[];
+  final incomplete = <String>[];
+  final rejected = <String>[];
+  final ready = <Map<String, Object?>>[];
+
+  for (final (index, raw) in _wordsOf(portionRoot, 'порция').indexed) {
+    if (raw is! Map<String, Object?>) {
+      incomplete.add('запись #$index: не объект');
+      continue;
+    }
+    final id = raw['id'];
+    final name = id is String && id.isNotEmpty ? id : 'запись #$index';
+    if (raw.containsKey('reject')) {
+      rejected.add(name);
+      continue;
+    }
+    final partOfSpeech = raw['part_of_speech'];
+    final empty = partOfSpeech is! String || partOfSpeech.trim().isEmpty;
+    final candidates = raw['ambiguous_pos'];
+
+    // Ничья — не ошибка вычитки, а незакрытый вопрос к человеку, и список у
+    // неё отдельный.
+    if (empty && candidates is List<Object?> && candidates.isNotEmpty) {
+      ties.add('$name (${candidates.join(", ")})');
+      continue;
+    }
+
+    final issues = <String>[];
+    if (empty) issues.add('пустой part_of_speech');
+    final translation = raw['translation'];
+    if (translation is! String || translation.trim().isEmpty) {
+      issues.add('пустой translation');
+    }
+    final distractors = raw['distractors'];
+    if (distractors is! List<Object?> ||
+        distractors.any((value) => value is! String)) {
+      issues.add('distractors не список строк');
+    } else if (distractors.length != seedDistractorCount) {
+      issues.add('обманок ${distractors.length} вместо $seedDistractorCount');
+    }
+    if (issues.isNotEmpty) {
+      incomplete.add('$name: ${issues.join(", ")}');
+      continue;
+    }
+    ready.add(raw);
+  }
+
+  final before = _wordsOf(_decode(seedText, 'сид'), 'сид').length;
+  final buffer =
+      StringBuffer()
+        ..writeln(
+          'порция $portion: принято ${ready.length}, '
+          'отклонено ${rejected.length}',
+        )
+        ..writeln('сид: $before → ${before + ready.length} слов');
+
+  if (ties.isNotEmpty) {
+    buffer.writeln(
+      '\nнерешённые ничьи (${ties.length}) — часть речи '
+      'выбирает человек:',
+    );
+    for (final tie in ties) {
+      buffer.writeln('  $tie');
+    }
+  }
+  if (incomplete.isNotEmpty) {
+    buffer.writeln('\nзаполнено наполовину (${incomplete.length}):');
+    for (final issue in incomplete) {
+      buffer.writeln('  $issue');
+    }
+  }
+
+  buffer.writeln('');
+  if (ready.isEmpty) {
+    buffer.writeln('правила: проверять нечего, готовых записей нет');
+  } else {
+    try {
+      final plan = planMerge(
+        seedText: seedText,
+        portionJson: jsonEncode({'portion': portion, 'words': ready}),
+        now: now,
+      );
+      buffer.writeln('правила: нарушений нет');
+      final known = {
+        for (final pair in findMirrorPairs(_decode(seedText, 'сид')))
+          pair.toString(),
+      };
+      final fresh = [
+        for (final pair in findMirrorPairs(_decode(plan.seedText, 'сид')))
+          if (!known.contains(pair.toString())) pair,
+      ];
+      if (fresh.isEmpty) {
+        buffer.writeln('новых зеркальных пар нет');
+      } else {
+        buffer.writeln(
+          'новые зеркальные пары (${fresh.length}) — не нарушение, '
+          'лечится правилом сессии Б1: ${fresh.join(", ")}',
+        );
+      }
+    } on FormatException catch (e) {
+      buffer.writeln('готовые записи свести нельзя:');
+      buffer.writeln(e.message);
+    }
+  }
+
+  buffer.writeln('\nничего не записано: это отчёт');
+  return buffer.toString();
 }
 
 /// Запись сида → одна строка файла, как их пишут руками.
@@ -330,15 +450,20 @@ const String _usage =
     'Сведение вычитанной порции в assets/words_seed.json.\n'
     '\n'
     '  dart run tool/merge_portion.dart <NN | путь к portion_NN.json> '
-    '[--seed assets/words_seed.json] [--out tool/out]';
+    '[--dry-run] [--seed assets/words_seed.json] [--out tool/out]';
 
 void main(List<String> args) {
   final positional = <String>[];
   var seedPath = 'assets/words_seed.json';
   var outDir = 'tool/out';
+  var dryRun = false;
 
   for (var i = 0; i < args.length; i++) {
     final arg = args[i];
+    if (arg == '--dry-run') {
+      dryRun = true;
+      continue;
+    }
     if (arg != '--seed' && arg != '--out') {
       positional.add(arg);
       continue;
@@ -370,6 +495,20 @@ void main(List<String> args) {
   }
 
   final seedFile = File(seedPath);
+
+  // Режим отчёта: тот же код, что и у настоящего сведения, но без единой
+  // записи на диск и без прогона тестов.
+  if (dryRun) {
+    stdout.write(
+      dryRunReport(
+        seedText: seedFile.readAsStringSync(),
+        portionJson: portionFile.readAsStringSync(),
+        now: DateTime.now(),
+      ),
+    );
+    return;
+  }
+
   final plan = planMerge(
     seedText: seedFile.readAsStringSync(),
     portionJson: portionFile.readAsStringSync(),
