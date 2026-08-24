@@ -1,0 +1,134 @@
+[
+  {
+    "name": "хаптики на ответе нет вовсе",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    _fall.stop();\n    _feel();\n    setState(() {});\n    _startReveal();",
+    "new": "    _fall.stop();\n    setState(() {});\n    _startReveal();"
+  },
+  {
+    "name": "хаптики на таймауте нет: там нет тапа, и её легко забыть",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    if (_run.timeout()) {\n      _feel();",
+    "new": "    if (_run.timeout()) {"
+  },
+  {
+    "name": "хаптика зовётся до стража паузы и фазы",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    if (_paused) return;\n    if (!_run.choose(index, _elapsed)) return;",
+    "new": "    _feel();\n    if (_paused) return;\n    if (!_run.choose(index, _elapsed)) return;"
+  },
+  {
+    "name": "хаптика одинаковая на всё: провал звучит как успех",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "      case Haptic.heavy:\n        unawaited(HapticFeedback.heavyImpact());",
+    "new": "      case Haptic.heavy:\n        unawaited(HapticFeedback.lightImpact());"
+  },
+  {
+    "name": "хаптика на уходе из игры",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    _run.abandon(_elapsed);\n    _lifecycle.dispose();",
+    "new": "    _run.abandon(_elapsed);\n    _feel();\n    _lifecycle.dispose();"
+  },
+  {
+    "name": "хаптика глохнет вместе с анимациями",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "  void _feel() {\n    switch (hapticFor(",
+    "new": "  void _feel() {\n    if (MediaQuery.disableAnimationsOf(context)) return;\n    switch (hapticFor("
+  },
+  {
+    "name": "тряске отдана и пара «слово → перевод»",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "              Expanded(\n                child: _field(scheme, juicy: juicy, revealing: revealing),\n              ),",
+    "new": "              Expanded(\n                child: Transform.translate(\n                  offset: Offset(shake, 0),\n                  child: _field(scheme, juicy: juicy, revealing: revealing),\n                ),\n              ),"
+  },
+  {
+    "name": "тряска ушла в вертикаль",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "              Transform.translate(offset: Offset(shake, 0), child: answers),",
+    "new": "              Transform.translate(\n                offset: Offset(shake, shake),\n                child: answers,\n              ),"
+  },
+  {
+    "name": "тряски у HUD нет",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "              Transform.translate(\n                offset: Offset(shake, 0),\n                child: GameHud(",
+    "new": "              Transform.translate(\n                offset: Offset.zero,\n                child: GameHud("
+  },
+  {
+    "name": "тряска растянута на всю подсветку",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    return shakeAmplitude * shakeIntensity(lived / shakeTime.inMicroseconds);",
+    "new": "    return shakeAmplitude *\n        shakeIntensity(lived / _run.revealTime.inMicroseconds);"
+  },
+  {
+    "name": "трясёт и на верном ответе",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    if (!juicy || !revealing || _run.verdict == Verdict.correct) return 0;\n    final lived",
+    "new": "    if (!juicy || !revealing) return 0;\n    final lived"
+  },
+  {
+    "name": "тряска не смотрит на «убрать анимации»",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    if (!juicy || !revealing || _run.verdict == Verdict.correct) return 0;\n    final lived",
+    "new": "    if (!revealing || _run.verdict == Verdict.correct) return 0;\n    final lived"
+  },
+  {
+    "name": "тон гаснет переливом, а не сразу",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "      duration: juicy && _run.combo > 0 ? comboTintFade : Duration.zero,",
+    "new": "      duration: juicy ? comboTintFade : Duration.zero,"
+  },
+  {
+    "name": "тон считается от лучшей серии, а не от текущей",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "        end: comboTint(scheme, _run.combo),",
+    "new": "        end: comboTint(scheme, _run.bestCombo),"
+  },
+  {
+    "name": "тон выключен вместе с анимациями",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "        end: comboTint(scheme, _run.combo),",
+    "new": "        end: juicy ? comboTint(scheme, _run.combo) : scheme.surface,"
+  },
+  {
+    "name": "прирост висит, а не летит",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "                      from: _fall.value,\n                      progress: _reveal.value,",
+    "new": "                      from: _fall.value,\n                      progress: 0,"
+  },
+  {
+    "name": "прирост стартует не оттуда, где было слово",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "                      from: _fall.value,\n                      progress: _reveal.value,",
+    "new": "                      from: 0,\n                      progress: _reveal.value,"
+  },
+  {
+    "name": "прирост показывается и на промахе",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "                if (juicy && revealing && _run.lastPoints > 0)",
+    "new": "                if (juicy && revealing)"
+  },
+  {
+    "name": "прирост летит и при «убрать анимации»",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "                if (juicy && revealing && _run.lastPoints > 0)",
+    "new": "                if (revealing && _run.lastPoints > 0)"
+  },
+  {
+    "name": "пульса счёта нет",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    if (_reveal.value < 0.5) return 0;\n    return 1 - ((_reveal.value - 0.75).abs() / 0.25).clamp(0.0, 1.0);",
+    "new": "    return 0;"
+  },
+  {
+    "name": "пульс счёта не гаснет при «убрать анимации»",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    if (!juicy || !revealing || _run.verdict != Verdict.correct) return 0;",
+    "new": "    if (!revealing || _run.verdict != Verdict.correct) return 0;"
+  },
+  {
+    "name": "прилетает весь счёт, а не прирост за это слово",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "                      points: _run.lastPoints,",
+    "new": "                      points: _run.score,"
+  }
+]

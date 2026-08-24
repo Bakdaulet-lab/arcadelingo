@@ -161,6 +161,16 @@ ColorScheme _scheme(WidgetTester tester) =>
 Color _fieldColor(WidgetTester tester) =>
     tester.widget<ColoredBox>(find.byKey(FallingWordsKeys.playfield)).color;
 
+/// Ширина счёта на экране, а не в раскладке.
+///
+/// getSize вернул бы размер после layout, которого Transform.scale не
+/// касается, и пульс был бы невидим для теста. Углы же едут через
+/// localToGlobal, то есть через саму матрицу.
+double _scoreWidth(WidgetTester tester) {
+  final score = find.byKey(FallingWordsKeys.score);
+  return tester.getBottomRight(score).dx - tester.getTopLeft(score).dx;
+}
+
 /// Горизонтальный центр ряда кнопок — по нему меряется тряска.
 double _answersX(WidgetTester tester) =>
     tester.getCenter(find.byKey(FallingWordsKeys.answers)).dx;
@@ -1315,6 +1325,64 @@ void main() {
       expect(find.byKey(FallingWordsKeys.nearMissBadge), findsNothing);
     });
 
+    testWidgets('прирост — это прирост, а не весь счёт', (tester) async {
+      await _pumpGame(tester, items: _items(3));
+
+      await _answerCorrectly(tester, 1);
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _translation(2));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(
+        tester.widget<Text>(find.byKey(FallingWordsKeys.scorePop)).data,
+        '+20',
+      );
+      expect(
+        _hud(tester, FallingWordsKeys.score),
+        '30',
+        reason: 'счёт к этому моменту 30, а прилетело за это слово 20',
+      );
+    });
+
+    testWidgets('прирост стартует там, где было слово', (tester) async {
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 4));
+      final word = tester.getCenter(find.byKey(FallingWordsKeys.word)).dy;
+      await _tap(tester, _translation(1));
+      await tester.pump(const Duration(milliseconds: 1));
+
+      expect(
+        tester.getCenter(find.byKey(FallingWordsKeys.scorePop)).dy,
+        closeTo(word, 24),
+        reason:
+            '«+N», вылетающий не оттуда, где стояло слово, читается как '
+            'посторонний элемент, а не как награда за это слово',
+      );
+    });
+
+    testWidgets('счёт раздувается на прилёте и к концу возвращается', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _translation(1));
+      // Три четверти трёхсот миллисекунд — пик пульса.
+      await tester.pump(const Duration(milliseconds: 225));
+      final peak = _scoreWidth(tester);
+
+      await tester.pump(const Duration(milliseconds: 75));
+      final calm = _scoreWidth(tester);
+
+      expect(
+        peak,
+        greaterThan(calm * 1.1),
+        reason: 'прилёт обязан быть заметен на самом счёте, а не только рядом',
+      );
+      expect(calm, greaterThan(0));
+    });
+
     testWidgets('счёт в HUD правдив уже в первом кадре подсветки', (
       tester,
     ) async {
@@ -1399,6 +1467,19 @@ void main() {
         isNot(clean),
         reason: 'и переход мгновенный: доливать кадры перелива не пришлось',
       );
+    });
+
+    testWidgets('пульса счёта нет', (tester) async {
+      await pumpCalm(tester);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _translation(1));
+      await tester.pump(const Duration(milliseconds: 225));
+      final atPeak = _scoreWidth(tester);
+
+      await tester.pump(const Duration(milliseconds: 75));
+
+      expect(atPeak, closeTo(_scoreWidth(tester), 0.01));
     });
 
     testWidgets('хаптика работает', (tester) async {

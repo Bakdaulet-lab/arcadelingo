@@ -22,6 +22,13 @@ def write(path, text):
 
 
 def main():
+    # Консоль Windows по умолчанию cp1251, и одна стрелка в названии мутации
+    # роняла бы прогон уже после того, как файл восстановлен, — то есть
+    # молча съедала бы остаток списка.
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except AttributeError:
+        pass
     plan = json.loads(read(sys.argv[1]))
     target = sys.argv[2]
     failures = []

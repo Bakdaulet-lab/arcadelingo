@@ -13,6 +13,8 @@ library;
 
 import 'package:flutter/material.dart';
 
+import 'falling_words_juice.dart';
+
 /// До этой серии фон чистый: ранний тон был бы шумом, а не наградой.
 const int comboTintStart = 2;
 
@@ -115,6 +117,7 @@ class GameHud extends StatelessWidget {
     required this.current,
     required this.total,
     super.key,
+    this.scorePulse = 0,
   });
 
   final int lives;
@@ -130,6 +133,10 @@ class GameHud extends StatelessWidget {
 
   /// Сколько показов запланировала сессия.
   final int total;
+
+  /// Насколько раздут счёт в этом кадре, 0…1. Ноль — обычный размер.
+  /// Украшение: при системном «убрать анимации» сюда приходит ноль всегда.
+  final double scorePulse;
 
   @override
   Widget build(BuildContext context) {
@@ -169,10 +176,17 @@ class GameHud extends StatelessWidget {
             key: FallingWordsKeys.combo,
             style: textTheme.titleMedium,
           ),
-          Text(
-            '$score',
-            key: FallingWordsKeys.score,
-            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          // Transform, а не изменение кегля: раздувание размером сдвинуло бы
+          // соседние счётчики, и HUD дёргался бы на каждом верном ответе.
+          Transform.scale(
+            scale: 1 + 0.25 * scorePulse.clamp(0.0, 1.0),
+            child: Text(
+              '$score',
+              key: FallingWordsKeys.score,
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -377,6 +391,84 @@ class AnswerButton extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Прирост очков, улетающий к счётчику.
+///
+/// Летит внутри поля падения, а не поверх всего экрана. Так стартовая точка
+/// — в точности место, где стояло слово, и её не приходится пересчитывать
+/// между двумя системами координат; финиш — верхний правый угол поля, ровно
+/// под счётом в HUD. Точность здесь важнее пары лишних пикселей полёта:
+/// «+N», вылетающий не оттуда, где было слово, читается как посторонний
+/// элемент.
+///
+/// Счёт в HUD к этому моменту уже правдив. Полёт — украшение над числом, а
+/// не способ его узнать: при системном «убрать анимации» его нет вовсе.
+class ScorePop extends StatelessWidget {
+  const ScorePop({
+    required this.points,
+    required this.from,
+    required this.progress,
+    required this.nearMiss,
+    super.key,
+  });
+
+  /// Сколько очков принёс ответ. Прирост, а не весь счёт.
+  final int points;
+
+  /// Где стояло слово: доля пути сверху вниз, 0…1.
+  final double from;
+
+  /// Доля полёта, 0…1.
+  final double progress;
+
+  /// Показать ли метку множителя рядом с приростом.
+  final bool nearMiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final flown = Curves.easeOutCubic.transform(progress.clamp(0.0, 1.0));
+    final start = Alignment(0, -1 + 2 * from.clamp(0.0, 1.0));
+    // Растворяется на последней трети пути: раньше — не успеть прочитать,
+    // позже — «+N» доживёт до следующего слова.
+    final fade = ((1 - progress) / 0.35).clamp(0.0, 1.0);
+    return IgnorePointer(
+      child: Align(
+        alignment: Alignment.lerp(start, Alignment.topRight, flown)!,
+        child: Opacity(
+          opacity: fade,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '+$points',
+                key: FallingWordsKeys.scorePop,
+                style: textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: scheme.primary,
+                ),
+              ),
+              if (nearMiss) ...[
+                const SizedBox(width: 6),
+                Text(
+                  // Множитель берётся из тех же констант, что и начисление:
+                  // метка, разошедшаяся с арифметикой, — обман в чистом виде.
+                  '×${nearMissBonusNumerator / nearMissBonusDenominator}',
+                  key: FallingWordsKeys.nearMissBadge,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: scheme.tertiary,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ),
