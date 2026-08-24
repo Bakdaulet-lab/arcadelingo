@@ -1,0 +1,62 @@
+[
+  {
+    "name": "ничья разрешается молча: берётся первый кандидат по алфавиту",
+    "file": "tool/import_cefrj.dart",
+    "old": "    if (candidates.length == 1) {",
+    "new": "    if (candidates.isNotEmpty) {"
+  },
+  {
+    "name": "кандидаты считаются по всем строкам, а не по минимальному уровню",
+    "file": "tool/import_cefrj.dart",
+    "old": "            for (final row in entry.value)\n              if (row.level.toLowerCase() == level)\n                partOfSpeechMap[row.partOfSpeech]!,",
+    "new": "            for (final row in entry.value)\n              partOfSpeechMap[row.partOfSpeech]!,"
+  },
+  {
+    "name": "схлопывание берёт максимальный уровень вместо минимального",
+    "file": "tool/import_cefrj.dart",
+    "old": "    importedLevels.indexOf(a) <= importedLevels.indexOf(b) ? a : b;",
+    "new": "    importedLevels.indexOf(a) >= importedLevels.indexOf(b) ? a : b;"
+  },
+  {
+    "name": "дедупа против сида нет вовсе",
+    "file": "tool/import_cefrj.dart",
+    "old": "  groups.removeWhere((headword, _) => excludedIds.contains(headword));",
+    "new": ""
+  },
+  {
+    "name": "перемешивание не смотрит на seed",
+    "file": "tool/import_cefrj.dart",
+    "old": "  var state = (seed & 0x7fffffff) | 1;",
+    "new": "  var state = 1;"
+  },
+  {
+    "name": "перемешивания нет: порядок остаётся исходным",
+    "file": "tool/import_cefrj.dart",
+    "old": "    _shuffleInPlace(ofLevel, shuffleSeed);",
+    "new": ""
+  },
+  {
+    "name": "сторож неизвестной части речи молчит",
+    "file": "tool/import_cefrj.dart",
+    "old": "    if (!knownPartsOfSpeech.contains(partOfSpeech)) {",
+    "new": "    if (false && !knownPartsOfSpeech.contains(partOfSpeech)) {"
+  },
+  {
+    "name": "сторож неизвестного уровня молчит",
+    "file": "tool/import_cefrj.dart",
+    "old": "    if (!knownLevels.contains(level)) {",
+    "new": "    if (false && !knownLevels.contains(level)) {"
+  },
+  {
+    "name": "отсев по форме headword не записывается: слова пропадают молча",
+    "file": "tool/import_cefrj.dart",
+    "old": "      skipped.add(row.skip(SkipReason.headwordNotSingleLowercaseWord));",
+    "new": ""
+  },
+  {
+    "name": "страж assets/ не срабатывает",
+    "file": "tool/import_cefrj.dart",
+    "old": "  if (segments.contains('assets')) {",
+    "new": "  if (segments.isEmpty) {"
+  }
+]

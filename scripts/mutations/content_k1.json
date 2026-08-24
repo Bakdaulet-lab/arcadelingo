@@ -1,0 +1,44 @@
+[
+  {
+    "name": "ассет ATTRIBUTION.md не зарегистрирован в pubspec: цитата не поедет в сборку",
+    "file": "pubspec.yaml",
+    "old": "    - assets/ATTRIBUTION.md",
+    "new": "    # - assets/ATTRIBUTION.md"
+  },
+  {
+    "name": "цитата пересказана своими словами вместо дословной",
+    "file": "assets/ATTRIBUTION.md",
+    "old": "Compiled by Yukio Tono, Tokyo University of Foreign Studies",
+    "new": "составлен в лаборатории японского университета"
+  },
+  {
+    "name": "разрешительная фраза выброшена из условий",
+    "file": "assets/ATTRIBUTION.md",
+    "old": "research and commercial purposes with no charge",
+    "new": "любых целей бесплатно"
+  },
+  {
+    "name": "у слова нет level",
+    "file": "assets/words_seed.json",
+    "old": "\"part_of_speech\": \"adv\", \"level\": \"a2\", ",
+    "new": "\"part_of_speech\": \"adv\", "
+  },
+  {
+    "name": "level вне закрытого набора: верхний регистр, как в источнике",
+    "file": "assets/words_seed.json",
+    "old": "\"level\": \"a2\"",
+    "new": "\"level\": \"A2\""
+  },
+  {
+    "name": "перевод слова столкнулся с переводом другого слова",
+    "file": "assets/words_seed.json",
+    "old": "\"translation\": \"хлеб\"",
+    "new": "\"translation\": \"яблоко\""
+  },
+  {
+    "name": "у двух слов совпал весь набор из четырёх вариантов",
+    "file": "assets/words_seed.json",
+    "old": "\"id\": \"bread\", \"text\": \"bread\", \"translation\": \"хлеб\", \"part_of_speech\": \"noun\", \"level\": \"a1\", \"distractors\": [\"сыр\", \"масло\", \"каша\"]",
+    "new": "\"id\": \"bread\", \"text\": \"bread\", \"translation\": \"груша\", \"part_of_speech\": \"noun\", \"level\": \"a1\", \"distractors\": [\"яблоко\", \"слива\", \"вишня\"]"
+  }
+]

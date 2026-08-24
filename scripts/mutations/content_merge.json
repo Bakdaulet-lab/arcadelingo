@@ -1,0 +1,74 @@
+[
+  {
+    "name": "страж пустого part_of_speech снят: нерешённая ничья уедет в ассет",
+    "file": "tool/merge_portion.dart",
+    "old": "    if (partOfSpeech is! String || partOfSpeech.trim().isEmpty) {",
+    "new": "    if (partOfSpeech is! String) {"
+  },
+  {
+    "name": "страж пустого translation снят: невычитанное слово уедет в ассет",
+    "file": "tool/merge_portion.dart",
+    "old": "    if (translation is! String || translation.trim().isEmpty) {",
+    "new": "    if (translation is! String) {"
+  },
+  {
+    "name": "страж числа обманок снят: слово с двумя кнопками уедет в ассет",
+    "file": "tool/merge_portion.dart",
+    "old": "    } else if (rawDistractors.length != seedDistractorCount) {",
+    "new": "    } else if (rawDistractors.length > 99) {"
+  },
+  {
+    "name": "отказ без причины проходит: копить в калибровку нечего",
+    "file": "tool/merge_portion.dart",
+    "old": "      if (reason is! String || reason.trim().isEmpty) {",
+    "new": "      if (reason is! String) {"
+  },
+  {
+    "name": "слово, уже лежащее в сиде, сводится второй раз",
+    "file": "tool/merge_portion.dart",
+    "old": "    } else if (seedIds.contains(id)) {",
+    "new": "    } else if (false && seedIds.contains(id)) {"
+  },
+  {
+    "name": "правила сида перед записью не проверяются",
+    "file": "tool/merge_portion.dart",
+    "old": "  if (ruleProblems.isNotEmpty) {",
+    "new": "  if (ruleProblems.isEmpty && ruleProblems.isNotEmpty) {"
+  },
+  {
+    "name": "между дописанными записями нет запятой: файл перестаёт быть JSON",
+    "file": "tool/merge_portion.dart",
+    "old": "      index == lines.length - 1 ? line : '$line,',",
+    "new": "      line,"
+  },
+  {
+    "name": "перенос строк всегда LF: на Windows файл рвётся в невидимом месте",
+    "file": "tool/merge_portion.dart",
+    "old": "  final eol = seedText.contains('\\r\\n') ? '\\r\\n' : '\\n';",
+    "new": "  const eol = '\\n';"
+  },
+  {
+    "name": "повторный отказ заводит вторую запись и переписывает причину",
+    "file": "tool/rejected.dart",
+    "old": "    if (known.add(entry.id)) result.add(entry);",
+    "new": "    known.add(entry.id);\n    result.add(entry);"
+  },
+  {
+    "name": "битый файл отказов молча читается как пустой",
+    "file": "tool/rejected.dart",
+    "old": "  if (json == null || json.trim().isEmpty) return const [];",
+    "new": "  if (json == null || json.trim().isEmpty) return const [];\n  try {\n    jsonDecode(json);\n  } on FormatException {\n    return const [];\n  }"
+  },
+  {
+    "name": "импортёр не смотрит в отказы: выброшенное вернётся в порцию 30",
+    "file": "tool/import_cefrj.dart",
+    "old": "  ...rejectedIds(rejectedJson),",
+    "new": ""
+  },
+  {
+    "name": "столкновение переводов перестаёт быть нарушением",
+    "file": "tool/seed_rules.dart",
+    "old": "      } else if (owner != id) {\n        problems.add(\n          SeedProblem(\n            SeedRule.translationCollision,",
+    "new": "      } else if (owner == id) {\n        problems.add(\n          SeedProblem(\n            SeedRule.translationCollision,"
+  }
+]

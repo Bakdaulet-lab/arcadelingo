@@ -60,6 +60,9 @@ flutter:
 
   assets:
     - assets/words_seed.json
+    # Лицензионное условие CEFR-J: цитата обязана быть в продукте, а не только
+    # в репозитории. Сторожится test/assets/attribution_test.dart.
+    - assets/ATTRIBUTION.md
     # Текст лицензии едет в бандл намеренно: OFL требует распространять её
     # вместе со шрифтом, а шрифт вшит в приложение. main.dart отдаёт её в
     # LicenseRegistry, чтобы она была видна в showLicensePage.

@@ -11,14 +11,17 @@ step 'Архитектурные границы'
 if ./scripts/arch_check.sh; then echo 'OK'; else status=1; fi
 
 step 'Форматирование'
-if [ -d lib ] || [ -d test ]; then
+if [ -d lib ] || [ -d test ] || [ -d tool ]; then
   targets=()
   [ -d lib ] && targets+=(lib)
   [ -d test ] && targets+=(test)
+  # tool/ — тоже наш исходник: flutter analyze его уже проверяет, а форматом
+  # он до Трека К просто не был покрыт, потому что каталога не существовало.
+  [ -d tool ] && targets+=(tool)
   if dart format --output=none --set-exit-if-changed "${targets[@]}"; then
     echo 'OK'
   else
-    echo 'Не отформатировано. Запусти: dart format lib test' >&2
+    echo 'Не отформатировано. Запусти: dart format lib test tool' >&2
     status=1
   fi
 else
