@@ -47,6 +47,7 @@ library;
 import 'dart:convert';
 import 'dart:io';
 
+import 'confusables.dart';
 import 'rejected.dart';
 import 'seed_rules.dart';
 
@@ -248,6 +249,7 @@ String dryRunReport({
   required String seedText,
   required String portionJson,
   required DateTime now,
+  String confusablesCsv = '',
 }) {
   final portionRoot = _decode(portionJson, 'порция');
   if (portionRoot is! Map<String, Object?>) {
@@ -355,9 +357,34 @@ String dryRunReport({
         buffer.writeln('новых зеркальных пар нет');
       } else {
         buffer.writeln(
-          'новые зеркальные пары (${fresh.length}) — не нарушение, '
-          'лечится правилом сессии Б1: ${fresh.join(", ")}',
+          'новые зеркальные пары (${fresh.length}): ${fresh.join(", ")}',
         );
+      }
+      // Пара сама по себе не нарушение, но незаписанная — блокирует сведение:
+      // правило сессии Б1 читает файл, а не отчёт прогона.
+      final unlisted = checkMirrorPairsListed(
+        _decode(plan.seedText, 'сид'),
+        confusablesCsv,
+      );
+      // Сверка «слово из файла есть в сиде» — по документу ПОСЛЕ сведения:
+      // до него второе слово пары ещё не приехало.
+      final missing = checkConfusablesExist(
+        _decode(plan.seedText, 'сид'),
+        confusablesCsv,
+      );
+      for (final problem in missing) {
+        buffer.writeln('  ${problem.message}');
+      }
+      if (unlisted.isEmpty) {
+        buffer.writeln('все зеркальные пары внесены в $confusablesPath');
+      } else {
+        buffer.writeln(
+          'НЕ внесены в $confusablesPath (${unlisted.length}) — сведение '
+          'откажется:',
+        );
+        for (final problem in unlisted) {
+          buffer.writeln('  ${problem.message}');
+        }
       }
     } on FormatException catch (e) {
       buffer.writeln('готовые записи свести нельзя:');
@@ -505,12 +532,19 @@ void main(List<String> args) {
 
   // Режим отчёта: тот же код, что и у настоящего сведения, но без единой
   // записи на диск и без прогона тестов.
+  // Отсутствие файла ловушек — не исключение, а «ни одна пара не записана»:
+  // так о нём скажет сама проверка, назвав путь.
+  final confusablesFile = File(confusablesPath);
+  final confusablesCsv =
+      confusablesFile.existsSync() ? confusablesFile.readAsStringSync() : '';
+
   if (dryRun) {
     stdout.write(
       dryRunReport(
         seedText: seedFile.readAsStringSync(),
         portionJson: portionFile.readAsStringSync(),
         now: DateTime.now(),
+        confusablesCsv: confusablesCsv,
       ),
     );
     return;
@@ -521,6 +555,22 @@ void main(List<String> args) {
     portionJson: portionFile.readAsStringSync(),
     now: DateTime.now(),
   );
+
+  // Гейт перед записью: незаписанная зеркальная пара останавливает сведение.
+  // Знание о ловушке дороже одной порции — искать её потом будет негде.
+  final unlisted = checkMirrorPairsListed(
+    jsonDecode(plan.seedText),
+    confusablesCsv,
+  );
+  if (unlisted.isNotEmpty) {
+    stderr.writeln('Сведение отменено, на диске ничего не поменялось.');
+    for (final problem in unlisted) {
+      stderr.writeln('  ${problem.message}');
+    }
+    stderr.writeln('Внеси пары в $confusablesPath и запусти снова.');
+    exitCode = 65;
+    return;
+  }
 
   seedFile.writeAsStringSync(plan.seedText);
   stdout.writeln(
@@ -543,7 +593,13 @@ void main(List<String> args) {
   // Валидатор — уже по записанному файлу, а не по построенному в памяти.
   stdout.writeln('\n=== валидатор ===');
   final writtenRoot = jsonDecode(seedFile.readAsStringSync());
-  final problems = validateSeed(writtenRoot);
+  // Сверка файла ловушек с сидом — только здесь, после записи: пара, у
+  // которой второе слово приехало этой же порцией, до сведения выглядела бы
+  // записью «на будущее».
+  final problems = [
+    ...validateSeed(writtenRoot),
+    ...checkConfusablesExist(writtenRoot, confusablesCsv),
+  ];
   if (problems.isEmpty) {
     stdout.writeln('нарушений нет');
   } else {
