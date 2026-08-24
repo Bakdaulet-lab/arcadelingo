@@ -43,6 +43,35 @@ check 'domain/ вызывает DateTime.now() — время должно пр�
 check 'domain/ использует Random без seed' \
   lib/domain 'Random\.secure\(|Random\([[:space:]]*\)'
 
+# 4. Направление зависимостей. До Фазы 2 это был единственный пункт закона,
+#    который жил только словами в CLAUDE.md: презентация ходит в хранилище
+#    через порт, фича не знает композиционного корня, данные — лист графа.
+#    Шаблон '[^']*/data/' требует слэша перед именем каталога: без него
+#    правило ловило бы и domain/metadata/, если такой появится.
+check 'lib/features/ импортирует lib/data/ — хранилище приходит портом, а не напрямую'   lib/features "^[[:space:]]*import[[:space:]]+'[^']*/data/"
+check 'lib/features/ импортирует lib/app/ — фича не знает композиционного корня'   lib/features "^[[:space:]]*import[[:space:]]+'[^']*/app/"
+check 'lib/data/ импортирует lib/features/ или lib/app/ — данные это лист графа'   lib/data "^[[:space:]]*import[[:space:]]+'[^']*/(features|app)/"
+check 'lib/ui/ импортирует data/, features/ или app/ — общая презентация ничего о них не знает'   lib/ui "^[[:space:]]*import[[:space:]]+'[^']*/(data|features|app)/"
+
+# 5. Игры — острова. Общий код двух игр — это либо контракт в domain, либо
+#    презентация в lib/ui, но не сосед по каталогу: игра, знающая о другой
+#    игре, перестаёт быть модулем, который подключают через ReviewSession.
+#
+#    Правило вакуумно, пока игра одна, и станет настоящим на второй. Проверять
+#    его мутацией надо соответственно: завести вторую папку с импортом первой.
+if [ -d lib/features/games ]; then
+  for game_dir in lib/features/games/*/; do
+    [ -d "$game_dir" ] || continue
+    game=$(basename "$game_dir")
+    for other_dir in lib/features/games/*/; do
+      [ -d "$other_dir" ] || continue
+      other=$(basename "$other_dir")
+      [ "$game" = "$other" ] && continue
+      check "игра $game импортирует игру $other"         "$game_dir" "^[[:space:]]*import[[:space:]]+'[^']*$other/"
+    done
+  done
+fi
+
 if [ "$fail" -ne 0 ]; then
   echo 'Архитектурный гейт не пройден. Правила: CLAUDE.md → «Архитектурный закон».' >&2
   exit 1

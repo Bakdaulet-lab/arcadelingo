@@ -12,8 +12,8 @@ library;
 
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution.dart';
-import 'package:arcadelingo/app/theme.dart';
 import 'package:arcadelingo/data/attribution_loader.dart';
+import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
 /// Экран целиком: читает ассет и отдаёт его виду.
