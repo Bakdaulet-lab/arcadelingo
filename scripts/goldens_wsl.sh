@@ -24,6 +24,12 @@
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 1
 
+# Git Bash переводит POSIX-пути в аргументах нативных .exe в windows-овые:
+# /opt/flutter/bin/flutter уезжал в «C:/Program Files/Git/opt/flutter/...», и
+# wsl.exe получал несуществующий путь. Здесь все пути в аргументах —
+# линуксовые и переводить их не надо.
+export MSYS_NO_PATHCONV=1
+
 DISTRO="${WORDARCADE_WSL_DISTRO:-Ubuntu-24.04}"
 FLUTTER_DIR="${WORDARCADE_WSL_FLUTTER:-/opt/flutter}"
 WORK="${WORDARCADE_WSL_WORKDIR:-/root/wordarcade-goldens}"
@@ -67,9 +73,12 @@ WANT=$(sed -n "s/^ *FLUTTER_VERSION: *['\"]\{0,1\}\([0-9.]*\)['\"]\{0,1\} *$/\1/
 
 echo "версия из workflow: $WANT"
 
-GOT=$(wsl.exe -d "$DISTRO" -u root -- bash -lc \
-  "PATH=$FLUTTER_DIR/bin:\$PATH flutter --version 2>/dev/null" \
-  | tr -d '\0' | tr -d '\r' | sed -n 's/^Flutter \([0-9.]*\) .*/\1/p' | head -1)
+# Абсолютным путём, а не через PATH. WSL по умолчанию подмешивает в PATH
+# windows-овые каталоги, и в них есть «Program Files (x86)»: присваивание
+# PATH=... перед командой роняло разбор на скобке.
+GOT=$(wsl.exe -d "$DISTRO" -u root -- "$FLUTTER_DIR/bin/flutter" --version \
+  2>/dev/null | tr -d '\0' | tr -d '\r' \
+  | sed -n 's/^Flutter \([0-9.]*\) .*/\1/p' | head -1)
 
 [ -n "$GOT" ] || die \
   "В $DISTRO нет рабочего flutter по пути $FLUTTER_DIR/bin." \
@@ -84,9 +93,8 @@ if [ "$GOT" != "$WANT" ]; then
     "Поставь $WANT в $FLUTTER_DIR либо укажи другой путь в WORDARCADE_WSL_FLUTTER."
 fi
 
-wsl.exe -d "$DISTRO" -u root -- bash -lc \
-  "PATH=$FLUTTER_DIR/bin:\$PATH flutter --version 2>/dev/null | sed -n '2,3p'" \
-  | tr -d '\0'
+wsl.exe -d "$DISTRO" -u root -- "$FLUTTER_DIR/bin/flutter" --version 2>/dev/null \
+  | tr -d '\0' | tr -d '\r' | sed -n '2,3p'
 
 # --- 3. Рабочее дерево в ext4 ------------------------------------------------
 
@@ -95,7 +103,7 @@ wsl.exe -d "$DISTRO" -u root -- bash -lc \
 #
 # Синхронизируется рабочее дерево, а не коммит: петля нужна ровно тогда, когда
 # правка ещё не закоммичена.
-if ! wsl.exe -d "$DISTRO" -u root -- bash -lc 'command -v rsync' >/dev/null 2>&1; then
+if ! wsl.exe -d "$DISTRO" -u root -- bash -c 'command -v rsync' >/dev/null 2>&1; then
   die \
     "В $DISTRO нет rsync." \
     "  wsl.exe -d $DISTRO -u root -- bash -c 'apt-get update && apt-get install -y rsync'"
@@ -115,8 +123,11 @@ rsync -a --delete \
   --exclude '*.new.png' \
   '$HERE/' '$WORK/'
 cd '$WORK'
+# Кавычки вокруг значения обязательны: WSL подмешивает в PATH windows-овые
+# каталоги, среди них «Program Files (x86)», и без кавычек скобка роняет разбор.
 export PATH="$FLUTTER_DIR/bin:\$PATH"
-flutter pub get > /tmp/wordarcade_pubget.log 2>&1 || { tail -20 /tmp/wordarcade_pubget.log; exit 1; }
+'$FLUTTER_DIR/bin/flutter' pub get > /tmp/wordarcade_pubget.log 2>&1 \
+  || { tail -20 /tmp/wordarcade_pubget.log; exit 1; }
 ./scripts/goldens.sh
 WSLEOF
 rc=${PIPESTATUS[0]}
