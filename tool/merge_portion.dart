@@ -366,6 +366,15 @@ String dryRunReport({
         _decode(plan.seedText, 'сид'),
         confusablesCsv,
       );
+      // Сверка «слово из файла есть в сиде» — по документу ПОСЛЕ сведения:
+      // до него второе слово пары ещё не приехало.
+      final missing = checkConfusablesExist(
+        _decode(plan.seedText, 'сид'),
+        confusablesCsv,
+      );
+      for (final problem in missing) {
+        buffer.writeln('  ${problem.message}');
+      }
       if (unlisted.isEmpty) {
         buffer.writeln('все зеркальные пары внесены в $confusablesPath');
       } else {
@@ -584,7 +593,13 @@ void main(List<String> args) {
   // Валидатор — уже по записанному файлу, а не по построенному в памяти.
   stdout.writeln('\n=== валидатор ===');
   final writtenRoot = jsonDecode(seedFile.readAsStringSync());
-  final problems = validateSeed(writtenRoot);
+  // Сверка файла ловушек с сидом — только здесь, после записи: пара, у
+  // которой второе слово приехало этой же порцией, до сведения выглядела бы
+  // записью «на будущее».
+  final problems = [
+    ...validateSeed(writtenRoot),
+    ...checkConfusablesExist(writtenRoot, confusablesCsv),
+  ];
   if (problems.isEmpty) {
     stdout.writeln('нарушений нет');
   } else {

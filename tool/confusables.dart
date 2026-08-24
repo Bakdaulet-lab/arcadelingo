@@ -99,7 +99,29 @@ Set<String> confusableKeys(String csv) => {
 /// (слово из несведённой порции) запрещена — пара вносится тем же коммитом,
 /// что и второе слово пары.
 List<SeedProblem> checkConfusablesExist(Object? root, String csv) {
-  throw UnimplementedError();
+  final known = <String>{};
+  if (root is Map<String, Object?>) {
+    final words = root['words'];
+    if (words is List<Object?>) {
+      for (final word in words) {
+        if (word is Map<String, Object?> && word['id'] is String) {
+          known.add(word['id']! as String);
+        }
+      }
+    }
+  }
+  return [
+    for (final pair in parseConfusables(csv))
+      // По нарушению на каждое отсутствующее слово, а не на строку: иначе
+      // вторую опечатку в той же паре нашли бы только следующим прогоном.
+      for (final id in [pair.first, pair.second])
+        if (!known.contains(id))
+          SeedProblem(
+            SeedRule.confusableWordMissing,
+            'в $confusablesPath пара "${pair.first}" / "${pair.second}", '
+            'но слова "$id" в сиде нет: опечатка в id либо запись «на будущее»',
+          ),
+  ];
 }
 
 /// Каждая найденная зеркальная пара обязана быть в файле.
