@@ -60,6 +60,9 @@ flutter:
 
   assets:
     - assets/words_seed.json
+    # Лицензионное условие CEFR-J: цитата обязана быть в продукте, а не только
+    # в репозитории. Сторожится test/assets/attribution_test.dart.
+    - assets/ATTRIBUTION.md
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

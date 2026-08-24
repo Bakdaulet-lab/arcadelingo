@@ -42,8 +42,13 @@ def main():
             continue
         write(path, original.replace(old, new))
         try:
+            # encoding явно: text=True декодирует вывод кодировкой консоли
+            # (на Windows cp1251), и первый же типографский символ в тексте
+            # ассета роняет поток чтения. Вердикт брался бы из returncode и
+            # остался бы верным, но прогон печатал бы traceback вместо отчёта.
             done = subprocess.run(['flutter', 'test', target],
-                                  capture_output=True, text=True, shell=True)
+                                  capture_output=True, text=True, shell=True,
+                                  encoding='utf-8', errors='replace')
             red = done.returncode != 0
         finally:
             write(path, original)
