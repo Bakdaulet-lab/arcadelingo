@@ -24,6 +24,19 @@ abstract final class AppKeys {
 
   /// «Сбросить прогресс» — только на экране ошибки состояния.
   static const Key reset = Key('app.reset');
+
+  /// Вход на «Источники» с домашнего экрана.
+  ///
+  /// Домашний, а не конец партии: на итогах кнопка конкурировала бы с «Ещё
+  /// раз» и «Выйти», ради которых экран и существует. Плюс домашний экран
+  /// не входит ни в один из восьми голденов.
+  static const Key sources = Key('app.sources');
+
+  /// Сам экран «Источники».
+  static const Key sourcesView = Key('app.sources_view');
+
+  /// «Полные тексты лицензий» → штатный `showLicensePage`.
+  static const Key licenses = Key('app.licenses');
 }
 
 /// Домашний экран: одна кнопка.

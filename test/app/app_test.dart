@@ -77,6 +77,26 @@ Future<LeitnerPrefsStore> _pumpApp(
 /// Документ состояния из карточек по id слова.
 String _stateOf(Map<String, LeitnerCard> cards) => encodeLeitnerState(cards);
 
+/// Весь текст, который сейчас нарисован на экране.
+///
+/// Через `RichText`, а не через `Text`: обычный `Text` собирает `RichText`
+/// внутри себя, поэтому один обход ловит и простые строки, и размеченные.
+/// Тесту не должно быть важно, каким из двух нарисован конкретный блок.
+String _screenText(WidgetTester tester) => tester
+    .widgetList<RichText>(find.byType(RichText))
+    .map((widget) => widget.text.toPlainText())
+    .join('\n');
+
+/// Цитата CEFR-J, дословно.
+///
+/// Литералом и здесь, и в attribution_test.dart намеренно: это условие
+/// чужой лицензии, а не наша строка. Две независимые копии ловят и правку
+/// в файле, и правку в разборе; общая константа поймала бы только вторую.
+const String _citation =
+    'The CEFR-J Wordlist Version 1.5. Compiled by Yukio Tono, Tokyo '
+    'University of Foreign Studies. Retrieved from '
+    'http://www.cefr-j.org/download.html';
+
 /// Тап по кнопке [key] и переход экрана.
 ///
 /// Два пустых кадра: первый взводит анимацию перехода, дальше 500 мс —
@@ -177,6 +197,109 @@ void main() {
         find.byKey(AppKeys.play),
         findsNothing,
         reason: 'играть нечем, кнопку показывать незачем',
+      );
+    });
+  });
+
+  group('Источники', () {
+    // Экран читает assets/ATTRIBUTION.md через rootBundle, а не через
+    // подсунутую строку: смысл задачи в том, что в продукте показан тот же
+    // файл, который лежит в репозитории. Подмена сделала бы тест зелёным
+    // при любом содержимом ассета.
+    testWidgets('вход с домашнего экрана открывает «Источники»', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      expect(find.byKey(AppKeys.sourcesView), findsNothing);
+
+      await _tapAndSettleRoute(tester, AppKeys.sources);
+
+      expect(find.byKey(AppKeys.sourcesView), findsOneWidget);
+    });
+
+    testWidgets('с «Источников» есть возврат на домашний экран', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _tapAndSettleRoute(tester, AppKeys.sources);
+
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(
+        find.byKey(AppKeys.play),
+        findsOneWidget,
+        reason: 'застрять на «Источниках» игрок не должен',
+      );
+      expect(find.byKey(AppKeys.sourcesView), findsNothing);
+    });
+
+    testWidgets('цитата CEFR-J показана дословно', (tester) async {
+      await _pumpApp(tester);
+      await _tapAndSettleRoute(tester, AppKeys.sources);
+
+      expect(
+        _screenText(tester),
+        contains(_citation),
+        reason:
+            'условие лицензии CEFR-J — «cite properly», и адресовано оно '
+            'пользователю: репозитория он не видит',
+      );
+    });
+
+    testWidgets('условия использования показаны целиком', (tester) async {
+      await _pumpApp(tester);
+      await _tapAndSettleRoute(tester, AppKeys.sources);
+      final text = _screenText(tester);
+
+      expect(
+        text,
+        contains('CEFR-J vocabulary and grammar profile datasets can be used'),
+      );
+      expect(
+        text,
+        contains('any damage resulting from using the dataset.'),
+        reason: 'обрезанные условия хуже отсутствующих: они выглядят полными',
+      );
+    });
+
+    testWidgets('разметка съедена, а не показана', (tester) async {
+      await _pumpApp(tester);
+      await _tapAndSettleRoute(tester, AppKeys.sources);
+      final text = _screenText(tester);
+
+      expect(text, isNot(contains('**')), reason: 'жирный');
+      expect(text, isNot(contains('##')), reason: 'заголовок');
+      expect(text, isNot(contains('`')), reason: 'код');
+      expect(
+        text,
+        isNot(contains('<https://')),
+        reason: 'угловые скобки автоссылки',
+      );
+    });
+
+    testWidgets('шрифт назван: без этого OFL не соблюдён', (tester) async {
+      await _pumpApp(tester);
+      await _tapAndSettleRoute(tester, AppKeys.sources);
+
+      expect(_screenText(tester), contains('Rubik'));
+    });
+
+    testWidgets('«Полные тексты лицензий» открывают штатный экран', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+      await _tapAndSettleRoute(tester, AppKeys.sources);
+
+      await _tapAndSettleRoute(tester, AppKeys.licenses);
+
+      expect(
+        find.byType(LicensePage),
+        findsOneWidget,
+        reason:
+            'четыре килобайта OFL — юридическое приложение, ему место на '
+            'штатном экране, а не в цитировании',
       );
     });
   });
