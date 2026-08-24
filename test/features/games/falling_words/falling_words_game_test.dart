@@ -20,6 +20,7 @@
 
 import 'dart:math' as math;
 
+import 'package:arcadelingo/app/theme.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_views.dart';
@@ -55,6 +56,9 @@ Future<FakeReviewSession> _pumpGame(
   addTearDown(tester.platformDispatcher.clearAllTestValues);
   await tester.pumpWidget(
     MaterialApp(
+      // Настоящая тема приложения, а не дефолтная синяя: иначе
+      // textContrastGuideline ниже проверяет палитру, которой никто не видит.
+      theme: wordarcadeTheme(),
       home: FallingWordsGame(
         session: session,
         seed: 1,
@@ -139,10 +143,17 @@ String _hud(WidgetTester tester, Key key) =>
 ColorScheme _scheme(WidgetTester tester) =>
     Theme.of(tester.element(find.byType(FallingWordsGame))).colorScheme;
 
-/// Текущий цвет поля падения. Именно текущий, а не тот, к которому оно
-/// едет: у [ColoredBox] цвет — это то, что нарисовано в этом кадре.
-Color _fieldColor(WidgetTester tester) =>
-    tester.widget<ColoredBox>(find.byKey(FallingWordsKeys.playfield)).color;
+/// Градиент поля в этом кадре — именно текущий, а не тот, к которому поле
+/// едет.
+LinearGradient _fieldGradient(WidgetTester tester) {
+  final box = tester.widget<DecoratedBox>(
+    find.byKey(FallingWordsKeys.playfield),
+  );
+  return (box.decoration as BoxDecoration).gradient! as LinearGradient;
+}
+
+/// Горячий цвет поля — тот, что в середине градиента.
+Color _fieldColor(WidgetTester tester) => _fieldGradient(tester).colors[1];
 
 /// Ширина счёта на экране, а не в раскладке.
 ///
@@ -1221,6 +1232,27 @@ void main() {
 
       expect(find.byKey(FallingWordsKeys.summary), findsOneWidget);
       expect(find.byKey(FallingWordsKeys.playfield), findsNothing);
+    });
+
+    testWidgets('у поля нет жёсткой границы: края сходят в фон', (
+      tester,
+    ) async {
+      await _pumpGame(tester, items: wordItems(12), total: 15);
+      final clean = _scheme(tester).surface;
+
+      for (var i = 1; i <= 8; i++) {
+        await _answerCorrectly(tester, i);
+      }
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final gradient = _fieldGradient(tester);
+      expect(gradient.colors.first, clean, reason: 'стык с HUD');
+      expect(gradient.colors.last, clean, reason: 'стык с кнопками');
+      expect(
+        gradient.colors[1],
+        isNot(clean),
+        reason: 'а середина при этом разогрета — иначе тона просто нет',
+      );
     });
 
     testWidgets('контраст держится и на самой густой серии', (tester) async {

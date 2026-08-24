@@ -44,6 +44,18 @@ Color comboTint(ColorScheme scheme, int combo) {
   return Color.lerp(scheme.surface, scheme.primary, comboTintMax * depth)!;
 }
 
+/// Доля высоты поля, на которой тон сходит к фону у каждого края.
+const double comboGradientEdge = 0.22;
+
+/// Тон поля по длине серии — вертикальным градиентом, а не заливкой.
+///
+/// Заливкой поле читалось панелью: жёсткая граница сверху о полосу HUD и
+/// снизу о ряд кнопок — это увидели голдены 0.9, числами оно не ловилось.
+/// У обоих краёв градиент равен `surface`, поэтому стыков не видно вовсе.
+LinearGradient comboGradient(ColorScheme scheme, int combo) {
+  throw UnimplementedError();
+}
+
 /// Ключи частей экрана. Тест ищет по ним то, что не опознать по тексту:
 /// падающее слово (текст у него меняется каждый раунд) и счётчики HUD.
 abstract final class FallingWordsKeys {

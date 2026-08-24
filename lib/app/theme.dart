@@ -25,3 +25,16 @@ ThemeData wordarcadeTheme({TargetPlatform? platform}) => ThemeData(
   colorScheme: ColorScheme.fromSeed(seedColor: wordarcadeSeed),
   platform: platform,
 );
+
+/// Вес для вариативного шрифта.
+///
+/// Обычный `fontWeight` на `Rubik[wght]` **не работает**: замерено — строка
+/// в `w400` и в `w700` выходит одной ширины, потому что ось `wght` от него
+/// не двигается, и всё рисуется значением по умолчанию (для Rubik это 300,
+/// то есть Light). Вес задаётся осью через `fontVariations`.
+///
+/// `fontWeight` при этом ставится тоже: он остаётся верным для запасных
+/// шрифтов и для семантики, просто сам по себе ничего не решает.
+TextStyle withWeight(TextStyle style, FontWeight weight) {
+  throw UnimplementedError();
+}

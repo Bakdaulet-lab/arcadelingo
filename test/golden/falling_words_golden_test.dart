@@ -64,16 +64,54 @@ void main() {
 
     expect(
       DefaultTextStyle.of(tester.element(find.byKey(wide))).style.fontFamily,
-      'Roboto',
+      'Rubik',
       reason: 'тема просит не тот шрифт — эталон снимется не в той гарнитуре',
     );
     expect(
       tester.getSize(find.byKey(wide)).width,
       greaterThan(tester.getSize(find.byKey(narrow)).width * 1.5),
       reason:
-          'ширины сошлись — значит за именем Roboto стоит запасной шрифт '
+          'ширины сошлись — значит за именем Rubik стоит запасной шрифт '
           'тестов и всё нарисовано прямоугольниками; смотреть на такие '
           'эталоны бессмысленно',
+    );
+  });
+
+  // Вторая канарейка, и она про вариативный файл. Обычный fontWeight ось
+  // wght у Rubik не двигает — замерено: строка в w400 и в w700 выходит
+  // ровно одной ширины. Вес идёт через fontVariations, и если эта проводка
+  // порвётся, весь текст молча уедет в значение по умолчанию, а для Rubik
+  // это Light 300. На голдене такое видно, только если знать, что искать.
+  testWidgets('вес шрифта применяется: жирное шире обычного', (tester) async {
+    const plain = ValueKey('plain');
+    const bold = ValueKey('bold');
+    final theme = wordarcadeTheme(platform: TargetPlatform.android);
+    final base = theme.textTheme.titleLarge!;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: theme,
+        home: Scaffold(
+          body: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Проверка веса', key: plain, style: base),
+              Text(
+                'Проверка веса',
+                key: bold,
+                style: withWeight(base, FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getSize(find.byKey(bold)).width,
+      greaterThan(tester.getSize(find.byKey(plain)).width),
+      reason:
+          'ширины сошлись — ось wght не применилась, и весь текст рисуется '
+          'значением по умолчанию (для Rubik это Light 300)',
     );
   });
 
