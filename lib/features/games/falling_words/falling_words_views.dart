@@ -45,6 +45,15 @@ Color comboTint(ColorScheme scheme, int combo) {
   return Color.lerp(scheme.surface, scheme.primary, comboTintMax * depth)!;
 }
 
+/// Загорелась ли серия — то есть видно ли уже тон на поле.
+///
+/// Одна функция на два ответа: подкрашивать ли поле и гореть ли множителю в
+/// HUD. Порог живёт здесь и нигде больше, поэтому разъехаться они не могут
+/// даже случайно.
+bool comboIsHot(int combo) {
+  throw UnimplementedError();
+}
+
 /// Доля высоты поля, на которой тон сходит к фону у каждого края.
 const double comboGradientEdge = 0.22;
 

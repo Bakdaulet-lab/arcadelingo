@@ -137,6 +137,10 @@ int _lives(WidgetTester tester) =>
 String _hud(WidgetTester tester, Key key) =>
     tester.widget<Text>(find.byKey(key)).data!;
 
+/// Цвет текста элемента HUD.
+Color? _hudColor(WidgetTester tester, Key key) =>
+    tester.widget<Text>(find.byKey(key)).style?.color;
+
 /// Палитра, по которой собран экран. Берётся с дерева, а не задаётся
 /// литералом: тема теста и тема приложения — разные, и тест должен
 /// проверять правило, а не конкретный оттенок.
@@ -1232,6 +1236,48 @@ void main() {
 
       expect(find.byKey(FallingWordsKeys.summary), findsOneWidget);
       expect(find.byKey(FallingWordsKeys.playfield), findsNothing);
+    });
+
+    testWidgets('множитель загорается вместе с полем, на той же серии', (
+      tester,
+    ) async {
+      await _pumpGame(tester, items: wordItems(6), total: 15);
+      final scheme = _scheme(tester);
+
+      await _answerCorrectly(tester, 1);
+      await _answerCorrectly(tester, 2);
+
+      expect(
+        _hudColor(tester, FallingWordsKeys.combo),
+        scheme.onSurfaceVariant,
+        reason: 'серия 2 — поле ещё чистое, и множителю гореть не с чего',
+      );
+
+      await _answerCorrectly(tester, 3);
+
+      expect(
+        _hudColor(tester, FallingWordsKeys.combo),
+        scheme.primary,
+        reason: 'серия 3 — поле загорелось, множитель обязан загореться с ним',
+      );
+    });
+
+    testWidgets('промах гасит и множитель тоже', (tester) async {
+      await _pumpGame(tester, items: wordItems(8), total: 15);
+      final scheme = _scheme(tester);
+
+      await _answerCorrectly(tester, 1);
+      await _answerCorrectly(tester, 2);
+      await _answerCorrectly(tester, 3);
+      expect(_hudColor(tester, FallingWordsKeys.combo), scheme.primary);
+
+      await _answerWrongly(tester, 4);
+
+      expect(
+        _hudColor(tester, FallingWordsKeys.combo),
+        scheme.onSurfaceVariant,
+        reason: 'серия оборвана — гаснет и поле, и множитель',
+      );
     });
 
     testWidgets('у поля нет жёсткой границы: края сходят в фон', (

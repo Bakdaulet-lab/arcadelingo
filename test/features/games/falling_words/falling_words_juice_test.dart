@@ -298,6 +298,32 @@ void main() {
     });
   });
 
+  group('Порог разогрева — один на поле и на HUD', () {
+    final scheme = wordarcadeTheme().colorScheme;
+
+    test('загорается на серии 3, на серии 2 ещё нет', () {
+      expect(comboIsHot(2), isFalse);
+      expect(comboIsHot(3), isTrue);
+    });
+
+    test('серии до первой не бывает, но и она не горит', () {
+      expect(comboIsHot(0), isFalse);
+      expect(comboIsHot(-1), isFalse);
+    });
+
+    test('множитель и поле загораются ровно вместе', () {
+      for (var combo = 0; combo <= 12; combo++) {
+        expect(
+          comboIsHot(combo),
+          comboTint(scheme, combo) != scheme.surface,
+          reason:
+              'серия $combo: множитель и поле разошлись, а порог у них '
+              'обязан быть один и тот же — SPEC, «Джус»',
+        );
+      }
+    });
+  });
+
   group('Тон поля — градиент, а не заливка', () {
     final scheme = wordarcadeTheme().colorScheme;
 
