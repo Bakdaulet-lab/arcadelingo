@@ -24,12 +24,6 @@
     "new": ""
   },
   {
-    "name": "Roboto не загружен: буквы стали прямоугольниками",
-    "file": "test/golden/flutter_test_config.dart",
-    "old": "  await _loadRoboto();\n",
-    "new": ""
-  },
-  {
     "name": "MaterialIcons не загружены: сердца стали прямоугольниками",
     "file": "test/golden/flutter_test_config.dart",
     "old": "  await _loadBundledFonts();\n",
@@ -40,5 +34,35 @@
     "file": "test/support/golden_harness.dart",
     "old": "        seed: 1,",
     "new": "        seed: 2,"
+  },
+  {
+    "name": "тема потеряла гарнитуру: текст ушёл в запасной шрифт",
+    "file": "lib/app/theme.dart",
+    "old": "    fontFamily: wordarcadeFont,\n",
+    "new": ""
+  },
+  {
+    "name": "ось веса не проставляется: весь текст стал Light 300",
+    "file": "lib/app/theme.dart",
+    "old": "  fontVariations: [FontVariation('wght', weight.value.toDouble())],\n",
+    "new": ""
+  },
+  {
+    "name": "палитра вернулась к пастели fromSeed",
+    "file": "lib/app/theme.dart",
+    "old": "  surface: const Color(0xFF0D0A12),\n",
+    "new": ""
+  },
+  {
+    "name": "тон поля залит без градиента",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "  colors: [scheme.surface, hot, hot, scheme.surface],",
+    "new": "  colors: [hot, hot, hot, hot],"
+  },
+  {
+    "name": "множитель перестал загораться с полем",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "                  comboIsHot(combo) ? scheme.primary : scheme.onSurfaceVariant,",
+    "new": "                  scheme.onSurfaceVariant,"
   }
 ]
