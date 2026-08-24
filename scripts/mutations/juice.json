@@ -1,0 +1,98 @@
+[
+  {
+    "name": "isNearMiss: граница исключительная (>= -> >)",
+    "file": "lib/features/games/falling_words/falling_words_juice.dart",
+    "old": "  return responseTime.inMicroseconds * nearMissDenominator >=\n      timeLimit.inMicroseconds * nearMissNumerator;",
+    "new": "  return responseTime.inMicroseconds * nearMissDenominator >\n      timeLimit.inMicroseconds * nearMissNumerator;"
+  },
+  {
+    "name": "isNearMiss: порог 0.85 -> 0.80",
+    "file": "lib/features/games/falling_words/falling_words_juice.dart",
+    "old": "const int nearMissNumerator = 17;",
+    "new": "const int nearMissNumerator = 16;"
+  },
+  {
+    "name": "isNearMiss: убран страж нулевого лимита",
+    "file": "lib/features/games/falling_words/falling_words_juice.dart",
+    "old": "  if (timeLimit <= Duration.zero) return false;\n",
+    "new": ""
+  },
+  {
+    "name": "shakeIntensity: cos -> sin (разгон вместо удара)",
+    "file": "lib/features/games/falling_words/falling_words_juice.dart",
+    "old": "  return (1 - progress) * cos(2 * pi * shakeOscillations * progress);",
+    "new": "  return (1 - progress) * sin(2 * pi * shakeOscillations * progress);"
+  },
+  {
+    "name": "shakeIntensity: убрано затухание",
+    "file": "lib/features/games/falling_words/falling_words_juice.dart",
+    "old": "  return (1 - progress) * cos(2 * pi * shakeOscillations * progress);",
+    "new": "  return cos(2 * pi * shakeOscillations * progress);"
+  },
+  {
+    "name": "shakeIntensity: убрано колебание (уплывание вбок)",
+    "file": "lib/features/games/falling_words/falling_words_juice.dart",
+    "old": "  return (1 - progress) * cos(2 * pi * shakeOscillations * progress);",
+    "new": "  return 1 - progress;"
+  },
+  {
+    "name": "shakeIntensity: огибающая выше единицы",
+    "file": "lib/features/games/falling_words/falling_words_juice.dart",
+    "old": "  return (1 - progress) * cos(2 * pi * shakeOscillations * progress);",
+    "new": "  return (1.5 - progress) * cos(2 * pi * shakeOscillations * progress);"
+  },
+  {
+    "name": "shakeIntensity: убран зажим вне 0..1",
+    "file": "lib/features/games/falling_words/falling_words_juice.dart",
+    "old": "  final progress = t.clamp(0.0, 1.0);",
+    "new": "  final progress = t;"
+  },
+  {
+    "name": "hapticFor: порог серии 5 -> 6",
+    "file": "lib/features/games/falling_words/falling_words_juice.dart",
+    "old": "const int comboHapticFrom = 5;",
+    "new": "const int comboHapticFrom = 6;"
+  },
+  {
+    "name": "hapticFor: последний момент ничем не отзывается",
+    "file": "lib/features/games/falling_words/falling_words_juice.dart",
+    "old": "  if (nearMiss || combo >= comboHapticFrom) return Haptic.medium;",
+    "new": "  if (combo >= comboHapticFrom) return Haptic.medium;"
+  },
+  {
+    "name": "hapticFor: удача звучит как провал",
+    "file": "lib/features/games/falling_words/falling_words_juice.dart",
+    "old": "  if (nearMiss || combo >= comboHapticFrom) return Haptic.medium;",
+    "new": "  if (nearMiss) return Haptic.heavy;\n  if (combo >= comboHapticFrom) return Haptic.medium;"
+  },
+  {
+    "name": "comboTint: тон появляется с нулевой серии",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "const int comboTintStart = 2;",
+    "new": "const int comboTintStart = 0;"
+  },
+  {
+    "name": "comboTint: потолок 0.35 -> 0.9 (текст перестаёт читаться)",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "const double comboTintMax = 0.35;",
+    "new": "const double comboTintMax = 0.9;"
+  },
+  {
+    "name": "comboTint: потолок 0.35 -> 0.10 (тона не видно)",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "const double comboTintMax = 0.35;",
+    "new": "const double comboTintMax = 0.10;"
+  },
+  {
+    "name": "comboTint: убран потолок серии",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "      .clamp(0.0, 1.0);",
+    "new": "      .toDouble();"
+  },
+  {
+    "name": "comboTint: цель смешения primary -> primaryContainer",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "  return Color.lerp(scheme.surface, scheme.primary, comboTintMax * depth)!;",
+    "new": "  return Color.lerp(\n    scheme.surface,\n    scheme.primaryContainer,\n    comboTintMax * depth,\n  )!;"
+  }
+]

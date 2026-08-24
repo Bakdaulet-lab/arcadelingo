@@ -12,6 +12,8 @@
 /// Числа — `SPEC.md`, раздел «Джус». Здесь они названы, а не объяснены.
 library;
 
+import 'dart:math';
+
 /// Что чувствует рука. Три значения, различимые на ощупь: больше рука не
 /// различает, меньше — не хватает, чтобы отделить потерю жизни от успеха.
 enum Haptic { light, medium, heavy }
@@ -56,7 +58,9 @@ Haptic hapticFor({
   required int combo,
   required bool nearMiss,
 }) {
-  throw UnimplementedError();
+  if (!correct) return Haptic.heavy;
+  if (nearMiss || combo >= comboHapticFrom) return Haptic.medium;
+  return Haptic.light;
 }
 
 /// Дан ли ответ в последние 15% отпущенного времени.
@@ -64,7 +68,12 @@ Haptic hapticFor({
 /// Про верность ответа функция не знает и знать не должна: бонус только
 /// верному — правило начисления, и живёт оно в `FallingWordsRun`.
 bool isNearMiss({required Duration responseTime, required Duration timeLimit}) {
-  throw UnimplementedError();
+  if (timeLimit <= Duration.zero) return false;
+  // Умножением, а не делением: доля 0.85 в double на самой границе окна
+  // округляется в разные стороны на разных платформах, а порядок величин
+  // здесь такой, что произведение целых не переполнится и близко.
+  return responseTime.inMicroseconds * nearMissDenominator >=
+      timeLimit.inMicroseconds * nearMissNumerator;
 }
 
 /// Смещение в долях [shakeAmplitude]; [t] — доля прожитого времени тряски.
@@ -72,5 +81,9 @@ bool isNearMiss({required Duration responseTime, required Duration timeLimit}) {
 /// Значения вне 0…1 зажимаются: часы тряски идут от чужого контроллера, и
 /// округление на его конце не должно выбрасывать экран за амплитуду.
 double shakeIntensity(double t) {
-  throw UnimplementedError();
+  final progress = t.clamp(0.0, 1.0);
+  // Косинус, а не синус: первый экстремум обязан прийтись на нулевой кадр.
+  // С синусом экран сначала стоял бы ровно и разгонялся к пику — это
+  // читается как «поехало», а не как «ударило».
+  return (1 - progress) * cos(2 * pi * shakeOscillations * progress);
 }

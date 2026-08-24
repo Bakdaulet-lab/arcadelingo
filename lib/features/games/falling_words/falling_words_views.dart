@@ -33,7 +33,13 @@ const Duration comboTintFade = Duration(milliseconds: 400);
 /// а не в `falling_words_juice.dart`: иначе Flutter приехал бы вместе с ней
 /// и в `FallingWordsRun`, который держится без него намеренно.
 Color comboTint(ColorScheme scheme, int combo) {
-  throw UnimplementedError();
+  final depth = ((combo - comboTintStart) / (comboTintEnd - comboTintStart))
+      .clamp(0.0, 1.0);
+  // Ранний выход, а не lerp с нулём: чистый фон обязан быть тем же самым
+  // цветом, что и surface, иначе «фон не тронут» пришлось бы проверять с
+  // допуском, и настоящий блёклый тон прошёл бы под такой допуск.
+  if (depth == 0) return scheme.surface;
+  return Color.lerp(scheme.surface, scheme.primary, comboTintMax * depth)!;
 }
 
 /// Ключи частей экрана. Тест ищет по ним то, что не опознать по тексту:
