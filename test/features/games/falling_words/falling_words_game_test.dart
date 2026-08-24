@@ -150,6 +150,41 @@ int _lives(WidgetTester tester) =>
 String _hud(WidgetTester tester, Key key) =>
     tester.widget<Text>(find.byKey(key)).data!;
 
+/// Палитра, по которой собран экран. Берётся с дерева, а не задаётся
+/// литералом: тема теста и тема приложения — разные, и тест должен
+/// проверять правило, а не конкретный оттенок.
+ColorScheme _scheme(WidgetTester tester) =>
+    Theme.of(tester.element(find.byType(FallingWordsGame))).colorScheme;
+
+/// Текущий цвет поля падения. Именно текущий, а не тот, к которому оно
+/// едет: у [ColoredBox] цвет — это то, что нарисовано в этом кадре.
+Color _fieldColor(WidgetTester tester) =>
+    tester.widget<ColoredBox>(find.byKey(FallingWordsKeys.playfield)).color;
+
+/// Горизонтальный центр ряда кнопок — по нему меряется тряска.
+double _answersX(WidgetTester tester) =>
+    tester.getCenter(find.byKey(FallingWordsKeys.answers)).dx;
+
+/// Ловушка вызовов хаптики на платформенном канале.
+///
+/// Обработчик обязателен. Без него `HapticFeedback` уходит в никуда, тест
+/// считает собственный пустой список и остаётся зелёным на реализации, где
+/// хаптики нет вовсе. Проверено мутацией «убрать вызов совсем».
+List<String> _captureHaptics(WidgetTester tester) {
+  final calls = <String>[];
+  final messenger = tester.binding.defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+    if (call.method == 'HapticFeedback.vibrate') {
+      calls.add(call.arguments as String);
+    }
+    return null;
+  });
+  addTearDown(
+    () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+  );
+  return calls;
+}
+
 void main() {
   group('Контракт с ядром', () {
     testWidgets('верный тап → один report(correct: true) за прожитое время', (
@@ -915,6 +950,471 @@ void main() {
       await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
       await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
       await expectLater(tester, meetsGuideline(textContrastGuideline));
+    });
+  });
+
+  group('Хаптика', () {
+    testWidgets('верный ответ — лёгкий отклик, ровно один', (tester) async {
+      final haptics = _captureHaptics(tester);
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _translation(1));
+
+      expect(haptics, ['HapticFeedbackType.lightImpact']);
+    });
+
+    testWidgets('промах — тяжёлый отклик', (tester) async {
+      final haptics = _captureHaptics(tester);
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _distractor(1, 1));
+
+      expect(haptics, ['HapticFeedbackType.heavyImpact']);
+    });
+
+    testWidgets(
+      'таймаут — тоже тяжёлый: тапа не было, рука узнаёт только так',
+      (tester) async {
+        final haptics = _captureHaptics(tester);
+        await _pumpGame(tester);
+
+        await tester.pump(const Duration(seconds: 6));
+
+        expect(haptics, ['HapticFeedbackType.heavyImpact']);
+      },
+    );
+
+    testWidgets('пятый верный подряд — средний отклик', (tester) async {
+      final haptics = _captureHaptics(tester);
+      await _pumpGame(tester, items: _items(6));
+
+      for (var i = 1; i <= 5; i++) {
+        await _answerCorrectly(tester, i);
+      }
+
+      expect(haptics, [
+        'HapticFeedbackType.lightImpact',
+        'HapticFeedbackType.lightImpact',
+        'HapticFeedbackType.lightImpact',
+        'HapticFeedbackType.lightImpact',
+        'HapticFeedbackType.mediumImpact',
+      ]);
+    });
+
+    testWidgets('ответ в последний момент — средний с первого же', (
+      tester,
+    ) async {
+      final haptics = _captureHaptics(tester);
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(milliseconds: 5500));
+      await _tap(tester, _translation(1));
+
+      expect(
+        haptics,
+        ['HapticFeedbackType.mediumImpact'],
+        reason:
+            'серия здесь единица — средний отклик может быть только от бонуса',
+      );
+    });
+
+    testWidgets('тап на паузе отклика не даёт', (tester) async {
+      final haptics = _captureHaptics(tester);
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 2));
+      await _lifecycle(tester, AppLifecycleState.inactive);
+      await _tap(tester, _translation(1));
+
+      expect(haptics, isEmpty, reason: 'ответ не принят — отзываться нечему');
+    });
+
+    testWidgets('тап во время подсветки второго отклика не даёт', (
+      tester,
+    ) async {
+      final haptics = _captureHaptics(tester);
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _distractor(1, 1));
+      expect(haptics, hasLength(1));
+
+      await tester.pump(const Duration(milliseconds: 400));
+      await _tap(tester, _distractor(1, 2), expectHit: false);
+
+      expect(haptics, hasLength(1));
+    });
+
+    testWidgets('выход из игры отклика не даёт', (tester) async {
+      final haptics = _captureHaptics(tester);
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpWidget(const SizedBox());
+
+      expect(
+        haptics,
+        isEmpty,
+        reason: 'уход — не ответ, хотя неответ ядру и докладывается',
+      );
+    });
+  });
+
+  group('Тряска на промахе', () {
+    testWidgets('ряд кнопок трясёт, и он меняет сторону', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+      final rest = _answersX(tester);
+
+      await _tap(tester, _distractor(1, 1));
+      await tester.pump(const Duration(milliseconds: 50));
+      final first = _answersX(tester) - rest;
+      await tester.pump(const Duration(milliseconds: 50));
+      final second = _answersX(tester) - rest;
+
+      expect(first.abs(), greaterThan(1));
+      expect(second.abs(), greaterThan(1));
+      expect(
+        first * second,
+        lessThan(0),
+        reason: 'знак сменился — это тряска, а не уплывание вбок',
+      );
+    });
+
+    testWidgets('HUD трясёт вместе с кнопками', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+      final rest = tester.getCenter(find.byType(GameHud)).dx;
+
+      await _tap(tester, _distractor(1, 1));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(
+        (tester.getCenter(find.byType(GameHud)).dx - rest).abs(),
+        greaterThan(1),
+      );
+    });
+
+    testWidgets('пара «слово → перевод» стоит неподвижно всю подсветку', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _distractor(1, 1));
+
+      final seen = <Offset>{};
+      for (var frame = 0; frame < 6; frame++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        seen.add(tester.getCenter(find.byKey(FallingWordsKeys.revealAnswer)));
+      }
+
+      expect(
+        seen,
+        hasLength(1),
+        reason:
+            'это единственный момент, когда человек учится: трясти его '
+            'нельзя даже 300 мс — SPEC, «Джус»',
+      );
+    });
+
+    testWidgets('трясёт только по горизонтали', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _distractor(1, 1));
+
+      final heights = <double>{};
+      for (var frame = 0; frame < 5; frame++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        heights.add(tester.getCenter(find.byKey(FallingWordsKeys.answers)).dy);
+      }
+
+      expect(
+        heights,
+        hasLength(1),
+        reason: 'вертикаль спорит с падением слова — SPEC, «Джус»',
+      );
+    });
+
+    testWidgets('к 300 мс экран стоит ровно, а подсветка ещё идёт', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+      final rest = _answersX(tester);
+
+      await _tap(tester, _distractor(1, 1));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(_answersX(tester), closeTo(rest, 0.01));
+      expect(
+        find.byKey(FallingWordsKeys.revealAnswer),
+        findsOneWidget,
+        reason: 'подсветке остались ещё 500 мс, и они спокойные',
+      );
+    });
+
+    testWidgets('верный ответ не трясёт', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+      final rest = _answersX(tester);
+
+      await _tap(tester, _translation(1));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(_answersX(tester), rest);
+    });
+
+    testWidgets('таймаут трясёт так же, как промах', (tester) async {
+      await _pumpGame(tester);
+      final rest = _answersX(tester);
+
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect((_answersX(tester) - rest).abs(), greaterThan(1));
+    });
+  });
+
+  group('Тон поля от серии', () {
+    testWidgets('на первом слове поле чистое', (tester) async {
+      await _pumpGame(tester);
+
+      expect(_fieldColor(tester), _scheme(tester).surface);
+    });
+
+    testWidgets('после трёх верных подряд поле подкрашено', (tester) async {
+      await _pumpGame(tester, items: _items(6));
+      final clean = _scheme(tester).surface;
+
+      await _answerCorrectly(tester, 1);
+      await _answerCorrectly(tester, 2);
+      await _answerCorrectly(tester, 3);
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(_fieldColor(tester), isNot(clean));
+    });
+
+    testWidgets('промах гасит тон сразу, не переливом', (tester) async {
+      await _pumpGame(tester, items: _items(8));
+      final clean = _scheme(tester).surface;
+
+      await _answerCorrectly(tester, 1);
+      await _answerCorrectly(tester, 2);
+      await _answerCorrectly(tester, 3);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(_fieldColor(tester), isNot(clean));
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _distractor(4, 1));
+
+      expect(
+        _fieldColor(tester),
+        clean,
+        reason:
+            'пара «слово → перевод» показывается ровно здесь, и на '
+            'подкрашенном поле её перевод дал бы контраст 3.6 — SPEC, «Джус»',
+      );
+      expect(find.byKey(FallingWordsKeys.revealAnswer), findsOneWidget);
+    });
+
+    testWidgets('на итогах подкрашенного поля нет вовсе', (tester) async {
+      await _pumpGame(tester, items: _items(3));
+
+      await _answerCorrectly(tester, 1);
+      await _answerCorrectly(tester, 2);
+      await _answerCorrectly(tester, 3);
+
+      expect(find.byKey(FallingWordsKeys.summary), findsOneWidget);
+      expect(find.byKey(FallingWordsKeys.playfield), findsNothing);
+    });
+
+    testWidgets('контраст держится и на самой густой серии', (tester) async {
+      await _pumpGame(tester, items: _items(12));
+
+      for (var i = 1; i <= 8; i++) {
+        await _answerCorrectly(tester, i);
+      }
+      await tester.pump(const Duration(milliseconds: 400));
+
+      await expectLater(tester, meetsGuideline(textContrastGuideline));
+    });
+  });
+
+  group('Прилёт очков', () {
+    testWidgets('верный ответ показывает прирост и уводит его к счёту', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _translation(1));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(
+        tester.widget<Text>(find.byKey(FallingWordsKeys.scorePop)).data,
+        '+10',
+      );
+      final score = tester.getCenter(find.byKey(FallingWordsKeys.score));
+      final far =
+          (tester.getCenter(find.byKey(FallingWordsKeys.scorePop)) - score)
+              .distance;
+
+      await tester.pump(const Duration(milliseconds: 200));
+      final near =
+          (tester.getCenter(find.byKey(FallingWordsKeys.scorePop)) - score)
+              .distance;
+
+      expect(near, lessThan(far), reason: '«+N» летит к счёту, а не висит');
+    });
+
+    testWidgets('к концу подсветки прирост со сцены ушёл', (tester) async {
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _translation(1));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byKey(FallingWordsKeys.scorePop), findsNothing);
+    });
+
+    testWidgets('промах прироста не показывает', (tester) async {
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _distractor(1, 1));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.byKey(FallingWordsKeys.scorePop), findsNothing);
+    });
+
+    testWidgets('в последний момент — прирост полуторный и с меткой', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(milliseconds: 5500));
+      await _tap(tester, _translation(1));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(
+        tester.widget<Text>(find.byKey(FallingWordsKeys.scorePop)).data,
+        '+15',
+      );
+      expect(find.byKey(FallingWordsKeys.nearMissBadge), findsOneWidget);
+    });
+
+    testWidgets('обычный ответ метки не показывает', (tester) async {
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _translation(1));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.byKey(FallingWordsKeys.nearMissBadge), findsNothing);
+    });
+
+    testWidgets('счёт в HUD правдив уже в первом кадре подсветки', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _translation(1));
+
+      expect(
+        _hud(tester, FallingWordsKeys.score),
+        '10',
+        reason: 'полёт — украшение над числом, а не способ его узнать',
+      );
+    });
+  });
+
+  group('Системное «убрать анимации»', () {
+    Future<FakeReviewSession> pumpCalm(
+      WidgetTester tester, {
+      List<ReviewItem>? items,
+    }) {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      return _pumpGame(tester, items: items);
+    }
+
+    testWidgets('подсветка промаха по-прежнему ровно 800 мс', (tester) async {
+      await pumpCalm(tester);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _distractor(1, 1));
+      await tester.pump(const Duration(milliseconds: 799));
+      expect(
+        find.text(_id(2)),
+        findsNothing,
+        reason: 'время чтения — тоже геймплей, а не украшение',
+      );
+
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(find.text(_id(2)), findsOneWidget);
+    });
+
+    testWidgets('тряски нет', (tester) async {
+      await pumpCalm(tester);
+      await tester.pump(const Duration(seconds: 1));
+      final rest = _answersX(tester);
+
+      await _tap(tester, _distractor(1, 1));
+      for (var frame = 0; frame < 3; frame++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(_answersX(tester), rest);
+      }
+    });
+
+    testWidgets('прироста в полёте нет, но счёт вырос', (tester) async {
+      await pumpCalm(tester);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _translation(1));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.byKey(FallingWordsKeys.scorePop), findsNothing);
+      expect(
+        _hud(tester, FallingWordsKeys.score),
+        '10',
+        reason: 'очки просто прибавляются — SPEC, «Джус»',
+      );
+    });
+
+    testWidgets('тон серии остаётся: это состояние, а не движение', (
+      tester,
+    ) async {
+      await pumpCalm(tester, items: _items(6));
+      final clean = _scheme(tester).surface;
+
+      await _answerCorrectly(tester, 1);
+      await _answerCorrectly(tester, 2);
+      await _answerCorrectly(tester, 3);
+
+      expect(
+        _fieldColor(tester),
+        isNot(clean),
+        reason: 'и переход мгновенный: доливать кадры перелива не пришлось',
+      );
+    });
+
+    testWidgets('хаптика работает', (tester) async {
+      final haptics = _captureHaptics(tester);
+      await pumpCalm(tester);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _tap(tester, _translation(1));
+
+      expect(
+        haptics,
+        ['HapticFeedbackType.lightImpact'],
+        reason:
+            'вибрация — не движение на экране; для того, кому движение '
+            'мешает, это единственный оставшийся канал',
+      );
     });
   });
 }

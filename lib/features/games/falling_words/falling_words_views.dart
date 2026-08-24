@@ -58,6 +58,20 @@ abstract final class FallingWordsKeys {
   /// «сколько показано / сколько запланировано».
   static const Key progress = Key('falling_words.progress');
 
+  /// Поле падения вместе с его фоном. По нему тест читает тон серии.
+  static const Key playfield = Key('falling_words.playfield');
+
+  /// Ряд кнопок ответа целиком. По нему тест меряет тряску: сами кнопки
+  /// находятся по тексту, а ряд — единственное, что можно померить, не
+  /// зная, какой из вариантов куда попал.
+  static const Key answers = Key('falling_words.answers');
+
+  /// Летящий к счёту прирост очков.
+  static const Key scorePop = Key('falling_words.score_pop');
+
+  /// Метка «×1.5» рядом с приростом.
+  static const Key nearMissBadge = Key('falling_words.near_miss_badge');
+
   static const Key summary = Key('falling_words.summary');
 
   /// Строка под статистикой итогов; её текст считает хост.
