@@ -17,6 +17,7 @@ library;
 import 'dart:async';
 
 import 'package:arcadelingo/app/app_views.dart';
+import 'package:arcadelingo/app/theme.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
@@ -50,9 +51,11 @@ class WordarcadeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Wordarcade',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
+      theme: wordarcadeTheme(),
+      // Баннер перекрывает верхний правый угол, где живёт счёт, и попадал бы
+      // в каждый голден (задача 0.9). Пользы от него нет и в отладке: то,
+      // что сборка отладочная, видно по фреймтаймам.
+      debugShowCheckedModeBanner: false,
       home: switch (seed) {
         Ok(:final value) => HomeScreen(store: store, items: value, now: now),
         Err(:final failure) => SeedErrorView(message: failure.message),

@@ -36,6 +36,9 @@ ios/Flutter/flutter_export_environment.sh
 
 # Артефакты тестов
 test/**/failures/
+# Кандидат в эталоны: его смотрит человек и переименовывает руками, если вид
+# верный. Хранить незачем — docs/dev/goldens.md
+test/golden/images/*.new.png
 coverage/
 
 # Claude Code: локальные настройки не коммитим, проектные — коммитим

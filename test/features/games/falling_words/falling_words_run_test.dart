@@ -15,25 +15,7 @@ import 'package:arcadelingo/features/games/falling_words/falling_words_run.dart'
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_review_session.dart';
-
-/// id слова по номеру: w01, w02, …
-String _id(int i) => 'w${i.toString().padLeft(2, '0')}';
-
-/// Верный вариант слова [i].
-String _translation(int i) => 'перевод ${_id(i)}';
-
-/// Обманка номер [d] у слова [i]. Тексты уникальны на весь тест: так
-/// ошибка «нажали не ту кнопку» видна в сообщении, а не угадывается.
-String _distractor(int i, int d) => 'обманка $d к ${_id(i)}';
-
-/// Слово с [distractors] обманками.
-ReviewItem _item(int i, {int distractors = 3}) => ReviewItem(
-  word: Word(id: _id(i), text: _id(i), translation: _translation(i)),
-  distractors: [for (var d = 1; d <= distractors; d++) _distractor(i, d)],
-);
-
-/// Сид из [n] слов по три обманки.
-List<ReviewItem> _items(int n) => [for (var i = 1; i <= n; i++) _item(i)];
+import '../../../support/review_items.dart';
 
 /// Игра на [session]: первое слово уже выдано.
 FallingWordsRun _started(ReviewSession session, {int seed = 1}) =>
@@ -63,7 +45,7 @@ void _miss(
 void main() {
   group('Протокол с сессией', () {
     test('start() → одно слово запрошено, докладов нет', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
 
       final run = _started(session);
 
@@ -74,7 +56,7 @@ void main() {
     });
 
     test('верный ответ → ровно один report(correct: true)', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
       final run = _started(session);
 
       final accepted = run.choose(run.correctIndex, const Duration(seconds: 2));
@@ -97,7 +79,7 @@ void main() {
     });
 
     test('неверный ответ → report(correct: false), подсветка 800 мс', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
       final run = _started(session);
 
       run.choose(_wrongIndex(run), const Duration(seconds: 2));
@@ -113,7 +95,7 @@ void main() {
     });
 
     test('верный ответ рассыпается 300 мс', () {
-      final run = _started(FakeReviewSession(_items(3)));
+      final run = _started(FakeReviewSession(wordItems(3)));
 
       run.choose(run.correctIndex, const Duration(seconds: 2));
 
@@ -121,7 +103,7 @@ void main() {
     });
 
     test('advance() → следующее слово, фаза падения', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
       final run = _started(session);
 
       _correct(run);
@@ -132,7 +114,7 @@ void main() {
     });
 
     test('choose() в фазе подсветки → false, второго доклада нет', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
       final run = _started(session);
 
       run.choose(run.correctIndex, const Duration(seconds: 2));
@@ -143,7 +125,7 @@ void main() {
     });
 
     test('timeout() в фазе подсветки → false, второго доклада нет', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
       final run = _started(session);
 
       run.choose(run.correctIndex, const Duration(seconds: 2));
@@ -164,7 +146,7 @@ void main() {
     });
 
     test('слова кончились → итоги, лишних докладов нет', () {
-      final session = FakeReviewSession(_items(2));
+      final session = FakeReviewSession(wordItems(2));
       final run = _started(session);
 
       _correct(run);
@@ -176,7 +158,7 @@ void main() {
     });
 
     test('выход в фазе падения → доложен неответ за прожитое время', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
       final run = _started(session);
 
       run.abandon(const Duration(seconds: 2));
@@ -192,7 +174,7 @@ void main() {
     });
 
     test('выход вне фазы падения → ничего не докладывается', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
       final run = _started(session);
 
       run.choose(run.correctIndex, const Duration(seconds: 2));
@@ -210,13 +192,13 @@ void main() {
 
   group('Время падения', () {
     test('первое слово падает 6 секунд', () {
-      final run = _started(FakeReviewSession(_items(3)));
+      final run = _started(FakeReviewSession(wordItems(3)));
 
       expect(run.timeLimit, const Duration(seconds: 6));
     });
 
     test('каждый уровень комбо снимает 0.25 с', () {
-      final run = _started(FakeReviewSession(_items(5)));
+      final run = _started(FakeReviewSession(wordItems(5)));
 
       _correct(run);
       expect(run.timeLimit, const Duration(milliseconds: 5750));
@@ -229,7 +211,7 @@ void main() {
     });
 
     test('быстрее 3 секунд слово не падает', () {
-      final run = _started(FakeReviewSession(_items(20)));
+      final run = _started(FakeReviewSession(wordItems(20)));
 
       for (var i = 0; i < 12; i++) {
         _correct(run);
@@ -245,7 +227,7 @@ void main() {
     });
 
     test('промах сбрасывает комбо, лимит возвращается к 6 с', () {
-      final run = _started(FakeReviewSession(_items(5)));
+      final run = _started(FakeReviewSession(wordItems(5)));
 
       _correct(run);
       _correct(run);
@@ -256,7 +238,7 @@ void main() {
     });
 
     test('таймаут → responseTime равен лимиту этого слова', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
       final run = _started(session);
 
       _correct(run);
@@ -279,13 +261,13 @@ void main() {
 
   group('Жизни', () {
     test('партия начинается с трёх жизней', () {
-      final run = _started(FakeReviewSession(_items(3)));
+      final run = _started(FakeReviewSession(wordItems(3)));
 
       expect(run.lives, 3);
     });
 
     test('промах и таймаут стоят по жизни, верный ответ — ничего', () {
-      final run = _started(FakeReviewSession(_items(5)));
+      final run = _started(FakeReviewSession(wordItems(5)));
 
       _correct(run);
       expect(run.lives, 3, reason: 'верный ответ жизнь не тратит');
@@ -299,7 +281,7 @@ void main() {
     });
 
     test('жизни кончились → итоги немедленно, новых слов не берём', () {
-      final session = FakeReviewSession(_items(8));
+      final session = FakeReviewSession(wordItems(8));
       final run = _started(session);
 
       _miss(run);
@@ -319,7 +301,7 @@ void main() {
 
   group('Очки и серия', () {
     test('очки — 10 за ответ, множитель растёт с серией', () {
-      final run = _started(FakeReviewSession(_items(5)));
+      final run = _started(FakeReviewSession(wordItems(5)));
 
       _correct(run);
       expect(run.score, 10, reason: 'первый верный: множитель 1');
@@ -333,7 +315,7 @@ void main() {
     });
 
     test('промах сбрасывает множитель, но не счёт', () {
-      final run = _started(FakeReviewSession(_items(5)));
+      final run = _started(FakeReviewSession(wordItems(5)));
 
       _correct(run);
       _correct(run);
@@ -346,7 +328,7 @@ void main() {
     });
 
     test('счётчики ответов: верные и все', () {
-      final run = _started(FakeReviewSession(_items(5)));
+      final run = _started(FakeReviewSession(wordItems(5)));
 
       _correct(run);
       _miss(run);
@@ -359,32 +341,32 @@ void main() {
 
   group('Варианты ответа', () {
     test('варианты — перевод и все обманки слова', () {
-      final run = _started(FakeReviewSession(_items(1)));
+      final run = _started(FakeReviewSession(wordItems(1)));
       final expected = {
-        _translation(1),
-        _distractor(1, 1),
-        _distractor(1, 2),
-        _distractor(1, 3),
+        wordTranslation(1),
+        wordDistractor(1, 1),
+        wordDistractor(1, 2),
+        wordDistractor(1, 3),
       };
 
       expect(run.options.toSet(), expected);
       expect(run.options, hasLength(4));
-      expect(run.options[run.correctIndex], _translation(1));
+      expect(run.options[run.correctIndex], wordTranslation(1));
     });
 
     test('одна обманка → две кнопки', () {
-      final run = _started(FakeReviewSession([_item(1, distractors: 1)]));
+      final run = _started(FakeReviewSession([wordItem(1, distractors: 1)]));
 
       expect(run.options, hasLength(2));
-      expect(run.options[run.correctIndex], _translation(1));
+      expect(run.options[run.correctIndex], wordTranslation(1));
     });
 
     test('обманок нет → одна кнопка, игра не падает', () {
-      final run = _started(FakeReviewSession([_item(1, distractors: 0)]));
+      final run = _started(FakeReviewSession([wordItem(1, distractors: 0)]));
 
       expect(
         run.options,
-        [_translation(1)],
+        [wordTranslation(1)],
         reason: 'вторую кнопку игре взять неоткуда: выдумывать обманки нельзя',
       );
       expect(run.correctIndex, 0);
@@ -403,15 +385,15 @@ void main() {
     });
 
     test('одинаковый seed → одинаковый порядок вариантов', () {
-      final first = _started(FakeReviewSession(_items(1)), seed: 7);
-      final second = _started(FakeReviewSession(_items(1)), seed: 7);
+      final first = _started(FakeReviewSession(wordItems(1)), seed: 7);
+      final second = _started(FakeReviewSession(wordItems(1)), seed: 7);
 
       expect(first.options, second.options);
       expect(first.correctIndex, second.correctIndex);
     });
 
     test('верный вариант не всегда на одной позиции', () {
-      final run = _started(FakeReviewSession(_items(10)));
+      final run = _started(FakeReviewSession(wordItems(10)));
       final positions = <int>{run.correctIndex};
 
       for (var i = 0; i < 9; i++) {
@@ -429,7 +411,7 @@ void main() {
 
   group('Стражи: игра не строит битый ReviewOutcome', () {
     test('отрицательное время ответа → ArgumentError, доклада нет', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
       final run = _started(session);
 
       expect(
@@ -441,7 +423,7 @@ void main() {
     });
 
     test('время ответа больше лимита → ArgumentError, доклада нет', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
       final run = _started(session);
 
       expect(
@@ -453,7 +435,7 @@ void main() {
     });
 
     test('время ответа ровно по лимиту принимается', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
       final run = _started(session);
 
       run.choose(run.correctIndex, const Duration(seconds: 6));
@@ -462,7 +444,7 @@ void main() {
     });
 
     test('индекс вне списка вариантов → ArgumentError, доклада нет', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
       final run = _started(session);
 
       expect(
@@ -477,7 +459,7 @@ void main() {
     });
 
     test('отрицательное время при выходе → ArgumentError, доклада нет', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
       final run = _started(session);
 
       expect(
@@ -490,14 +472,14 @@ void main() {
 
   group('Бонус «в последний момент»', () {
     test('до первого ответа бонуса нет и очков не начислено', () {
-      final run = _started(FakeReviewSession(_items(3)));
+      final run = _started(FakeReviewSession(wordItems(3)));
 
       expect(run.nearMiss, isFalse);
       expect(run.lastPoints, 0);
     });
 
     test('ответ ровно на 85% лимита даёт полуторные очки', () {
-      final run = _started(FakeReviewSession(_items(3)));
+      final run = _started(FakeReviewSession(wordItems(3)));
 
       run.choose(run.correctIndex, const Duration(microseconds: 5100000));
 
@@ -507,7 +489,7 @@ void main() {
     });
 
     test('микросекундой раньше — обычные очки', () {
-      final run = _started(FakeReviewSession(_items(3)));
+      final run = _started(FakeReviewSession(wordItems(3)));
 
       run.choose(run.correctIndex, const Duration(microseconds: 5099999));
 
@@ -517,7 +499,7 @@ void main() {
     });
 
     test('бонус считается от очков с множителем, а не от базовых десяти', () {
-      final run = _started(FakeReviewSession(_items(6)));
+      final run = _started(FakeReviewSession(wordItems(6)));
 
       _correct(run);
       _correct(run);
@@ -533,7 +515,7 @@ void main() {
     });
 
     test('бонус не трогает ни серию, ни жизни, ни лимит следующего слова', () {
-      final run = _started(FakeReviewSession(_items(3)));
+      final run = _started(FakeReviewSession(wordItems(3)));
 
       run.choose(run.correctIndex, const Duration(microseconds: 5100000));
       run.advance();
@@ -552,7 +534,7 @@ void main() {
     });
 
     test('промах в последний момент бонуса не даёт', () {
-      final run = _started(FakeReviewSession(_items(3)));
+      final run = _started(FakeReviewSession(wordItems(3)));
 
       run.choose(_wrongIndex(run), const Duration(microseconds: 5940000));
 
@@ -566,7 +548,7 @@ void main() {
     });
 
     test('таймаут бонуса не даёт, хотя позднее некуда', () {
-      final run = _started(FakeReviewSession(_items(3)));
+      final run = _started(FakeReviewSession(wordItems(3)));
 
       run.timeout();
 
@@ -576,7 +558,7 @@ void main() {
     });
 
     test('на следующем слове бонус и прирост обнулены', () {
-      final run = _started(FakeReviewSession(_items(3)));
+      final run = _started(FakeReviewSession(wordItems(3)));
 
       run.choose(run.correctIndex, const Duration(microseconds: 5100000));
       run.advance();
@@ -587,7 +569,7 @@ void main() {
     });
 
     test('бонус не виден ядру: ReviewOutcome тот же, что и без бонуса', () {
-      final session = FakeReviewSession(_items(3));
+      final session = FakeReviewSession(wordItems(3));
       final run = _started(session);
 
       run.choose(run.correctIndex, const Duration(microseconds: 5100000));
