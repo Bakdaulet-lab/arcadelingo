@@ -28,5 +28,17 @@
     "file": "assets/words_seed.json",
     "old": "\"level\": \"a2\"",
     "new": "\"level\": \"A2\""
+  },
+  {
+    "name": "перевод слова столкнулся с переводом другого слова",
+    "file": "assets/words_seed.json",
+    "old": "\"translation\": \"хлеб\"",
+    "new": "\"translation\": \"яблоко\""
+  },
+  {
+    "name": "у двух слов совпал весь набор из четырёх вариантов",
+    "file": "assets/words_seed.json",
+    "old": "\"id\": \"bread\", \"text\": \"bread\", \"translation\": \"хлеб\", \"part_of_speech\": \"noun\", \"level\": \"a1\", \"distractors\": [\"сыр\", \"масло\", \"каша\"]",
+    "new": "\"id\": \"bread\", \"text\": \"bread\", \"translation\": \"груша\", \"part_of_speech\": \"noun\", \"level\": \"a1\", \"distractors\": [\"яблоко\", \"слива\", \"вишня\"]"
   }
 ]

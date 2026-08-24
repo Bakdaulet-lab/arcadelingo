@@ -17,8 +17,16 @@ def read(path):
     return io.open(path, encoding='utf-8').read()
 
 
-def write(path, text):
-    io.open(path, 'w', encoding='utf-8', newline='\n').write(text)
+def eol_of(path):
+    # Рабочая копия на Windows приходит с CRLF, а восстановление через '\n'
+    # переписало бы переносы во всём файле: git показал бы правку там, где
+    # раннер обещал ничего не трогать. На ассете это чуть не уехало в коммит.
+    with io.open(path, 'rb') as handle:
+        return '\r\n' if b'\r\n' in handle.read() else '\n'
+
+
+def write(path, text, eol='\n'):
+    io.open(path, 'w', encoding='utf-8', newline=eol).write(text)
 
 
 def main():
@@ -36,11 +44,12 @@ def main():
     for case in plan:
         path, old, new = case['file'], case['old'], case['new']
         original = read(path)
+        eol = eol_of(path)
         if original.count(old) != 1:
             failures.append('%s: якорь не найден (%d совпадений)'
                             % (case['name'], original.count(old)))
             continue
-        write(path, original.replace(old, new))
+        write(path, original.replace(old, new), eol)
         try:
             # encoding явно: text=True декодирует вывод кодировкой консоли
             # (на Windows cp1251), и первый же типографский символ в тексте
@@ -51,7 +60,7 @@ def main():
                                   encoding='utf-8', errors='replace')
             red = done.returncode != 0
         finally:
-            write(path, original)
+            write(path, original, eol)
         mark = 'OK  ' if red else 'ТЕАТР'
         print('%s %s' % (mark, case['name']))
         if not red:

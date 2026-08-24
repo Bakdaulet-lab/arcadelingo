@@ -69,8 +69,10 @@ void main() {
 
   group('identity', () {
     test('id не равен text в нижнем регистре', () {
+      // 'Apple' правило не нарушает: id равен text в нижнем регистре, а
+      // заглавную ловит script. Нарушение — когда id и text разные слова.
       expect(
-        _rules(_doc([_word('apple', text: 'Apple')])),
+        _rules(_doc([_word('apple', text: 'pear')])),
         contains(SeedRule.identity),
       );
     });
@@ -80,7 +82,12 @@ void main() {
         _rules(_doc([_word('apple', translation: '')])),
         contains(SeedRule.identity),
       );
-      expect(_rules(_doc(const [<String, Object?>{}])), [SeedRule.identity]);
+      // Пустая запись нарушает разом identity, part_of_speech, level и
+      // distractors — здесь проверяется только первое.
+      expect(
+        _rules(_doc(const [<String, Object?>{}])),
+        contains(SeedRule.identity),
+      );
     });
   });
 

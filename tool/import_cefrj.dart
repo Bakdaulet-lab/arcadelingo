@@ -9,6 +9,7 @@
 ///
 ///     dart run tool/import_cefrj.dart <cefrj-vocabulary-profile-1.5.csv>
 ///         [--out tool/out] [--seed assets/words_seed.json]
+///         [--rejected tool/out/rejected.json]
 ///
 /// Сам CSV в репозитории не лежит: он не наш, а условия CEFR-J требуют
 /// цитирования, а не перепубликации. Откуда его взять и на каких условиях —
@@ -35,6 +36,8 @@ library;
 
 import 'dart:convert';
 import 'dart:io';
+
+import 'rejected.dart';
 
 /// Размер порции. Одна порция = один вечер вычитки = один коммит.
 const int defaultPortionSize = 50;
@@ -555,7 +558,8 @@ const String _usage =
     'Импорт CEFR-J A1/A2 в рабочие порции.\n'
     '\n'
     '  dart run tool/import_cefrj.dart <cefrj-vocabulary-profile-1.5.csv> '
-    '[--out tool/out] [--seed assets/words_seed.json]\n'
+    '[--out tool/out] [--seed assets/words_seed.json] '
+    '[--rejected tool/out/rejected.json]\n'
     '\n'
     'CSV в репозитории нет намеренно: см. docs/dev/content_sources.md';
 
@@ -566,9 +570,11 @@ void main(List<String> args) {
   var outDir = 'tool/out';
   var seedPath = 'assets/words_seed.json';
 
+  String? rejectedPath;
+
   for (var i = 0; i < args.length; i++) {
     final arg = args[i];
-    if (arg != '--out' && arg != '--seed') {
+    if (arg != '--out' && arg != '--seed' && arg != '--rejected') {
       positional.add(arg);
       continue;
     }
@@ -576,10 +582,14 @@ void main(List<String> args) {
       _fail('$arg без значения');
       return;
     }
-    if (arg == '--out') {
-      outDir = args[++i];
-    } else {
-      seedPath = args[++i];
+    final value = args[++i];
+    switch (arg) {
+      case '--out':
+        outDir = value;
+      case '--seed':
+        seedPath = value;
+      default:
+        rejectedPath = value;
     }
   }
   if (positional.length != 1) {
@@ -588,9 +598,17 @@ void main(List<String> args) {
   }
 
   assertOutDirAllowed(outDir);
+  // Отказы исключаются наравне с сидом. Файла может не быть — это первый
+  // прогон, а не ошибка; битый файл роняет прогон в excludedFrom.
+  final rejectedFile = File(rejectedPath ?? '$outDir/rejected.json');
+  final fromSeed = excludedFrom(seedJson: File(seedPath).readAsStringSync());
+  final fromRejected = excludedFrom(
+    rejectedJson:
+        rejectedFile.existsSync() ? rejectedFile.readAsStringSync() : null,
+  );
   final result = importCefrj(
     File(positional.single).readAsStringSync(),
-    excludedIds: _seedIds(File(seedPath).readAsStringSync()),
+    excludedIds: {...fromSeed, ...fromRejected},
   );
 
   final directory = Directory(outDir)..createSync(recursive: true);
@@ -610,7 +628,11 @@ void main(List<String> args) {
     ..writeln('')
     ..writeln('порций: ${result.portions.length} → ${directory.path}')
     ..writeln('ничьих: ${result.ambiguous.length} → ambiguous.csv')
-    ..writeln('отсев:  ${result.skipped.length} → skipped.csv');
+    ..writeln('отсев:  ${result.skipped.length} → skipped.csv')
+    ..writeln(
+      'исключено заранее: сид ${fromSeed.length}, '
+      'отказы ${fromRejected.length}',
+    );
 }
 
 void _fail(String message) {
@@ -628,9 +650,10 @@ void _fail(String message) {
 /// Оба источника необязательны: на первом прогоне нет файла отказов, а сид
 /// теоретически может быть пуст. Битые — [FormatException], не пустое множество:
 /// молчаливое «отказов нет» стоило бы вечера повторной вычитки.
-Set<String> excludedFrom({String? seedJson, String? rejectedJson}) {
-  throw UnimplementedError();
-}
+Set<String> excludedFrom({String? seedJson, String? rejectedJson}) => {
+  if (seedJson != null) ..._seedIds(seedJson),
+  ...rejectedIds(rejectedJson),
+};
 
 /// id слов, которые уже в сиде. Нужны только они: остальное — дело вычитки.
 Set<String> _seedIds(String json) {
