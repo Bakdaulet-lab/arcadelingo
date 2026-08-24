@@ -106,6 +106,64 @@ void main() {
     });
   });
 
+  group('сверка файла с сидом: каждый id обязан существовать', () {
+    // Опечатку в id иначе не заметит никто и никогда: ручные пары по
+    // определению не находятся автоматически, сверять их не с чем.
+    Map<String, Object?> seedOf(List<String> ids) => {
+      'version': seedFormatVersion,
+      'source_lang': 'en',
+      'target_lang': 'ru',
+      'words': [
+        for (final id in ids)
+          {
+            'id': id,
+            'text': id,
+            'translation': 'слово',
+            'part_of_speech': 'noun',
+            'level': 'a1',
+            'distractors': const ['один', 'два', 'три'],
+          },
+      ],
+    };
+
+    test('оба слова пары в сиде — нарушения нет', () {
+      expect(
+        checkConfusablesExist(seedOf(['open', 'close', 'step', 'walk']), _csv),
+        isEmpty,
+      );
+    });
+
+    test('слова нет в сиде — нарушение называет и слово, и пару', () {
+      final problems = checkConfusablesExist(
+        seedOf(['open', 'close', 'step']),
+        _csv,
+      );
+
+      expect(problems, hasLength(1));
+      expect(problems.single.rule, SeedRule.confusableWordMissing);
+      expect(
+        problems.single.message,
+        allOf(contains('walk'), contains('step')),
+      );
+    });
+
+    test('нет обоих слов пары — два нарушения, а не одно', () {
+      // Иначе вторую опечатку в той же строке нашли бы только следующим
+      // прогоном.
+      expect(
+        checkConfusablesExist(
+          seedOf(const []),
+          'first,second,reason\nopen,close,причина\n',
+        ),
+        hasLength(2),
+      );
+    });
+
+    test('пустой файл ловушек — проверять нечего', () {
+      expect(checkConfusablesExist(seedOf(['open']), ''), isEmpty);
+    });
+  });
+
   group('сверка найденных зеркальных пар с файлом', () {
     test('пара внесена — нарушения нет', () {
       expect(
