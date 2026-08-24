@@ -70,5 +70,29 @@
     "file": "tool/seed_rules.dart",
     "old": "      } else if (owner != id) {\n        problems.add(\n          SeedProblem(\n            SeedRule.translationCollision,",
     "new": "      } else if (owner == id) {\n        problems.add(\n          SeedProblem(\n            SeedRule.translationCollision,"
+  },
+  {
+    "name": "ловушки: незаписанная зеркальная пара перестаёт быть нарушением",
+    "file": "tool/confusables.dart",
+    "old": "      if (!listed.contains(confusableKey(pair.first, pair.second)))",
+    "new": "      if (listed.contains(confusableKey(pair.first, pair.second)))"
+  },
+  {
+    "name": "ловушки: ключ пары зависит от порядка слов",
+    "file": "tool/confusables.dart",
+    "old": "    a.compareTo(b) <= 0 ? '$a|$b' : '$b|$a';",
+    "new": "    '$a|$b';"
+  },
+  {
+    "name": "ловушки: пара без причины проходит разбор",
+    "file": "tool/confusables.dart",
+    "old": "    if (reason.isEmpty) {",
+    "new": "    if (false && reason.isEmpty) {"
+  },
+  {
+    "name": "ловушки: отсутствующее в сиде слово не замечается",
+    "file": "tool/confusables.dart",
+    "old": "        if (!known.contains(id))",
+    "new": "        if (false && !known.contains(id))"
   }
 ]
