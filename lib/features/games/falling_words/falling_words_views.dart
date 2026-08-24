@@ -36,12 +36,15 @@ const Duration comboTintFade = Duration(milliseconds: 400);
 /// а не в `falling_words_juice.dart`: иначе Flutter приехал бы вместе с ней
 /// и в `FallingWordsRun`, который держится без него намеренно.
 Color comboTint(ColorScheme scheme, int combo) {
-  final depth = ((combo - comboTintStart) / (comboTintEnd - comboTintStart))
-      .clamp(0.0, 1.0);
   // Ранний выход, а не lerp с нулём: чистый фон обязан быть тем же самым
   // цветом, что и surface, иначе «фон не тронут» пришлось бы проверять с
   // допуском, и настоящий блёклый тон прошёл бы под такой допуск.
-  if (depth == 0) return scheme.surface;
+  //
+  // Спрашивается та же функция, что и у множителя в HUD: пока порог один на
+  // двоих в коде, разъехаться они не могут.
+  if (!comboIsHot(combo)) return scheme.surface;
+  final depth = ((combo - comboTintStart) / (comboTintEnd - comboTintStart))
+      .clamp(0.0, 1.0);
   return Color.lerp(scheme.surface, scheme.primary, comboTintMax * depth)!;
 }
 
@@ -50,9 +53,7 @@ Color comboTint(ColorScheme scheme, int combo) {
 /// Одна функция на два ответа: подкрашивать ли поле и гореть ли множителю в
 /// HUD. Порог живёт здесь и нигде больше, поэтому разъехаться они не могут
 /// даже случайно.
-bool comboIsHot(int combo) {
-  throw UnimplementedError();
-}
+bool comboIsHot(int combo) => combo > comboTintStart;
 
 /// Доля высоты поля, на которой тон сходит к фону у каждого края.
 const double comboGradientEdge = 0.22;
@@ -149,6 +150,7 @@ class GameHud extends StatelessWidget {
     required this.multiplier,
     required this.current,
     required this.total,
+    required this.combo,
     super.key,
     this.scorePulse = 0,
   });
@@ -166,6 +168,12 @@ class GameHud extends StatelessWidget {
 
   /// Сколько показов запланировала сессия.
   final int total;
+
+  /// Длина серии — не то же, что [multiplier]. Нужна затем, что множитель
+  /// загорается на том же пороге, что и тон поля, а порог задан по серии.
+  /// Считать серию обратно из множителя значило бы завести вторую формулу
+  /// «плюс один» рядом с той, что живёт в `FallingWordsRun`.
+  final int combo;
 
   /// Насколько раздут счёт в этом кадре, 0…1. Ноль — обычный размер.
   /// Украшение: при системном «убрать анимации» сюда приходит ноль всегда.
@@ -210,7 +218,8 @@ class GameHud extends StatelessWidget {
             '×$multiplier',
             key: FallingWordsKeys.combo,
             style: textTheme.titleMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
+              color:
+                  comboIsHot(combo) ? scheme.primary : scheme.onSurfaceVariant,
             ),
           ),
           // Transform, а не изменение кегля: раздувание размером сдвинуло бы

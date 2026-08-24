@@ -46,5 +46,29 @@
     "file": "lib/features/games/falling_words/falling_words_views.dart",
     "old": "const double comboTintMax = 0.35;",
     "new": "const double comboTintMax = 0.95;"
+  },
+  {
+    "name": "порог разогрева уехал на серию",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "bool comboIsHot(int combo) => combo > comboTintStart;",
+    "new": "bool comboIsHot(int combo) => combo > comboTintStart + 1;"
+  },
+  {
+    "name": "множитель не загорается вовсе",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "                  comboIsHot(combo) ? scheme.primary : scheme.onSurfaceVariant,",
+    "new": "                  scheme.onSurfaceVariant,"
+  },
+  {
+    "name": "множитель горит с самого начала",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "                  comboIsHot(combo) ? scheme.primary : scheme.onSurfaceVariant,",
+    "new": "                  scheme.primary,"
+  },
+  {
+    "name": "тон и множитель развязаны: у поля свой порог",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "  if (!comboIsHot(combo)) return scheme.surface;",
+    "new": "  if (combo <= comboTintStart + 1) return scheme.surface;"
   }
 ]

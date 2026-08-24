@@ -299,6 +299,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
                   maxLives: FallingWordsRun.startLives,
                   score: _run.score,
                   multiplier: _run.scoreMultiplier,
+                  combo: _run.combo,
                   scorePulse: _pulse(juicy: juicy, revealing: revealing),
                   // В фазе подсветки ответ уже доложен, и answered его
                   // считает; в падении текущее слово ещё впереди счётчика.
