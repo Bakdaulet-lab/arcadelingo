@@ -264,7 +264,17 @@ void main() {
       expect(
         _contrast(scheme.onSurface, comboTint(scheme, 40)),
         greaterThanOrEqualTo(4.5),
-        reason: 'потолок смешения выбран под это, а не наоборот — SPEC, «Джус»',
+        reason: 'верхняя граница потолка смешения — SPEC, «Джус»',
+      );
+    });
+
+    test('на потолке тон заметен, а не выдаёт себя за чистый фон', () {
+      expect(
+        _distance(scheme.surface, comboTint(scheme, 8)),
+        greaterThan(0.15),
+        reason:
+            'нижняя граница потолка: смешение к primaryContainer давало 0.04 '
+            'и не читалось как награда вовсе — SPEC, «Джус»',
       );
     });
   });
