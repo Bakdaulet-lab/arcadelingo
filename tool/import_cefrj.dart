@@ -33,6 +33,9 @@
 ///   в одну порцию, а это ровно то, что запрещено обманкам.
 library;
 
+import 'dart:convert';
+import 'dart:io';
+
 /// Размер порции. Одна порция = один вечер вычитки = один коммит.
 const int defaultPortionSize = 50;
 
@@ -213,30 +216,321 @@ ImportResult importCefrj(
   int portionSize = defaultPortionSize,
   int shuffleSeed = defaultShuffleSeed,
 }) {
-  throw UnimplementedError();
+  final rows = _parseRows(csv);
+  final skipped = <SkippedRow>[];
+
+  // Шаг 1: уровень. Единственный фильтр, который не пишет в отсев: B1/B2 —
+  // это скоуп задачи, а не потеря, и 5224 строки утопили бы в отсеве сигнал.
+  final byLevel = [
+    for (final row in rows)
+      if (importedLevels.contains(row.level.toLowerCase())) row,
+  ];
+
+  // Шаг 2: часть речи.
+  final byPartOfSpeech = <_Row>[];
+  for (final row in byLevel) {
+    if (partOfSpeechMap.containsKey(row.partOfSpeech)) {
+      byPartOfSpeech.add(row);
+    } else {
+      skipped.add(row.skip(SkipReason.partOfSpeechOutOfScope));
+    }
+  }
+
+  // Шаг 3: форма headword. Отсекает наш собственный инвариант `id == text`.
+  final byShape = <_Row>[];
+  for (final row in byPartOfSpeech) {
+    if (_singleLowercaseWord.hasMatch(row.headword)) {
+      byShape.add(row);
+    } else {
+      skipped.add(row.skip(SkipReason.headwordNotSingleLowercaseWord));
+    }
+  }
+
+  // Шаг 4: группировка по слову, в порядке первого появления — прогон должен
+  // быть воспроизводим и до перемешивания.
+  final groups = <String, List<_Row>>{};
+  for (final row in byShape) {
+    (groups[row.headword] ??= <_Row>[]).add(row);
+  }
+  final headwords = groups.length;
+
+  // Шаг 5: дедуп против сида — по слову, а не по строке: если слово уже наше,
+  // уходят разом все его части речи, и ничьёй оно тоже не считается.
+  groups.removeWhere((headword, _) => excludedIds.contains(headword));
+
+  // Шаг 6: схлопывание. По минимальному уровню — и только по уровню.
+  final words = <ImportedWord>[];
+  final ambiguous = <AmbiguousWord>[];
+  for (final entry in groups.entries) {
+    final level = entry.value
+        .map((row) => row.level.toLowerCase())
+        .reduce(_lowerLevel);
+    final candidates =
+        <String>{
+            for (final row in entry.value)
+              if (row.level.toLowerCase() == level)
+                partOfSpeechMap[row.partOfSpeech]!,
+          }.toList()
+          ..sort();
+
+    if (candidates.length == 1) {
+      words.add(
+        ImportedWord(
+          text: entry.key,
+          level: level,
+          partOfSpeech: candidates.single,
+        ),
+      );
+      continue;
+    }
+    // Ничья. Часть речи не выбирается здесь ни при каких условиях: приоритет
+    // молча превратил бы «отвечать» в «ответ».
+    words.add(
+      ImportedWord(
+        text: entry.key,
+        level: level,
+        partOfSpeech: null,
+        ambiguousPartsOfSpeech: candidates,
+      ),
+    );
+    ambiguous.add(
+      AmbiguousWord(
+        headword: entry.key,
+        level: level,
+        // Все варианты источника, включая другие уровни: человек решает,
+        // глядя на слово целиком, а не на срез минимального уровня.
+        variants:
+            <String>{
+                for (final row in entry.value)
+                  '${row.partOfSpeech} ${row.level}',
+              }.toList()
+              ..sort(),
+      ),
+    );
+  }
+
+  return ImportResult(
+    portions: _splitIntoPortions(words, portionSize, shuffleSeed),
+    ambiguous: ambiguous,
+    skipped: skipped,
+    funnel: ImportFunnel(
+      rows: rows.length,
+      byLevel: byLevel.length,
+      byPartOfSpeech: byPartOfSpeech.length,
+      byHeadwordShape: byShape.length,
+      headwords: headwords,
+      afterDedup: groups.length,
+      ambiguous: ambiguous.length,
+    ),
+  );
 }
+
+/// Строка источника: нужны только первые три колонки.
+class _Row {
+  const _Row(this.headword, this.partOfSpeech, this.level);
+
+  final String headword;
+  final String partOfSpeech;
+  final String level;
+
+  SkippedRow skip(SkipReason reason) => SkippedRow(
+    headword: headword,
+    partOfSpeech: partOfSpeech,
+    level: level,
+    reason: reason,
+  );
+}
+
+/// Инвариант сида: `id == text`, одно слово из строчных латинских букв.
+final RegExp _singleLowercaseWord = RegExp(r'^[a-z]+$');
+
+/// CSV → строки. Первая строка — шапка. Разбор `split(',')`, а не CSV-пакетом:
+/// в CEFR-J 1.5 кавычки есть в 699 строках, но ни разу в первых трёх колонках
+/// (проверено 2026-08-24), а новая зависимость требует согласования.
+List<_Row> _parseRows(String csv) {
+  final lines = const LineSplitter().convert(csv);
+  final rows = <_Row>[];
+  for (var index = 1; index < lines.length; index++) {
+    final line = lines[index];
+    if (line.trim().isEmpty) continue;
+    // Нумерация человеческая: шапка — строка 1, чтобы номер из сообщения
+    // можно было набрать в редакторе и попасть в ту же строку.
+    final number = index + 1;
+    final fields = line.split(',');
+    if (fields.length < 3) {
+      throw FormatException(
+        'CEFR-J: строка $number: меньше трёх колонок: "$line"',
+      );
+    }
+    final headword = fields[0].trim();
+    final partOfSpeech = fields[1].trim();
+    final level = fields[2].trim();
+    if (headword.isEmpty) {
+      throw FormatException('CEFR-J: строка $number: пустой headword');
+    }
+    // Оба сторожа стоят до фильтров и работают на всех строках, включая
+    // B1/B2: иначе обновление источника заметили бы только на апгрейде.
+    if (!knownPartsOfSpeech.contains(partOfSpeech)) {
+      throw FormatException(
+        'CEFR-J: строка $number: неизвестная часть речи "$partOfSpeech". '
+        'Источник изменился — решай, что с ней делать, а не пропускай',
+      );
+    }
+    if (!knownLevels.contains(level)) {
+      throw FormatException(
+        'CEFR-J: строка $number: неизвестный уровень "$level". '
+        'Источник изменился — решай, что с ним делать, а не пропускай',
+      );
+    }
+    rows.add(_Row(headword, partOfSpeech, level));
+  }
+  return rows;
+}
+
+/// Меньший из двух уровней по порядку ввода.
+String _lowerLevel(String a, String b) =>
+    importedLevels.indexOf(a) <= importedLevels.indexOf(b) ? a : b;
+
+/// Слова → порции: сначала весь A1, потом весь A2, внутри уровня —
+/// перемешивание. Граничная порция уровня короткая, а не смешанная: иначе
+/// «сначала весь A1» переставало бы быть правдой ровно на одной порции.
+List<Portion> _splitIntoPortions(
+  List<ImportedWord> words,
+  int portionSize,
+  int shuffleSeed,
+) {
+  if (portionSize < 1) {
+    throw ArgumentError.value(portionSize, 'portionSize', 'должен быть ≥ 1');
+  }
+  final portions = <Portion>[];
+  var number = 1;
+  for (final level in importedLevels) {
+    final ofLevel = [
+      for (final word in words)
+        if (word.level == level) word,
+    ];
+    _shuffleInPlace(ofLevel, shuffleSeed);
+    for (var start = 0; start < ofLevel.length; start += portionSize) {
+      final end = start + portionSize;
+      portions.add(
+        Portion(
+          number: number++,
+          level: level,
+          words: ofLevel.sublist(
+            start,
+            end > ofLevel.length ? ofLevel.length : end,
+          ),
+        ),
+      );
+    }
+  }
+  return portions;
+}
+
+/// Фишер—Йетс на собственном линейном конгруэнтном генераторе.
+///
+/// Не `Random(seed)` из `dart:math`: его последовательность документирована
+/// как implementation-specific, а порции обязаны совпасть у двух человек на
+/// разных версиях SDK. Качество случайности здесь ни на что не влияет: важно
+/// только, чтобы порядок не был алфавитным и был воспроизводимым.
+void _shuffleInPlace(List<ImportedWord> words, int seed) {
+  var state = (seed & 0x7fffffff) | 1;
+  int next(int bound) {
+    state = (state * 1103515245 + 12345) & 0x7fffffff;
+    return state % bound;
+  }
+
+  for (var i = words.length - 1; i > 0; i--) {
+    final j = next(i + 1);
+    final swapped = words[i];
+    words[i] = words[j];
+    words[j] = swapped;
+  }
+}
+
+/// Что человеку делать с этим файлом. Лежит внутри порции, потому что
+/// открывают её, а не документацию.
+const String _portionNote =
+    'Заполни translation и три distractors. Где part_of_speech пуст — выбери '
+    'из ambiguous_pos. Отказ от слова — поле "reject" с причиной.';
 
 /// Порция → текст файла `portion_NN.json`: те же имена полей, что в сиде,
 /// плюс пустые `translation` и `distractors` под руку человека.
 String encodePortion(Portion portion) {
-  throw UnimplementedError();
+  final buffer =
+      StringBuffer()
+        ..writeln('{')
+        ..writeln('  "portion": ${portion.number},')
+        ..writeln('  "level": ${jsonEncode(portion.level)},')
+        ..writeln('  "source": "CEFR-J Wordlist 1.5",')
+        ..writeln('  "note": ${jsonEncode(_portionNote)},')
+        ..writeln('  "words": [');
+  for (var i = 0; i < portion.words.length; i++) {
+    final word = portion.words[i];
+    // Одна запись — одна строка: порцию заполняют руками, и перевод набирают
+    // рядом со словом, а не через пять строк от него.
+    final fields = <String>[
+      '"id": ${jsonEncode(word.text)}',
+      '"text": ${jsonEncode(word.text)}',
+      '"translation": ""',
+      '"part_of_speech": ${jsonEncode(word.partOfSpeech ?? '')}',
+      '"level": ${jsonEncode(word.level)}',
+      if (word.isAmbiguous)
+        '"ambiguous_pos": ${jsonEncode(word.ambiguousPartsOfSpeech)}',
+      '"distractors": []',
+    ];
+    final comma = i == portion.words.length - 1 ? '' : ',';
+    buffer.writeln('    { ${fields.join(', ')} }$comma');
+  }
+  return (buffer
+        ..writeln('  ]')
+        ..writeln('}'))
+      .toString();
 }
 
 /// Ничьи → CSV. Пустой список даёт файл с одной шапкой, а не отсутствие
 /// файла: «ничьих нет» и «импортёр про них забыл» обязаны отличаться.
 String encodeAmbiguousCsv(List<AmbiguousWord> words) {
-  throw UnimplementedError();
+  final buffer = StringBuffer()..writeln('headword,level,variants');
+  for (final word in words) {
+    // Варианты через «;» — запятая развалила бы колонки.
+    buffer.writeln(
+      '${_cell(word.headword)},${_cell(word.level)},'
+      '${_cell(word.variants.join('; '))}',
+    );
+  }
+  return buffer.toString();
 }
 
 /// Отсев → CSV, с причиной строкой.
 String encodeSkippedCsv(List<SkippedRow> rows) {
-  throw UnimplementedError();
+  final buffer = StringBuffer()..writeln('headword,pos,CEFR,причина');
+  for (final row in rows) {
+    buffer.writeln(
+      '${_cell(row.headword)},${_cell(row.partOfSpeech)},'
+      '${_cell(row.level)},${_cell(row.reason.text)}',
+    );
+  }
+  return buffer.toString();
 }
 
+/// Ячейка CSV. В первых трёх колонках источника запятых нет, но отсев печатает
+/// данные источника как есть, и полагаться на это не стоит.
+String _cell(String value) =>
+    value.contains(',') || value.contains('"')
+        ? '"${value.replaceAll('"', '""')}"'
+        : value;
+
 /// Воронка → человекочитаемый отчёт для stdout.
-String formatFunnel(ImportFunnel funnel) {
-  throw UnimplementedError();
-}
+String formatFunnel(ImportFunnel funnel) => [
+  'строк в источнике:            ${funnel.rows}',
+  'уровни A1 и A2:               ${funnel.byLevel}',
+  'четыре части речи:            ${funnel.byPartOfSpeech}',
+  'headword одним словом:        ${funnel.byHeadwordShape}',
+  'уникальных слов:              ${funnel.headwords}',
+  'после дедупа против сида:     ${funnel.afterDedup}',
+  'из них ничьих по части речи:  ${funnel.ambiguous}',
+].join('\n');
 
 /// Страж инварианта: писать под `assets/` импортёру запрещено.
 ///
@@ -244,11 +538,109 @@ String formatFunnel(ImportFunnel funnel) {
 /// набирается опечаткой, а перезаписанный сид уносит с собой вычитанные
 /// переводы, которых в CSV нет и не будет.
 void assertOutDirAllowed(String path) {
-  throw UnimplementedError();
+  final segments = path
+      .replaceAll(r'\', '/')
+      .split('/')
+      .where((segment) => segment.isNotEmpty && segment != '.');
+  if (segments.contains('assets')) {
+    throw ArgumentError.value(
+      path,
+      'out',
+      'импортёр в assets/ не пишет: туда попадает только вычитанное',
+    );
+  }
 }
+
+const String _usage =
+    'Импорт CEFR-J A1/A2 в рабочие порции.\n'
+    '\n'
+    '  dart run tool/import_cefrj.dart <cefrj-vocabulary-profile-1.5.csv> '
+    '[--out tool/out] [--seed assets/words_seed.json]\n'
+    '\n'
+    'CSV в репозитории нет намеренно: см. docs/dev/content_sources.md';
 
 /// Читает CSV и сид, пишет порции, `ambiguous.csv` и `skipped.csv`, печатает
 /// воронку. Единственное место в файле, которое трогает диск.
-Future<void> main(List<String> args) async {
-  throw UnimplementedError();
+void main(List<String> args) {
+  final positional = <String>[];
+  var outDir = 'tool/out';
+  var seedPath = 'assets/words_seed.json';
+
+  for (var i = 0; i < args.length; i++) {
+    final arg = args[i];
+    if (arg != '--out' && arg != '--seed') {
+      positional.add(arg);
+      continue;
+    }
+    if (i + 1 >= args.length) {
+      _fail('$arg без значения');
+      return;
+    }
+    if (arg == '--out') {
+      outDir = args[++i];
+    } else {
+      seedPath = args[++i];
+    }
+  }
+  if (positional.length != 1) {
+    _fail('нужен ровно один путь к CSV, получено ${positional.length}');
+    return;
+  }
+
+  assertOutDirAllowed(outDir);
+  final result = importCefrj(
+    File(positional.single).readAsStringSync(),
+    excludedIds: _seedIds(File(seedPath).readAsStringSync()),
+  );
+
+  final directory = Directory(outDir)..createSync(recursive: true);
+  for (final portion in result.portions) {
+    final name = 'portion_${portion.number.toString().padLeft(2, '0')}.json';
+    File('${directory.path}/$name').writeAsStringSync(encodePortion(portion));
+  }
+  File(
+    '${directory.path}/ambiguous.csv',
+  ).writeAsStringSync(encodeAmbiguousCsv(result.ambiguous));
+  File(
+    '${directory.path}/skipped.csv',
+  ).writeAsStringSync(encodeSkippedCsv(result.skipped));
+
+  stdout
+    ..writeln(formatFunnel(result.funnel))
+    ..writeln('')
+    ..writeln('порций: ${result.portions.length} → ${directory.path}')
+    ..writeln('ничьих: ${result.ambiguous.length} → ambiguous.csv')
+    ..writeln('отсев:  ${result.skipped.length} → skipped.csv');
+}
+
+void _fail(String message) {
+  stderr
+    ..writeln('import_cefrj: $message')
+    ..writeln('')
+    ..writeln(_usage);
+  exitCode = 64;
+}
+
+/// id слов, которые уже в сиде. Нужны только они: остальное — дело вычитки.
+Set<String> _seedIds(String json) {
+  final root = jsonDecode(json);
+  if (root is! Map<String, Object?>) {
+    throw const FormatException('сид слов: корень не объект');
+  }
+  final words = root['words'];
+  if (words is! List<Object?>) {
+    throw const FormatException('сид слов: нет списка words');
+  }
+  final ids = <String>{};
+  for (final word in words) {
+    if (word is! Map<String, Object?>) {
+      throw const FormatException('сид слов: запись не объект');
+    }
+    final id = word['id'];
+    if (id is! String) {
+      throw const FormatException('сид слов: id не строка');
+    }
+    ids.add(id);
+  }
+  return ids;
 }
