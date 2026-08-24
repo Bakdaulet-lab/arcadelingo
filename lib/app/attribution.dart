@@ -77,11 +77,10 @@ List<AttributionBlock> parseAttribution(String source) {
   }
 
   for (final raw in source.split('\n')) {
-    // Хвостовой возврат каретки, а не replaceAll по всей строке: на Windows
-    // рабочая копия приходит с CRLF, и невидимый символ в конце сорвал бы
-    // дословность цитаты, ничего не показав глазу.
-    final line = raw.endsWith('\r') ? raw.substring(0, raw.length - 1) : raw;
-    final trimmed = line.trim();
+    // CRLF рабочей копии на Windows снимает сам trim(): всё, что ниже,
+    // смотрит на trimmed, а не на сырую строку. Явное срезание тут стояло и
+    // было убрано — мутация показала, что оно не наблюдаемо ничем.
+    final trimmed = raw.trim();
 
     if (trimmed.isEmpty) {
       flush();
@@ -90,7 +89,7 @@ List<AttributionBlock> parseAttribution(String source) {
 
     // Отступ продолжает пункт списка — и только пункт: у абзацев в файле
     // продолжения не отбиты, и трогать их незачем.
-    if (line.startsWith('  ') && pending?.kind == AttributionBlockKind.bullet) {
+    if (raw.startsWith('  ') && pending?.kind == AttributionBlockKind.bullet) {
       pending!.add(trimmed);
       continue;
     }
