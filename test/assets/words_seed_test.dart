@@ -12,10 +12,12 @@
 // означает «форма и инварианты в порядке», а не «контент выверен».
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../tool/confusables.dart';
 import '../../tool/seed_rules.dart';
 
 const _assetPath = 'assets/words_seed.json';
@@ -75,6 +77,16 @@ void main() {
     // test/data/words/words_seed_loader_test.dart. Правятся оба и в одном
     // коммите — порция 1 приехала красной ровно потому, что второй забыли.
     expect(words, hasLength(96));
+  });
+
+  test('каждая зеркальная пара внесена в файл ловушек', () {
+    // Сама пара нарушением не является. Нарушение — что о ней некому будет
+    // узнать: правило сессии Б1 читает файл, а не отчёт прогона.
+    // dart:io, а не rootBundle: файл ловушек не ассет, в приложение не едет.
+    expect(
+      checkMirrorPairsListed(root, File(confusablesPath).readAsStringSync()),
+      isEmpty,
+    );
   });
 
   test('зеркальные пары известны и не запрещены', () {

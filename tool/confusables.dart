@@ -45,25 +45,66 @@ class ConfusablePair {
 
 /// Канонический ключ пары: порядок слов в файле и в находке валидатора
 /// совпадать не обязан.
-String confusableKey(String a, String b) {
-  throw UnimplementedError();
-}
+String confusableKey(String a, String b) =>
+    a.compareTo(b) <= 0 ? '$a|$b' : '$b|$a';
 
 /// Текст файла → пары. Битая строка роняет разбор: пропустить её значило бы
 /// молча потерять ловушку, ради записи которой файл и заведён.
 List<ConfusablePair> parseConfusables(String csv) {
-  throw UnimplementedError();
+  final pairs = <ConfusablePair>[];
+  final lines = csv.split('\n');
+  for (var index = 1; index < lines.length; index++) {
+    final line = lines[index].trim();
+    if (line.isEmpty) continue;
+    final number = index + 1;
+    // Колонки разделяют только первые две запятые: остальные — часть причины,
+    // а причину пишет человек, и запятых в ней сколько угодно.
+    final fields = line.split(',');
+    if (fields.length < 3) {
+      throw FormatException(
+        'ловушки: строка $number: нужно три колонки, а не ${fields.length}: '
+        '"$line"',
+      );
+    }
+    final first = fields[0].trim();
+    final second = fields[1].trim();
+    final reason = fields.sublist(2).join(',').trim();
+    if (first.isEmpty || second.isEmpty) {
+      throw FormatException('ловушки: строка $number: пустой id в паре');
+    }
+    if (first == second) {
+      throw FormatException(
+        'ловушки: строка $number: слово "$first" в паре с самим собой',
+      );
+    }
+    if (reason.isEmpty) {
+      throw FormatException(
+        'ловушки: строка $number: пара $first / $second без причины',
+      );
+    }
+    pairs.add(ConfusablePair(first: first, second: second, reason: reason));
+  }
+  return pairs;
 }
 
 /// Ключи всех записанных пар.
-Set<String> confusableKeys(String csv) {
-  throw UnimplementedError();
-}
+Set<String> confusableKeys(String csv) => {
+  for (final pair in parseConfusables(csv)) pair.key,
+};
 
 /// Каждая найденная зеркальная пара обязана быть в файле.
 ///
 /// Обратное неверно и проверяться не может: почти-синонимы валидатор не найдёт
 /// никогда, на то файл и ведётся руками.
 List<SeedProblem> checkMirrorPairsListed(Object? root, String csv) {
-  throw UnimplementedError();
+  final listed = confusableKeys(csv);
+  return [
+    for (final pair in findMirrorPairs(root))
+      if (!listed.contains(confusableKey(pair.first, pair.second)))
+        SeedProblem(
+          SeedRule.mirrorPairNotListed,
+          'зеркальная пара "${pair.first}" / "${pair.second}" не внесена в '
+          '$confusablesPath: пару нашли, а записать забыли',
+        ),
+  ];
 }
