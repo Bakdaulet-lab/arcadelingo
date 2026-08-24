@@ -8,8 +8,8 @@
   {
     "name": "страж пустого translation снят: невычитанное слово уедет в ассет",
     "file": "tool/merge_portion.dart",
-    "old": "    if (translation is! String || translation.trim().isEmpty) {",
-    "new": "    if (translation is! String) {"
+    "old": "    if (translation is! String || translation.trim().isEmpty) {\n      problems.add('$name: пустой translation — запись не вычитана');",
+    "new": "    if (translation is! String) {\n      problems.add('$name: пустой translation — запись не вычитана');"
   },
   {
     "name": "страж числа обманок снят: слово с двумя кнопками уедет в ассет",
