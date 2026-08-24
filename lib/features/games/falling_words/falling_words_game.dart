@@ -360,9 +360,14 @@ class _FallingWordsGameState extends State<FallingWordsGame>
       // раз быстрее, то есть недетерминированно для теста.
       duration: juicy && _run.combo > 0 ? comboTintFade : Duration.zero,
       builder:
-          (context, color, _) => ColoredBox(
+          (context, color, _) => DecoratedBox(
             key: FallingWordsKeys.playfield,
-            color: color ?? scheme.surface,
+            // Градиент, а не заливка: заливкой поле читалось панелью —
+            // жёсткая граница о HUD сверху и о ряд кнопок снизу. Это увидели
+            // голдены 0.9, числами оно не ловилось.
+            decoration: BoxDecoration(
+              gradient: comboGradientFor(scheme, color ?? scheme.surface),
+            ),
             child: Stack(
               children: [
                 if (missed)

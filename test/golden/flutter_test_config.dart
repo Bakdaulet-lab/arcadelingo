@@ -5,6 +5,11 @@
 // ближайший flutter_test_config.dart вверх по дереву, поэтому загрузка
 // шрифтов не платится при каждом прогоне быстрых тестов.
 //
+// Шрифты грузятся только из ассетов приложения. Раньше Roboto приезжал из
+// кеша SDK с поиском FLUTTER_ROOT и подъёмом от исполняемого файла — вся
+// эта археология умерла вместе с задачей 0.12: своя гарнитура лежит в
+// assets/fonts и попадает в FontManifest наравне с иконками.
+//
 // Процедура обновления эталонов человеком — docs/dev/goldens.md.
 
 import 'dart:async';
@@ -14,22 +19,8 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Начертания Roboto, которые нужны Material 3: w400, w500 и w700.
-///
-/// Одного regular мало — движок синтезировал бы жирный сам, и заголовки на
-/// эталоне отличались бы от того, что рисует телефон.
-const List<String> _robotoFiles = [
-  'roboto-regular.ttf',
-  'roboto-medium.ttf',
-  'roboto-bold.ttf',
-];
-
-/// Где в дереве Flutter лежат шрифты Material.
-const String _materialFontsPath = 'bin/cache/artifacts/material_fonts';
-
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
-  await _loadRoboto();
   await _loadBundledFonts();
   final local = goldenFileComparator as LocalFileComparator;
   goldenFileComparator = _HumanReviewedComparator(
@@ -38,33 +29,10 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   await testMain();
 }
 
-/// Roboto из кеша SDK.
+/// Шрифты из ассетов самого приложения: гарнитура Rubik и MaterialIcons.
 ///
-/// В репозиторий не кладём: версия Flutter зафиксирована, а при её смене
-/// эталоны поедут от движка отрисовки независимо от того, чья копия .ttf
-/// лежала рядом.
-Future<void> _loadRoboto() async {
-  final directory = _materialFonts();
-  final loader = FontLoader('Roboto');
-  for (final name in _robotoFiles) {
-    final file = File.fromUri(directory.uri.resolve(name));
-    if (!file.existsSync()) {
-      throw StateError(_missingFontsMessage(file.path));
-    }
-    final bytes = await file.readAsBytes();
-    loader.addFont(
-      Future.value(
-        ByteData.view(bytes.buffer, bytes.offsetInBytes, bytes.lengthInBytes),
-      ),
-    );
-  }
-  await loader.load();
-}
-
-/// Шрифты из ассетов самого приложения — здесь это MaterialIcons.
-///
-/// Иконки несут половину смысла экрана: сердца, крест у промаха, галочка у
-/// верного варианта. Без них голден снимет прямоугольники и будет зелёным.
+/// Иконки несут половину смысла экрана — сердца, крест у промаха, галочка
+/// у верного варианта, — а гарнитура и есть предмет задачи 0.12.
 Future<void> _loadBundledFonts() async {
   final manifest =
       json.decode(await rootBundle.loadString('FontManifest.json')) as List;
@@ -78,45 +46,19 @@ Future<void> _loadBundledFonts() async {
     }
     await loader.load();
   }
-  if (!families.contains('MaterialIcons')) {
-    throw StateError(
-      'В FontManifest.json нет MaterialIcons: ${families.join(', ')}.\n'
-      'Иконки нарисуются прямоугольниками, а голдены останутся зелёными.\n'
-      'Проверь uses-material-design: true в pubspec.yaml.',
-    );
+  // Молчаливого фолбэка нет намеренно: без шрифта flutter test рисует
+  // каждую букву прямоугольником, и восемь эталонов снялись бы зелёными и
+  // бессмысленными одновременно.
+  for (final required in ['MaterialIcons', 'Rubik']) {
+    if (!families.contains(required)) {
+      throw StateError(
+        'В FontManifest.json нет $required: ${families.join(', ')}.\n'
+        'Текст или иконки нарисуются прямоугольниками, а эталоны останутся\n'
+        'зелёными. Проверь секции fonts и uses-material-design в pubspec.',
+      );
+    }
   }
 }
-
-/// Каталог с Roboto: сначала FLUTTER_ROOT, потом подъём от исполняемого
-/// файла — тесты запускает движок из того же кеша, что и шрифты.
-Directory _materialFonts() {
-  final roots = <String>[
-    if (Platform.environment['FLUTTER_ROOT'] case final root?) root,
-    ..._ancestors(Platform.resolvedExecutable),
-  ];
-  for (final root in roots) {
-    final directory = Directory('$root/$_materialFontsPath/');
-    if (directory.existsSync()) return directory;
-  }
-  throw StateError(_missingFontsMessage('<$_materialFontsPath>'));
-}
-
-/// Все каталоги вверх от [path], от ближнего к дальнему.
-Iterable<String> _ancestors(String path) sync* {
-  var current = File(path).parent;
-  while (true) {
-    yield current.path;
-    final parent = current.parent;
-    if (parent.path == current.path) return;
-    current = parent;
-  }
-}
-
-String _missingFontsMessage(String looked) =>
-    'Шрифты Material не найдены: $looked\n'
-    'Без них flutter test рисует каждую букву прямоугольником — эталоны\n'
-    'снялись бы зелёными и бессмысленными одновременно, поэтому падаем.\n'
-    'Почини: flutter precache  (или проверь FLUTTER_ROOT)';
 
 /// Компаратор, который сам эталон не пишет никогда.
 ///

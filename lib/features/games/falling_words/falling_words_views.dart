@@ -11,6 +11,7 @@
 /// мужчин).
 library;
 
+import 'package:arcadelingo/app/theme.dart';
 import 'package:flutter/material.dart';
 
 import 'falling_words_juice.dart';
@@ -52,9 +53,20 @@ const double comboGradientEdge = 0.22;
 /// Заливкой поле читалось панелью: жёсткая граница сверху о полосу HUD и
 /// снизу о ряд кнопок — это увидели голдены 0.9, числами оно не ловилось.
 /// У обоих краёв градиент равен `surface`, поэтому стыков не видно вовсе.
-LinearGradient comboGradient(ColorScheme scheme, int combo) {
-  throw UnimplementedError();
-}
+LinearGradient comboGradient(ColorScheme scheme, int combo) =>
+    comboGradientFor(scheme, comboTint(scheme, combo));
+
+/// Тот же градиент, но от готового горячего цвета.
+///
+/// Нужен экрану: тон переливается, и в кадре стоит не цвет серии, а то, что
+/// анимация досчитала между двумя сериями.
+LinearGradient comboGradientFor(ColorScheme scheme, Color hot) =>
+    LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [scheme.surface, hot, hot, scheme.surface],
+      stops: [0, comboGradientEdge, 1 - comboGradientEdge, 1],
+    );
 
 /// Ключи частей экрана. Тест ищет по ним то, что не опознать по тексту:
 /// падающее слово (текст у него меняется каждый раунд) и счётчики HUD.
@@ -181,12 +193,16 @@ class GameHud extends StatelessWidget {
           Text(
             '$current/$total',
             key: FallingWordsKeys.progress,
-            style: textTheme.titleMedium,
+            style: textTheme.titleMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
           Text(
             '×$multiplier',
             key: FallingWordsKeys.combo,
-            style: textTheme.titleMedium,
+            style: textTheme.titleMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
           // Transform, а не изменение кегля: раздувание размером сдвинуло бы
           // соседние счётчики, и HUD дёргался бы на каждом верном ответе.
@@ -195,9 +211,7 @@ class GameHud extends StatelessWidget {
             child: Text(
               '$score',
               key: FallingWordsKeys.score,
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: withWeight(textTheme.titleLarge!, FontWeight.bold),
             ),
           ),
         ],
@@ -232,10 +246,10 @@ class FallingField extends StatelessWidget {
       key: FallingWordsKeys.word,
       textAlign: TextAlign.center,
       maxLines: 2,
-      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-        fontWeight: FontWeight.bold,
-        color: scheme.onSurface,
-      ),
+      style: withWeight(
+        Theme.of(context).textTheme.displaySmall!,
+        FontWeight.bold,
+      ).copyWith(color: scheme.onSurface),
     );
     if (fadeProgress > 0) {
       word = Opacity(
@@ -271,9 +285,10 @@ class RevealPair extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final style = Theme.of(
-      context,
-    ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold);
+    final style = withWeight(
+      Theme.of(context).textTheme.displaySmall!,
+      FontWeight.bold,
+    );
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -296,7 +311,7 @@ class RevealPair extends StatelessWidget {
                     key: FallingWordsKeys.word,
                     textAlign: TextAlign.center,
                     maxLines: 2,
-                    style: style?.copyWith(color: scheme.error),
+                    style: style.copyWith(color: scheme.error),
                   ),
                 ),
               ],
@@ -312,7 +327,7 @@ class RevealPair extends StatelessWidget {
               key: FallingWordsKeys.revealAnswer,
               textAlign: TextAlign.center,
               maxLines: 2,
-              style: style?.copyWith(color: scheme.primary),
+              style: style.copyWith(color: scheme.primary),
             ),
           ],
         ),
@@ -360,7 +375,7 @@ class AnswerButton extends StatelessWidget {
         Icons.close,
       ),
     };
-    final radius = BorderRadius.circular(12);
+    final radius = BorderRadius.circular(16);
     return Opacity(
       opacity: state == AnswerState.dimmed ? 0.5 : 1,
       child: Material(
@@ -462,10 +477,10 @@ class ScorePop extends StatelessWidget {
               Text(
                 '+$points',
                 key: FallingWordsKeys.scorePop,
-                style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: scheme.primary,
-                ),
+                style: withWeight(
+                  textTheme.headlineSmall!,
+                  FontWeight.bold,
+                ).copyWith(color: scheme.primary),
               ),
               if (nearMiss) ...[
                 const SizedBox(width: 6),
@@ -474,10 +489,10 @@ class ScorePop extends StatelessWidget {
                   // метка, разошедшаяся с арифметикой, — обман в чистом виде.
                   '×${nearMissBonusNumerator / nearMissBonusDenominator}',
                   key: FallingWordsKeys.nearMissBadge,
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: scheme.tertiary,
-                  ),
+                  style: withWeight(
+                    textTheme.titleMedium!,
+                    FontWeight.bold,
+                  ).copyWith(color: scheme.tertiary),
                 ),
               ],
             ],

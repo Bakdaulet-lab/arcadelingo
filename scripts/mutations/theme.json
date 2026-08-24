@@ -1,0 +1,50 @@
+[
+  {
+    "name": "растяжка схлопнута: жёсткая граница вернулась",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "const double comboGradientEdge = 0.22;",
+    "new": "const double comboGradientEdge = 0;"
+  },
+  {
+    "name": "градиента нет: тон залит до самых краёв",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "  colors: [scheme.surface, hot, hot, scheme.surface],",
+    "new": "  colors: [hot, hot, hot, hot],"
+  },
+  {
+    "name": "градиент лёг горизонтально и спорит с падением",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "      begin: Alignment.topCenter,\n      end: Alignment.bottomCenter,",
+    "new": "      begin: Alignment.centerLeft,\n      end: Alignment.centerRight,"
+  },
+  {
+    "name": "края разъехались: стык с HUD и с кнопками разный",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "  stops: [0, comboGradientEdge, 1 - comboGradientEdge, 1],",
+    "new": "  stops: [0, comboGradientEdge, 1 - comboGradientEdge / 2, 1],"
+  },
+  {
+    "name": "текст поля потерял контраст к фону",
+    "file": "lib/app/theme.dart",
+    "old": "  onSurface: const Color(0xFFF2ECFF),",
+    "new": "  onSurface: const Color(0xFF3A3346),"
+  },
+  {
+    "name": "«+N» потерял контраст к разогретому полю",
+    "file": "lib/app/theme.dart",
+    "old": "  primary: const Color(0xFF3DFFC0),",
+    "new": "  primary: const Color(0xFF12604B),"
+  },
+  {
+    "name": "тон стал невидим: смешение почти нулевое",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "const double comboTintMax = 0.35;",
+    "new": "const double comboTintMax = 0.05;"
+  },
+  {
+    "name": "тон задавил текст: смешение до потолка",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "const double comboTintMax = 0.35;",
+    "new": "const double comboTintMax = 0.95;"
+  }
+]
