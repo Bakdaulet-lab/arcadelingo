@@ -1,0 +1,68 @@
+[
+  {
+    "name": "тон серии почти незаметен",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "const double comboTintMax = 0.35;",
+    "new": "const double comboTintMax = 0.10;"
+  },
+  {
+    "name": "тряски нет: амплитуда ноль",
+    "file": "lib/features/games/falling_words/falling_words_juice.dart",
+    "old": "const double shakeAmplitude = 8;",
+    "new": "const double shakeAmplitude = 0;"
+  },
+  {
+    "name": "метка ×1.5 у прилетевших очков пропала",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "                      progress: _reveal.value,\n                      nearMiss: _run.nearMiss,",
+    "new": "                      progress: _reveal.value,\n                      nearMiss: false,"
+  },
+  {
+    "name": "debug-баннер вернулся в кадр",
+    "file": "test/support/golden_harness.dart",
+    "old": "      debugShowCheckedModeBanner: false,\n",
+    "new": ""
+  },
+  {
+    "name": "MaterialIcons не загружены: сердца стали прямоугольниками",
+    "file": "test/golden/flutter_test_config.dart",
+    "old": "  await _loadBundledFonts();\n",
+    "new": ""
+  },
+  {
+    "name": "зерно перемешивания уплыло: кнопки в другом порядке",
+    "file": "test/support/golden_harness.dart",
+    "old": "        seed: 1,",
+    "new": "        seed: 2,"
+  },
+  {
+    "name": "тема потеряла гарнитуру: текст ушёл в запасной шрифт",
+    "file": "lib/app/theme.dart",
+    "old": "    fontFamily: wordarcadeFont,\n",
+    "new": ""
+  },
+  {
+    "name": "ось веса не проставляется: весь текст стал Light 300",
+    "file": "lib/app/theme.dart",
+    "old": "  fontVariations: [FontVariation('wght', weight.value.toDouble())],\n",
+    "new": ""
+  },
+  {
+    "name": "палитра вернулась к пастели fromSeed",
+    "file": "lib/app/theme.dart",
+    "old": "  surface: const Color(0xFF0D0A12),\n",
+    "new": ""
+  },
+  {
+    "name": "тон поля залит без градиента",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "  colors: [scheme.surface, hot, hot, scheme.surface],",
+    "new": "  colors: [hot, hot, hot, hot],"
+  },
+  {
+    "name": "множитель перестал загораться с полем",
+    "file": "lib/features/games/falling_words/falling_words_views.dart",
+    "old": "                  comboIsHot(combo) ? scheme.primary : scheme.onSurfaceVariant,",
+    "new": "                  scheme.onSurfaceVariant,"
+  }
+]

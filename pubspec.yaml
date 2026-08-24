@@ -63,6 +63,23 @@ flutter:
     # Лицензионное условие CEFR-J: цитата обязана быть в продукте, а не только
     # в репозитории. Сторожится test/assets/attribution_test.dart.
     - assets/ATTRIBUTION.md
+    # Текст лицензии едет в бандл намеренно: OFL требует распространять её
+    # вместе со шрифтом, а шрифт вшит в приложение. main.dart отдаёт её в
+    # LicenseRegistry, чтобы она была видна в showLicensePage.
+    - assets/fonts/OFL.txt
+
+  fonts:
+    # Один вариативный файл вместо трёх статических: Google Fonts статические
+    # инстансы Rubik больше не отдаёт. Ось wght идёт от 300 до 900, но по
+    # умолчанию в файле стоит 300 — если движок ось не применит, весь текст
+    # выйдет тонким. Это сторожит канарейка в test/golden/.
+    #
+    # Файл переименован из «Rubik[wght].ttf»: FontManifest.json хранит путь
+    # percent-encoded, а ключ ассета остаётся сырым, и загрузка по манифесту
+    # падает на «Unable to load asset». Сам шрифт не изменён.
+    - family: Rubik
+      fonts:
+        - asset: assets/fonts/Rubik-Variable.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

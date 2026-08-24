@@ -20,6 +20,7 @@
 
 import 'dart:math' as math;
 
+import 'package:arcadelingo/app/theme.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_views.dart';
@@ -28,24 +29,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_review_session.dart';
-
-/// id слова по номеру: w01, w02, … Он же текст падающего слова.
-String _id(int i) => 'w${i.toString().padLeft(2, '0')}';
-
-/// Верный вариант слова [i].
-String _translation(int i) => 'перевод ${_id(i)}';
-
-/// Обманка номер [d] у слова [i].
-String _distractor(int i, int d) => 'обманка $d к ${_id(i)}';
-
-/// Слово с [distractors] обманками.
-ReviewItem _item(int i, {int distractors = 3}) => ReviewItem(
-  word: Word(id: _id(i), text: _id(i), translation: _translation(i)),
-  distractors: [for (var d = 1; d <= distractors; d++) _distractor(i, d)],
-);
-
-/// Сид из [n] слов по три обманки.
-List<ReviewItem> _items(int n) => [for (var i = 1; i <= n; i++) _item(i)];
+import '../../../support/review_items.dart';
 
 /// Игра на телефонном экране; возвращает сессию, по которой сверяют доклады.
 ///
@@ -65,13 +49,16 @@ Future<FakeReviewSession> _pumpGame(
   VoidCallback? onPlayAgain,
   VoidCallback? onExit,
 }) async {
-  final session = FakeReviewSession(items ?? _items(3), total: total);
+  final session = FakeReviewSession(items ?? wordItems(3), total: total);
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
   addTearDown(tester.platformDispatcher.clearAllTestValues);
   await tester.pumpWidget(
     MaterialApp(
+      // Настоящая тема приложения, а не дефолтная синяя: иначе
+      // textContrastGuideline ниже проверяет палитру, которой никто не видит.
+      theme: wordarcadeTheme(),
       home: FallingWordsGame(
         session: session,
         seed: 1,
@@ -113,14 +100,14 @@ Future<void> _lifecycle(WidgetTester tester, AppLifecycleState state) async {
 /// Верный ответ на слово [i] через секунду и промотанная подсветка.
 Future<void> _answerCorrectly(WidgetTester tester, int i) async {
   await tester.pump(const Duration(seconds: 1));
-  await _tap(tester, _translation(i));
+  await _tap(tester, wordTranslation(i));
   await tester.pump(const Duration(milliseconds: 300));
 }
 
 /// Промах по слову [i] через секунду и промотанная подсветка.
 Future<void> _answerWrongly(WidgetTester tester, int i) async {
   await tester.pump(const Duration(seconds: 1));
-  await _tap(tester, _distractor(i, 1));
+  await _tap(tester, wordDistractor(i, 1));
   await tester.pump(const Duration(milliseconds: 800));
 }
 
@@ -150,16 +137,27 @@ int _lives(WidgetTester tester) =>
 String _hud(WidgetTester tester, Key key) =>
     tester.widget<Text>(find.byKey(key)).data!;
 
+/// Цвет текста элемента HUD.
+Color? _hudColor(WidgetTester tester, Key key) =>
+    tester.widget<Text>(find.byKey(key)).style?.color;
+
 /// Палитра, по которой собран экран. Берётся с дерева, а не задаётся
 /// литералом: тема теста и тема приложения — разные, и тест должен
 /// проверять правило, а не конкретный оттенок.
 ColorScheme _scheme(WidgetTester tester) =>
     Theme.of(tester.element(find.byType(FallingWordsGame))).colorScheme;
 
-/// Текущий цвет поля падения. Именно текущий, а не тот, к которому оно
-/// едет: у [ColoredBox] цвет — это то, что нарисовано в этом кадре.
-Color _fieldColor(WidgetTester tester) =>
-    tester.widget<ColoredBox>(find.byKey(FallingWordsKeys.playfield)).color;
+/// Градиент поля в этом кадре — именно текущий, а не тот, к которому поле
+/// едет.
+LinearGradient _fieldGradient(WidgetTester tester) {
+  final box = tester.widget<DecoratedBox>(
+    find.byKey(FallingWordsKeys.playfield),
+  );
+  return (box.decoration as BoxDecoration).gradient! as LinearGradient;
+}
+
+/// Горячий цвет поля — тот, что в середине градиента.
+Color _fieldColor(WidgetTester tester) => _fieldGradient(tester).colors[1];
 
 /// Ширина счёта на экране, а не в раскладке.
 ///
@@ -203,7 +201,7 @@ void main() {
       final session = await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 2));
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
 
       expect(session.reports, hasLength(1));
       final outcome = session.reports.single.outcome;
@@ -236,7 +234,7 @@ void main() {
     testWidgets('жизни кончились на пятом слове → итоги, лишних слов нет', (
       tester,
     ) async {
-      final session = await _pumpGame(tester, items: _items(8));
+      final session = await _pumpGame(tester, items: wordItems(8));
 
       await _answerCorrectly(tester, 1);
       await _answerCorrectly(tester, 2);
@@ -271,7 +269,7 @@ void main() {
     testWidgets('слов меньше цели → итоги по фактическому числу', (
       tester,
     ) async {
-      final session = await _pumpGame(tester, items: _items(2), total: 15);
+      final session = await _pumpGame(tester, items: wordItems(2), total: 15);
 
       await _answerCorrectly(tester, 1);
       await _answerCorrectly(tester, 2);
@@ -345,7 +343,7 @@ void main() {
         reason: 'и продолжается, а не стоит',
       );
 
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
 
       expect(
         session.reports.single.outcome.responseTime,
@@ -373,7 +371,7 @@ void main() {
       );
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
 
       expect(
         session.reports.single.outcome.responseTime,
@@ -410,7 +408,7 @@ void main() {
       final session = await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _distractor(1, 1));
+      await _tap(tester, wordDistractor(1, 1));
       await tester.pump(const Duration(milliseconds: 300));
 
       await _lifecycle(tester, AppLifecycleState.inactive);
@@ -419,14 +417,14 @@ void main() {
 
       await tester.pump(const Duration(milliseconds: 499));
       expect(
-        find.text(_id(2)),
+        find.text(wordId(2)),
         findsNothing,
         reason: 'подсветке остался 1 мс, слово ещё не сменилось',
       );
 
       await tester.pump(const Duration(milliseconds: 1));
 
-      expect(find.text(_id(2)), findsOneWidget);
+      expect(find.text(wordId(2)), findsOneWidget);
       expect(session.reports, hasLength(1));
     });
 
@@ -437,7 +435,7 @@ void main() {
 
       await tester.pump(const Duration(seconds: 2));
       await _lifecycle(tester, AppLifecycleState.inactive);
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
       await tester.pump(const Duration(seconds: 6));
 
       expect(
@@ -448,7 +446,7 @@ void main() {
             'но ответ не считается',
       );
       expect(
-        find.text(_id(1)),
+        find.text(wordId(1)),
         findsOneWidget,
         reason: 'игра не уехала на следующее слово мимо паузы',
       );
@@ -469,7 +467,7 @@ void main() {
         reason: 'при ускорении в 20 раз слово упало бы за 0.3 с',
       );
 
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
 
       expect(
         session.reports.single.outcome.responseTime,
@@ -483,23 +481,23 @@ void main() {
       final session = await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _distractor(1, 1));
+      await _tap(tester, wordDistractor(1, 1));
       await tester.pump(const Duration(milliseconds: 400));
       // По погасшей кнопке, а не по переводу: перевод в фазе подсветки есть
       // и в паре, и на кнопке, и find.text нашёл бы два виджета.
-      await _tap(tester, _distractor(1, 2), expectHit: false);
+      await _tap(tester, wordDistractor(1, 2), expectHit: false);
 
       expect(session.reports, hasLength(1), reason: 'SPEC, кейс 3');
 
       await tester.pump(const Duration(milliseconds: 399));
       expect(
-        find.text(_id(2)),
+        find.text(wordId(2)),
         findsNothing,
         reason: 'до конца подсветки 1 мс',
       );
 
       await tester.pump(const Duration(milliseconds: 1));
-      expect(find.text(_id(2)), findsOneWidget, reason: 'ровно 800 мс');
+      expect(find.text(wordId(2)), findsOneWidget, reason: 'ровно 800 мс');
     });
 
     testWidgets('двойной быстрый тап по одной кнопке → засчитан один', (
@@ -508,8 +506,8 @@ void main() {
       final session = await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 2));
-      await tester.tap(find.text(_translation(1)));
-      await tester.tap(find.text(_translation(1)));
+      await tester.tap(find.text(wordTranslation(1)));
+      await tester.tap(find.text(wordTranslation(1)));
       await tester.pump();
 
       expect(
@@ -526,8 +524,8 @@ void main() {
       final session = await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 2));
-      await tester.tap(find.text(_translation(1)));
-      await tester.tap(find.text(_distractor(1, 1)));
+      await tester.tap(find.text(wordTranslation(1)));
+      await tester.tap(find.text(wordDistractor(1, 1)));
       await tester.pump();
 
       expect(session.reports, hasLength(1), reason: 'SPEC, кейс 5');
@@ -560,14 +558,14 @@ void main() {
       final session = await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
       await tester.pumpWidget(const SizedBox());
 
       expect(session.reports, hasLength(1), reason: 'ответ уже доложен');
     });
 
     testWidgets('выход с экрана итогов → лишнего доклада нет', (tester) async {
-      final session = await _pumpGame(tester, items: _items(1));
+      final session = await _pumpGame(tester, items: wordItems(1));
 
       await _answerCorrectly(tester, 1);
       expect(find.byKey(FallingWordsKeys.summary), findsOneWidget);
@@ -580,7 +578,7 @@ void main() {
 
   group('Экран', () {
     testWidgets('HUD показывает жизни, счёт, серию и прогресс', (tester) async {
-      await _pumpGame(tester, items: _items(5), total: 15);
+      await _pumpGame(tester, items: wordItems(5), total: 15);
 
       expect(_lives(tester), 3);
       expect(
@@ -631,7 +629,7 @@ void main() {
       await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _distractor(1, 1));
+      await _tap(tester, wordDistractor(1, 1));
 
       expect(
         find.byKey(FallingWordsKeys.revealAnswer),
@@ -640,19 +638,19 @@ void main() {
       );
       expect(
         tester.widget<Text>(find.byKey(FallingWordsKeys.revealAnswer)).data,
-        _translation(1),
+        wordTranslation(1),
       );
       expect(
-        _button(tester, _distractor(1, 1)).state,
+        _button(tester, wordDistractor(1, 1)).state,
         AnswerState.wrong,
         reason: '«что я нажал» — часть ответа, эта кнопка остаётся помеченной',
       );
       expect(
-        _button(tester, _translation(1)).state,
+        _button(tester, wordTranslation(1)).state,
         AnswerState.dimmed,
         reason: 'верный вариант теперь в паре; кнопка не тянет взгляд вниз',
       );
-      expect(_button(tester, _distractor(1, 2)).state, AnswerState.dimmed);
+      expect(_button(tester, wordDistractor(1, 2)).state, AnswerState.dimmed);
       expect(
         find.byIcon(Icons.close),
         findsNWidgets(2),
@@ -667,10 +665,10 @@ void main() {
 
       expect(
         tester.widget<Text>(find.byKey(FallingWordsKeys.revealAnswer)).data,
-        _translation(1),
+        wordTranslation(1),
       );
-      expect(_button(tester, _translation(1)).state, AnswerState.dimmed);
-      expect(_button(tester, _distractor(1, 1)).state, AnswerState.dimmed);
+      expect(_button(tester, wordTranslation(1)).state, AnswerState.dimmed);
+      expect(_button(tester, wordDistractor(1, 1)).state, AnswerState.dimmed);
       expect(
         find.byIcon(Icons.close),
         findsOneWidget,
@@ -682,7 +680,7 @@ void main() {
       await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _distractor(1, 1));
+      await _tap(tester, wordDistractor(1, 1));
 
       expect(_pairSpan(tester), lessThan(_screenHeight(tester) / 3));
     });
@@ -700,28 +698,28 @@ void main() {
     });
 
     testWidgets('одна обманка → две кнопки, игра не падает', (tester) async {
-      await _pumpGame(tester, items: [_item(1, distractors: 1)]);
+      await _pumpGame(tester, items: [wordItem(1, distractors: 1)]);
 
       expect(find.byType(AnswerButton), findsNWidgets(2));
-      expect(find.text(_translation(1)), findsOneWidget);
-      expect(find.text(_distractor(1, 1)), findsOneWidget);
+      expect(find.text(wordTranslation(1)), findsOneWidget);
+      expect(find.text(wordDistractor(1, 1)), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
     testWidgets('обманок нет → одна кнопка, игра не падает', (tester) async {
-      await _pumpGame(tester, items: [_item(1, distractors: 0)]);
+      await _pumpGame(tester, items: [wordItem(1, distractors: 0)]);
 
       expect(
         find.byType(AnswerButton),
         findsOneWidget,
         reason: 'вторую кнопку игре взять неоткуда — SPEC, кейс 8',
       );
-      expect(find.text(_translation(1)), findsOneWidget);
+      expect(find.text(wordTranslation(1)), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
     testWidgets('итоги: счёт, лучшая серия, число верных', (tester) async {
-      final session = await _pumpGame(tester, items: _items(4));
+      final session = await _pumpGame(tester, items: wordItems(4));
 
       await _answerCorrectly(tester, 1);
       await _answerCorrectly(tester, 2);
@@ -744,7 +742,7 @@ void main() {
     testWidgets('очередь кончилась → «Раунд окончен» и обе кнопки', (
       tester,
     ) async {
-      await _pumpGame(tester, items: _items(1));
+      await _pumpGame(tester, items: wordItems(1));
 
       await _answerCorrectly(tester, 1);
 
@@ -760,7 +758,7 @@ void main() {
     testWidgets('жизни кончились → заголовок про жизни, а не «Раунд окончен»', (
       tester,
     ) async {
-      await _pumpGame(tester, items: _items(8));
+      await _pumpGame(tester, items: wordItems(8));
 
       await _answerWrongly(tester, 1);
       await _answerWrongly(tester, 2);
@@ -782,7 +780,7 @@ void main() {
       var reportsWhenAsked = -1;
       session = await _pumpGame(
         tester,
-        items: _items(1),
+        items: wordItems(1),
         summaryFooter: () {
           calls++;
           reportsWhenAsked = session.reports.length;
@@ -818,7 +816,7 @@ void main() {
     });
 
     testWidgets('строки хоста нет → итоги без неё', (tester) async {
-      await _pumpGame(tester, items: _items(1));
+      await _pumpGame(tester, items: wordItems(1));
 
       await _answerCorrectly(tester, 1);
 
@@ -831,7 +829,7 @@ void main() {
       var exit = 0;
       await _pumpGame(
         tester,
-        items: _items(1),
+        items: wordItems(1),
         onPlayAgain: () => playAgain++,
         onExit: () => exit++,
       );
@@ -859,7 +857,7 @@ void main() {
     ) async {
       await _pumpGame(
         tester,
-        items: _items(1),
+        items: wordItems(1),
         summaryFooter: () => 'Ещё есть слова — сыграй ещё раунд',
       );
       await _answerCorrectly(tester, 1);
@@ -915,12 +913,12 @@ void main() {
     ) async {
       await _pumpGame(tester);
       await tester.pump(const Duration(seconds: 1));
-      final normal = tester.getSize(find.text(_translation(1)));
+      final normal = tester.getSize(find.text(wordTranslation(1)));
       final normalHeart = tester.getSize(find.byIcon(Icons.favorite).first);
 
       tester.platformDispatcher.textScaleFactorTestValue = 2;
       await tester.pump();
-      final doubled = tester.getSize(find.text(_translation(1)));
+      final doubled = tester.getSize(find.text(wordTranslation(1)));
 
       expect(
         doubled.height,
@@ -939,14 +937,14 @@ void main() {
         isNull,
         reason: 'ничего не переполнилось: overflow — это FlutterError',
       );
-      expect(find.text(_translation(1)).hitTestable(), findsOneWidget);
-      expect(find.text(_distractor(1, 3)).hitTestable(), findsOneWidget);
+      expect(find.text(wordTranslation(1)).hitTestable(), findsOneWidget);
+      expect(find.text(wordDistractor(1, 3)).hitTestable(), findsOneWidget);
 
       tester.platformDispatcher.textScaleFactorTestValue = 3;
       await tester.pump();
 
       expect(
-        tester.getSize(find.text(_translation(1))),
+        tester.getSize(find.text(wordTranslation(1))),
         doubled,
         reason: 'масштаб зажат на 2×: при 3× четыре кнопки уже не влезают',
       );
@@ -969,7 +967,7 @@ void main() {
       await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
 
       expect(haptics, ['HapticFeedbackType.lightImpact']);
     });
@@ -979,7 +977,7 @@ void main() {
       await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _distractor(1, 1));
+      await _tap(tester, wordDistractor(1, 1));
 
       expect(haptics, ['HapticFeedbackType.heavyImpact']);
     });
@@ -998,7 +996,7 @@ void main() {
 
     testWidgets('пятый верный подряд — средний отклик', (tester) async {
       final haptics = _captureHaptics(tester);
-      await _pumpGame(tester, items: _items(6));
+      await _pumpGame(tester, items: wordItems(6));
 
       for (var i = 1; i <= 5; i++) {
         await _answerCorrectly(tester, i);
@@ -1020,7 +1018,7 @@ void main() {
       await _pumpGame(tester);
 
       await tester.pump(const Duration(milliseconds: 5500));
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
 
       expect(
         haptics,
@@ -1036,7 +1034,7 @@ void main() {
 
       await tester.pump(const Duration(seconds: 2));
       await _lifecycle(tester, AppLifecycleState.inactive);
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
 
       expect(haptics, isEmpty, reason: 'ответ не принят — отзываться нечему');
     });
@@ -1048,11 +1046,11 @@ void main() {
       await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _distractor(1, 1));
+      await _tap(tester, wordDistractor(1, 1));
       expect(haptics, hasLength(1));
 
       await tester.pump(const Duration(milliseconds: 400));
-      await _tap(tester, _distractor(1, 2), expectHit: false);
+      await _tap(tester, wordDistractor(1, 2), expectHit: false);
 
       expect(haptics, hasLength(1));
     });
@@ -1078,7 +1076,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       final rest = _answersX(tester);
 
-      await _tap(tester, _distractor(1, 1));
+      await _tap(tester, wordDistractor(1, 1));
       await tester.pump(const Duration(milliseconds: 50));
       final first = _answersX(tester) - rest;
       await tester.pump(const Duration(milliseconds: 50));
@@ -1098,7 +1096,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       final rest = tester.getCenter(find.byType(GameHud)).dx;
 
-      await _tap(tester, _distractor(1, 1));
+      await _tap(tester, wordDistractor(1, 1));
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(
@@ -1112,7 +1110,7 @@ void main() {
     ) async {
       await _pumpGame(tester);
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _distractor(1, 1));
+      await _tap(tester, wordDistractor(1, 1));
 
       final seen = <Offset>{};
       for (var frame = 0; frame < 6; frame++) {
@@ -1132,7 +1130,7 @@ void main() {
     testWidgets('трясёт только по горизонтали', (tester) async {
       await _pumpGame(tester);
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _distractor(1, 1));
+      await _tap(tester, wordDistractor(1, 1));
 
       final heights = <double>{};
       for (var frame = 0; frame < 5; frame++) {
@@ -1154,7 +1152,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       final rest = _answersX(tester);
 
-      await _tap(tester, _distractor(1, 1));
+      await _tap(tester, wordDistractor(1, 1));
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(_answersX(tester), closeTo(rest, 0.01));
@@ -1170,7 +1168,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       final rest = _answersX(tester);
 
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(_answersX(tester), rest);
@@ -1195,7 +1193,7 @@ void main() {
     });
 
     testWidgets('после трёх верных подряд поле подкрашено', (tester) async {
-      await _pumpGame(tester, items: _items(6));
+      await _pumpGame(tester, items: wordItems(6));
       final clean = _scheme(tester).surface;
 
       await _answerCorrectly(tester, 1);
@@ -1207,7 +1205,7 @@ void main() {
     });
 
     testWidgets('промах гасит тон сразу, не переливом', (tester) async {
-      await _pumpGame(tester, items: _items(8));
+      await _pumpGame(tester, items: wordItems(8));
       final clean = _scheme(tester).surface;
 
       await _answerCorrectly(tester, 1);
@@ -1217,7 +1215,7 @@ void main() {
       expect(_fieldColor(tester), isNot(clean));
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _distractor(4, 1));
+      await _tap(tester, wordDistractor(4, 1));
 
       expect(
         _fieldColor(tester),
@@ -1230,7 +1228,7 @@ void main() {
     });
 
     testWidgets('на итогах подкрашенного поля нет вовсе', (tester) async {
-      await _pumpGame(tester, items: _items(3));
+      await _pumpGame(tester, items: wordItems(3));
 
       await _answerCorrectly(tester, 1);
       await _answerCorrectly(tester, 2);
@@ -1240,8 +1238,71 @@ void main() {
       expect(find.byKey(FallingWordsKeys.playfield), findsNothing);
     });
 
+    testWidgets('множитель загорается вместе с полем, на той же серии', (
+      tester,
+    ) async {
+      await _pumpGame(tester, items: wordItems(6), total: 15);
+      final scheme = _scheme(tester);
+
+      await _answerCorrectly(tester, 1);
+      await _answerCorrectly(tester, 2);
+
+      expect(
+        _hudColor(tester, FallingWordsKeys.combo),
+        scheme.onSurfaceVariant,
+        reason: 'серия 2 — поле ещё чистое, и множителю гореть не с чего',
+      );
+
+      await _answerCorrectly(tester, 3);
+
+      expect(
+        _hudColor(tester, FallingWordsKeys.combo),
+        scheme.primary,
+        reason: 'серия 3 — поле загорелось, множитель обязан загореться с ним',
+      );
+    });
+
+    testWidgets('промах гасит и множитель тоже', (tester) async {
+      await _pumpGame(tester, items: wordItems(8), total: 15);
+      final scheme = _scheme(tester);
+
+      await _answerCorrectly(tester, 1);
+      await _answerCorrectly(tester, 2);
+      await _answerCorrectly(tester, 3);
+      expect(_hudColor(tester, FallingWordsKeys.combo), scheme.primary);
+
+      await _answerWrongly(tester, 4);
+
+      expect(
+        _hudColor(tester, FallingWordsKeys.combo),
+        scheme.onSurfaceVariant,
+        reason: 'серия оборвана — гаснет и поле, и множитель',
+      );
+    });
+
+    testWidgets('у поля нет жёсткой границы: края сходят в фон', (
+      tester,
+    ) async {
+      await _pumpGame(tester, items: wordItems(12), total: 15);
+      final clean = _scheme(tester).surface;
+
+      for (var i = 1; i <= 8; i++) {
+        await _answerCorrectly(tester, i);
+      }
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final gradient = _fieldGradient(tester);
+      expect(gradient.colors.first, clean, reason: 'стык с HUD');
+      expect(gradient.colors.last, clean, reason: 'стык с кнопками');
+      expect(
+        gradient.colors[1],
+        isNot(clean),
+        reason: 'а середина при этом разогрета — иначе тона просто нет',
+      );
+    });
+
     testWidgets('контраст держится и на самой густой серии', (tester) async {
-      await _pumpGame(tester, items: _items(12));
+      await _pumpGame(tester, items: wordItems(12));
 
       for (var i = 1; i <= 8; i++) {
         await _answerCorrectly(tester, i);
@@ -1259,7 +1320,7 @@ void main() {
       await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(
@@ -1283,7 +1344,7 @@ void main() {
       await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.byKey(FallingWordsKeys.scorePop), findsNothing);
@@ -1293,7 +1354,7 @@ void main() {
       await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _distractor(1, 1));
+      await _tap(tester, wordDistractor(1, 1));
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.byKey(FallingWordsKeys.scorePop), findsNothing);
@@ -1305,7 +1366,7 @@ void main() {
       await _pumpGame(tester);
 
       await tester.pump(const Duration(milliseconds: 5500));
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(
@@ -1319,18 +1380,18 @@ void main() {
       await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.byKey(FallingWordsKeys.nearMissBadge), findsNothing);
     });
 
     testWidgets('прирост — это прирост, а не весь счёт', (tester) async {
-      await _pumpGame(tester, items: _items(3));
+      await _pumpGame(tester, items: wordItems(3));
 
       await _answerCorrectly(tester, 1);
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _translation(2));
+      await _tap(tester, wordTranslation(2));
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(
@@ -1349,7 +1410,7 @@ void main() {
 
       await tester.pump(const Duration(seconds: 4));
       final word = tester.getCenter(find.byKey(FallingWordsKeys.word)).dy;
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
       await tester.pump(const Duration(milliseconds: 1));
 
       expect(
@@ -1367,7 +1428,7 @@ void main() {
       await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
       // Три четверти трёхсот миллисекунд — пик пульса.
       await tester.pump(const Duration(milliseconds: 225));
       final peak = _scoreWidth(tester);
@@ -1389,7 +1450,7 @@ void main() {
       await _pumpGame(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
 
       expect(
         _hud(tester, FallingWordsKeys.score),
@@ -1413,16 +1474,16 @@ void main() {
       await pumpCalm(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _distractor(1, 1));
+      await _tap(tester, wordDistractor(1, 1));
       await tester.pump(const Duration(milliseconds: 799));
       expect(
-        find.text(_id(2)),
+        find.text(wordId(2)),
         findsNothing,
         reason: 'время чтения — тоже геймплей, а не украшение',
       );
 
       await tester.pump(const Duration(milliseconds: 1));
-      expect(find.text(_id(2)), findsOneWidget);
+      expect(find.text(wordId(2)), findsOneWidget);
     });
 
     testWidgets('тряски нет', (tester) async {
@@ -1430,7 +1491,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       final rest = _answersX(tester);
 
-      await _tap(tester, _distractor(1, 1));
+      await _tap(tester, wordDistractor(1, 1));
       for (var frame = 0; frame < 3; frame++) {
         await tester.pump(const Duration(milliseconds: 50));
         expect(_answersX(tester), rest);
@@ -1441,7 +1502,7 @@ void main() {
       await pumpCalm(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.byKey(FallingWordsKeys.scorePop), findsNothing);
@@ -1455,7 +1516,7 @@ void main() {
     testWidgets('тон серии остаётся: это состояние, а не движение', (
       tester,
     ) async {
-      await pumpCalm(tester, items: _items(6));
+      await pumpCalm(tester, items: wordItems(6));
       final clean = _scheme(tester).surface;
 
       await _answerCorrectly(tester, 1);
@@ -1473,7 +1534,7 @@ void main() {
       await pumpCalm(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
       await tester.pump(const Duration(milliseconds: 225));
       final atPeak = _scoreWidth(tester);
 
@@ -1487,7 +1548,7 @@ void main() {
       await pumpCalm(tester);
 
       await tester.pump(const Duration(seconds: 1));
-      await _tap(tester, _translation(1));
+      await _tap(tester, wordTranslation(1));
 
       expect(
         haptics,

@@ -12,6 +12,7 @@
 
 import 'dart:math';
 
+import 'package:arcadelingo/app/theme.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_juice.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_views.dart';
 import 'package:flutter/material.dart';
@@ -220,7 +221,10 @@ void main() {
   });
 
   group('Тон фона от серии', () {
-    final scheme = ColorScheme.fromSeed(seedColor: Colors.deepPurple);
+    // Схема приложения, а не своя копия. С копией закон о контрасте сторожил
+    // бы палитру, которой никто не видит: сменили тему — тесты зелёные,
+    // экран нечитаемый.
+    final scheme = wordarcadeTheme().colorScheme;
 
     test('до серии 3 фон чистый', () {
       expect(comboTint(scheme, 0), scheme.surface);
@@ -273,9 +277,105 @@ void main() {
         _distance(scheme.surface, comboTint(scheme, 8)),
         greaterThan(0.15),
         reason:
-            'нижняя граница потолка: смешение к primaryContainer давало 0.04 '
-            'и не читалось как награда вовсе — SPEC, «Джус»',
+            'нижняя граница потолка: смешение, которого не видно, — не '
+            'награда, а просто трата — SPEC, «Джус»',
       );
+    });
+
+    test('на разогретом поле читается и то, что туда прилетает', () {
+      final hot = comboTint(scheme, 8);
+
+      expect(
+        _contrast(scheme.primary, hot),
+        greaterThanOrEqualTo(4.5),
+        reason: '«+N» летит именно на разогретое поле, а не на чистое',
+      );
+      expect(
+        _contrast(scheme.tertiary, hot),
+        greaterThanOrEqualTo(4.5),
+        reason: 'метка множителя летит с ним рядом',
+      );
+    });
+  });
+
+  group('Порог разогрева — один на поле и на HUD', () {
+    final scheme = wordarcadeTheme().colorScheme;
+
+    test('загорается на серии 3, на серии 2 ещё нет', () {
+      expect(comboIsHot(2), isFalse);
+      expect(comboIsHot(3), isTrue);
+    });
+
+    test('серии до первой не бывает, но и она не горит', () {
+      expect(comboIsHot(0), isFalse);
+      expect(comboIsHot(-1), isFalse);
+    });
+
+    test('множитель и поле загораются ровно вместе', () {
+      for (var combo = 0; combo <= 12; combo++) {
+        expect(
+          comboIsHot(combo),
+          comboTint(scheme, combo) != scheme.surface,
+          reason:
+              'серия $combo: множитель и поле разошлись, а порог у них '
+              'обязан быть один и тот же — SPEC, «Джус»',
+        );
+      }
+    });
+  });
+
+  group('Тон поля — градиент, а не заливка', () {
+    final scheme = wordarcadeTheme().colorScheme;
+
+    test('на серии 0 градиент ровный: весь фон', () {
+      final gradient = comboGradient(scheme, 0);
+
+      expect(
+        gradient.colors.toSet(),
+        {scheme.surface},
+        reason: 'до серии 3 поле чистое, и градиент этого не меняет',
+      );
+    });
+
+    test('середина горячая, оба края — чистый фон', () {
+      final gradient = comboGradient(scheme, 8);
+
+      expect(gradient.colors.first, scheme.surface, reason: 'верхний край');
+      expect(gradient.colors.last, scheme.surface, reason: 'нижний край');
+      expect(gradient.colors[1], comboTint(scheme, 8));
+      expect(gradient.colors[2], comboTint(scheme, 8));
+      expect(
+        gradient.colors[1],
+        isNot(scheme.surface),
+        reason: 'иначе градиента нет вовсе и панель вернулась',
+      );
+    });
+
+    test('растяжка настоящая: край не схлопнут в ноль', () {
+      final stops = comboGradient(scheme, 8).stops!;
+
+      expect(stops.first, 0);
+      expect(stops.last, 1);
+      expect(
+        stops[1],
+        greaterThan(0.1),
+        reason:
+            'схлопнутая растяжка — это та же жёсткая граница, из-за которой '
+            'поле читалось панелью на голденах 0.9',
+      );
+      expect(stops[2], lessThan(0.9));
+      expect(
+        stops[1],
+        closeTo(1 - stops[2], 1e-9),
+        reason: 'края симметричны: стык и с HUD, и с кнопками одинаков',
+      );
+    });
+
+    test('градиент вертикальный: горизонтальный спорил бы с падением', () {
+      final gradient = comboGradient(scheme, 8);
+
+      expect(gradient.begin, Alignment.topCenter);
+      expect(gradient.end, Alignment.bottomCenter);
     });
   });
 }
