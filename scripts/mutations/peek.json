@@ -1,0 +1,38 @@
+[
+  {
+    "name": "тег снят — съёмка попадает в обычный прогон",
+    "file": "test/peek/screens_peek_test.dart",
+    "old": "@Tags(['peek'])\nlibrary;\n",
+    "new": "library;\n"
+  },
+  {
+    "name": "verify.sh перестал отсекать съёмку в режиме off",
+    "file": "scripts/verify.sh",
+    "old": "    run_tests() { flutter test --exclude-tags 'golden || peek'; }\n",
+    "new": "    run_tests() { flutter test --exclude-tags golden; }\n"
+  },
+  {
+    "name": "verify.sh перестал отсекать съёмку в режиме all",
+    "file": "scripts/verify.sh",
+    "old": "    run_tests() { flutter test --exclude-tags peek; }\n",
+    "new": "    run_tests() { flutter test; }\n"
+  },
+  {
+    "name": "снимки поехали в каталог эталонов",
+    "file": "test/peek/peek_harness.dart",
+    "old": "const String peekOutDir = 'test/peek/out';",
+    "new": "const String peekOutDir = 'test/golden/images';"
+  },
+  {
+    "name": "съёмка вернулась к компаратору голденов",
+    "file": "test/peek/peek_harness.dart",
+    "old": "  final file = File('$peekOutDir/$name.png');",
+    "new": "  await expectLater(finder, matchesGoldenFile('x.png'));\n  final file = File('$peekOutDir/$name.png');"
+  },
+  {
+    "name": ".gitignore перестал прятать снимки",
+    "file": ".gitignore",
+    "old": "test/peek/out/\n",
+    "new": ""
+  }
+]

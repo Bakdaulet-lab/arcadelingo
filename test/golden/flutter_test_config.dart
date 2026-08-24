@@ -5,59 +5,29 @@
 // ближайший flutter_test_config.dart вверх по дереву, поэтому загрузка
 // шрифтов не платится при каждом прогоне быстрых тестов.
 //
-// Шрифты грузятся только из ассетов приложения. Раньше Roboto приезжал из
-// кеша SDK с поиском FLUTTER_ROOT и подъёмом от исполняемого файла — вся
-// эта археология умерла вместе с задачей 0.12: своя гарнитура лежит в
-// assets/fonts и попадает в FontManifest наравне с иконками.
+// Шрифты грузятся только из ассетов приложения, общим загрузчиком из
+// test/support/bundled_fonts.dart — тем же, которым пользуется test/peek/.
 //
 // Процедура обновления эталонов человеком — docs/dev/goldens.md.
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
+// Uint8List: приезжал транзитом через package:flutter/services.dart,
+// который уехал вместе с загрузчиком шрифтов. Импорт точный.
+import 'dart:typed_data';
 
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/bundled_fonts.dart';
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
-  await _loadBundledFonts();
+  await loadBundledFonts();
   final local = goldenFileComparator as LocalFileComparator;
   goldenFileComparator = _HumanReviewedComparator(
     local.basedir.resolve('flutter_test_config.dart'),
   );
   await testMain();
-}
-
-/// Шрифты из ассетов самого приложения: гарнитура Rubik и MaterialIcons.
-///
-/// Иконки несут половину смысла экрана — сердца, крест у промаха, галочка
-/// у верного варианта, — а гарнитура и есть предмет задачи 0.12.
-Future<void> _loadBundledFonts() async {
-  final manifest =
-      json.decode(await rootBundle.loadString('FontManifest.json')) as List;
-  final families = <String>[];
-  for (final entry in manifest) {
-    final family = (entry as Map)['family'] as String;
-    families.add(family);
-    final loader = FontLoader(family);
-    for (final font in entry['fonts'] as List) {
-      loader.addFont(rootBundle.load((font as Map)['asset'] as String));
-    }
-    await loader.load();
-  }
-  // Молчаливого фолбэка нет намеренно: без шрифта flutter test рисует
-  // каждую букву прямоугольником, и восемь эталонов снялись бы зелёными и
-  // бессмысленными одновременно.
-  for (final required in ['MaterialIcons', 'Rubik']) {
-    if (!families.contains(required)) {
-      throw StateError(
-        'В FontManifest.json нет $required: ${families.join(', ')}.\n'
-        'Текст или иконки нарисуются прямоугольниками, а эталоны останутся\n'
-        'зелёными. Проверь секции fonts и uses-material-design в pubspec.',
-      );
-    }
-  }
 }
 
 /// Компаратор, который сам эталон не пишет никогда.

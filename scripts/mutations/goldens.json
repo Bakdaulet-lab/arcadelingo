@@ -26,7 +26,7 @@
   {
     "name": "MaterialIcons не загружены: сердца стали прямоугольниками",
     "file": "test/golden/flutter_test_config.dart",
-    "old": "  await _loadBundledFonts();\n",
+    "old": "  await loadBundledFonts();\n",
     "new": ""
   },
   {
