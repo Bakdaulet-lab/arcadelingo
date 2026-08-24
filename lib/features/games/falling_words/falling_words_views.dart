@@ -13,6 +13,29 @@ library;
 
 import 'package:flutter/material.dart';
 
+/// До этой серии фон чистый: ранний тон был бы шумом, а не наградой.
+const int comboTintStart = 2;
+
+/// С этой серии тон больше не густеет.
+const int comboTintEnd = 8;
+
+/// Насколько глубоко фон уходит к `primaryContainer` на потолке. Выше —
+/// `onSurface` на подкрашенном фоне уходит под контраст 4.5:1, а он в
+/// тестах уже стоит (`textContrastGuideline`).
+const double comboTintMax = 0.35;
+
+/// Сколько переливается фон при смене серии.
+const Duration comboTintFade = Duration(milliseconds: 400);
+
+/// Тон фона по длине серии.
+///
+/// Единственная функция джуса, которой нужна палитра, — поэтому она здесь,
+/// а не в `falling_words_juice.dart`: иначе Flutter приехал бы вместе с ней
+/// и в `FallingWordsRun`, который держится без него намеренно.
+Color comboTint(ColorScheme scheme, int combo) {
+  throw UnimplementedError();
+}
+
 /// Ключи частей экрана. Тест ищет по ним то, что не опознать по тексту:
 /// падающее слово (текст у него меняется каждый раунд) и счётчики HUD.
 abstract final class FallingWordsKeys {
