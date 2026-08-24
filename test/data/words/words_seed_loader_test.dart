@@ -9,12 +9,14 @@ import '../../support/result.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  // Второй счётчик размера сида. Первый — «ровно N слов» в
+  // test/assets/words_seed_test.dart; правятся оба и в одном коммите порции.
   test(
-    'loadWordsSeed: ассет из бандла → 50 единиц показа, первая — apple',
+    'loadWordsSeed: ассет из бандла → 96 единиц показа, первая — apple',
     () async {
       final items = ok(await loadWordsSeed());
 
-      expect(items, hasLength(50));
+      expect(items, hasLength(96));
       expect(items.first.word.id, 'apple');
       expect(items.first.distractors, hasLength(3));
     },
