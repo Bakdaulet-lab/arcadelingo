@@ -129,6 +129,19 @@ class FallingWordsRun {
   /// Сколько ответов доложено; слово с повтором даёт два.
   int get answeredCount => _answeredCount;
 
+  /// Был ли последний ответ дан в последние 15% лимита. Промах и таймаут
+  /// последним моментом не считаются, каким бы поздним ни был ответ:
+  /// бонус — награда за верный ответ, а не за то, что время вышло.
+  bool get nearMiss {
+    throw UnimplementedError();
+  }
+
+  /// Сколько очков принёс последний ответ; ноль при промахе и таймауте.
+  /// Нужен экрану: `+N` показывает именно прирост, а не весь счёт.
+  int get lastPoints {
+    throw UnimplementedError();
+  }
+
   /// Берёт первое слово. Пустая сессия → [FallingPhase.nothingToday].
   void start() {
     final first = _session.nextItem();

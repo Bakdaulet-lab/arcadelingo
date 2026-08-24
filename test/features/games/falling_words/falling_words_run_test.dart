@@ -487,4 +487,129 @@ void main() {
       expect(session.reports, isEmpty);
     });
   });
+
+  group('Бонус «в последний момент»', () {
+    test('до первого ответа бонуса нет и очков не начислено', () {
+      final run = _started(FakeReviewSession(_items(3)));
+
+      expect(run.nearMiss, isFalse);
+      expect(run.lastPoints, 0);
+    });
+
+    test('ответ ровно на 85% лимита даёт полуторные очки', () {
+      final run = _started(FakeReviewSession(_items(3)));
+
+      run.choose(run.correctIndex, const Duration(microseconds: 5100000));
+
+      expect(run.nearMiss, isTrue);
+      expect(run.lastPoints, 15, reason: '10 × 1 × 3 ~/ 2');
+      expect(run.score, 15);
+    });
+
+    test('микросекундой раньше — обычные очки', () {
+      final run = _started(FakeReviewSession(_items(3)));
+
+      run.choose(run.correctIndex, const Duration(microseconds: 5099999));
+
+      expect(run.nearMiss, isFalse);
+      expect(run.lastPoints, 10);
+      expect(run.score, 10);
+    });
+
+    test('бонус считается от очков с множителем, а не от базовых десяти', () {
+      final run = _started(FakeReviewSession(_items(6)));
+
+      _correct(run);
+      _correct(run);
+      _correct(run);
+      expect(run.score, 60, reason: '10 + 20 + 30');
+      expect(run.timeLimit, const Duration(milliseconds: 5250));
+
+      // 90% от 5.25 с — уверенно в окне, но не на самой границе.
+      run.choose(run.correctIndex, const Duration(microseconds: 4725000));
+
+      expect(run.lastPoints, 60, reason: '10 × 4 × 3 ~/ 2, а не 10 × 3 ~/ 2');
+      expect(run.score, 120);
+    });
+
+    test('бонус не трогает ни серию, ни жизни, ни лимит следующего слова', () {
+      final run = _started(FakeReviewSession(_items(3)));
+
+      run.choose(run.correctIndex, const Duration(microseconds: 5100000));
+      run.advance();
+
+      expect(
+        run.combo,
+        1,
+        reason: 'один верный ответ — серия один, не полтора',
+      );
+      expect(run.lives, 3);
+      expect(
+        run.timeLimit,
+        const Duration(milliseconds: 5750),
+        reason: 'ускорение считает серию, а не награду',
+      );
+    });
+
+    test('промах в последний момент бонуса не даёт', () {
+      final run = _started(FakeReviewSession(_items(3)));
+
+      run.choose(_wrongIndex(run), const Duration(microseconds: 5940000));
+
+      expect(
+        run.nearMiss,
+        isFalse,
+        reason: 'бонус — награда за верный ответ, а не за поздний',
+      );
+      expect(run.lastPoints, 0);
+      expect(run.score, 0);
+    });
+
+    test('таймаут бонуса не даёт, хотя позднее некуда', () {
+      final run = _started(FakeReviewSession(_items(3)));
+
+      run.timeout();
+
+      expect(run.nearMiss, isFalse);
+      expect(run.lastPoints, 0);
+      expect(run.score, 0);
+    });
+
+    test('на следующем слове бонус и прирост обнулены', () {
+      final run = _started(FakeReviewSession(_items(3)));
+
+      run.choose(run.correctIndex, const Duration(microseconds: 5100000));
+      run.advance();
+
+      expect(run.nearMiss, isFalse, reason: 'это факт о прошлом ответе');
+      expect(run.lastPoints, 0);
+      expect(run.score, 15, reason: 'а вот счёт обнулять нечему');
+    });
+
+    test('бонус не виден ядру: ReviewOutcome тот же, что и без бонуса', () {
+      final session = FakeReviewSession(_items(3));
+      final run = _started(session);
+
+      run.choose(run.correctIndex, const Duration(microseconds: 5100000));
+
+      expect(
+        run.lastPoints,
+        15,
+        reason: 'бонус начислен — без этого остальные ассерты ничего не значат',
+      );
+      final outcome = session.reports.single.outcome;
+      expect(outcome.correct, isTrue);
+      expect(
+        outcome.responseTime,
+        const Duration(microseconds: 5100000),
+        reason: 'ровно прожитое время, без надбавки за удачу',
+      );
+      expect(
+        outcome.timeLimit,
+        const Duration(seconds: 6),
+        reason: 'лимит этого слова, а не окно бонуса',
+      );
+      expect(outcome.hintsUsed, 0);
+    });
+  });
 }
