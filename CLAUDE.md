@@ -25,7 +25,10 @@
 Это не пожелания. `./scripts/arch_check.sh` проверяет **все** пункты механически.
 Пункт 4 до Фазы 2 жил одними словами; теперь и он исполняемый.
 
-1. `lib/domain/` НЕ импортирует `package:flutter/*`, `lib/data/`, `lib/features/`.
+1. `lib/domain/` НЕ импортирует `package:flutter/*`, `lib/data/`, `lib/features/`
+   и вообще ни одного стороннего пакета: только `dart:*` и себя. Порт остаётся
+   интерфейсом, а БД живёт в `data/` — расстояние между этим и обратным ровно
+   одна строка импорта.
 2. Игры в `lib/features/games/` НЕ импортируют `lib/domain/srs/`. Игра общается
    с ядром только через `ReviewSession` (`lib/domain/review/review_contract.dart`).
 3. `lib/domain/` детерминирован: `DateTime.now()` внутри ЗАПРЕЩЁН, текущее время

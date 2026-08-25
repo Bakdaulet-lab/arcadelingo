@@ -29,6 +29,23 @@ check 'lib/domain/ импортирует Flutter' \
   lib/domain "^[[:space:]]*import[[:space:]]+'package:flutter/"
 check 'lib/domain/ импортирует data/ или features/' \
   lib/domain "^[[:space:]]*import[[:space:]]+'.*(data|features)/"
+# Сторонних пакетов в domain нет вовсе, и до Этапа 2.3 это держалось само
+# собой: импортировать было нечего. С приходом drift правило перестало быть
+# даровым — порт AnswerLog обязан остаться интерфейсом, а БД жить в data/,
+# и расстояние между этими двумя состояниями ровно одна строка импорта.
+# Строже, чем «не Flutter»: package:meta и package:collection тоже мимо.
+# Понадобится — снимать осознанно, а не обнаружить постфактум.
+#
+# Своим grep, а не через check: исключение «кроме своего пакета» — это
+# второй шаблон, а ERE отрицательного просмотра вперёд не знает.
+domain_foreign=$(grep -rnE --include='*.dart'   "^[[:space:]]*import[[:space:]]+'package:" lib/domain 2>/dev/null   | grep -v "'package:arcadelingo/" || true)
+if [ -n "$domain_foreign" ]; then
+  printf 'ARCH VIOLATION — %s
+%s
+
+'     'lib/domain/ импортирует сторонний пакет (можно только dart: и себя)'     "$domain_foreign" >&2
+  fail=1
+fi
 
 # 2. Игра — оболочка. Логика планирования повторов в неё не просачивается.
 check 'игра импортирует domain/srs напрямую (должна работать через ReviewSession)' \

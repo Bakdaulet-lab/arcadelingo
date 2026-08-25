@@ -1,0 +1,98 @@
+[
+  {
+    "name": "переигровка считает от «сейчас» одной точки, а не от момента записи",
+    "file": "lib/domain/log/replay.dart",
+    "old": "    cards[record.wordId] = schedule(before, record.grade, now: record.at);",
+    "new": "    cards[record.wordId] = schedule(before, record.grade, now: log.first.at);"
+  },
+  {
+    "name": "переигровка пересчитывает оценку вместо сохранённой",
+    "file": "lib/domain/log/answer_record.dart",
+    "old": "    grade: event.grade,",
+    "new": "    grade: gradeOutcome(event.outcome),"
+  },
+  {
+    "name": "новое слово заводится сразу во второй коробке",
+    "file": "lib/domain/log/replay.dart",
+    "old": "        LeitnerCard(box: LeitnerCard.minBox, due: record.at);",
+    "new": "        LeitnerCard(box: LeitnerCard.minBox + 1, due: record.at);"
+  },
+  {
+    "name": "переигровка забывает прошлое состояние слова",
+    "file": "lib/domain/log/replay.dart",
+    "old": "        cards[record.wordId] ??\n        LeitnerCard(box: LeitnerCard.minBox, due: record.at);",
+    "new": "        LeitnerCard(box: LeitnerCard.minBox, due: record.at);"
+  },
+  {
+    "name": "наблюдатель ничего не пишет",
+    "file": "lib/domain/log/logging_observer.dart",
+    "old": "    unawaited(_log.append(AnswerRecord.of(event)));",
+    "new": ""
+  },
+  {
+    "name": "наблюдатель ждёт записи",
+    "file": "lib/domain/log/logging_observer.dart",
+    "old": "  void onAnswer(ReviewEvent event) {\n    unawaited(_log.append(AnswerRecord.of(event)));\n  }",
+    "new": "  Future<void> onAnswer(ReviewEvent event) async {\n    await _log.append(AnswerRecord.of(event));\n  }"
+  },
+  {
+    "name": "usecase не подключает журнал к сессии",
+    "file": "lib/domain/usecases/start_session.dart",
+    "old": "          LoggingObserver(log: _answerLog),",
+    "new": ""
+  },
+  {
+    "name": "корень не отдаёт журнал домашнему экрану",
+    "file": "lib/app/app.dart",
+    "old": "          answerLog: answerLog,",
+    "new": "          answerLog: const NoopAnswerLog(),"
+  },
+  {
+    "name": "момент теряет доли секунды",
+    "file": "lib/data/log/drift_answer_log.dart",
+    "old": "          atUtcMicros: record.at.toUtc().microsecondsSinceEpoch,",
+    "new": "          atUtcMicros: record.at.toUtc().millisecondsSinceEpoch * 1000000,"
+  },
+  {
+    "name": "день считается из момента, а не хранится",
+    "file": "lib/data/log/drift_answer_log.dart",
+    "old": "    localDay: decodeDay(row.localDay)!,",
+    "new": "    localDay: StreakDay.of(\n      DateTime.fromMicrosecondsSinceEpoch(row.atUtcMicros, isUtc: true),\n    ),"
+  },
+  {
+    "name": "чтение идёт в порядке БД, а не в хронологическом",
+    "file": "lib/data/log/drift_answer_log.dart",
+    "old": "    query.orderBy([\n      (row) => OrderingTerm.asc(row.atUtcMicros),\n      (row) => OrderingTerm.asc(row.id),\n    ]);",
+    "new": ""
+  },
+  {
+    "name": "при равных моментах порядок ответов теряется",
+    "file": "lib/data/log/drift_answer_log.dart",
+    "old": "      (row) => OrderingTerm.asc(row.id),\n",
+    "new": ""
+  },
+  {
+    "name": "история слова не фильтруется по слову",
+    "file": "lib/data/log/drift_answer_log.dart",
+    "old": "      _read(_db.select(_db.answers)..where((row) => row.wordId.equals(wordId)));",
+    "new": "      _read(_db.select(_db.answers));"
+  },
+  {
+    "name": "сводка считает верными все ответы",
+    "file": "lib/data/log/drift_answer_log.dart",
+    "old": "    final right = answers.correct.cast<int>().sum();",
+    "new": "    final right = answers.id.count();"
+  },
+  {
+    "name": "границы отрезка дней исключаются",
+    "file": "lib/data/log/drift_answer_log.dart",
+    "old": "            answers.localDay.isBetweenValues(encodeDay(from), encodeDay(to)),",
+    "new": "            answers.localDay.isBiggerThanValue(encodeDay(from)) &\n                answers.localDay.isSmallerThanValue(encodeDay(to)),"
+  },
+  {
+    "name": "день пишется без ведущих нулей",
+    "file": "lib/data/day_text.dart",
+    "old": "    '${day.month.toString().padLeft(2, '0')}-'\n    '${day.day.toString().padLeft(2, '0')}';",
+    "new": "    '${day.month}-'\n    '${day.day}';"
+  }
+]
