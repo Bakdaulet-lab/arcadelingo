@@ -198,6 +198,23 @@ void main() {
       expect(find.byType(FallingWordsGame), findsNothing);
     });
 
+    // Дыру нашла мутация «страж пустого реестра убран»: тесты остались
+    // зелёными, потому что пустой реестр никто не пробовал.
+    testWidgets('пустой реестр роняет с причиной, а не молчит', (tester) async {
+      await _pumpApp(tester, games: const []);
+
+      await tester.tap(find.byKey(AppKeys.play));
+      await tester.pump();
+
+      final thrown = tester.takeException();
+      expect(thrown, isStateError);
+      expect(
+        (thrown as StateError).message,
+        contains('реестр игр пуст'),
+        reason: 'дефект сборки обязан назвать себя',
+      );
+    });
+
     testWidgets('падающие слова остаются игрой по умолчанию', (tester) async {
       await _pumpApp(tester);
 
