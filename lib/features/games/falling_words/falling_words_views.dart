@@ -11,7 +11,7 @@
 /// мужчин).
 library;
 
-import 'package:arcadelingo/app/theme.dart';
+import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
 import 'falling_words_juice.dart';

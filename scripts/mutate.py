@@ -5,7 +5,15 @@ CLAUDE.md → «Тесты»: зелёный тест на сломанном к
 делает эту проверку воспроизводимой, а не разовой: каждая мутация здесь
 описана вместе с тем, какой тест обязан её поймать.
 
-Запуск: python scripts/mutate.py <файл-с-мутациями.json> <путь-к-тестам>
+Запуск: python scripts/mutate.py <файл-с-мутациями.json> <путь-к-тестам>...
+
+Путей может быть несколько. Раньше брался только первый, а лишние молча
+терялись — и десять мутаций Этапа 2.3 отчитались «ТЕАТР» просто потому, что
+их тесты не гонялись. Молчаливое сужение проверки хуже её отсутствия:
+отсутствие видно.
+
+Целиком `test` сюда передавать нельзя: голдены локально красные всегда
+(эталоны Linux), и тогда КАЖДАЯ мутация отчитается пойманной.
 """
 import io
 import json
@@ -68,7 +76,10 @@ def main():
     except AttributeError:
         pass
     plan = json.loads(read(sys.argv[1]))
-    target = sys.argv[2]
+    targets = sys.argv[2:]
+    if not targets:
+        print('Не указано, какие тесты гонять.')
+        sys.exit(2)
     assert_committed(case['file'] for case in plan)
     failures = []
 
@@ -86,7 +97,7 @@ def main():
             # (на Windows cp1251), и первый же типографский символ в тексте
             # ассета роняет поток чтения. Вердикт брался бы из returncode и
             # остался бы верным, но прогон печатал бы traceback вместо отчёта.
-            done = subprocess.run(['flutter', 'test', target],
+            done = subprocess.run(['flutter', 'test'] + targets,
                                   capture_output=True, text=True, shell=True,
                                   encoding='utf-8', errors='replace')
             red = done.returncode != 0

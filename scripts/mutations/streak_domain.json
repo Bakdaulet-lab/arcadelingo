@@ -1,0 +1,56 @@
+[
+  {
+    "name": "наблюдателей не зовут вовсе",
+    "file": "lib/domain/session/observed_session.dart",
+    "old": "    for (final observer in _observers) {\n      observer.onAnswer(event);\n    }",
+    "new": "    if (_observers.isEmpty) return;"
+  },
+  {
+    "name": "наблюдателей зовут до того, как ответ принят делегатом",
+    "file": "lib/domain/session/observed_session.dart",
+    "old": "    final item = _current;\n    _inner.report(outcome);\n    _current = null;",
+    "new": "    final item = _current;\n    _current = null;"
+  },
+  {
+    "name": "рекорд сбрасывается при разрыве серии",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "    best: current > state.best ? current : state.best,",
+    "new": "    best: current,"
+  },
+  {
+    "name": "тот же день считается новым днём серии",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "  if (last == day) return state;",
+    "new": ""
+  },
+  {
+    "name": "разрыв продлевает серию вместо того, чтобы начать заново",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "  final current = last != null && day == last.next ? state.current + 1 : 1;",
+    "new": "  final current = state.current + 1;"
+  },
+  {
+    "name": "несуществующая дата молча уезжает на следующий месяц",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "    if (_normalize(year, month, day) == null) {\n      throw ArgumentError('несуществующая дата: $year-$month-$day');\n    }",
+    "new": ""
+  },
+  {
+    "name": "серия пишется на каждый ответ, а не раз в день",
+    "file": "lib/domain/streak/streak_observer.dart",
+    "old": "    if (advanced == _state) return;",
+    "new": ""
+  },
+  {
+    "name": "битая серия не мешает начать партию",
+    "file": "lib/domain/usecases/start_session.dart",
+    "old": "      case Err(:final failure):\n        return Err(failure);\n    }\n    final startedAt = _now();",
+    "new": "      case Err():\n        streak = StreakState.empty;\n    }\n    final startedAt = _now();"
+  },
+  {
+    "name": "оценка в событии выдумана, а не посчитана из ответа",
+    "file": "lib/domain/session/observed_session.dart",
+    "old": "      grade: gradeOutcome(outcome),",
+    "new": "      grade: ReviewGrade.good,"
+  }
+]

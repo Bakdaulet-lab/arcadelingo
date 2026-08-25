@@ -8,7 +8,12 @@ plugins {
 android {
     namespace = "com.baks.arcadelingo"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Не flutter.ndkVersion (26.3.11579264): shared_preferences_android
+    // требует 27.0.12077973, и сборка предупреждает об этом на каждом прогоне.
+    // Версии NDK обратно совместимы, поэтому берётся наибольшая из требуемых.
+    // Как только Flutter поднимет свою до 27+, строку надо убрать — пин,
+    // переживший причину, однажды окажется ниже нужного.
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

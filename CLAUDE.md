@@ -17,20 +17,35 @@
 - Скриншот экрана для DoD, без заведения голдена:
   `flutter test --tags peek test/peek/` → PNG в `test/peek/out/`.
   Компаратор не участвует, эталоном такой снимок не станет — `docs/dev/goldens.md`
+- Иконка лаунчера: `flutter test tool/brand/render_icons.dart` — рисует три
+  варианта в `tool/out/icons/` и ничего не трогает в репозитории.
+  `BRAND_ICON=block flutter test tool/brand/render_icons.dart` ставит выбранный
+  в `android/` и `ios/`. Не `dart run`: рисунку нужны `dart:ui` и Rubik из ассетов
 - Кодоген: `dart run build_runner build --delete-conflicting-outputs`
 - Запуск на устройстве: `flutter run --release` (в debug анимации тормозят, судить о «фане» нельзя)
 
 ## Архитектурный закон
 
-Это не пожелания. `./scripts/arch_check.sh` проверяет пункты 1–3 механически.
+Это не пожелания. `./scripts/arch_check.sh` проверяет **все** пункты механически.
+Пункт 4 до Фазы 2 жил одними словами; теперь и он исполняемый.
 
-1. `lib/domain/` НЕ импортирует `package:flutter/*`, `lib/data/`, `lib/features/`.
+1. `lib/domain/` НЕ импортирует `package:flutter/*`, `lib/data/`, `lib/features/`
+   и вообще ни одного стороннего пакета: только `dart:*` и себя. Порт остаётся
+   интерфейсом, а БД живёт в `data/` — расстояние между этим и обратным ровно
+   одна строка импорта.
 2. Игры в `lib/features/games/` НЕ импортируют `lib/domain/srs/`. Игра общается
    с ядром только через `ReviewSession` (`lib/domain/review/review_contract.dart`).
 3. `lib/domain/` детерминирован: `DateTime.now()` внутри ЗАПРЕЩЁН, текущее время
    передаётся параметром `now` (в `srs/` — значением, в сессию — функцией). Никакого
    `Random` без seed. `lib/domain/srs/` — чистые функции.
-4. Направление зависимостей: presentation → usecase → repository(абстракция) ← impl → datasource
+4. Направление зависимостей: presentation → usecase → repository(абстракция) ← impl → datasource.
+   Конкретно: `lib/features/` не импортирует ни `lib/data/` (хранилище приходит
+   портом), ни `lib/app/` (фича не знает композиционного корня); `lib/data/` —
+   лист графа и не импортирует `lib/features/` и `lib/app/`; `lib/ui/` — общая
+   презентация (тема), и о `data/`, `features/`, `app/` она не знает.
+5. Игры — острова: одна игра НЕ импортирует другую. Общий код двух игр — это
+   либо контракт в `domain/`, либо презентация в `lib/ui/`, но не сосед по
+   каталогу. Правило вакуумно, пока игра одна, и станет настоящим на второй.
 
 Игра, в которой появилась логика планирования повторов, — блокер на ревью, а не замечание.
 

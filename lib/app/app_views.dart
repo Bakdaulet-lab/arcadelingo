@@ -10,6 +10,8 @@
 /// сбрасывать нечего, и кнопки здесь не будет.
 library;
 
+import 'package:arcadelingo/ui/streak_label.dart';
+import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
 /// Ключи экранов хоста. Тест ищет по ним то, что не опознать по тексту:
@@ -37,6 +39,9 @@ abstract final class AppKeys {
 
   /// «Полные тексты лицензий» → штатный `showLicensePage`.
   static const Key licenses = Key('app.licenses');
+
+  /// Строка серии на домашнем экране; её нет, когда серии нет.
+  static const Key streak = Key('app.streak');
 }
 
 /// Домашний экран: одна кнопка.
@@ -45,7 +50,18 @@ abstract final class AppKeys {
 /// собирается на текущий момент и, пролежав на этом экране до полуночи,
 /// протухла бы (0.6, `docs/dev/context.md`).
 class PlayView extends StatelessWidget {
-  const PlayView({required this.onPlay, required this.onSources, super.key});
+  const PlayView({
+    required this.onPlay,
+    required this.onSources,
+    super.key,
+    this.streakDays,
+  });
+
+  /// Сколько дней подряд человек играл; null — серии нет или состояние не
+  /// читается. Строка — украшение: битый документ становится громким на тапе
+  /// «Играть», а не на входе в приложение, иначе экран ошибки появлялся бы
+  /// раньше, чем человек чего-либо попросил.
+  final int? streakDays;
 
   final VoidCallback onPlay;
 
@@ -67,11 +83,14 @@ class PlayView extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Wordarcade',
+                'Arcadelingo',
                 textAlign: TextAlign.center,
-                style: textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                // `withWeight`, а не `copyWith(fontWeight:)`. Оси `wght`
+                // обычный fontWeight не двигает (шапка lib/ui/theme.dart), и
+                // заголовок всё это время рисовался обычным начертанием, а не
+                // жирным. Заметно ровно здесь: это единственная строка в
+                // приложении, набранная кеглем displaySmall.
+                style: withWeight(textTheme.displaySmall!, FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
@@ -79,6 +98,17 @@ class PlayView extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: textTheme.bodyLarge,
               ),
+              if (streakDays case final days? when days > 0) ...[
+                const SizedBox(height: 16),
+                Text(
+                  streakLabel(days),
+                  key: AppKeys.streak,
+                  textAlign: TextAlign.center,
+                  style: textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ],
               const SizedBox(height: 40),
               FilledButton(
                 key: AppKeys.play,

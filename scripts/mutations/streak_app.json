@@ -1,0 +1,8 @@
+[
+  {
+    "name": "сброс прогресса не трогает серию",
+    "file": "lib/app/app.dart",
+    "old": "    await widget.streakStore.reset();\n",
+    "new": ""
+  }
+]
