@@ -1,0 +1,82 @@
+/// Реестр игр: что вообще умеет запускать приложение.
+///
+/// Живёт в композиционном корне, и это единственное место, которое знает
+/// обо всех играх сразу. Сами игры друг о друге не знают — это пункт 5
+/// «Архитектурного закона», и его сторожит `arch_check.sh`.
+///
+/// Смысл реестра — сделать проверяемым обещание Фазы 2: вторую игру можно
+/// добавить, не трогая ядро. Добавление сводится к одной записи здесь;
+/// `lib/domain/` и первая игра при этом не меняются ни на строку, и это
+/// доказывается пустым `git diff`, а не словами.
+///
+/// Экрана выбора игры тут нет намеренно. Игра пока одна, и переключатель
+/// между одним элементом — мёртвый UI; выбор — Фаза 4, когда играть будет
+/// из чего.
+library;
+
+import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
+import 'package:flutter/material.dart';
+
+/// Всё, что игре нужно от хоста, одним значением.
+///
+/// Игра не знает ни про хранилище, ни про размер сессии, ни про то, что
+/// будет после выхода: она получает готовую [ReviewSession] и три способа
+/// сказать хосту, что партия кончилась.
+class GameLaunch {
+  const GameLaunch({
+    required this.session,
+    required this.summaryFooter,
+    required this.onPlayAgain,
+    required this.onExit,
+  });
+
+  /// Сессия, уже собранная usecase'ом и обёрнутая наблюдателями.
+  final ReviewSession session;
+
+  /// Строка «что дальше» на итогах; считает её хост.
+  final String Function() summaryFooter;
+
+  /// «Ещё раз»: новую партию строит хост.
+  final VoidCallback onPlayAgain;
+
+  /// «Выйти» с экранов конца партии.
+  final VoidCallback onExit;
+}
+
+/// Одна игра в реестре.
+class GameEntry {
+  const GameEntry({required this.id, required this.title, required this.build});
+
+  /// Идентификатор в событиях ответа.
+  ///
+  /// Уезжает в `ReviewEvent.gameId`, а с Этапа 2.3 — в журнал ответов.
+  /// Переименование расходится с уже записанной историей, поэтому id живёт
+  /// здесь и нигде больше не дублируется.
+  final String id;
+
+  /// Название для человека. Понадобится экрану выбора в Фазе 4.
+  final String title;
+
+  /// Экран игры на готовом [GameLaunch].
+  final Widget Function(GameLaunch launch) build;
+}
+
+/// Падающие слова — игра Гейта-0.
+const GameEntry fallingWordsEntry = GameEntry(
+  id: 'falling_words',
+  title: 'Падающие слова',
+  build: _buildFallingWords,
+);
+
+/// Все игры приложения.
+///
+/// Порядок значим: пока экрана выбора нет, запускается первая.
+const List<GameEntry> wordarcadeGames = [fallingWordsEntry];
+
+Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
+  session: launch.session,
+  summaryFooter: launch.summaryFooter,
+  onPlayAgain: launch.onPlayAgain,
+  onExit: launch.onExit,
+);

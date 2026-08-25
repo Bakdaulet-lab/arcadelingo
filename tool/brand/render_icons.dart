@@ -23,7 +23,7 @@ library;
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:arcadelingo/app/theme.dart';
+import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

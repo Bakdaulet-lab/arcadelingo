@@ -10,9 +10,13 @@
 library;
 
 import 'package:arcadelingo/app/app.dart';
-import 'package:arcadelingo/app/theme.dart';
+import 'package:arcadelingo/data/log/answer_database.dart';
+import 'package:arcadelingo/data/log/drift_answer_log.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
+import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
 import 'package:arcadelingo/data/words/words_seed_loader.dart';
+import 'package:arcadelingo/ui/theme.dart';
+import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,7 +27,18 @@ Future<void> main() async {
   _registerFontLicense();
   final prefs = await SharedPreferences.getInstance();
   final seed = await loadWordsSeed();
-  runApp(WordarcadeApp(store: LeitnerPrefsStore(prefs), seed: seed));
+  runApp(
+    WordarcadeApp(
+      store: LeitnerPrefsStore(prefs),
+      streakStore: StreakPrefsStore(prefs),
+      seed: seed,
+      // Файл открывается лениво, при первой записи: журнал не на пути
+      // старта, и ждать его здесь незачем.
+      answerLog: DriftAnswerLog(
+        AnswerDatabase(driftDatabase(name: 'wordarcade_answers')),
+      ),
+    ),
+  );
 }
 
 /// Отдаёт лицензию шрифта в `showLicensePage`.

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "id зашит в код вместо реестра",
+    "file": "lib/app/app.dart",
+    "old": "      gameId: game.id,",
+    "new": "      gameId: 'falling_words',"
+  },
+  {
+    "name": "запускается всегда первая игра из умолчания, а не из реестра",
+    "file": "lib/app/app.dart",
+    "old": "    final game = widget.games.first;",
+    "new": "    final game = wordarcadeGames.first;"
+  },
+  {
+    "name": "страж пустого реестра убран",
+    "file": "lib/app/app.dart",
+    "old": "    if (widget.games.isEmpty) {\n      throw StateError('реестр игр пуст: запускать нечего');\n    }\n",
+    "new": ""
+  },
+  {
+    "name": "строка итогов до игры не доезжает",
+    "file": "lib/app/app.dart",
+    "old": "                      summaryFooter: footer,",
+    "new": "                      summaryFooter: () => '',"
+  },
+  {
+    "name": "реестр объявлен пустым",
+    "file": "lib/app/games.dart",
+    "old": "const List<GameEntry> wordarcadeGames = [fallingWordsEntry];",
+    "new": "const List<GameEntry> wordarcadeGames = [];"
+  }
+]

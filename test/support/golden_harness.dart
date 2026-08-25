@@ -9,9 +9,9 @@
 // а там pixelRatio по умолчанию 1.0, то есть кадр в логических пикселях.
 // Смотреть на такой файл надо с зумом.
 
-import 'package:arcadelingo/app/theme.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
+import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

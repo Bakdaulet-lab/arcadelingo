@@ -16,8 +16,8 @@
 // поле переполняется на коротком экране, — и эталон закрепил бы сломанную
 // вёрстку как правильную. Вернуться сюда после Р7.
 
-import 'package:arcadelingo/app/theme.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_views.dart';
+import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

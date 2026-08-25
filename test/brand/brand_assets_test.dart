@@ -8,7 +8,7 @@
 // тест отвечает:
 //
 //   имя      — подпись под иконкой и в списке задач, на обеих платформах;
-//   цвет     — числа в XML и plist равны `surface` из lib/app/theme.dart,
+//   цвет     — числа в XML и plist равны `surface` из lib/ui/theme.dart,
 //              потому что скопированное число расходится молча;
 //   иконки   — файлы на месте, ровно того размера, что обещает манифест
 //              плотностей, и без альфы там, где альфа запрещена.
@@ -20,7 +20,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:arcadelingo/app/theme.dart';
+import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Имя, утверждённое автором. Одно на обе платформы.

@@ -76,5 +76,17 @@
     "file": "android/app/build.gradle.kts",
     "old": "applicationId = \"com.baks.arcadelingo\"",
     "new": "applicationId = \"com.baks.wordarcade\""
+  },
+  {
+    "name": "заголовок домашнего экрана снова назван старым именем",
+    "file": "lib/app/app_views.dart",
+    "old": "                'Arcadelingo',",
+    "new": "                'Wordarcade',"
+  },
+  {
+    "name": "вес заголовка снова через copyWith: fontWeight на Rubik инертен",
+    "file": "lib/app/app_views.dart",
+    "old": "style: withWeight(textTheme.displaySmall!, FontWeight.bold),",
+    "new": "style: textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),"
   }
 ]

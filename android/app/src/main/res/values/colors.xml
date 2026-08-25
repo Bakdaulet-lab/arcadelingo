@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- `surface` из lib/app/theme.dart. Копия числа тут неизбежна: XML не
+    <!-- `surface` из lib/ui/theme.dart. Копия числа тут неизбежна: XML не
          умеет читать Dart, а окно красится до того, как поднимется движок.
          Расхождение сторожит test/brand/brand_assets_test.dart — иначе смена
          палитры дала бы вспышку чужого цвета, которую видно только глазами

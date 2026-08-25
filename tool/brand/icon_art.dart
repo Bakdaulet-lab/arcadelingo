@@ -1,7 +1,7 @@
 /// Рисунок иконки лаунчера. Только геометрия — файлы пишет
 /// `tool/brand/render_icons.dart`.
 ///
-/// Цвета берутся из `lib/app/theme.dart`, а не переписываются сюда числами.
+/// Цвета берутся из `lib/ui/theme.dart`, а не переписываются сюда числами.
 /// Иконка и экран обязаны быть одного цвета, а вторая копия `#0D0A12`
 /// разъехалась бы с первой молча: иконку никто не пересматривает при смене
 /// палитры.
@@ -16,7 +16,7 @@ library;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:arcadelingo/app/theme.dart';
+import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
 /// Фон: тот же `surface`, что у экрана игры.

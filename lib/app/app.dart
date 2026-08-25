@@ -18,13 +18,15 @@ import 'dart:async';
 
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution_view.dart';
-import 'package:arcadelingo/app/theme.dart';
+import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
+import 'package:arcadelingo/domain/ports/answer_log.dart';
+import 'package:arcadelingo/domain/ports/streak_store.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
-import 'package:arcadelingo/domain/session/leitner_review_session.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
-import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
+import 'package:arcadelingo/domain/usecases/start_session.dart';
+import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
 /// Размер сессии из SPEC. Его задаёт хост: игра про эту цифру не знает и
@@ -39,14 +41,30 @@ class WordarcadeApp extends StatelessWidget {
   /// показать, что очередь строится в момент тапа, а не при старте.
   const WordarcadeApp({
     required this.store,
+    required this.streakStore,
     required this.seed,
     super.key,
     this.now = DateTime.now,
+    this.games = wordarcadeGames,
+    this.answerLog = const NoopAnswerLog(),
   });
 
   final LeitnerPrefsStore store;
+
+  /// Второй документ прогресса. Портом, а не конкретным стором: корень —
+  /// единственное место, которое знает и о `data/`, и о `domain/`.
+  final StreakStore streakStore;
   final Result<List<ReviewItem>> seed;
   final DateTime Function() now;
+
+  /// Что приложение умеет запускать. Умолчание — реестр из `games.dart`;
+  /// тест подменяет список, чтобы проверить подключение второй игры.
+  final List<GameEntry> games;
+
+  /// История ответов. Умолчание — нулевой объект: приложение полноценно и
+  /// без неё, а тесты, которые о журнале не знают, о нём и не узнают.
+  /// Настоящий журнал подключает `main.dart` — корень знает и о `data/`.
+  final AnswerLog answerLog;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +78,14 @@ class WordarcadeApp extends StatelessWidget {
       // что сборка отладочная, видно по фреймтаймам.
       debugShowCheckedModeBanner: false,
       home: switch (seed) {
-        Ok(:final value) => HomeScreen(store: store, items: value, now: now),
+        Ok(:final value) => HomeScreen(
+          store: store,
+          streakStore: streakStore,
+          items: value,
+          now: now,
+          games: games,
+          answerLog: answerLog,
+        ),
         Err(:final failure) => SeedErrorView(message: failure.message),
       },
     );
@@ -71,23 +96,38 @@ class WordarcadeApp extends StatelessWidget {
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     required this.store,
+    required this.streakStore,
     required this.items,
     required this.now,
+    required this.games,
+    required this.answerLog,
     super.key,
   });
 
   final LeitnerPrefsStore store;
+
+  final StreakStore streakStore;
 
   /// Сид целиком: сессия сама решает, что из него взять.
   final List<ReviewItem> items;
 
   final DateTime Function() now;
 
+  final List<GameEntry> games;
+
+  final AnswerLog answerLog;
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  /// Сколько дней подряд человек играл; null — серии нет или документ не
+  /// читается. Строка — украшение, и ошибка чтения здесь молчит намеренно:
+  /// громкой она станет на тапе «Играть», а экран ошибки при входе в
+  /// приложение появлялся бы раньше, чем человек о чём-либо попросил.
+  int? _streakDays;
+
   /// Причина, по которой не читается состояние; null — экран «Играть».
   Failure? _stateFailure;
 
@@ -95,7 +135,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final failure = _stateFailure;
     return failure == null
-        ? PlayView(onPlay: _start, onSources: _openSources)
+        ? PlayView(
+          onPlay: _start,
+          onSources: _openSources,
+          streakDays: _streakDays,
+        )
         : StateErrorView(message: failure.message, onReset: _reset);
   }
 
@@ -113,11 +157,55 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Тап «Играть»: прочитать состояние и начать партию.
+  @override
+  void initState() {
+    super.initState();
+    _refreshStreak();
+  }
+
+  /// Перечитывает серию для строки на экране.
+  ///
+  /// Тихо глотает [Err] — и только здесь. Это украшение: битый документ
+  /// станет громким на тапе «Играть», где usecase вернёт причину и человек
+  /// увидит экран ошибки. Падать при входе в приложение, до того как он о
+  /// чём-либо попросил, было бы хуже.
+  void _refreshStreak() {
+    final days = switch (widget.streakStore.load()) {
+      Ok(:final value) => value.current,
+      Err() => 0,
+    };
+    setState(() => _streakDays = days > 0 ? days : null);
+  }
+
+  /// Тап «Играть»: собрать партию и показать её.
+  ///
+  /// Вся проводка — в usecase; здесь остаётся только навигация и разбор
+  /// результата. Это и было целью Этапа 1: «после ответа серия продлилась»
+  /// проверяется без дерева виджетов.
   void _start() {
-    switch (widget.store.load()) {
+    // Последнее состояние, приехавшее из сессии: по нему считается строка
+    // итогов. До первого ответа это то, что прочитано из хранилища.
+    var latest = <String, LeitnerCard>{};
+    // Первая из реестра: экрана выбора пока нет, а порядок в списке значим.
+    // Пустой реестр — дефект сборки, и молчать о нём хуже, чем упасть.
+    if (widget.games.isEmpty) {
+      throw StateError('реестр игр пуст: запускать нечего');
+    }
+    final game = widget.games.first;
+    final started = StartSession(
+      cards: widget.store,
+      streaks: widget.streakStore,
+      now: widget.now,
+      target: sessionTarget,
+      answerLog: widget.answerLog,
+    )(
+      items: widget.items,
+      gameId: game.id,
+      onCardsChanged: (changed) => latest = changed,
+    );
+    switch (started) {
       case Ok(:final value):
-        _play(value);
+        _play(game, value, () => _footer(latest));
       case Err(:final failure):
         setState(() => _stateFailure = failure);
     }
@@ -126,45 +214,41 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Единственный в приложении вызов [LeitnerPrefsStore.reset] — и тот по
   /// нажатию человека. Сразу после сброса пробуем снова: повторный тап
   /// «Играть» ничего не добавил бы.
+  /// Сбрасывает **оба** документа прогресса. Серия — это прогресс, и
+  /// оставить её после «Сбросить прогресс» значило бы сбросить наполовину.
   Future<void> _reset() async {
     await widget.store.reset();
+    await widget.streakStore.reset();
     if (!mounted) return;
     setState(() => _stateFailure = null);
+    _refreshStreak();
     _start();
   }
 
-  void _play(Map<String, LeitnerCard> cards) {
-    // Последнее состояние, приехавшее из сессии: по нему считается строка
-    // итогов. До первого ответа это то, что прочитано из хранилища.
-    var latest = cards;
-    final session = LeitnerReviewSession.start(
-      cards: cards,
-      items: widget.items,
-      target: sessionTarget,
-      now: widget.now,
-      onCardsChanged: (changed) {
-        latest = changed;
-        // Ответ уже принят, ждать записи некому: report() не async, а
-        // save() кодирует состояние синхронно, до первого await.
-        unawaited(widget.store.save(changed));
-      },
-    );
+  void _play(GameEntry game, ReviewSession session, String Function() footer) {
     final navigator = Navigator.of(context);
     unawaited(
-      navigator.push(
-        MaterialPageRoute<void>(
-          builder:
-              (context) => FallingWordsGame(
-                session: session,
-                summaryFooter: () => _footer(latest),
-                onPlayAgain: () {
-                  navigator.pop();
-                  _start();
-                },
-                onExit: navigator.pop,
-              ),
-        ),
-      ),
+      navigator
+          .push(
+            MaterialPageRoute<void>(
+              builder:
+                  (context) => game.build(
+                    GameLaunch(
+                      session: session,
+                      summaryFooter: footer,
+                      onPlayAgain: () {
+                        navigator.pop();
+                        _start();
+                      },
+                      onExit: navigator.pop,
+                    ),
+                  ),
+            ),
+          )
+          .then((_) {
+            // Вернулись с партии: серия могла продлиться.
+            if (mounted) _refreshStreak();
+          }),
     );
   }
 
