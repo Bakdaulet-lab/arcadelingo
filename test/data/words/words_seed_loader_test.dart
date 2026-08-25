@@ -12,11 +12,11 @@ void main() {
   // Второй счётчик размера сида. Первый — «ровно N слов» в
   // test/assets/words_seed_test.dart; правятся оба и в одном коммите порции.
   test(
-    'loadWordsSeed: ассет из бандла → 268 единиц показа, первая — apple',
+    'loadWordsSeed: ассет из бандла → 343 единицы показа, первая — apple',
     () async {
       final items = ok(await loadWordsSeed());
 
-      expect(items, hasLength(268));
+      expect(items, hasLength(343));
       expect(items.first.word.id, 'apple');
       expect(items.first.distractors, hasLength(3));
     },
