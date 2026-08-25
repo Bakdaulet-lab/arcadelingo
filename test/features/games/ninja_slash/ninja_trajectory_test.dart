@@ -175,4 +175,77 @@ void main() {
       }
     });
   });
+
+  group('Позиции волны', () {
+    test('позиций столько же, сколько объектов', () {
+      for (final count in [1, 2, 3]) {
+        expect(
+          wavePositions(count: count, t: 0.5, width: _width, height: _height),
+          hasLength(count),
+          reason: 'волна из $count',
+        );
+      }
+      expect(
+        wavePositions(count: 0, t: 0.5, width: _width, height: _height),
+        isEmpty,
+      );
+    });
+
+    test('позиция объекта — та же, что даёт связка дорожки и траектории', () {
+      final positions = wavePositions(
+        count: 3,
+        t: 0.37,
+        width: _width,
+        height: _height,
+      );
+
+      for (var slot = 0; slot < 3; slot++) {
+        expect(positions[slot], _at(slot, 0.37), reason: 'дорожка $slot');
+      }
+    });
+
+    test('три объекта стоят на трёх разных дорожках', () {
+      final xs =
+          wavePositions(
+            count: 3,
+            t: 0.5,
+            width: _width,
+            height: _height,
+          ).map((p) => p.dx).toSet();
+
+      expect(xs, hasLength(3));
+    });
+
+    test('один объект — по центру поля', () {
+      final only =
+          wavePositions(
+            count: 1,
+            t: 0.5,
+            width: _width,
+            height: _height,
+          ).single;
+
+      expect(only.dx, closeTo(_width / 2, 1e-9));
+    });
+
+    test('в начале и в конце полёта все под нижней кромкой', () {
+      for (final t in [0.0, 1.0]) {
+        for (final p in wavePositions(
+          count: 3,
+          t: t,
+          width: _width,
+          height: _height,
+        )) {
+          expect(p.dy, greaterThan(_height), reason: 't = $t');
+        }
+      }
+    });
+
+    test('волна шире таблицы дорожек — ошибка вызывающего', () {
+      expect(
+        () => wavePositions(count: 4, t: 0.5, width: _width, height: _height),
+        throwsArgumentError,
+      );
+    });
+  });
 }

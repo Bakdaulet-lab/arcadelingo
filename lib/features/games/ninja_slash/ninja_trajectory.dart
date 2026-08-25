@@ -103,3 +103,17 @@ Offset trajectory({
   required double apex,
   required double bottom,
 }) => Offset(lane + drift * t, bottom - apex * 4 * t * (1 - t));
+
+/// Где стоят объекты волны из [count] штук в долю полёта [t] на поле
+/// [width] × [height].
+///
+/// Одна функция на двоих: по ней поле рисует объекты, и по ней же игра
+/// проверяет, что задел рез. Рисовать одно, а резать другое здесь
+/// невозможно по построению — а разъехаться две копии этой арифметики
+/// успели бы к первому же изменению апексов.
+List<Offset> wavePositions({
+  required int count,
+  required double t,
+  required double width,
+  required double height,
+}) => throw UnimplementedError();

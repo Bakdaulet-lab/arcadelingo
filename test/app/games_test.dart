@@ -21,6 +21,7 @@ import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/session/observed_session.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
+import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,7 +31,12 @@ import '../support/review_items.dart';
 final DateTime _t0 = DateTime.utc(2026, 8, 25, 10);
 
 /// Ключ игры, которой в `lib/` нет и не будет.
-const String _fakeId = 'ninja_slash';
+///
+/// До Фазы 4 здесь стоял `ninja_slash` — тогда это и был ключ игры, которой
+/// нет. Теперь такая игра есть, и оставить имя значило бы получить тест,
+/// зелёный по неправильной причине: ассерт про `gameId` совпал бы с
+/// настоящей записью реестра.
+const String _fakeId = 'fake_game';
 
 /// Что фейковая игра получила при запуске: по этому значению видно, всё ли
 /// хост передал и с каким id собрал сессию.
@@ -147,6 +153,38 @@ void main() {
       for (final game in wordarcadeGames) {
         expect(game.title.trim(), isNotEmpty, reason: game.id);
       }
+    });
+
+    // Фаза 4: вторая игра — настоящая, а не фейк из этого файла.
+    test('в реестре две игры, и падающие слова по-прежнему первые', () {
+      expect(wordarcadeGames.map((g) => g.id), [
+        'falling_words',
+        'ninja_slash',
+      ]);
+      expect(
+        wordarcadeGames.first,
+        fallingWordsEntry,
+        reason:
+            'экрана выбора ещё нет, и запускается первая — умолчание не '
+            'должно смениться от появления второй игры',
+      );
+    });
+
+    // Литералом, по той же причине, что и у падающих слов: id уезжает в
+    // журнал ответов, и переименование разойдётся с историей.
+    test('id ниндзя-слэша — ninja_slash', () {
+      expect(ninjaSlashEntry.id, 'ninja_slash');
+    });
+
+    testWidgets('вторая игра запускается тем же путём, что и первая', (
+      tester,
+    ) async {
+      await _pumpApp(tester, games: [ninjaSlashEntry]);
+
+      await _tapAndSettle(tester, AppKeys.play);
+
+      expect(find.byType(NinjaSlashGame), findsOneWidget);
+      expect(find.byType(FallingWordsGame), findsNothing);
     });
   });
 
