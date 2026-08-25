@@ -12,6 +12,7 @@
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
+import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -98,7 +99,11 @@ Future<void> answerGolden(WidgetTester tester, int i) async {
 ///
 /// Те же размер, плотность и масштаб текста, что и у восьми кадров игры:
 /// эталоны обязаны отличаться тем, что на них нарисовано, и ничем больше.
-Future<void> pumpRitualGolden(WidgetTester tester, StreakView ritual) async {
+Future<void> pumpRitualGolden(
+  WidgetTester tester,
+  StreakView ritual, {
+  List<WeekDay>? week,
+}) async {
   tester.view.physicalSize = goldenPhysicalSize;
   tester.view.devicePixelRatio = goldenDevicePixelRatio;
   tester.platformDispatcher.textScaleFactorTestValue = 1;
@@ -108,7 +113,12 @@ Future<void> pumpRitualGolden(WidgetTester tester, StreakView ritual) async {
     MaterialApp(
       theme: wordarcadeTheme(platform: TargetPlatform.android),
       debugShowCheckedModeBanner: false,
-      home: PlayView(onPlay: () {}, onSources: () {}, ritual: ritual),
+      home: PlayView(
+        onPlay: () {},
+        onSources: () {},
+        ritual: ritual,
+        week: week,
+      ),
     ),
   );
   await tester.pump();

@@ -12,6 +12,8 @@ library;
 
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/ui/ritual_labels.dart';
+import 'package:arcadelingo/ui/streak_card.dart';
+import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -41,8 +43,12 @@ abstract final class AppKeys {
   /// «Полные тексты лицензий» → штатный `showLicensePage`.
   static const Key licenses = Key('app.licenses');
 
-  /// Строка серии на домашнем экране; её нет, когда серии нет.
-  static const Key streak = Key('app.streak');
+  /// Подпись под пламенем стрик-карточки; её нет, когда серии нет.
+  ///
+  /// Определение живёт в `lib/ui/streak_card.dart`: карточка о хосте не
+  /// знает (пункт 4 «Архитектурного закона»), а два одинаковых литерала в
+  /// двух файлах однажды разъедутся.
+  static const Key streak = streakCaptionKey;
 
   /// «Сегодня сыграно» / «Сегодня ещё не сыграно».
   static const Key today = Key('app.today');
@@ -62,6 +68,7 @@ class PlayView extends StatelessWidget {
     required this.onSources,
     super.key,
     this.ritual,
+    this.week,
   });
 
   /// Серия на сегодня; null — состояние не читается.
@@ -74,6 +81,13 @@ class PlayView extends StatelessWidget {
   /// Ошибка чтения здесь молчит: ритуал — украшение, битый документ
   /// становится громким на тапе «Играть».
   final StreakView? ritual;
+
+  /// Семь дней недели для полосы под пламенем; null — журнал ещё читается.
+  ///
+  /// Отдельно от [ritual], потому что источник другой и он асинхронный:
+  /// сыгранные дни знает журнал событий, а не состояние серии. Место под
+  /// полосу занято заранее — карточка не прыгает, когда данные приедут.
+  final List<WeekDay>? week;
 
   final VoidCallback onPlay;
 
@@ -111,19 +125,9 @@ class PlayView extends StatelessWidget {
                 style: textTheme.bodyLarge,
               ),
               if (ritual case final view?) ...[
-                if (ritualStreakLabel(view) case final streak?) ...[
-                  const SizedBox(height: 24),
-                  Text(
-                    streak,
-                    key: AppKeys.streak,
-                    textAlign: TextAlign.center,
-                    style: withWeight(
-                      textTheme.titleLarge!,
-                      FontWeight.bold,
-                    ).copyWith(color: Theme.of(context).colorScheme.primary),
-                  ),
-                ],
-                const SizedBox(height: 8),
+                const SizedBox(height: 24),
+                StreakCard(ritual: view, week: week),
+                const SizedBox(height: 12),
                 Text(
                   ritualTodayLabel(view),
                   key: AppKeys.today,

@@ -8,7 +8,10 @@
 // Три состояния, а не шесть: остальные различаются словами, и слова
 // проверяет `test/ui/ritual_labels_test.dart`. Кадр «заморозка потрачена
 // вчера» эталоном не заводится намеренно — он отличается от соседнего ровно
-// одной строкой текста, и держать за это восьмой байтовый эталон дорого.
+// одной строкой текста, и держать за это отдельный байтовый эталон дорого.
+//
+// Пересняты под задачу 3.3.1: вместо трёх строк текста на карточке пламя,
+// растущее с серией, и полоса недели. Первые кандидаты автор не принял.
 //
 // Эталоны снимаются на Linux и принимаются человеком по артефакту прогона
 // CI: `--update-goldens` в проекте не работает ни у кого
@@ -22,11 +25,17 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../support/golden_harness.dart';
 
+import 'package:arcadelingo/ui/week_strip.dart';
+
 import '../support/ritual_views.dart';
 
 void main() {
   testWidgets('ритуал: серии ещё нет', (tester) async {
-    await pumpRitualGolden(tester, ritualView());
+    await pumpRitualGolden(
+      tester,
+      ritualView(),
+      week: weekStrip(today: ritualToday, played: const {}),
+    );
 
     await expectLater(
       find.byType(PlayView),
@@ -35,7 +44,14 @@ void main() {
   });
 
   testWidgets('ритуал: сегодня сыграно, серия идёт', (tester) async {
-    await pumpRitualGolden(tester, ritualView(days: 5, best: 9));
+    await pumpRitualGolden(
+      tester,
+      ritualView(days: 5, best: 9),
+      week: weekStrip(
+        today: ritualToday,
+        played: {daysAgo(2), daysAgo(1), ritualToday},
+      ),
+    );
 
     await expectLater(
       find.byType(PlayView),
@@ -47,6 +63,7 @@ void main() {
     await pumpRitualGolden(
       tester,
       ritualView(days: 6, lastOffset: 2, best: 9, freezes: 1),
+      week: weekStrip(today: ritualToday, played: {daysAgo(2)}),
     );
 
     await expectLater(

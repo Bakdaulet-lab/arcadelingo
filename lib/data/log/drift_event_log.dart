@@ -70,6 +70,15 @@ class DriftEventLog implements EventLog {
     };
   }
 
+  @override
+  Future<Set<StreakDay>> daysWith({
+    required AppEventKind kind,
+    required StreakDay from,
+    required StreakDay to,
+  }) {
+    throw UnimplementedError('DriftEventLog.daysWith');
+  }
+
   AppEvent _toEvent(Event row) => AppEvent(
     kind: row.kind,
     at: DateTime.fromMicrosecondsSinceEpoch(row.atUtcMicros, isUtc: true),

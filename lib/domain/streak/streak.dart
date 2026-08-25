@@ -60,6 +60,24 @@ class StreakDay implements Comparable<StreakDay> {
     return StreakDay(tomorrow.year, tomorrow.month, tomorrow.day);
   }
 
+  /// Предыдущий календарный день — зеркало [next], и через тот же `DateTime.utc`
+  /// как календарь: у UTC нет переходов на летнее время.
+  StreakDay get previous {
+    final yesterday = DateTime.utc(
+      year,
+      month,
+      day,
+    ).subtract(const Duration(days: 1));
+    return StreakDay(yesterday.year, yesterday.month, yesterday.day);
+  }
+
+  /// День недели: 1 — понедельник, 7 — воскресенье.
+  ///
+  /// Свойство календарного дня, а не момента, поэтому живёт здесь. UTC снова
+  /// взят календарём: в локальной зоне тот же вызов в ночь перевода стрелок
+  /// мог бы дать соседний день.
+  int get weekday => DateTime.utc(year, month, day).weekday;
+
   static DateTime? _normalize(int year, int month, int day) {
     final probe = DateTime.utc(year, month, day);
     if (probe.year != year || probe.month != month || probe.day != day) {

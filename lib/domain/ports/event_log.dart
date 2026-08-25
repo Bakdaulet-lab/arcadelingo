@@ -29,6 +29,19 @@ abstract class EventLog {
     required StreakDay from,
     required StreakDay to,
   });
+
+  /// Дни отрезка [from]..[to], в которые случилось хотя бы одно событие рода
+  /// [kind]. Границы включительно.
+  ///
+  /// Множество, а не список: полосе недели важно «был ли день», а не сколько
+  /// раз. Первый потребитель — стрик-карточка с `roundOver`: она обязана
+  /// показывать сыгранные дни, а не выводить их из длины серии, потому что
+  /// состояние помнит текущую серию и ничего до её обрыва.
+  Future<Set<StreakDay>> daysWith({
+    required AppEventKind kind,
+    required StreakDay from,
+    required StreakDay to,
+  });
 }
 
 /// Журнал, который ничего не пишет и ничего не помнит.
@@ -47,6 +60,13 @@ class NoopEventLog implements EventLog {
 
   @override
   Future<Map<AppEventKind, int>> countsByKind({
+    required StreakDay from,
+    required StreakDay to,
+  }) async => const {};
+
+  @override
+  Future<Set<StreakDay>> daysWith({
+    required AppEventKind kind,
     required StreakDay from,
     required StreakDay to,
   }) async => const {};

@@ -30,6 +30,7 @@ import 'package:arcadelingo/domain/session/observed_session.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
+import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:arcadelingo/domain/usecases/count_played_day.dart';
 import 'package:arcadelingo/domain/usecases/start_session.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -148,6 +149,15 @@ class _HomeScreenState extends State<HomeScreen> {
   /// появлялся бы раньше, чем человек о чём-либо попросил.
   StreakView? _ritual;
 
+  /// Семь дней недели для полосы; null — журнал ещё читается.
+  ///
+  /// Отдельным полем и асинхронно, потому что источник другой: сыгранные дни
+  /// знает журнал событий, а состояние серии помнит только длину текущей и
+  /// ничего до её обрыва. Человек, игравший в понедельник и вторник,
+  /// сорвавшийся в среду и вернувшийся в четверг, обязан увидеть галочки на
+  /// понедельнике и вторнике — вывод из `current` показал бы там пусто.
+  List<WeekDay>? _week;
+
   /// Причина, по которой не читается состояние; null — экран «Играть».
   Failure? _stateFailure;
 
@@ -155,7 +165,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final failure = _stateFailure;
     return failure == null
-        ? PlayView(onPlay: _start, onSources: _openSources, ritual: _ritual)
+        ? PlayView(
+          onPlay: _start,
+          onSources: _openSources,
+          ritual: _ritual,
+          week: _week,
+        )
         : StateErrorView(message: failure.message, onReset: _reset);
   }
 
@@ -204,11 +219,43 @@ class _HomeScreenState extends State<HomeScreen> {
   /// увидит экран ошибки. Падать при входе в приложение, до того как он о
   /// чём-либо попросил, было бы хуже.
   void _refreshRitual() {
-    final view = switch (widget.streakStore.load()) {
-      Ok(:final value) => streakAsOf(value, StreakDay.of(widget.now())),
+    final today = StreakDay.of(widget.now());
+    final state = switch (widget.streakStore.load()) {
+      Ok(:final value) => value,
       Err() => null,
     };
-    setState(() => _ritual = view);
+    setState(() => _ritual = state == null ? null : streakAsOf(state, today));
+    if (state != null) unawaited(_refreshWeek(state, today));
+  }
+
+  /// Собирает полосу недели: сыгранные дни — из журнала, замороженный — из
+  /// состояния.
+  ///
+  /// Журнал ведётся с Этапа 3.2, и дни до него в полосе пусты, сколько бы их
+  /// ни было сыграно. Восстанавливать их неоткуда, и притворяться, что
+  /// можно, хуже, чем показать пустой кружок (`SPEC.md`).
+  Future<void> _refreshWeek(StreakState state, StreakDay today) async {
+    var monday = today;
+    while (monday.weekday != DateTime.monday) {
+      monday = monday.previous;
+    }
+    var sunday = monday;
+    for (var i = 0; i < 6; i++) {
+      sunday = sunday.next;
+    }
+    final played = await widget.eventLog.daysWith(
+      kind: AppEventKind.roundOver,
+      from: monday,
+      to: sunday,
+    );
+    if (!mounted) return;
+    setState(() {
+      _week = weekStrip(
+        today: today,
+        played: played,
+        frozen: state.lastFrozenDay,
+      );
+    });
   }
 
   /// Партия кончилась: записать событие и засчитать день.

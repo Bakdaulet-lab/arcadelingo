@@ -33,4 +33,17 @@ class InMemoryEventLog implements EventLog {
     }
     return counts;
   }
+
+  @override
+  Future<Set<StreakDay>> daysWith({
+    required AppEventKind kind,
+    required StreakDay from,
+    required StreakDay to,
+  }) async => {
+    for (final event in events)
+      if (event.kind == kind &&
+          event.localDay.compareTo(from) >= 0 &&
+          event.localDay.compareTo(to) <= 0)
+        event.localDay,
+  };
 }

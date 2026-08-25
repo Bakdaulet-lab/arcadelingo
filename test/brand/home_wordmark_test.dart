@@ -14,7 +14,6 @@
 
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
-import 'package:arcadelingo/ui/streak_label.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,7 +62,9 @@ void main() {
   testWidgets('марка и серия стоят на экране вместе', (tester) async {
     await _pump(tester, ritual: ritualView(days: 5));
     expect(find.text(appName), findsOneWidget);
-    expect(find.text(streakLabel(5)), findsOneWidget);
+    // Серия теперь карточка: число в пламени, подпись под ним.
+    expect(find.text('5'), findsOneWidget);
+    expect(find.text('дней подряд'), findsOneWidget);
     expect(find.byKey(AppKeys.streak), findsOneWidget);
     // Порядок сверху вниз: имя, затем серия. Если строка серии окажется над
     // заголовком, экран начнёт представляться числом, а не приложением.

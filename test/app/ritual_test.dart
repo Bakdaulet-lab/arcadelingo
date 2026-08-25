@@ -21,7 +21,9 @@ import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
+import 'package:arcadelingo/ui/streak_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -265,6 +267,48 @@ void main() {
     });
   });
 
+  group('Полоса недели', () {
+    // Ровно то, ради чего полоса берёт данные из журнала. Серия оборвана
+    // средой, `current` знает только про четверг, — но понедельник и вторник
+    // человек отыграл, и галочки на них обязаны быть.
+    testWidgets('сыгранные дни приходят из журнала, а не из длины серии', (
+      tester,
+    ) async {
+      _now = _t0.add(const Duration(days: 1)); // четверг 27 августа
+      await pumpApp(
+        tester,
+        prefs: {
+          'streak_state': jsonEncode({
+            'version': 2,
+            'current': 1,
+            'best': 2,
+            'last_day': '2026-08-27',
+            'freezes': 0,
+            'days_since_freeze': 1,
+          }),
+        },
+      );
+      // Журнал помнит понедельник и вторник — до обрыва.
+      for (final day in ['2026-08-24', '2026-08-25']) {
+        await events.append(
+          AppEvent(
+            kind: AppEventKind.roundOver,
+            at: DateTime.utc(2026, 8, 24, 12),
+            localDay: StreakDay(2026, 8, int.parse(day.split('-').last)),
+          ),
+        );
+      }
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byIcon(Icons.check),
+        findsNWidgets(2),
+        reason: 'состояние серии этих дней не помнит, а журнал помнит',
+      );
+    });
+  });
+
   group('Домашний экран', () {
     testWidgets('до первой партии — приглашение и ни одной цифры', (
       tester,
@@ -289,8 +333,10 @@ void main() {
 
       expect(
         tester.widget<Text>(find.byKey(AppKeys.streak)).data,
-        'Серия: 1 день',
+        'день подряд',
+        reason: 'число уже нарисовано в пламени, подпись его не повторяет',
       );
+      expect(tester.widget<Text>(find.byKey(flameDigitKey)).data, '1');
       expect(find.text('Сегодня сыграно'), findsOneWidget);
       expect(find.text('Сыграть ещё раз'), findsOneWidget);
     });
@@ -331,10 +377,7 @@ void main() {
         },
       );
 
-      expect(
-        tester.widget<Text>(find.byKey(AppKeys.streak)).data,
-        'Серия: 4 дня',
-      );
+      expect(tester.widget<Text>(find.byKey(flameDigitKey)).data, '4');
       expect(find.text('Спасти серию'), findsOneWidget);
       expect(find.text('Заморозка в запасе'), findsOneWidget);
     });
