@@ -52,7 +52,12 @@ class StreakDay implements Comparable<StreakDay> {
   /// сложение на локальном `DateTime` в ночь перевода стрелок дало бы тот же
   /// день или пропустило бы один — и серия порвалась бы дважды в год.
   StreakDay get next {
-    throw UnimplementedError();
+    final tomorrow = DateTime.utc(
+      year,
+      month,
+      day,
+    ).add(const Duration(days: 1));
+    return StreakDay(tomorrow.year, tomorrow.month, tomorrow.day);
   }
 
   static DateTime? _normalize(int year, int month, int day) {
@@ -153,5 +158,12 @@ class StreakState {
 ///
 /// `best` держит максимум и разрывом не сбрасывается.
 StreakState advanceStreak(StreakState state, StreakDay day) {
-  throw UnimplementedError();
+  final last = state.lastDay;
+  if (last == day) return state;
+  final current = last != null && day == last.next ? state.current + 1 : 1;
+  return StreakState(
+    current: current,
+    best: current > state.best ? current : state.best,
+    lastDay: day,
+  );
 }

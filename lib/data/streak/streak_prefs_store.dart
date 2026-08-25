@@ -28,18 +28,24 @@ class StreakPrefsStore implements StreakStore {
   /// тест держит это имя литералом именно поэтому.
   static const String key = 'streak_state';
 
+  /// Ключа нет — первый запуск, не ошибка: [StreakState.empty]. Битый
+  /// документ — [Err]; стор при этом ничего не пишет и не сбрасывает.
   @override
   Result<StreakState> load() {
-    throw UnimplementedError();
+    final raw = _prefs.getString(key);
+    if (raw == null) return Ok(StreakState.empty);
+    return decodeStreakState(raw);
   }
 
+  /// Записывает состояние целиком: документ заменяется, не сливается.
+  ///
+  /// Кодирование стоит в аргументе `setString`, то есть выполняется
+  /// синхронно, до первого `await`, — как и у карточек. Наблюдатель зовёт
+  /// это через `unawaited` на живом состоянии.
   @override
-  Future<bool> save(StreakState state) {
-    throw UnimplementedError();
-  }
+  Future<bool> save(StreakState state) =>
+      _prefs.setString(key, encodeStreakState(state));
 
   @override
-  Future<bool> reset() {
-    throw UnimplementedError();
-  }
+  Future<bool> reset() => _prefs.remove(key);
 }

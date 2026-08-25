@@ -6,6 +6,18 @@
 library;
 
 /// «Серия: N дней» с правильной формой слова.
-String streakLabel(int days) {
-  throw UnimplementedError();
+String streakLabel(int days) => 'Серия: $days ${_dayWord(days)}';
+
+/// Форма слова «день» при числе [n].
+///
+/// Одиннадцать–четырнадцать проверяются до последней цифры и ломают наивное
+/// «смотрим на единицу в конце»: 11 — «дней», хотя кончается на 1.
+String _dayWord(int n) {
+  final lastTwo = n.abs() % 100;
+  if (lastTwo >= 11 && lastTwo <= 14) return 'дней';
+  return switch (n.abs() % 10) {
+    1 => 'день',
+    2 || 3 || 4 => 'дня',
+    _ => 'дней',
+  };
 }

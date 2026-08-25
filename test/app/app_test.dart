@@ -87,17 +87,36 @@ Future<LeitnerPrefsStore> _pumpApp(
 Future<String?> _streakDoc() async =>
     (await SharedPreferences.getInstance()).getString('streak_state');
 
-/// Партия целиком: [words] верных ответов и возврат на домашний экран.
+/// Партия целиком; возвращает число ответов.
 ///
 /// Настоящий путь, а не вызов usecase'а напрямую: сценарии серии проверяются
 /// там же, где живёт человек, — через тап «Играть» и настоящие prefs.
-Future<void> _playRound(WidgetTester tester, {int words = 3}) async {
+///
+/// Отвечает на то слово, которое на экране, а не на i-е по счёту: очередь
+/// собирает сессия, и какие слова в неё попадут во второй партии, тест знать
+/// не обязан. Число ответов возвращается затем же, зачем в тестах usecase'а:
+/// верный ответ уводит слово в третью коробку на трое суток, и партия на
+/// коротком сиде оказывается пустой. Тест, который этого не заметит, будет
+/// ложно-зелёным — «серия не изменилась» станет значить «отвечать было
+/// нечего».
+Future<int> _playRound(WidgetTester tester) async {
   await _tapAndSettleRoute(tester, AppKeys.play);
-  for (var i = 1; i <= words; i++) {
-    await _answerCorrectly(tester, i);
+  var answered = 0;
+  while (find.byKey(FallingWordsKeys.summary).evaluate().isEmpty) {
+    if (find.byKey(FallingWordsKeys.nothingToday).evaluate().isNotEmpty) break;
+    await tester.pump(const Duration(seconds: 1));
+    final word = tester.widget<Text>(find.byKey(FallingWordsKeys.word)).data!;
+    await tester.tap(find.text('перевод $word'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    answered++;
   }
   await _tapAndSettleRoute(tester, FallingWordsKeys.exit);
+  return answered;
 }
+
+/// Сид, которого хватает на три партии по пятнадцать слов подряд.
+List<ReviewItem> _longSeed() => _items(60);
 
 /// Документ состояния из карточек по id слова.
 String _stateOf(Map<String, LeitnerCard> cards) => encodeLeitnerState(cards);
@@ -262,11 +281,17 @@ void main() {
     });
 
     testWidgets('вторая партия в тот же день ничего не меняет', (tester) async {
-      await _pumpApp(tester);
+      await _pumpApp(tester, seed: Ok(_longSeed()));
       await _playRound(tester);
       final afterFirst = await _streakDoc();
 
-      await _playRound(tester);
+      final second = await _playRound(tester);
+
+      expect(
+        second,
+        greaterThan(0),
+        reason: 'иначе тест зелен оттого, что отвечать было нечего',
+      );
 
       expect(
         await _streakDoc(),
@@ -279,12 +304,13 @@ void main() {
     // функцией, и тест их подменяет.
     testWidgets('партия назавтра продлевает серию', (tester) async {
       var clock = _t0;
-      await _pumpApp(tester, now: () => clock);
+      await _pumpApp(tester, seed: Ok(_longSeed()), now: () => clock);
       await _playRound(tester);
 
       clock = _t0.add(const Duration(days: 1));
-      await _playRound(tester);
+      final second = await _playRound(tester);
 
+      expect(second, greaterThan(0));
       final doc = await _streakDoc();
       expect(doc, contains('"current":2'));
       expect(doc, contains('"best":2'));
@@ -295,13 +321,12 @@ void main() {
       tester,
     ) async {
       var clock = _t0;
-      await _pumpApp(tester, now: () => clock);
-      await _playRound(tester);
-      clock = _t0.add(const Duration(days: 1));
-      await _playRound(tester);
-
-      clock = _t0.add(const Duration(days: 3));
-      await _playRound(tester);
+      await _pumpApp(tester, seed: Ok(_longSeed()), now: () => clock);
+      for (final shift in [0, 1, 3]) {
+        clock = _t0.add(Duration(days: shift));
+        final answered = await _playRound(tester);
+        expect(answered, greaterThan(0), reason: 'день $shift: партия пустая');
+      }
 
       final doc = await _streakDoc();
       expect(doc, contains('"current":1'));

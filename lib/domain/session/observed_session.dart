@@ -104,12 +104,38 @@ class ObservedSession implements ReviewSession {
 
   @override
   ReviewItem? nextItem() {
-    throw UnimplementedError();
+    // Делегат первый: он же бросит на «nextItem() до report()», и до
+    // присваивания дело не дойдёт.
+    final item = _inner.nextItem();
+    if (item != null) _current = item;
+    return item;
   }
 
   @override
   void report(ReviewOutcome outcome) {
-    throw UnimplementedError();
+    final item = _current;
+    _inner.report(outcome);
+    _current = null;
+    if (item == null) {
+      // Сюда не попасть с любой строгой сессией: и настоящая, и фейк из
+      // тестов бросают StateError на report() без выданного слова. Но если
+      // однажды внутрь подставят мягкую, событие оказалось бы без слова —
+      // и лучше об этом узнать, чем разослать наблюдателям половину факта.
+      throw StateError(
+        'внутренняя сессия приняла report() без выданного слова',
+      );
+    }
+    final event = ReviewEvent(
+      item: item,
+      outcome: outcome,
+      grade: gradeOutcome(outcome),
+      at: _now(),
+      gameId: _gameId,
+      sessionId: _sessionId,
+    );
+    for (final observer in _observers) {
+      observer.onAnswer(event);
+    }
   }
 
   @override

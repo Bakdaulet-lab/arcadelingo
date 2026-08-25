@@ -20,8 +20,7 @@ class StreakObserver implements ReviewObserver {
       _state = initial;
 
   final StreakStore _store;
-  // Станет изменяемым в реализации: onAnswer продвигает серию.
-  final StreakState _state;
+  StreakState _state;
 
   /// Текущее состояние серии — для теста проводки и для хоста, если
   /// понадобится показать серию, не перечитывая хранилище.
@@ -36,6 +35,12 @@ class StreakObserver implements ReviewObserver {
   /// следующей партией.
   @override
   void onAnswer(ReviewEvent event) {
-    throw UnimplementedError();
+    final advanced = advanceStreak(_state, StreakDay.of(event.at));
+    // Тот же день возвращает то же состояние — и тогда писать нечего.
+    // Сравнение по значению, а не по ссылке: `advanceStreak` вправе
+    // вернуть новый объект с теми же полями.
+    if (advanced == _state) return;
+    _state = advanced;
+    unawaited(_store.save(advanced));
   }
 }

@@ -20,6 +20,7 @@ import '../review/review_contract.dart';
 import '../session/leitner_review_session.dart';
 import '../session/observed_session.dart';
 import '../srs/leitner.dart';
+import '../streak/streak.dart';
 import '../streak/streak_observer.dart';
 
 class StartSession {
@@ -52,6 +53,46 @@ class StartSession {
     required String gameId,
     void Function(Map<String, LeitnerCard> cards)? onCardsChanged,
   }) {
-    throw UnimplementedError();
+    final Map<String, LeitnerCard> cards;
+    switch (_cards.load()) {
+      case Ok(:final value):
+        cards = value;
+      case Err(:final failure):
+        return Err(failure);
+    }
+    // Серия читается до создания сессии, а не при первом ответе: партия,
+    // которая началась и упала на середине, — худший из возможных исходов.
+    final StreakState streak;
+    switch (_streaks.load()) {
+      case Ok(:final value):
+        streak = value;
+      case Err(:final failure):
+        return Err(failure);
+    }
+    final startedAt = _now();
+    final inner = LeitnerReviewSession.start(
+      cards: cards,
+      items: items,
+      target: _target,
+      now: _now,
+      onCardsChanged: (changed) {
+        // Ответ уже принят, ждать записи некому: report() не async, а
+        // сохранение кодирует состояние синхронно, до первого await.
+        unawaited(_cards.save(changed));
+        onCardsChanged?.call(changed);
+      },
+    );
+    return Ok(
+      ObservedSession(
+        inner: inner,
+        observers: [StreakObserver(store: _streaks, initial: streak)],
+        now: _now,
+        gameId: gameId,
+        // Момент старта, а не счётчик: партия длится минуты, столкнуться
+        // двум сессиям в одной миллисекунде негде, а значение при этом
+        // детерминировано подставленными часами.
+        sessionId: startedAt.toIso8601String(),
+      ),
+    );
   }
 }
