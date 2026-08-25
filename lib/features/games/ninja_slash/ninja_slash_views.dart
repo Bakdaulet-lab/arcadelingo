@@ -17,7 +17,10 @@
 /// мужчин).
 library;
 
+import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
+
+import 'ninja_trajectory.dart';
 
 /// До этой серии поле чистое: ранний тон был бы шумом, а не наградой.
 const int comboTintStart = 2;
@@ -39,22 +42,35 @@ const double comboGradientEdge = 0.22;
 /// Единственная функция джуса, которой нужна палитра, — поэтому она здесь,
 /// а не в `ninja_slash_juice.dart`: иначе Flutter приехал бы вместе с ней и
 /// в `NinjaRun`, который держится без него намеренно.
-Color comboTint(ColorScheme scheme, int combo) => throw UnimplementedError();
+Color comboTint(ColorScheme scheme, int combo) {
+  // Ранний выход, а не lerp с нулём: чистое поле обязано быть тем же самым
+  // цветом, что и surface, иначе «поле не тронуто» пришлось бы проверять с
+  // допуском, и настоящий блёклый тон прошёл бы под такой допуск.
+  if (!comboIsHot(combo)) return scheme.surface;
+  final depth = ((combo - comboTintStart) / (comboTintEnd - comboTintStart))
+      .clamp(0.0, 1.0);
+  return Color.lerp(scheme.surface, scheme.primary, comboTintMax * depth)!;
+}
 
 /// Загорелась ли серия — то есть видно ли уже тон на поле.
 ///
 /// Одна функция на два ответа: подкрашивать ли поле и гореть ли множителю в
 /// HUD. Порог живёт здесь и нигде больше, поэтому разъехаться они не могут
 /// даже случайно.
-bool comboIsHot(int combo) => throw UnimplementedError();
+bool comboIsHot(int combo) => combo > comboTintStart;
 
 /// Тон поля по длине серии — вертикальным градиентом, а не заливкой.
 LinearGradient comboGradient(ColorScheme scheme, int combo) =>
-    throw UnimplementedError();
+    comboGradientFor(scheme, comboTint(scheme, combo));
 
 /// Тот же градиент, но от готового горячего цвета.
 LinearGradient comboGradientFor(ColorScheme scheme, Color hot) =>
-    throw UnimplementedError();
+    LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [scheme.surface, hot, hot, scheme.surface],
+      stops: [0, comboGradientEdge, 1 - comboGradientEdge, 1],
+    );
 
 /// Ключи частей экрана.
 abstract final class NinjaKeys {
@@ -151,7 +167,62 @@ class GameHud extends StatelessWidget {
   final double scorePulse;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 16,
+        runSpacing: 8,
+        children: [
+          Semantics(
+            label: 'Жизни: $lives из $maxLives',
+            excludeSemantics: true,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < maxLives; i++)
+                  Icon(
+                    i < lives ? Icons.favorite : Icons.favorite_border,
+                    color: i < lives ? scheme.error : scheme.outline,
+                    size: 24,
+                    applyTextScaling: true,
+                  ),
+              ],
+            ),
+          ),
+          Text(
+            '$current/$total',
+            key: NinjaKeys.progress,
+            style: textTheme.titleMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            '×$multiplier',
+            key: NinjaKeys.combo,
+            style: textTheme.titleMedium?.copyWith(
+              color:
+                  comboIsHot(combo) ? scheme.primary : scheme.onSurfaceVariant,
+            ),
+          ),
+          // Transform, а не изменение кегля: раздувание размером сдвинуло бы
+          // соседние счётчики, и HUD дёргался бы на каждом верном резе.
+          Transform.scale(
+            scale: 1 + 0.25 * scorePulse.clamp(0.0, 1.0),
+            child: Text(
+              '$score',
+              key: NinjaKeys.score,
+              style: withWeight(textTheme.titleLarge!, FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Один объект волны — круг с переводом внутри.
@@ -162,7 +233,76 @@ class FlyingObject extends StatelessWidget {
   final ObjectState state;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    // Пары те же, что у кнопок падающих слов: контраст у них уже замерен, и
+    // заводить вторую палитру ради круглой формы было бы не решением, а
+    // риском.
+    final (
+      Color background,
+      Color foreground,
+      IconData? icon,
+    ) = switch (state) {
+      ObjectState.idle || ObjectState.dimmed => (
+        scheme.surfaceContainerHighest,
+        scheme.onSurface,
+        null,
+      ),
+      ObjectState.correct => (
+        scheme.primaryContainer,
+        scheme.onPrimaryContainer,
+        Icons.check,
+      ),
+      ObjectState.wrong => (
+        scheme.errorContainer,
+        scheme.onErrorContainer,
+        Icons.close,
+      ),
+    };
+    return Opacity(
+      opacity: state == ObjectState.dimmed ? 0.5 : 1,
+      child: Container(
+        width: objectRadius * 2,
+        height: objectRadius * 2,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: background,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: icon == null ? Colors.transparent : foreground,
+            width: icon == null ? 0 : 3,
+          ),
+        ),
+        // Содержимое обязано помещаться в круг: размер объекта — часть
+        // геометрии реза, и растягиваться под перевод он не может. При
+        // системном шрифте 2× две строки плюс иконка дают 80 dp на 68 dp
+        // круга (замерено тестом), поэтому уменьшается всё целиком, как
+        // полоса недели в стрик-карточке, а не ломается ряд.
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: SizedBox(
+            width: objectRadius * 2 - 8,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) Icon(icon, color: foreground, size: 18),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: withWeight(
+                    Theme.of(context).textTheme.bodyMedium!,
+                    FontWeight.bold,
+                  ).copyWith(color: foreground),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Поле волны: слово наверху, объекты на параболах.
@@ -189,10 +329,67 @@ class NinjaField extends StatelessWidget {
   final double progress;
 
   /// Стоп-кадр промаха: объекты гаснут, чтобы пара по центру читалась.
+  ///
+  /// На нём же перестаёт рисоваться слово наверху: оно уже стоит в паре по
+  /// центру, и два одинаковых слова на экране — это шум, а не подсказка.
   final bool faded;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final positions = wavePositions(
+          count: objects.length,
+          t: progress,
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+        );
+        return Stack(
+          children: [
+            if (!faded)
+              Positioned(
+                top: 12,
+                left: 16,
+                right: 16,
+                child: Text(
+                  word,
+                  key: NinjaKeys.word,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  style: withWeight(
+                    Theme.of(context).textTheme.displaySmall!,
+                    FontWeight.bold,
+                  ).copyWith(color: scheme.onSurface),
+                ),
+              ),
+            Positioned.fill(
+              key: NinjaKeys.objects,
+              child: Opacity(
+                // Гаснут, а не исчезают: стоп-кадр обязан остаться
+                // стоп-кадром, но пара по центру читается поверх него.
+                opacity: faded ? 0.25 : 1,
+                child: Stack(
+                  children: [
+                    for (var i = 0; i < objects.length; i++)
+                      Positioned(
+                        left: positions[i].dx - objectRadius,
+                        top: positions[i].dy - objectRadius,
+                        child: FlyingObject(
+                          key: NinjaKeys.objectAt(i),
+                          label: objects[i].label,
+                          state: objects[i].state,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 /// Связка «слово → перевод» на промахе и таймауте.
@@ -206,7 +403,57 @@ class RevealPair extends StatelessWidget {
   final String answer;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final style = withWeight(
+      Theme.of(context).textTheme.displaySmall!,
+      FontWeight.bold,
+    );
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.close,
+                  color: scheme.error,
+                  size: 32,
+                  applyTextScaling: true,
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    word,
+                    key: NinjaKeys.word,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    style: style.copyWith(color: scheme.error),
+                  ),
+                ),
+              ],
+            ),
+            Icon(
+              Icons.arrow_downward,
+              color: scheme.outline,
+              size: 28,
+              applyTextScaling: true,
+            ),
+            Text(
+              answer,
+              key: NinjaKeys.revealAnswer,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              style: style.copyWith(color: scheme.primary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// Итоги партии.
@@ -238,7 +485,63 @@ class SummaryView extends StatelessWidget {
   final VoidCallback onExit;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    final note = footer;
+    // Прокрутка, а не фиксированная колонка: при системном шрифте 2×
+    // содержимое не помещается на 360×640. Пока помещается — Center держит
+    // его по центру.
+    return Center(
+      key: NinjaKeys.summary,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              outOfLives ? 'Жизни кончились' : 'Раунд окончен',
+              textAlign: TextAlign.center,
+              style: textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 24),
+            Text('Счёт: $score', style: textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Text('Лучшая серия: $bestCombo', style: textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Text(
+              'Верных ответов: $correctCount из $answeredCount',
+              style: textTheme.titleLarge,
+            ),
+            if (note != null) ...[
+              const SizedBox(height: 16),
+              Text(
+                note,
+                key: NinjaKeys.summaryFooter,
+                textAlign: TextAlign.center,
+                style: textTheme.bodyLarge?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            const SizedBox(height: 32),
+            EndButton(
+              key: NinjaKeys.playAgain,
+              label: 'Ещё раз',
+              onPressed: onPlayAgain,
+            ),
+            const SizedBox(height: 8),
+            EndButton(
+              key: NinjaKeys.exit,
+              label: 'Выйти',
+              primary: false,
+              onPressed: onExit,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// Кнопка на экране конца партии.
@@ -257,7 +560,18 @@ class EndButton extends StatelessWidget {
   final bool primary;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) {
+    final style = ButtonStyle(
+      minimumSize: WidgetStateProperty.all(const Size(220, 56)),
+      textStyle: WidgetStateProperty.all(
+        Theme.of(context).textTheme.titleMedium,
+      ),
+    );
+    final text = Text(label, textAlign: TextAlign.center);
+    return primary
+        ? FilledButton(onPressed: onPressed, style: style, child: text)
+        : OutlinedButton(onPressed: onPressed, style: style, child: text);
+  }
 }
 
 /// Сессия не дала ни одного слова.
@@ -267,5 +581,30 @@ class NothingTodayView extends StatelessWidget {
   final VoidCallback onExit;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      key: NinjaKeys.nothingToday,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.task_alt, size: 64, color: scheme.primary),
+            const SizedBox(height: 16),
+            Text('На сегодня всё', style: textTheme.headlineMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Слова к повторению кончились. Возвращайся завтра.',
+              textAlign: TextAlign.center,
+              style: textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 32),
+            EndButton(key: NinjaKeys.exit, label: 'Выйти', onPressed: onExit),
+          ],
+        ),
+      ),
+    );
+  }
 }

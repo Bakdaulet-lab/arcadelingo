@@ -216,14 +216,12 @@ void main() {
       expect(xs, hasLength(3));
     });
 
-    test('один объект — по центру поля', () {
+    // На старте, а не в апексе: к середине полёта объект успевает уехать на
+    // половину дрейфа, и «по центру» — это про дорожку, а не про то, где он
+    // окажется потом.
+    test('один объект стартует по центру поля', () {
       final only =
-          wavePositions(
-            count: 1,
-            t: 0.5,
-            width: _width,
-            height: _height,
-          ).single;
+          wavePositions(count: 1, t: 0, width: _width, height: _height).single;
 
       expect(only.dx, closeTo(_width / 2, 1e-9));
     });

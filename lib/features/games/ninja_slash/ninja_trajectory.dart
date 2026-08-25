@@ -116,4 +116,28 @@ List<Offset> wavePositions({
   required double t,
   required double width,
   required double height,
-}) => throw UnimplementedError();
+}) {
+  final bottom = flightBottom(height);
+  return [
+    for (final slot in laneSlotsFor(count))
+      _positionOnSlot(slot, t: t, width: width, height: height, bottom: bottom),
+  ];
+}
+
+/// Где объект дорожки [slot] в долю полёта [t].
+Offset _positionOnSlot(
+  int slot, {
+  required double t,
+  required double width,
+  required double height,
+  required double bottom,
+}) {
+  final flight = flightForSlot(slot, width: width, height: height);
+  return trajectory(
+    t: t,
+    lane: flight.lane,
+    drift: flight.drift,
+    apex: flight.apex,
+    bottom: bottom,
+  );
+}

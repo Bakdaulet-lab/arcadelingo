@@ -581,8 +581,10 @@ void main() {
 
       await tester.pump(const Duration(milliseconds: 400));
 
-      expect(find.byKey(NinjaKeys.revealAnswer), findsOneWidget);
-      expect(find.text(wordTranslation(1)), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(NinjaKeys.revealAnswer)).data,
+        wordTranslation(1),
+      );
       expect(
         _objectCenter(tester, 0),
         frozen,
