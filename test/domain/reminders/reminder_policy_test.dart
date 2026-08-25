@@ -144,24 +144,24 @@ void main() {
     });
   });
 
-  group('Текст считается на день срабатывания', () {
+  group('Причина считается на день срабатывания', () {
     // Сегодня сыграно, напоминание уходит на завтра. Завтра серия будет
-    // живой и несыгранной — текст обязан звать продолжить, а не
-    // поздравлять с сегодняшним днём.
-    test('сыграл сегодня — завтрашнее напоминание зовёт продолжить', () {
+    // живой и несыгранной — звать надо продолжить, а не поздравлять с
+    // сегодняшним днём.
+    test('сыграл сегодня — завтрашнее зовёт продолжить', () {
       final plan = planReminder(
         settings: _on,
         streak: _streak(days: 5),
         now: _at(10),
       );
 
-      expect(plan!.title, contains('5'));
-      expect(plan.body, isNot(contains('под угрозой')));
+      expect(plan!.reason, ReminderReason.keepGoing);
+      expect(plan.days, 5, reason: 'завтра серия всё ещё пять дней');
     });
 
     // Вчера не играл, сегодня время уже прошло: завтра пропущенным окажется
     // сегодняшний день, и заморозка его прикроет.
-    test('пропуск и заморозка — завтрашнее напоминание про угрозу', () {
+    test('пропуск и заморозка — завтрашнее про угрозу', () {
       final plan = planReminder(
         settings: _on,
         streak: _streak(days: 5, lastOffset: 1, freezes: 1),
@@ -169,7 +169,8 @@ void main() {
       );
 
       expect(plan!.at, DateTime(2026, 8, 27, 20));
-      expect(plan.title, contains('под угрозой'));
+      expect(plan.reason, ReminderReason.atRisk);
+      expect(plan.days, 5);
     });
 
     test('серия оборвётся, спасать нечем — зовём начать заново', () {
@@ -179,50 +180,55 @@ void main() {
         now: _at(23),
       );
 
-      expect(
-        plan!.title,
-        isNot(contains('5')),
-        reason: 'к завтрашнему дню этой серии уже не будет',
-      );
+      expect(plan!.reason, ReminderReason.start);
+      expect(plan.days, 0, reason: 'к завтрашнему дню этой серии уже не будет');
     });
 
     test('серии нет — зовём начать', () {
       final plan = planReminder(settings: _on, streak: _streak(), now: _at(10));
 
-      expect(plan!.title, isNotEmpty);
-      expect(plan.body, isNotEmpty);
-      expect(plan.title, isNot(contains('0')));
+      expect(plan!.reason, ReminderReason.start);
+      expect(plan.days, 0);
+    });
+
+    test('сегодня не сыграно и время не прошло — сегодняшнее про серию', () {
+      final plan = planReminder(
+        settings: _on,
+        streak: _streak(days: 3, lastOffset: 1),
+        now: _at(10),
+      );
+
+      expect(plan!.at, DateTime(2026, 8, 26, 20));
+      expect(plan.reason, ReminderReason.keepGoing);
+      expect(plan.days, 3);
     });
   });
 
-  group('Слова', () {
-    test('заголовок и текст непусты во всех состояниях', () {
-      final states = [
-        _streak(),
-        _streak(days: 1),
-        _streak(days: 5, lastOffset: 1),
-        _streak(days: 5, lastOffset: 2, freezes: 1),
-        _streak(days: 30, lastOffset: 1),
-      ];
-
-      for (final state in states) {
-        final plan = planReminder(settings: _on, streak: state, now: _at(10));
-        expect(plan!.title.trim(), isNotEmpty, reason: '$state');
-        expect(plan.body.trim(), isNotEmpty, reason: '$state');
-      }
-    });
-
-    test('русский счёт дней в заголовке', () {
-      String titleFor(int days) =>
+  group('Слов здесь нет', () {
+    // Политика отвечает «когда и почему»; «какими словами» — презентация.
+    // Первая версия собирала текст прямо здесь и утащила домен в импорт
+    // lib/ui ради русского счёта дней.
+    test('план несёт причину и число, а не строки', () {
+      final plan =
           planReminder(
             settings: _on,
-            streak: _streak(days: days, lastOffset: 1),
+            streak: _streak(days: 3, lastOffset: 1),
             now: _at(10),
-          )!.title;
+          )!;
 
-      expect(titleFor(1), contains('1 день'));
-      expect(titleFor(3), contains('3 дня'));
-      expect(titleFor(11), contains('11 дней'));
+      expect(plan.reason, isA<ReminderReason>());
+      expect(plan.days, isA<int>());
+    });
+
+    test('равенство планов по полям', () {
+      ReminderPlan? plan() => planReminder(
+        settings: _on,
+        streak: _streak(days: 3, lastOffset: 1),
+        now: _at(10),
+      );
+
+      expect(plan(), plan());
+      expect(plan().hashCode, plan().hashCode);
     });
   });
 }

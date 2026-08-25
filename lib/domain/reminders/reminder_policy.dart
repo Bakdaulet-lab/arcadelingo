@@ -1,48 +1,68 @@
-/// Когда напоминать и что говорить — чистая функция от состояния и часов.
+/// Когда напоминать и почему — чистая функция от состояния и часов.
 ///
-/// Здесь нет ни платформы, ни плагина, ни зон: только «в какой момент» и
-/// «какими словами». Ради этого порт [Reminders] и заведён — вся политика
+/// Здесь нет ни платформы, ни плагина, ни зон: только «в какой момент» и «по
+/// какому поводу». Ради этого порт [Reminders] и заведён — вся политика
 /// проверяется таблицей, а адаптеру остаётся отдать момент платформе.
 ///
-/// Главное решение файла: **текст считается на тот день, в который
+/// Главное решение файла: **повод считается на тот день, в который
 /// напоминание сработает**, а не на сегодняшний. Напоминание, поставленное
-/// вечером на завтра, сработает в мире, где серия на день старше; текст,
-/// посчитанный сегодня, сказал бы про сегодняшнее состояние. Пересчёт делает
-/// та же `streakAsOf`, что рисует домашний экран, — второй трактовки «что с
-/// серией» в проекте нет.
+/// вечером на завтра, сработает в мире, где серия на день старше; повод,
+/// посчитанный сегодня, говорил бы про сегодняшнее состояние. Пересчёт
+/// делает та же `streakAsOf`, что рисует домашний экран, — второй трактовки
+/// «что с серией» в проекте нет.
+///
+/// Слов здесь нет вовсе: политика отвечает «когда и почему», а «какими
+/// словами» — презентация (`lib/ui/reminder_labels.dart`). Первая версия
+/// собирала текст прямо здесь и утащила `lib/domain` в импорт `lib/ui` ради
+/// русского счёта дней; арх-гейт это пропустил, и правило пришлось дописать
+/// (`docs/dev/context.md`).
 library;
 
 import '../streak/streak.dart';
 import '../streak/streak_view.dart';
 import 'reminder_settings.dart';
 
-/// Готовое напоминание: момент и слова.
+/// Зачем напоминаем. От этого зависят слова, и только они.
+enum ReminderReason {
+  /// Серии нет или она к тому моменту оборвётся: зовём начать.
+  start,
+
+  /// Серия жива, и в тот день ещё не сыграно: зовём продолжить.
+  keepGoing,
+
+  /// Пропущен день, и заморозка его прикроет, если сыграть.
+  atRisk,
+}
+
+/// Готовое напоминание: момент, повод и длина серии на этот момент.
 class ReminderPlan {
   const ReminderPlan({
     required this.at,
-    required this.title,
-    required this.body,
+    required this.reason,
+    required this.days,
   });
 
   /// Момент в местной зоне.
   final DateTime at;
 
-  final String title;
-  final String body;
+  final ReminderReason reason;
+
+  /// Сколько дней будет в серии в день срабатывания; ноль — серии не будет.
+  final int days;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ReminderPlan &&
           at == other.at &&
-          title == other.title &&
-          body == other.body;
+          reason == other.reason &&
+          days == other.days;
 
   @override
-  int get hashCode => Object.hash(at, title, body);
+  int get hashCode => Object.hash(at, reason, days);
 
   @override
-  String toString() => 'ReminderPlan($at: $title / $body)';
+  String toString() => 'ReminderPlan($at, ${reason.name}, дней: $days)';
 }
 
 /// Что поставить в расписание сейчас, или null — ставить нечего.
@@ -60,14 +80,27 @@ ReminderPlan? planReminder({
   required StreakState streak,
   required DateTime now,
 }) {
-  throw UnimplementedError('planReminder');
+  if (!settings.enabled) return null;
+
+  final todayAt = settings.at.on(now);
+  final playedToday = streakAsOf(streak, StreakDay.of(now)).playedToday;
+  final at =
+      !playedToday && now.isBefore(todayAt)
+          ? todayAt
+          : settings.at.on(now.add(const Duration(days: 1)));
+
+  // Состояние на день срабатывания, а не на сегодня.
+  final view = streakAsOf(streak, StreakDay.of(at));
+  return ReminderPlan(at: at, reason: reasonFor(view), days: view.days);
 }
 
-/// Слова напоминания по состоянию серии на день, когда оно сработает.
+/// Зачем напоминать при таком состоянии серии.
 ///
-/// Отдельной функцией, потому что варианты — это решение, а не вёрстка:
-/// «Серия 5 дней под угрозой» бьёт сильнее, чем «пора позаниматься», и
-/// разница между ними и есть то, ради чего фаза существует.
-(String title, String body) reminderText(StreakView view) {
-  throw UnimplementedError('reminderText');
+/// Отдельной функцией, потому что различие — решение, а не вёрстка: «серия
+/// под угрозой» бьёт сильнее, чем «пора позаниматься», и разница между ними
+/// и есть то, ради чего фаза существует. Во что это превратится словами,
+/// решает `lib/ui/reminder_labels.dart`.
+ReminderReason reasonFor(StreakView view) {
+  if (view.freezeWillCover) return ReminderReason.atRisk;
+  return view.alive ? ReminderReason.keepGoing : ReminderReason.start;
 }
