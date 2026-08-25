@@ -25,17 +25,12 @@ import 'package:arcadelingo/domain/ports/streak_store.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/domain/usecases/start_session.dart';
-import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
 /// Размер сессии из SPEC. Его задаёт хост: игра про эту цифру не знает и
 /// заканчивает партию только по `nextItem() == null` и нулю жизней.
 const int sessionTarget = 15;
-
-/// Идентификатор игры в событиях ответа. На Фазе 2 игра одна; реестр игр —
-/// Этап 2.2, и тогда строка переедет туда.
-const String fallingWordsGameId = 'falling_words';
 
 class WordarcadeApp extends StatelessWidget {
   /// [seed] уже разобран: читать ассет — работа `loadWordsSeed`, а этому
@@ -178,6 +173,12 @@ class _HomeScreenState extends State<HomeScreen> {
     // Последнее состояние, приехавшее из сессии: по нему считается строка
     // итогов. До первого ответа это то, что прочитано из хранилища.
     var latest = <String, LeitnerCard>{};
+    // Первая из реестра: экрана выбора пока нет, а порядок в списке значим.
+    // Пустой реестр — дефект сборки, и молчать о нём хуже, чем упасть.
+    if (widget.games.isEmpty) {
+      throw StateError('реестр игр пуст: запускать нечего');
+    }
+    final game = widget.games.first;
     final started = StartSession(
       cards: widget.store,
       streaks: widget.streakStore,
@@ -185,12 +186,12 @@ class _HomeScreenState extends State<HomeScreen> {
       target: sessionTarget,
     )(
       items: widget.items,
-      gameId: fallingWordsGameId,
+      gameId: game.id,
       onCardsChanged: (changed) => latest = changed,
     );
     switch (started) {
       case Ok(:final value):
-        _play(value, () => _footer(latest));
+        _play(game, value, () => _footer(latest));
       case Err(:final failure):
         setState(() => _stateFailure = failure);
     }
@@ -210,21 +211,23 @@ class _HomeScreenState extends State<HomeScreen> {
     _start();
   }
 
-  void _play(ReviewSession session, String Function() footer) {
+  void _play(GameEntry game, ReviewSession session, String Function() footer) {
     final navigator = Navigator.of(context);
     unawaited(
       navigator
           .push(
             MaterialPageRoute<void>(
               builder:
-                  (context) => FallingWordsGame(
-                    session: session,
-                    summaryFooter: footer,
-                    onPlayAgain: () {
-                      navigator.pop();
-                      _start();
-                    },
-                    onExit: navigator.pop,
+                  (context) => game.build(
+                    GameLaunch(
+                      session: session,
+                      summaryFooter: footer,
+                      onPlayAgain: () {
+                        navigator.pop();
+                        _start();
+                      },
+                      onExit: navigator.pop,
+                    ),
                   ),
             ),
           )
