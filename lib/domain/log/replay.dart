@@ -39,5 +39,14 @@ import 'answer_record.dart';
 /// История до появления журнала неизвестна, и восстановить её неоткуда:
 /// переигровка верна для состояния, начатого с пустого журнала.
 Map<String, LeitnerCard> replayCards(Iterable<AnswerRecord> log) {
-  throw UnimplementedError('replayCards');
+  final cards = <String, LeitnerCard>{};
+  for (final record in log) {
+    // Слово, встреченное впервые, приходит из первой коробки со сроком
+    // «сейчас» — ровно так его заводит сессия в момент первого ответа.
+    final before =
+        cards[record.wordId] ??
+        LeitnerCard(box: LeitnerCard.minBox, due: record.at);
+    cards[record.wordId] = schedule(before, record.grade, now: record.at);
+  }
+  return cards;
 }

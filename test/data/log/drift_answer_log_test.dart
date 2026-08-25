@@ -15,7 +15,6 @@ import 'package:arcadelingo/data/log/drift_answer_log.dart';
 import 'package:arcadelingo/domain/log/answer_record.dart';
 import 'package:arcadelingo/domain/srs/review_grade.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
-import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -124,16 +123,17 @@ void main() {
       expect((await log.all()).single.localDay, StreakDay(2026, 8, 26));
     });
 
-    test('оценка возвращается тем же значением перечисления', () async {
-      for (final grade in ReviewGrade.values) {
-        final fresh = AnswerDatabase(NativeDatabase.memory());
-        addTearDown(fresh.close);
-        final freshLog = DriftAnswerLog(fresh);
-
-        await freshLog.append(_record(grade: grade));
-
-        expect((await freshLog.all()).single.grade, grade);
+    // Все четыре значения в одной БД, по слову на каждое: четыре
+    // отдельные базы дали бы то же самое плюс предупреждение drift о
+    // нескольких открытых экземплярах, то есть шум без пользы.
+    test('оценки возвращаются теми же значениями перечисления', () async {
+      for (final (index, grade) in ReviewGrade.values.indexed) {
+        await log.append(
+          _record(wordId: 'w0$index', grade: grade, at: _t0.add(_min(index))),
+        );
       }
+
+      expect((await log.all()).map((r) => r.grade), ReviewGrade.values);
     });
 
     test('журнал только дописывается: прошлые строки на месте', () async {

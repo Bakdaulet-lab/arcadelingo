@@ -33,8 +33,6 @@ class LoggingObserver implements ReviewObserver {
   /// отсутствующего.
   @override
   void onAnswer(ReviewEvent event) {
-    // Заглушка красного коммита: пустое тело, а не бросок. Наблюдатель уже
-    // подключён в StartSession, и бросок отсюда уронил бы все существующие
-    // тесты партии — красным стало бы не то, что проверяется.
+    unawaited(_log.append(AnswerRecord.of(event)));
   }
 }

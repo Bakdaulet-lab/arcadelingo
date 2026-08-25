@@ -64,7 +64,7 @@ class _OneTapGame extends StatelessWidget {
   );
 }
 
-final GameEntry _entry = GameEntry(
+const GameEntry _entry = GameEntry(
   id: 'one_tap',
   title: 'Один тап',
   build: _OneTapGame.new,
