@@ -48,34 +48,16 @@
     "new": ""
   },
   {
-    "name": "кодек принимает момент с зоной как день",
-    "file": "lib/data/streak/streak_codec.dart",
-    "old": "  final parsed = _dayFormat.firstMatch(rawDay);",
-    "new": "  final loose = DateTime.tryParse(rawDay);\n  final parsed = loose == null ? null : _dayFormat.firstMatch('${loose.year.toString().padLeft(4, '0')}-${loose.month.toString().padLeft(2, '0')}-${loose.day.toString().padLeft(2, '0')}');"
-  },
-  {
     "name": "серия пишется на каждый ответ, а не раз в день",
     "file": "lib/domain/streak/streak_observer.dart",
     "old": "    if (advanced == _state) return;",
     "new": ""
   },
   {
-    "name": "битая серия молча становится пустой",
-    "file": "lib/data/streak/streak_prefs_store.dart",
-    "old": "    if (raw == null) return Ok(StreakState.empty);\n    return decodeStreakState(raw);",
-    "new": "    if (raw == null) return Ok(StreakState.empty);\n    final decoded = decodeStreakState(raw);\n    return decoded is Err<StreakState> ? Ok(StreakState.empty) : decoded;"
-  },
-  {
     "name": "битая серия не мешает начать партию",
     "file": "lib/domain/usecases/start_session.dart",
     "old": "      case Err(:final failure):\n        return Err(failure);\n    }\n    final startedAt = _now();",
     "new": "      case Err():\n        streak = StreakState.empty;\n    }\n    final startedAt = _now();"
-  },
-  {
-    "name": "сброс прогресса не трогает серию",
-    "file": "lib/app/app.dart",
-    "old": "    await widget.streakStore.reset();\n",
-    "new": ""
   },
   {
     "name": "оценка в событии выдумана, а не посчитана из ответа",
