@@ -346,11 +346,21 @@ void main() {
     });
 
     testWidgets('«Сбросить прогресс» убирает и серию тоже', (tester) async {
-      await _pumpApp(tester, prefs: {_key: 'битый документ'});
-      // Сначала запишем серию мимо экрана ошибки: он появится на тапе.
+      // Серия обязана существовать ДО сброса, иначе тест проходит оттого,
+      // что удалять было нечего. На этом он уже один раз оказался
+      // ложно-зелёным — поймано мутацией «сброс не трогает серию».
+      await _pumpApp(
+        tester,
+        prefs: {
+          _key: 'битый документ',
+          'streak_state':
+              '{"version":1,"current":4,"best":9,"last_day":"2026-08-20"}',
+        },
+      );
+      expect(await _streakDoc(), isNotNull);
+
       await _tapAndSettleRoute(tester, AppKeys.play);
       expect(find.byKey(AppKeys.stateError), findsOneWidget);
-
       await _tapAndSettleRoute(tester, AppKeys.reset);
 
       expect(
