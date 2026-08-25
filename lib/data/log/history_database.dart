@@ -1,4 +1,4 @@
-/// История в SQLite через Drift: пока одна таблица ответов, схема v1.
+/// История в SQLite через Drift: ответы и события, схема v2.
 ///
 /// Имя базы — `HistoryDatabase`, а не `AnswerDatabase`: рядом с ответами
 /// на Этапе 3.2 ложится журнал событий, и база перестаёт быть про один
@@ -36,6 +36,7 @@
 /// выбирается обычным `BETWEEN` без единой функции работы с датами.
 library;
 
+import 'package:arcadelingo/domain/events/app_event.dart';
 import 'package:arcadelingo/domain/srs/review_grade.dart';
 import 'package:drift/drift.dart';
 
@@ -81,12 +82,54 @@ class Answers extends Table {
   TextColumn get sessionId => text()();
 }
 
-@DriftDatabase(tables: [Answers])
+/// События приложения: append-only, строки не меняются и не удаляются.
+///
+/// Отдельная таблица, а не колонка-разметка в `answers`: у ответа есть слово,
+/// оценка и время реакции, у события нет ничего из этого. Общая таблица с
+/// половиной пустых колонок — это две сущности, притворяющиеся одной.
+@TableIndex(name: 'events_kind', columns: {#kind})
+@TableIndex(name: 'events_day', columns: {#localDay})
+class Events extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// Что случилось — именем значения перечисления.
+  TextColumn get kind => textEnum<AppEventKind>()();
+
+  /// Момент: микросекунды с эпохи, UTC. Те же соображения, что у ответов.
+  IntColumn get atUtcMicros => integer()();
+
+  /// Локальный календарный день игравшего, `ГГГГ-ММ-ДД`.
+  TextColumn get localDay => text().withLength(min: 10, max: 10)();
+
+  /// Партия, к которой относится событие; NULL у тех, что вне партии.
+  TextColumn get sessionId => text().nullable()();
+}
+
+@DriftDatabase(tables: [Answers, Events])
 class HistoryDatabase extends _$HistoryDatabase {
   HistoryDatabase(super.e);
 
-  /// Версия схемы. Растёт вместе с изменениями таблицы; переход пишется
-  /// явной миграцией — той же дисциплиной, что `version` в документах prefs.
+  /// Версия схемы. Растёт вместе с изменениями таблиц; переход пишется явной
+  /// миграцией — той же дисциплиной, что `version` в документах prefs.
+  ///
+  /// v1 — только `answers` (Этап 2.3). v2 — плюс `events` (Этап 3.2).
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  /// Первая настоящая миграция проекта.
+  ///
+  /// Делать её сейчас дёшево: базе неделя, и данные в ней есть ровно у
+  /// одного человека. Отложить значило бы отлаживать миграции тогда, когда
+  /// цена ошибки станет «чужой прогресс».
+  ///
+  /// `answers` при переходе не трогается ни одним оператором — и это не
+  /// обещание в комментарии, а то, что проверяет тест: DDL таблицы до и
+  /// после миграции совпадает дословно.
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) => m.createAll(),
+    // Заглушка красного коммита: переход не написан, и тесты миграции
+    // краснеют на том, ради чего этап и затевался.
+    onUpgrade: (m, from, to) async {},
+  );
 }

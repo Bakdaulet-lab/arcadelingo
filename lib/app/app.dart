@@ -22,6 +22,7 @@ import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/ports/answer_log.dart';
+import 'package:arcadelingo/domain/ports/event_log.dart';
 import 'package:arcadelingo/domain/ports/streak_store.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
@@ -47,6 +48,7 @@ class WordarcadeApp extends StatelessWidget {
     this.now = DateTime.now,
     this.games = wordarcadeGames,
     this.answerLog = const NoopAnswerLog(),
+    this.eventLog = const NoopEventLog(),
   });
 
   final LeitnerPrefsStore store;
@@ -65,6 +67,10 @@ class WordarcadeApp extends StatelessWidget {
   /// без неё, а тесты, которые о журнале не знают, о нём и не узнают.
   /// Настоящий журнал подключает `main.dart` — корень знает и о `data/`.
   final AnswerLog answerLog;
+
+  /// История событий: открыл, начал, доиграл, бросил. Тоже с нулевым
+  /// объектом умолчанием — приложение полноценно и без приборов.
+  final EventLog eventLog;
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +91,7 @@ class WordarcadeApp extends StatelessWidget {
           now: now,
           games: games,
           answerLog: answerLog,
+          eventLog: eventLog,
         ),
         Err(:final failure) => SeedErrorView(message: failure.message),
       },
@@ -101,6 +108,7 @@ class HomeScreen extends StatefulWidget {
     required this.now,
     required this.games,
     required this.answerLog,
+    required this.eventLog,
     super.key,
   });
 
@@ -116,6 +124,8 @@ class HomeScreen extends StatefulWidget {
   final List<GameEntry> games;
 
   final AnswerLog answerLog;
+
+  final EventLog eventLog;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();

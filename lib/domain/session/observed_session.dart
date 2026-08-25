@@ -145,6 +145,14 @@ class ObservedSession implements ReviewSession {
   /// оно взято из записи реестра, больше негде.
   String get gameId => _gameId;
 
+  /// Идентификатор партии.
+  ///
+  /// Тоже для хоста: событие «партия началась» обязано нести тот же ключ,
+  /// что и ответы этой партии, иначе «начал, но не доиграл» ниоткуда не
+  /// видно. Считать его хосту заново значило бы завести второй источник
+  /// одного значения.
+  String get sessionId => _sessionId;
+
   @override
   bool get isFinished => _inner.isFinished;
 
