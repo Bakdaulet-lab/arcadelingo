@@ -14,6 +14,7 @@ import 'package:arcadelingo/features/games/falling_words/falling_words_run.dart'
 import 'package:arcadelingo/features/games/falling_words/falling_words_views.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_review_session.dart';
@@ -26,29 +27,48 @@ const Duration _fall = Duration(seconds: 6);
 
 /// Игра **на взводе**: помощник не пропускает его, в отличие от соседнего
 /// файла.
+///
+/// «Убрать анимации» выставляется флагом доступности платформы, а не
+/// виджетом `MediaQuery`: `AnimationBehavior` смотрит на
+/// `SemanticsBinding.disableAnimations`, а не на дерево. Подменённый
+/// `MediaQuery` дал бы тест, зелёный при любом поведении контроллера —
+/// поймано мутацией «взвод — украшение».
 Future<FakeReviewSession> _pumpAtWindUp(
   WidgetTester tester, {
   bool disableAnimations = false,
 }) async {
+  if (disableAnimations) {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAllTestValues);
+  }
   final session = FakeReviewSession(wordItems(3));
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
-    MediaQuery(
-      data: MediaQueryData(disableAnimations: disableAnimations),
-      child: MaterialApp(
-        theme: wordarcadeTheme(),
-        home: FallingWordsGame(
-          session: session,
-          seed: 1,
-          onPlayAgain: () {},
-          onExit: () {},
-        ),
+    MaterialApp(
+      theme: wordarcadeTheme(),
+      home: FallingWordsGame(
+        session: session,
+        seed: 1,
+        onPlayAgain: () {},
+        onExit: () {},
       ),
     ),
   );
   return session;
+}
+
+/// Смена состояния приложения так, как её шлёт система, — сообщением в
+/// канал: прямой вызов на binding пропустил бы промежуточные состояния.
+Future<void> _lifecycle(WidgetTester tester, AppLifecycleState state) async {
+  await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+    'flutter/lifecycle',
+    const StringCodec().encodeMessage(state.toString()),
+    (_) {},
+  );
+  await tester.pump();
 }
 
 /// Где сейчас слово по вертикали.
@@ -188,6 +208,51 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1));
 
       expect(session.reports, hasLength(1));
+    });
+  });
+
+  group('Взвод пауз не боится', () {
+    // 700 мс не должны сгорать в фоне: свернул на середине взвода — после
+    // возврата остаётся ровно столько же, сколько было.
+    testWidgets('сворачивание останавливает взвод', (tester) async {
+      final session = await _pumpAtWindUp(tester);
+      await tester.pump(const Duration(milliseconds: 300));
+      final start = _wordTop(tester);
+
+      await _lifecycle(tester, AppLifecycleState.inactive);
+      // Время в фоне идёт, но взвод стоит.
+      await tester.pump(const Duration(seconds: 5));
+
+      expect(_wordTop(tester), start, reason: 'падение так и не началось');
+      await tester.tap(find.text(wordTranslation(1)));
+      await tester.pump();
+      expect(session.reports, isEmpty, reason: 'всё ещё взвод');
+    });
+
+    testWidgets('после возврата взвод продолжается с того же места', (
+      tester,
+    ) async {
+      final session = await _pumpAtWindUp(tester);
+      await tester.pump(const Duration(milliseconds: 300));
+      await _lifecycle(tester, AppLifecycleState.inactive);
+      await tester.pump(const Duration(seconds: 5));
+
+      await _lifecycle(tester, AppLifecycleState.resumed);
+      // Оставалось 400 мс: на 390 всё ещё взвод.
+      await tester.pump(const Duration(milliseconds: 390));
+      await tester.tap(find.text(wordTranslation(1)));
+      await tester.pump();
+      expect(session.reports, isEmpty, reason: 'взвод не досижен');
+
+      await tester.pump(const Duration(milliseconds: 10));
+      await tester.tap(find.text(wordTranslation(1)));
+      await tester.pump();
+
+      expect(
+        session.reports,
+        hasLength(1),
+        reason: 'взвод досижен ровно, а не сгорел и не начался заново',
+      );
     });
   });
 
