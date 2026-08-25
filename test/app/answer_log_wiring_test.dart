@@ -18,8 +18,8 @@
 import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/games.dart';
-import 'package:arcadelingo/data/log/answer_database.dart';
 import 'package:arcadelingo/data/log/drift_answer_log.dart';
+import 'package:arcadelingo/data/log/history_database.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
@@ -73,10 +73,10 @@ const GameEntry _entry = GameEntry(
 void main() {
   setUpAll(useTestSqlite);
 
-  late AnswerDatabase db;
+  late HistoryDatabase db;
 
   setUp(() {
-    db = AnswerDatabase(NativeDatabase.memory());
+    db = HistoryDatabase(NativeDatabase.memory());
   });
 
   tearDown(() => db.close());

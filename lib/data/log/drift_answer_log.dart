@@ -1,4 +1,4 @@
-/// Реализация порта [AnswerLog] поверх [AnswerDatabase].
+/// Реализация порта [AnswerLog] поверх [HistoryDatabase].
 ///
 /// Всё, что этот класс делает, — переводит строку таблицы в [AnswerRecord] и
 /// обратно. Ни одного решения о том, что считать ответом, здесь нет: правило
@@ -7,7 +7,7 @@
 library;
 
 import 'package:arcadelingo/data/day_text.dart';
-import 'package:arcadelingo/data/log/answer_database.dart';
+import 'package:arcadelingo/data/log/history_database.dart';
 import 'package:arcadelingo/domain/log/answer_record.dart';
 import 'package:arcadelingo/domain/ports/answer_log.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
@@ -16,7 +16,7 @@ import 'package:drift/drift.dart';
 class DriftAnswerLog implements AnswerLog {
   DriftAnswerLog(this._db);
 
-  final AnswerDatabase _db;
+  final HistoryDatabase _db;
 
   @override
   Future<void> append(AnswerRecord record) => _db

@@ -21,9 +21,12 @@ import 'package:arcadelingo/app/attribution_view.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
+import 'package:arcadelingo/domain/events/app_event.dart';
 import 'package:arcadelingo/domain/ports/answer_log.dart';
+import 'package:arcadelingo/domain/ports/event_log.dart';
 import 'package:arcadelingo/domain/ports/streak_store.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/session/observed_session.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/domain/usecases/start_session.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -47,6 +50,7 @@ class WordarcadeApp extends StatelessWidget {
     this.now = DateTime.now,
     this.games = wordarcadeGames,
     this.answerLog = const NoopAnswerLog(),
+    this.eventLog = const NoopEventLog(),
   });
 
   final LeitnerPrefsStore store;
@@ -65,6 +69,10 @@ class WordarcadeApp extends StatelessWidget {
   /// без неё, а тесты, которые о журнале не знают, о нём и не узнают.
   /// Настоящий журнал подключает `main.dart` — корень знает и о `data/`.
   final AnswerLog answerLog;
+
+  /// История событий: открыл, начал, доиграл, бросил. Тоже с нулевым
+  /// объектом умолчанием — приложение полноценно и без приборов.
+  final EventLog eventLog;
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +93,7 @@ class WordarcadeApp extends StatelessWidget {
           now: now,
           games: games,
           answerLog: answerLog,
+          eventLog: eventLog,
         ),
         Err(:final failure) => SeedErrorView(message: failure.message),
       },
@@ -101,6 +110,7 @@ class HomeScreen extends StatefulWidget {
     required this.now,
     required this.games,
     required this.answerLog,
+    required this.eventLog,
     super.key,
   });
 
@@ -116,6 +126,8 @@ class HomeScreen extends StatefulWidget {
   final List<GameEntry> games;
 
   final AnswerLog answerLog;
+
+  final EventLog eventLog;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -161,6 +173,24 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _refreshStreak();
+    // «Открыл приложение» — здесь, а не в `main.dart`: оттуда событие не
+    // увидел бы ни один тест, а проводку без приборов проверять нечем.
+    // Цена решения названа: на битом сиде домашнего экрана не существует, и
+    // события не будет. Битый сид — дефект сборки, играть всё равно нечем.
+    _record(AppEventKind.appOpen);
+  }
+
+  /// Пишет событие часами хоста и не ждёт записи.
+  ///
+  /// `unawaited` по той же причине, что у карточек и серии: обработчики
+  /// синхронны, ждать их некому. Потерянная при убийстве приложения строка —
+  /// это потерянное наблюдение, а не потерянный прогресс.
+  void _record(AppEventKind kind, {String? sessionId}) {
+    unawaited(
+      widget.eventLog.append(
+        AppEvent.at(kind, widget.now(), sessionId: sessionId),
+      ),
+    );
   }
 
   /// Перечитывает серию для строки на экране.
@@ -205,6 +235,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     switch (started) {
       case Ok(:final value):
+        // Партия считается начатой, когда она собралась: экран ошибки — не
+        // начало. Ключ берётся у самой сессии, чтобы у события и у её
+        // ответов он был один, а не посчитан дважды.
+        _record(
+          AppEventKind.roundStart,
+          sessionId: value is ObservedSession ? value.sessionId : null,
+        );
         _play(game, value, () => _footer(latest));
       case Err(:final failure):
         setState(() => _stateFailure = failure);

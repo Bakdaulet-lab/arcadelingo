@@ -10,8 +10,8 @@
 // про перевод строк. Тегом `golden` не помечен и в отдельный скрипт не
 // вынесен — ответ «sqlite не приехал» нужен на каждом прогоне.
 
-import 'package:arcadelingo/data/log/answer_database.dart';
 import 'package:arcadelingo/data/log/drift_answer_log.dart';
+import 'package:arcadelingo/data/log/history_database.dart';
 import 'package:arcadelingo/domain/log/answer_record.dart';
 import 'package:arcadelingo/domain/srs/review_grade.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
@@ -52,11 +52,11 @@ AnswerRecord _record({
 void main() {
   setUpAll(useTestSqlite);
 
-  late AnswerDatabase db;
+  late HistoryDatabase db;
   late DriftAnswerLog log;
 
   setUp(() {
-    db = AnswerDatabase(NativeDatabase.memory());
+    db = HistoryDatabase(NativeDatabase.memory());
     log = DriftAnswerLog(db);
   });
 

@@ -10,8 +10,9 @@
 library;
 
 import 'package:arcadelingo/app/app.dart';
-import 'package:arcadelingo/data/log/answer_database.dart';
 import 'package:arcadelingo/data/log/drift_answer_log.dart';
+import 'package:arcadelingo/data/log/drift_event_log.dart';
+import 'package:arcadelingo/data/log/history_database.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
 import 'package:arcadelingo/data/words/words_seed_loader.dart';
@@ -27,6 +28,9 @@ Future<void> main() async {
   _registerFontLicense();
   final prefs = await SharedPreferences.getInstance();
   final seed = await loadWordsSeed();
+  // Одна база на два журнала: у них одна природа и одна миграция. Файл
+  // открывается лениво, при первой записи, — журналы не на пути старта.
+  final history = HistoryDatabase(driftDatabase(name: 'wordarcade_answers'));
   runApp(
     WordarcadeApp(
       store: LeitnerPrefsStore(prefs),
@@ -34,9 +38,8 @@ Future<void> main() async {
       seed: seed,
       // Файл открывается лениво, при первой записи: журнал не на пути
       // старта, и ждать его здесь незачем.
-      answerLog: DriftAnswerLog(
-        AnswerDatabase(driftDatabase(name: 'wordarcade_answers')),
-      ),
+      answerLog: DriftAnswerLog(history),
+      eventLog: DriftEventLog(history),
     ),
   );
 }

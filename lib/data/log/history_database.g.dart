@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'answer_database.dart';
+part of 'history_database.dart';
 
 // ignore_for_file: type=lint
 class $AnswersTable extends Answers with TableInfo<$AnswersTable, Answer> {
@@ -703,10 +703,386 @@ class AnswersCompanion extends UpdateCompanion<Answer> {
   }
 }
 
-abstract class _$AnswerDatabase extends GeneratedDatabase {
-  _$AnswerDatabase(QueryExecutor e) : super(e);
-  $AnswerDatabaseManager get managers => $AnswerDatabaseManager(this);
+class $EventsTable extends Events with TableInfo<$EventsTable, Event> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<AppEventKind, String> kind =
+      GeneratedColumn<String>(
+        'kind',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<AppEventKind>($EventsTable.$converterkind);
+  static const VerificationMeta _atUtcMicrosMeta = const VerificationMeta(
+    'atUtcMicros',
+  );
+  @override
+  late final GeneratedColumn<int> atUtcMicros = GeneratedColumn<int>(
+    'at_utc_micros',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _localDayMeta = const VerificationMeta(
+    'localDay',
+  );
+  @override
+  late final GeneratedColumn<String> localDay = GeneratedColumn<String>(
+    'local_day',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 10,
+      maxTextLength: 10,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    kind,
+    atUtcMicros,
+    localDay,
+    sessionId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'events';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Event> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('at_utc_micros')) {
+      context.handle(
+        _atUtcMicrosMeta,
+        atUtcMicros.isAcceptableOrUnknown(
+          data['at_utc_micros']!,
+          _atUtcMicrosMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_atUtcMicrosMeta);
+    }
+    if (data.containsKey('local_day')) {
+      context.handle(
+        _localDayMeta,
+        localDay.isAcceptableOrUnknown(data['local_day']!, _localDayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_localDayMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Event map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Event(
+      id:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}id'],
+          )!,
+      kind: $EventsTable.$converterkind.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}kind'],
+        )!,
+      ),
+      atUtcMicros:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}at_utc_micros'],
+          )!,
+      localDay:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.string,
+            data['${effectivePrefix}local_day'],
+          )!,
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      ),
+    );
+  }
+
+  @override
+  $EventsTable createAlias(String alias) {
+    return $EventsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<AppEventKind, String, String> $converterkind =
+      const EnumNameConverter<AppEventKind>(AppEventKind.values);
+}
+
+class Event extends DataClass implements Insertable<Event> {
+  final int id;
+
+  /// Что случилось — именем значения перечисления.
+  final AppEventKind kind;
+
+  /// Момент: микросекунды с эпохи, UTC. Те же соображения, что у ответов.
+  final int atUtcMicros;
+
+  /// Локальный календарный день игравшего, `ГГГГ-ММ-ДД`.
+  final String localDay;
+
+  /// Партия, к которой относится событие; NULL у тех, что вне партии.
+  final String? sessionId;
+  const Event({
+    required this.id,
+    required this.kind,
+    required this.atUtcMicros,
+    required this.localDay,
+    this.sessionId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    {
+      map['kind'] = Variable<String>($EventsTable.$converterkind.toSql(kind));
+    }
+    map['at_utc_micros'] = Variable<int>(atUtcMicros);
+    map['local_day'] = Variable<String>(localDay);
+    if (!nullToAbsent || sessionId != null) {
+      map['session_id'] = Variable<String>(sessionId);
+    }
+    return map;
+  }
+
+  EventsCompanion toCompanion(bool nullToAbsent) {
+    return EventsCompanion(
+      id: Value(id),
+      kind: Value(kind),
+      atUtcMicros: Value(atUtcMicros),
+      localDay: Value(localDay),
+      sessionId:
+          sessionId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(sessionId),
+    );
+  }
+
+  factory Event.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Event(
+      id: serializer.fromJson<int>(json['id']),
+      kind: $EventsTable.$converterkind.fromJson(
+        serializer.fromJson<String>(json['kind']),
+      ),
+      atUtcMicros: serializer.fromJson<int>(json['atUtcMicros']),
+      localDay: serializer.fromJson<String>(json['localDay']),
+      sessionId: serializer.fromJson<String?>(json['sessionId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'kind': serializer.toJson<String>(
+        $EventsTable.$converterkind.toJson(kind),
+      ),
+      'atUtcMicros': serializer.toJson<int>(atUtcMicros),
+      'localDay': serializer.toJson<String>(localDay),
+      'sessionId': serializer.toJson<String?>(sessionId),
+    };
+  }
+
+  Event copyWith({
+    int? id,
+    AppEventKind? kind,
+    int? atUtcMicros,
+    String? localDay,
+    Value<String?> sessionId = const Value.absent(),
+  }) => Event(
+    id: id ?? this.id,
+    kind: kind ?? this.kind,
+    atUtcMicros: atUtcMicros ?? this.atUtcMicros,
+    localDay: localDay ?? this.localDay,
+    sessionId: sessionId.present ? sessionId.value : this.sessionId,
+  );
+  Event copyWithCompanion(EventsCompanion data) {
+    return Event(
+      id: data.id.present ? data.id.value : this.id,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      atUtcMicros:
+          data.atUtcMicros.present ? data.atUtcMicros.value : this.atUtcMicros,
+      localDay: data.localDay.present ? data.localDay.value : this.localDay,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Event(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('atUtcMicros: $atUtcMicros, ')
+          ..write('localDay: $localDay, ')
+          ..write('sessionId: $sessionId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, kind, atUtcMicros, localDay, sessionId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Event &&
+          other.id == this.id &&
+          other.kind == this.kind &&
+          other.atUtcMicros == this.atUtcMicros &&
+          other.localDay == this.localDay &&
+          other.sessionId == this.sessionId);
+}
+
+class EventsCompanion extends UpdateCompanion<Event> {
+  final Value<int> id;
+  final Value<AppEventKind> kind;
+  final Value<int> atUtcMicros;
+  final Value<String> localDay;
+  final Value<String?> sessionId;
+  const EventsCompanion({
+    this.id = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.atUtcMicros = const Value.absent(),
+    this.localDay = const Value.absent(),
+    this.sessionId = const Value.absent(),
+  });
+  EventsCompanion.insert({
+    this.id = const Value.absent(),
+    required AppEventKind kind,
+    required int atUtcMicros,
+    required String localDay,
+    this.sessionId = const Value.absent(),
+  }) : kind = Value(kind),
+       atUtcMicros = Value(atUtcMicros),
+       localDay = Value(localDay);
+  static Insertable<Event> custom({
+    Expression<int>? id,
+    Expression<String>? kind,
+    Expression<int>? atUtcMicros,
+    Expression<String>? localDay,
+    Expression<String>? sessionId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kind != null) 'kind': kind,
+      if (atUtcMicros != null) 'at_utc_micros': atUtcMicros,
+      if (localDay != null) 'local_day': localDay,
+      if (sessionId != null) 'session_id': sessionId,
+    });
+  }
+
+  EventsCompanion copyWith({
+    Value<int>? id,
+    Value<AppEventKind>? kind,
+    Value<int>? atUtcMicros,
+    Value<String>? localDay,
+    Value<String?>? sessionId,
+  }) {
+    return EventsCompanion(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      atUtcMicros: atUtcMicros ?? this.atUtcMicros,
+      localDay: localDay ?? this.localDay,
+      sessionId: sessionId ?? this.sessionId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(
+        $EventsTable.$converterkind.toSql(kind.value),
+      );
+    }
+    if (atUtcMicros.present) {
+      map['at_utc_micros'] = Variable<int>(atUtcMicros.value);
+    }
+    if (localDay.present) {
+      map['local_day'] = Variable<String>(localDay.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EventsCompanion(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('atUtcMicros: $atUtcMicros, ')
+          ..write('localDay: $localDay, ')
+          ..write('sessionId: $sessionId')
+          ..write(')'))
+        .toString();
+  }
+}
+
+abstract class _$HistoryDatabase extends GeneratedDatabase {
+  _$HistoryDatabase(QueryExecutor e) : super(e);
+  $HistoryDatabaseManager get managers => $HistoryDatabaseManager(this);
   late final $AnswersTable answers = $AnswersTable(this);
+  late final $EventsTable events = $EventsTable(this);
   late final Index answersWord = Index(
     'answers_word',
     'CREATE INDEX answers_word ON answers (word_id)',
@@ -715,14 +1091,25 @@ abstract class _$AnswerDatabase extends GeneratedDatabase {
     'answers_day',
     'CREATE INDEX answers_day ON answers (local_day)',
   );
+  late final Index eventsKind = Index(
+    'events_kind',
+    'CREATE INDEX events_kind ON events (kind)',
+  );
+  late final Index eventsDay = Index(
+    'events_day',
+    'CREATE INDEX events_day ON events (local_day)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     answers,
+    events,
     answersWord,
     answersDay,
+    eventsKind,
+    eventsDay,
   ];
 }
 
@@ -756,7 +1143,7 @@ typedef $$AnswersTableUpdateCompanionBuilder =
     });
 
 class $$AnswersTableFilterComposer
-    extends Composer<_$AnswerDatabase, $AnswersTable> {
+    extends Composer<_$HistoryDatabase, $AnswersTable> {
   $$AnswersTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -822,7 +1209,7 @@ class $$AnswersTableFilterComposer
 }
 
 class $$AnswersTableOrderingComposer
-    extends Composer<_$AnswerDatabase, $AnswersTable> {
+    extends Composer<_$HistoryDatabase, $AnswersTable> {
   $$AnswersTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -887,7 +1274,7 @@ class $$AnswersTableOrderingComposer
 }
 
 class $$AnswersTableAnnotationComposer
-    extends Composer<_$AnswerDatabase, $AnswersTable> {
+    extends Composer<_$HistoryDatabase, $AnswersTable> {
   $$AnswersTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -938,7 +1325,7 @@ class $$AnswersTableAnnotationComposer
 class $$AnswersTableTableManager
     extends
         RootTableManager<
-          _$AnswerDatabase,
+          _$HistoryDatabase,
           $AnswersTable,
           Answer,
           $$AnswersTableFilterComposer,
@@ -946,11 +1333,11 @@ class $$AnswersTableTableManager
           $$AnswersTableAnnotationComposer,
           $$AnswersTableCreateCompanionBuilder,
           $$AnswersTableUpdateCompanionBuilder,
-          (Answer, BaseReferences<_$AnswerDatabase, $AnswersTable, Answer>),
+          (Answer, BaseReferences<_$HistoryDatabase, $AnswersTable, Answer>),
           Answer,
           PrefetchHooks Function()
         > {
-  $$AnswersTableTableManager(_$AnswerDatabase db, $AnswersTable table)
+  $$AnswersTableTableManager(_$HistoryDatabase db, $AnswersTable table)
     : super(
         TableManagerState(
           db: db,
@@ -1030,7 +1417,7 @@ class $$AnswersTableTableManager
 
 typedef $$AnswersTableProcessedTableManager =
     ProcessedTableManager<
-      _$AnswerDatabase,
+      _$HistoryDatabase,
       $AnswersTable,
       Answer,
       $$AnswersTableFilterComposer,
@@ -1038,14 +1425,214 @@ typedef $$AnswersTableProcessedTableManager =
       $$AnswersTableAnnotationComposer,
       $$AnswersTableCreateCompanionBuilder,
       $$AnswersTableUpdateCompanionBuilder,
-      (Answer, BaseReferences<_$AnswerDatabase, $AnswersTable, Answer>),
+      (Answer, BaseReferences<_$HistoryDatabase, $AnswersTable, Answer>),
       Answer,
       PrefetchHooks Function()
     >;
+typedef $$EventsTableCreateCompanionBuilder =
+    EventsCompanion Function({
+      Value<int> id,
+      required AppEventKind kind,
+      required int atUtcMicros,
+      required String localDay,
+      Value<String?> sessionId,
+    });
+typedef $$EventsTableUpdateCompanionBuilder =
+    EventsCompanion Function({
+      Value<int> id,
+      Value<AppEventKind> kind,
+      Value<int> atUtcMicros,
+      Value<String> localDay,
+      Value<String?> sessionId,
+    });
 
-class $AnswerDatabaseManager {
-  final _$AnswerDatabase _db;
-  $AnswerDatabaseManager(this._db);
+class $$EventsTableFilterComposer
+    extends Composer<_$HistoryDatabase, $EventsTable> {
+  $$EventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<AppEventKind, AppEventKind, String> get kind =>
+      $composableBuilder(
+        column: $table.kind,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get atUtcMicros => $composableBuilder(
+    column: $table.atUtcMicros,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localDay => $composableBuilder(
+    column: $table.localDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$EventsTableOrderingComposer
+    extends Composer<_$HistoryDatabase, $EventsTable> {
+  $$EventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get atUtcMicros => $composableBuilder(
+    column: $table.atUtcMicros,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get localDay => $composableBuilder(
+    column: $table.localDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$EventsTableAnnotationComposer
+    extends Composer<_$HistoryDatabase, $EventsTable> {
+  $$EventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<AppEventKind, String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<int> get atUtcMicros => $composableBuilder(
+    column: $table.atUtcMicros,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get localDay =>
+      $composableBuilder(column: $table.localDay, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+}
+
+class $$EventsTableTableManager
+    extends
+        RootTableManager<
+          _$HistoryDatabase,
+          $EventsTable,
+          Event,
+          $$EventsTableFilterComposer,
+          $$EventsTableOrderingComposer,
+          $$EventsTableAnnotationComposer,
+          $$EventsTableCreateCompanionBuilder,
+          $$EventsTableUpdateCompanionBuilder,
+          (Event, BaseReferences<_$HistoryDatabase, $EventsTable, Event>),
+          Event,
+          PrefetchHooks Function()
+        > {
+  $$EventsTableTableManager(_$HistoryDatabase db, $EventsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$EventsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$EventsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () => $$EventsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<AppEventKind> kind = const Value.absent(),
+                Value<int> atUtcMicros = const Value.absent(),
+                Value<String> localDay = const Value.absent(),
+                Value<String?> sessionId = const Value.absent(),
+              }) => EventsCompanion(
+                id: id,
+                kind: kind,
+                atUtcMicros: atUtcMicros,
+                localDay: localDay,
+                sessionId: sessionId,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required AppEventKind kind,
+                required int atUtcMicros,
+                required String localDay,
+                Value<String?> sessionId = const Value.absent(),
+              }) => EventsCompanion.insert(
+                id: id,
+                kind: kind,
+                atUtcMicros: atUtcMicros,
+                localDay: localDay,
+                sessionId: sessionId,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          BaseReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$EventsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$HistoryDatabase,
+      $EventsTable,
+      Event,
+      $$EventsTableFilterComposer,
+      $$EventsTableOrderingComposer,
+      $$EventsTableAnnotationComposer,
+      $$EventsTableCreateCompanionBuilder,
+      $$EventsTableUpdateCompanionBuilder,
+      (Event, BaseReferences<_$HistoryDatabase, $EventsTable, Event>),
+      Event,
+      PrefetchHooks Function()
+    >;
+
+class $HistoryDatabaseManager {
+  final _$HistoryDatabase _db;
+  $HistoryDatabaseManager(this._db);
   $$AnswersTableTableManager get answers =>
       $$AnswersTableTableManager(_db, _db.answers);
+  $$EventsTableTableManager get events =>
+      $$EventsTableTableManager(_db, _db.events);
 }
