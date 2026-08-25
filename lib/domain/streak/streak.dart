@@ -99,9 +99,20 @@ class StreakDay implements Comparable<StreakDay> {
 /// изменил» проверялось одним `expect`, а наблюдатель мог не писать в
 /// хранилище, когда писать нечего.
 class StreakState {
+  /// Больше одной заморозки в запасе не бывает: две подряд прощённые недели
+  /// превращают серию в счётчик установок приложения.
+  static const int maxFreezes = 1;
+
   /// Бросает [ArgumentError] на отрицательных счётчиках и на `best`
   /// меньше `current`: это не исход работы, а повреждённое состояние.
-  StreakState({this.current = 0, this.best = 0, this.lastDay}) {
+  StreakState({
+    this.current = 0,
+    this.best = 0,
+    this.lastDay,
+    this.freezes = 0,
+    this.daysSinceFreeze = 0,
+    this.lastFrozenDay,
+  }) {
     if (current < 0 || best < 0) {
       throw ArgumentError('серия отрицательной длины: $current/$best');
     }
@@ -112,6 +123,26 @@ class StreakState {
       throw ArgumentError(
         'серия $current и последний день $lastDay не согласованы',
       );
+    }
+    if (freezes < 0 || freezes > maxFreezes) {
+      throw ArgumentError('заморозок $freezes вне 0..$maxFreezes');
+    }
+    if (daysSinceFreeze < 0) {
+      throw ArgumentError('дней к заморозке отрицательное: $daysSinceFreeze');
+    }
+    if (freezes == maxFreezes && daysSinceFreeze != 0) {
+      throw ArgumentError(
+        'заморозка уже в запасе, копить нечего: $daysSinceFreeze',
+      );
+    }
+    final frozen = lastFrozenDay;
+    if (frozen != null) {
+      final last = lastDay;
+      if (last == null || frozen.compareTo(last) >= 0) {
+        throw ArgumentError(
+          'замороженный день $frozen не раньше последнего сыгранного $last',
+        );
+      }
     }
   }
 
@@ -128,21 +159,63 @@ class StreakState {
   /// Последний засчитанный день; null только у [empty].
   final StreakDay? lastDay;
 
+  /// Заморозок в запасе: 0 или 1 ([maxFreezes]).
+  ///
+  /// Заморозка прощает **ровно один** пропущенный день и тратится не в
+  /// полночь, а задним числом — в момент следующей игры. Иначе и быть не
+  /// может: в полночь у нас ничего не выполняется.
+  final int freezes;
+
+  /// Сколько засчитанных дней прошло с последней траты.
+  ///
+  /// Копится только пока заморозки нет: при `freezes == maxFreezes` всегда
+  /// ноль, и это инвариант конструктора, а не соглашение.
+  final int daysSinceFreeze;
+
+  /// День, который прикрыла заморозка, — или null, если в текущей серии
+  /// такого не было.
+  ///
+  /// Хранится ради одного: молча потраченная заморозка не существует для
+  /// игрока. Он обязан узнать и что его спасли, и какой ценой
+  /// (`streak_view.dart`). Обрыв серии обнуляет поле вместе с ней: у новой
+  /// серии замороженных дней нет.
+  final StreakDay? lastFrozenDay;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is StreakState &&
           current == other.current &&
           best == other.best &&
-          lastDay == other.lastDay;
+          lastDay == other.lastDay &&
+          freezes == other.freezes &&
+          daysSinceFreeze == other.daysSinceFreeze &&
+          lastFrozenDay == other.lastFrozenDay;
 
   @override
-  int get hashCode => Object.hash(current, best, lastDay);
+  int get hashCode => Object.hash(
+    current,
+    best,
+    lastDay,
+    freezes,
+    daysSinceFreeze,
+    lastFrozenDay,
+  );
 
   @override
   String toString() =>
-      'StreakState(current: $current, best: $best, lastDay: $lastDay)';
+      'StreakState(current: $current, best: $best, lastDay: $lastDay, '
+      'freezes: $freezes, daysSinceFreeze: $daysSinceFreeze, '
+      'lastFrozenDay: $lastFrozenDay)';
 }
+
+/// Сколько засчитанных дней нужно, чтобы заработать заморозку.
+///
+/// Считаются именно засчитанные дни, а не календарные: заморозка — награда за
+/// игру, а не за то, что прошла неделя. Обрыв серии счётчик не обнуляет —
+/// человек эти дни отыграл, и отнимать их за один пропуск значило бы наказать
+/// дважды.
+const int daysToEarnFreeze = 7;
 
 /// Состояние после игры в [day].
 ///
@@ -157,6 +230,12 @@ class StreakState {
 /// случаем должна Фаза 3 вместе с заморозкой и часовым поясом.
 ///
 /// `best` держит максимум и разрывом не сбрасывается.
+///
+/// **Чем именно день был засчитан, переход не знает и не спрашивает.**
+/// Законченная партия и экран «на сегодня всё» приходят сюда одинаково: игрок
+/// в обоих случаях сделал всё, что система позволила, а разложенный по
+/// коробкам Лейтнер делает пустые дни неизбежными. Второй ветки правил не
+/// существует — значит и разойтись им негде. Кто зовёт этот путь, решает хост.
 StreakState advanceStreak(StreakState state, StreakDay day) {
   final last = state.lastDay;
   if (last == day) return state;

@@ -131,7 +131,7 @@ void main() {
 
     test('неизвестная версия — Err: читать её некому', () {
       expect(
-        err(decodeStreakState('{"version":2,"current":0,"best":0}')).message,
+        err(decodeStreakState('{"version":3,"current":0,"best":0}')).message,
         contains('версия'),
       );
     });
