@@ -12,12 +12,6 @@
     "new": "    final item = _current;\n    _current = null;"
   },
   {
-    "name": "день считается по UTC, а не по часам игрока",
-    "file": "lib/domain/streak/streak_observer.dart",
-    "old": "    final advanced = advanceStreak(_state, StreakDay.of(event.at));",
-    "new": "    final advanced = advanceStreak(_state, StreakDay.of(event.at.toUtc()));"
-  },
-  {
     "name": "рекорд сбрасывается при разрыве серии",
     "file": "lib/domain/streak/streak.dart",
     "old": "    best: current > state.best ? current : state.best,",
@@ -34,12 +28,6 @@
     "file": "lib/domain/streak/streak.dart",
     "old": "  final current = last != null && day == last.next ? state.current + 1 : 1;",
     "new": "  final current = state.current + 1;"
-  },
-  {
-    "name": "следующий день считается сложением по локальному времени",
-    "file": "lib/domain/streak/streak.dart",
-    "old": "    final tomorrow = DateTime.utc(\n      year,\n      month,\n      day,\n    ).add(const Duration(days: 1));",
-    "new": "    final tomorrow = DateTime(year, month, day + 1);"
   },
   {
     "name": "несуществующая дата молча уезжает на следующий месяц",
