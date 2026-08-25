@@ -1,0 +1,68 @@
+[
+  {
+    "name": "взвода нет вовсе: слово едет с нулевого кадра",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    if (_run.phase == FallingPhase.falling) {\n      _windingUp = true;\n      _windUp.forward(from: 0);\n    }",
+    "new": "    if (_run.phase == FallingPhase.falling) _startFall();"
+  },
+  {
+    "name": "взвод вдвое короче обещанного",
+    "file": "lib/features/games/falling_words/falling_words_run.dart",
+    "old": "  static const Duration windUpTime = Duration(milliseconds: 700);",
+    "new": "  static const Duration windUpTime = Duration(milliseconds: 350);"
+  },
+  {
+    "name": "взвод длиннее обещанного",
+    "file": "lib/features/games/falling_words/falling_words_run.dart",
+    "old": "  static const Duration windUpTime = Duration(milliseconds: 700);",
+    "new": "  static const Duration windUpTime = Duration(milliseconds: 1400);"
+  },
+  {
+    "name": "падение после взвода не начинается",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    setState(() => _windingUp = false);\n    _startFall();",
+    "new": "    setState(() => _windingUp = false);"
+  },
+  {
+    "name": "взвод не кончается: флаг остаётся поднятым",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    setState(() => _windingUp = false);\n    _startFall();",
+    "new": "    _startFall();"
+  },
+  {
+    "name": "тап во время взвода засчитывается",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    if (_windingUp) return;",
+    "new": ""
+  },
+  {
+    "name": "взвод — украшение: системное «убрать анимации» его отменяет",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "      duration: FallingWordsRun.windUpTime,\n      // `preserve` — как у падения: взвод игровое время, и системное\n      // «убрать анимации» его не отменяет.\n      animationBehavior: AnimationBehavior.preserve,",
+    "new": "      duration: FallingWordsRun.windUpTime,\n      animationBehavior: AnimationBehavior.normal,"
+  },
+  {
+    "name": "взвод съедает время падения",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "  void _startFall() {\n    _fall.duration = _run.timeLimit;\n    _fall.forward(from: 0);",
+    "new": "  void _startFall() {\n    _fall.duration = _run.timeLimit - FallingWordsRun.windUpTime;\n    _fall.forward(from: 0);"
+  },
+  {
+    "name": "взвод повторяется перед каждым словом",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    if (_run.phase == FallingPhase.falling) _startFall();\n  }\n\n  void _onTap(int index) {",
+    "new": "    if (_run.phase == FallingPhase.falling) {\n      _windingUp = true;\n      _windUp.forward(from: 0);\n    }\n  }\n\n  void _onTap(int index) {"
+  },
+  {
+    "name": "сворачивание сжигает взвод",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "    _paused = true;\n    _windUp.stop();",
+    "new": "    _paused = true;"
+  },
+  {
+    "name": "после паузы взвод не возобновляется",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "        _windingUp ? _windUp.forward() : _fall.forward();",
+    "new": "        _fall.forward();"
+  }
+]
