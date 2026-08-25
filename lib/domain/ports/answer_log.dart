@@ -50,6 +50,13 @@ abstract class AnswerLog {
     required StreakDay from,
     required StreakDay to,
   });
+
+  /// Итоги за всё время: сколько ответов, сколько верных, за сколько дней.
+  ///
+  /// Своим запросом, а не суммой [perDay]: чтобы сложить всё, пришлось бы
+  /// знать, с какого дня начинать, а этого никто не знает без ещё одного
+  /// запроса. Первый потребитель — экран прогресса.
+  Future<AnswerTotals> totals();
 }
 
 /// Журнал, который ничего не пишет и ничего не помнит.
@@ -75,4 +82,7 @@ class NoopAnswerLog implements AnswerLog {
     required StreakDay from,
     required StreakDay to,
   }) async => const [];
+
+  @override
+  Future<AnswerTotals> totals() async => AnswerTotals.empty;
 }

@@ -27,7 +27,12 @@ Future<void> _pump(WidgetTester tester, {StreakView? ritual}) =>
     tester.pumpWidget(
       MaterialApp(
         theme: wordarcadeTheme(platform: TargetPlatform.android),
-        home: PlayView(onPlay: () {}, onSources: () {}, ritual: ritual),
+        home: PlayView(
+          onPlay: () {},
+          onProgress: () {},
+          onSources: () {},
+          ritual: ritual,
+        ),
       ),
     );
 

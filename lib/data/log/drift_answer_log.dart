@@ -80,6 +80,11 @@ class DriftAnswerLog implements AnswerLog {
     ];
   }
 
+  @override
+  Future<AnswerTotals> totals() {
+    throw UnimplementedError('DriftAnswerLog.totals');
+  }
+
   /// Общий хвост чтений: порядок и перевод строк в записи.
   ///
   /// Порядок задан здесь, а не в каждом методе: хронологический — обещание

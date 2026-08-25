@@ -122,6 +122,7 @@ Future<void> pumpRitualGolden(
       debugShowCheckedModeBanner: false,
       home: PlayView(
         onPlay: () {},
+        onProgress: () {},
         onSources: () {},
         ritual: ritual,
         week: week,
