@@ -10,9 +10,9 @@
 library;
 
 import 'package:arcadelingo/app/app.dart';
-import 'package:arcadelingo/app/theme.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/data/words/words_seed_loader.dart';
+import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
