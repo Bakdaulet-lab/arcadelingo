@@ -213,3 +213,147 @@ hope,wish,«надежда» стоит обманкой у wish
 box,bag,«коробка» стоит обманкой у bag
 bridge,building,«мост» стоит обманкой у building
 top,side,обманки пересекаются: «верх», «край», «низ»
+bottom,top,антонимы или пара: каждый стоит обманкой у другого (порции 14–18)
+above,below,антонимы или пара: каждый стоит обманкой у другого (порции 14–18)
+soon,late,антонимы или пара: каждый стоит обманкой у другого (порции 14–18)
+ask,answer,антонимы или пара: каждый стоит обманкой у другого (порции 14–18)
+later,before,антонимы или пара: каждый стоит обманкой у другого (порции 14–18)
+poor,rich,антонимы или пара: каждый стоит обманкой у другого (порции 14–18)
+there,here,антонимы или пара: каждый стоит обманкой у другого (порции 14–18)
+late,early,антонимы или пара: каждый стоит обманкой у другого (порции 14–18)
+never,always,антонимы или пара: каждый стоит обманкой у другого (порции 14–18)
+ear,eye,антонимы или пара: каждый стоит обманкой у другого (порции 14–18)
+healthy,sick,антонимы или пара: каждый стоит обманкой у другого (порции 14–18)
+host,guest,антонимы или пара: каждый стоит обманкой у другого (порции 14–18)
+correct,wrong,однокоренные переводы: «правильный» и «неправильный»
+job,work,однокоренные переводы: «работа» и «работать»
+brother,take,«брат» и «брать» различаются одной буквой
+sit,see,«сидеть» и «видеть» схожи на вид
+cook,ready,однокоренные переводы: «готовить» и «готовый»
+healthy,greet,однокоренные переводы: «здоровый» и «здороваться»
+healthy,health,производная пара: «здоровый» и «здоровье»
+happiness,often,«счастье» и «часто» схожи на вид
+listen,list,near-miss на чтении
+sing,singer,производная пара
+bottle,bottom,near-miss на чтении
+officer,office,near-miss на чтении
+player,play,производная пара
+catch,cat,near-miss на чтении
+build,building,производная пара
+star,start,near-miss на чтении
+week,weekend,near-miss на чтении
+reader,read,производная пара
+reader,reading,near-miss на чтении
+reader,ready,near-miss на чтении
+bee,beef,near-miss на чтении
+swim,swimming,производная пара
+science,scientist,производная пара
+breathe,bread,near-miss на чтении
+breathe,breakfast,near-miss на чтении
+breathe,break,near-miss на чтении
+skill,ski,near-miss на чтении
+interview,interesting,near-miss на чтении
+interview,interest,near-miss на чтении
+notebook,note,near-miss на чтении
+later,late,near-miss на чтении
+business,bus,near-miss на чтении
+tower,towel,near-miss на чтении
+prince,princess,near-miss на чтении
+musician,music,производная пара
+difficult,different,near-miss на чтении
+difficult,difference,near-miss на чтении
+farm,farmer,производная пара
+fishing,fish,производная пара
+son,song,near-miss на чтении
+tea,teacher,near-miss на чтении
+tea,team,near-miss на чтении
+tea,teach,near-miss на чтении
+article,art,near-miss на чтении
+winter,win,near-miss на чтении
+card,car,near-miss на чтении
+ear,early,near-miss на чтении
+dancing,dance,производная пара
+pencil,pen,near-miss на чтении
+corn,corner,near-miss на чтении
+interest,interesting,производная пара
+ski,skirt,near-miss на чтении
+creativity,cream,near-miss на чтении
+happiness,happy,производная пара
+happiness,happen,near-miss на чтении
+granddaughter,grandma,near-miss на чтении
+granddaughter,grandpa,near-miss на чтении
+carrot,car,near-miss на чтении
+carrot,carry,near-miss на чтении
+seek,see,near-miss на чтении
+listen,hear,«слушать» и «слышать» — почти синонимы
+listen,speak,«слушать» стоит обманкой у speak
+spend,pay,«тратить» стоит обманкой у pay
+star,moon,«звезда» стоит обманкой у moon
+trip,travel,«поездка» и «путешествовать» — соседние
+trip,vacation,«поездка» стоит обманкой у vacation
+lunch,dinner,приёмы пищи: «обед» стоит обманкой у dinner
+lunch,breakfast,приёмы пищи, обманки пересекаются
+snack,lunch,«перекус» стоит обманкой у lunch
+tea,coffee,«чай» стоит обманкой у coffee
+week,day,«неделя» стоит обманкой у day
+month,year,соседние отрезки времени, обманки пересекаются
+custom,habit,«обычай» и «привычка» — почти синонимы
+talent,skill,«талант» стоит обманкой у skill
+fear,afraid,«страх» и «испуганный» — одно поле
+fork,knife,«вилка» стоит обманкой у knife
+spoon,knife,«ложка» стоит обманкой у knife
+spoon,fork,приборы, обманки пересекаются
+seek,find,«искать» и «находить» — пара
+park,garden,«парк» стоит обманкой у garden
+vegetable,fruit,«овощ» стоит обманкой у fruit
+noise,music,«шум» стоит обманкой у music
+science,technology,соседние области
+lion,tiger,«лев» стоит обманкой у tiger
+brother,sister,пара по родству, обманки пересекаются
+son,father,«сын» стоит обманкой у father
+winter,autumn,соседние сезоны, обманки пересекаются
+silver,gold,металлы: «серебро» существительным при «золотом» прилагательном — асимметрия по доминанте слова
+first,second,порядковые: «первый» стоит обманкой у second
+third,second,порядковые, обманки пересекаются
+paint,draw,«красить» стоит обманкой у draw
+cinema,movie,«кинотеатр» и «фильм» — одно поле
+poster,picture,«плакат» стоит обманкой у picture
+tower,building,«башня» стоит обманкой у building
+prince,king,«принц» стоит обманкой у king
+frog,bird,«лягушка» стоит обманкой у bird
+cow,pig,«корова» стоит обманкой у pig
+bottle,glass,«бутылка» стоит обманкой у glass
+actor,singer,«актёр» стоит обманкой у singer
+musician,singer,«музыкант» стоит обманкой у singer
+engineer,worker,«инженер» стоит обманкой у worker
+factory,office,«завод» стоит обманкой у office
+sea,river,вода: соседние по смыслу
+problem,question,«проблема» и «задача» из обманок question
+portrait,photo,«портрет» стоит обманкой у photo
+carrot,potato,«морковь» стоит обманкой у potato
+sausage,beef,«колбаса» стоит обманкой у beef
+glove,apron,«перчатки» стоят обманкой у apron
+rhythm,music,«ритм» стоит обманкой у music
+salad,soup,«суп» стоит обманкой у salad
+board,desk,школьное: «доска» стоит обманкой у desk
+board,classroom,«доска» стоит обманкой у classroom
+example,sum,«пример» стоит обманкой у sum
+parent,child,«родитель» стоит обманкой у child
+bee,butterfly,«пчела» стоит обманкой у butterfly
+festival,celebration,праздничное поле: соседние
+funny,laugh,«смешной» и «смеяться» — одно поле
+piano,guitar,«пианино» стоит обманкой у guitar
+basketball,volleyball,«баскетбол» стоит обманкой у volleyball
+introduce,greet,«знакомиться» стоит обманкой у greet
+want,wish,«хотеть» и «желание» — одно поле
+believe,imagine,«верить» стоит обманкой у imagine
+jump,run,«прыгать» стоит обманкой у run
+drum,guitar,«барабан» стоит обманкой у guitar
+field,garden,«поле» стоит обманкой у garden
+tooth,mouth,«зуб» стоит обманкой у mouth
+face,nose,лицо и его части: обманки пересекаются
+neck,shoulder,соседние части тела, обманки пересекаются
+leg,knee,нога и её части: обманки пересекаются
+solve,choose,«решать» стоит обманкой у choose
+library,book,книжное поле: соседние
+history,story,«история» и «рассказ» — близкие слова и переводы
