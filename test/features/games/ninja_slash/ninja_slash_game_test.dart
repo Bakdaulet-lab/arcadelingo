@@ -820,6 +820,23 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byKey(NinjaKeys.playfield), findsOneWidget);
+      // Не просто «переполнения нет»: FittedBox не переполняется при любом
+      // fit, потому что режет лишнее. Проверяется то, что обещано, —
+      // содержимое **уменьшается** и остаётся внутри круга. Меряется
+      // getRect, а не getSize: размер после layout масштаб не видит, а углы
+      // едут через матрицу (урок 0.11).
+      final object = tester.getRect(find.byKey(NinjaKeys.objectAt(0)));
+      final label = tester.getRect(
+        find.descendant(
+          of: find.byKey(NinjaKeys.objectAt(0)),
+          matching: find.byType(Text),
+        ),
+      );
+      expect(
+        label.height,
+        lessThanOrEqualTo(object.height),
+        reason: 'круг расти не может — его радиус часть геометрии реза',
+      );
     });
 
     testWidgets('итоги при шрифте 2× на коротком экране: выход достижим', (

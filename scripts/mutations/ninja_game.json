@@ -1,0 +1,176 @@
+[
+  {
+    "name": "порог свайпа не спрашивается: тап режет",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (!swipeCounts(_travelled)) return;\n",
+    "new": ""
+  },
+  {
+    "name": "рез проверяется по нулевому кадру, а не по текущему",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "        t: _flight.value,",
+    "new": "        t: 0,"
+  },
+  {
+    "name": "жест принимается на паузе",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (_paused || _windingUp) return;",
+    "new": "    if (_windingUp) return;"
+  },
+  {
+    "name": "после реза объекты продолжают лететь",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (!_run.slice(target, _elapsed)) return;\n    _flight.stop();",
+    "new": "    if (!_run.slice(target, _elapsed)) return;"
+  },
+  {
+    "name": "таймаут срабатывает раньше конца полёта",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (_run.phase != NinjaPhase.flying || _flight.value < 1) return;",
+    "new": "    if (_run.phase != NinjaPhase.flying || _flight.value < 0.9) return;"
+  },
+  {
+    "name": "полёт — украшение: «убрать анимации» его ускоряет",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      duration: NinjaRun.baseFlightTime,\n      animationBehavior: AnimationBehavior.preserve,",
+    "new": "      duration: NinjaRun.baseFlightTime,\n      animationBehavior: AnimationBehavior.normal,"
+  },
+  {
+    "name": "взвод — украшение: «убрать анимации» его отменяет",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      duration: NinjaRun.windUpTime,\n      // `preserve` — как у полёта: взвод игровое время, и системное\n      // «убрать анимации» его не отменяет.\n      animationBehavior: AnimationBehavior.preserve,",
+    "new": "      duration: NinjaRun.windUpTime,\n      animationBehavior: AnimationBehavior.normal,"
+  },
+  {
+    "name": "пауза не останавливает полёт",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _windUp.stop();\n    _flight.stop();\n    _reveal.stop();",
+    "new": "    _windUp.stop();\n    _reveal.stop();"
+  },
+  {
+    "name": "пауза не останавливает подсветку",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _windUp.stop();\n    _flight.stop();\n    _reveal.stop();",
+    "new": "    _windUp.stop();\n    _flight.stop();"
+  },
+  {
+    "name": "после паузы полёт не возобновляется",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "        _windingUp ? _windUp.forward() : _flight.forward();",
+    "new": "        _windUp.forward();"
+  },
+  {
+    "name": "уход из игры неответа не докладывает",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _run.abandon(_elapsed);\n",
+    "new": ""
+  },
+  {
+    "name": "конец раунда докладывается дважды",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      widget.onRoundOver?.call();",
+    "new": "      widget.onRoundOver?.call();\n      widget.onRoundOver?.call();"
+  },
+  {
+    "name": "строка хоста спрашивается на каждой перестройке итогов",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "            footer: _footer,",
+    "new": "            footer: widget.summaryFooter?.call(),"
+  },
+  {
+    "name": "разрезанный по ошибке объект не помечен",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (index == _run.slicedIndex) return ObjectState.wrong;\n",
+    "new": ""
+  },
+  {
+    "name": "на промахе объекты не гаснут",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                    faded: missed,",
+    "new": "                    faded: false,"
+  },
+  {
+    "name": "на взводе объекты уже на поле",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                      if (!_windingUp)\n",
+    "new": ""
+  },
+  {
+    "name": "пара «слово → перевод» на промахе не показывается",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                  if (missed)\n                    RevealPair(\n                      word: _run.item!.word.text,\n                      answer: _run.item!.word.translation,\n                    ),\n",
+    "new": ""
+  },
+  {
+    "name": "содержимое объекта не ужимается под системный шрифт 2×",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "          fit: BoxFit.scaleDown,",
+    "new": "          fit: BoxFit.none,"
+  },
+  {
+    "name": "порог разогрева сдвинут",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "const int comboTintStart = 2;",
+    "new": "const int comboTintStart = 4;"
+  },
+  {
+    "name": "потолок тона выше нормы контраста",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "const double comboTintMax = 0.35;",
+    "new": "const double comboTintMax = 0.9;"
+  },
+  {
+    "name": "тон поля — заливка, а не градиент",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "      stops: [0, comboGradientEdge, 1 - comboGradientEdge, 1],",
+    "new": "      stops: [0, 0, 1, 1],"
+  },
+  {
+    "name": "градиент горизонтальный: спорит с полётом",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "      begin: Alignment.topCenter,\n      end: Alignment.bottomCenter,",
+    "new": "      begin: Alignment.centerLeft,\n      end: Alignment.centerRight,"
+  },
+  {
+    "name": "множитель горит не по тому же порогу, что поле",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "                  comboIsHot(combo) ? scheme.primary : scheme.onSurfaceVariant,",
+    "new": "                  combo > 0 ? scheme.primary : scheme.onSurfaceVariant,"
+  },
+  {
+    "name": "ключ объекта один на всю волну",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "  static Key objectAt(int index) => ValueKey('ninja_slash.object.$index');",
+    "new": "  static Key objectAt(int index) => const ValueKey('ninja_slash.object');"
+  },
+  {
+    "name": "итоги и проигрыш под одним заголовком",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "              outOfLives ? 'Жизни кончились' : 'Раунд окончен',",
+    "new": "              'Раунд окончен',"
+  },
+  {
+    "name": "позиции волны игнорируют симметрию дорожек",
+    "file": "lib/features/games/ninja_slash/ninja_trajectory.dart",
+    "old": "    for (final slot in laneSlotsFor(count))\n      _positionOnSlot(slot, t: t, width: width, height: height, bottom: bottom),",
+    "new": "    for (var slot = 0; slot < count; slot++)\n      _positionOnSlot(slot, t: t, width: width, height: height, bottom: bottom),"
+  },
+  {
+    "name": "ниндзя-слэш стал умолчанием вместо падающих слов",
+    "file": "lib/app/games.dart",
+    "old": "const List<GameEntry> wordarcadeGames = [fallingWordsEntry, ninjaSlashEntry];",
+    "new": "const List<GameEntry> wordarcadeGames = [ninjaSlashEntry, fallingWordsEntry];"
+  },
+  {
+    "name": "вторая игра в реестр не попала",
+    "file": "lib/app/games.dart",
+    "old": "const List<GameEntry> wordarcadeGames = [fallingWordsEntry, ninjaSlashEntry];",
+    "new": "const List<GameEntry> wordarcadeGames = [fallingWordsEntry];"
+  },
+  {
+    "name": "id ниндзя-слэша разошёлся с журналом",
+    "file": "lib/app/games.dart",
+    "old": "  id: 'ninja_slash',",
+    "new": "  id: 'ninja',"
+  }
+]

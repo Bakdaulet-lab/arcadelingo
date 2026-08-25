@@ -124,6 +124,36 @@ void main() {
         );
       }
     });
+
+    // Согласие двух функций — ещё не согласие экрана: HUD может спрашивать
+    // не ту. Мутация «множитель горит по combo > 0» проходила мимо всех
+    // тестов, пока проводка не проверялась отдельно.
+    testWidgets('HUD спрашивает про разогрев ту же функцию', (tester) async {
+      Future<Color?> colorAt(int combo) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: wordarcadeTheme(),
+            home: Scaffold(
+              body: GameHud(
+                lives: 3,
+                maxLives: 3,
+                score: 0,
+                multiplier: combo + 1,
+                current: 1,
+                total: 15,
+                combo: combo,
+              ),
+            ),
+          ),
+        );
+        return tester.widget<Text>(find.byKey(NinjaKeys.combo)).style?.color;
+      }
+
+      expect(await colorAt(1), scheme.onSurfaceVariant);
+      expect(await colorAt(2), scheme.onSurfaceVariant);
+      expect(await colorAt(3), scheme.primary);
+      expect(await colorAt(9), scheme.primary);
+    });
   });
 
   group('Тон поля — градиент, а не заливка', () {
