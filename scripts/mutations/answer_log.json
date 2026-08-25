@@ -60,12 +60,6 @@
     "new": ""
   },
   {
-    "name": "при равных моментах порядок ответов теряется",
-    "file": "lib/data/log/drift_answer_log.dart",
-    "old": "      (row) => OrderingTerm.asc(row.id),\n",
-    "new": ""
-  },
-  {
     "name": "история слова не фильтруется по слову",
     "file": "lib/data/log/drift_answer_log.dart",
     "old": "      _read(_db.select(_db.answers)..where((row) => row.wordId.equals(wordId)));",
