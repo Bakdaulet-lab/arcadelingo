@@ -138,6 +138,13 @@ class ObservedSession implements ReviewSession {
     }
   }
 
+  /// Какая игра играет этой сессией.
+  ///
+  /// Публичный не для игры — ей это незачем, — а для хоста и для теста:
+  /// именно это значение уезжает в каждое событие ответа, и проверить, что
+  /// оно взято из записи реестра, больше негде.
+  String get gameId => _gameId;
+
   @override
   bool get isFinished => _inner.isFinished;
 

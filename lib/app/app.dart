@@ -18,6 +18,7 @@ import 'dart:async';
 
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution_view.dart';
+import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/ports/streak_store.dart';
@@ -48,6 +49,7 @@ class WordarcadeApp extends StatelessWidget {
     required this.seed,
     super.key,
     this.now = DateTime.now,
+    this.games = wordarcadeGames,
   });
 
   final LeitnerPrefsStore store;
@@ -57,6 +59,10 @@ class WordarcadeApp extends StatelessWidget {
   final StreakStore streakStore;
   final Result<List<ReviewItem>> seed;
   final DateTime Function() now;
+
+  /// Что приложение умеет запускать. Умолчание — реестр из `games.dart`;
+  /// тест подменяет список, чтобы проверить подключение второй игры.
+  final List<GameEntry> games;
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +79,7 @@ class WordarcadeApp extends StatelessWidget {
           streakStore: streakStore,
           items: value,
           now: now,
+          games: games,
         ),
         Err(:final failure) => SeedErrorView(message: failure.message),
       },
@@ -87,6 +94,7 @@ class HomeScreen extends StatefulWidget {
     required this.streakStore,
     required this.items,
     required this.now,
+    required this.games,
     super.key,
   });
 
@@ -98,6 +106,8 @@ class HomeScreen extends StatefulWidget {
   final List<ReviewItem> items;
 
   final DateTime Function() now;
+
+  final List<GameEntry> games;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
