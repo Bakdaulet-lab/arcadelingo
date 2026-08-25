@@ -23,6 +23,7 @@ import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_views.dart';
+import 'package:arcadelingo/ui/streak_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -339,10 +340,12 @@ void main() {
       await _playRound(tester);
 
       expect(find.byKey(AppKeys.streak), findsOneWidget);
+      // Число стоит в пламени, подпись его не повторяет (задача 3.3.1).
       expect(
         tester.widget<Text>(find.byKey(AppKeys.streak)).data,
-        'Серия: 1 день',
+        'день подряд',
       );
+      expect(tester.widget<Text>(find.byKey(flameDigitKey)).data, '1');
     });
 
     testWidgets('«Сбросить прогресс» убирает и серию тоже', (tester) async {

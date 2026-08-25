@@ -10,8 +10,11 @@
 /// сбрасывать нечего, и кнопки здесь не будет.
 library;
 
-import 'package:arcadelingo/ui/streak_label.dart';
+import 'package:arcadelingo/domain/streak/streak_view.dart';
+import 'package:arcadelingo/ui/ritual_labels.dart';
+import 'package:arcadelingo/ui/streak_card.dart';
 import 'package:arcadelingo/ui/theme.dart';
+import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter/material.dart';
 
 /// Ключи экранов хоста. Тест ищет по ним то, что не опознать по тексту:
@@ -40,8 +43,18 @@ abstract final class AppKeys {
   /// «Полные тексты лицензий» → штатный `showLicensePage`.
   static const Key licenses = Key('app.licenses');
 
-  /// Строка серии на домашнем экране; её нет, когда серии нет.
-  static const Key streak = Key('app.streak');
+  /// Подпись под пламенем стрик-карточки; её нет, когда серии нет.
+  ///
+  /// Определение живёт в `lib/ui/streak_card.dart`: карточка о хосте не
+  /// знает (пункт 4 «Архитектурного закона»), а два одинаковых литерала в
+  /// двух файлах однажды разъедутся.
+  static const Key streak = streakCaptionKey;
+
+  /// «Сегодня сыграно» / «Сегодня ещё не сыграно».
+  static const Key today = Key('app.today');
+
+  /// Состояние запаса заморозок; её нет, пока говорить нечего.
+  static const Key freeze = Key('app.freeze');
 }
 
 /// Домашний экран: одна кнопка.
@@ -54,14 +67,27 @@ class PlayView extends StatelessWidget {
     required this.onPlay,
     required this.onSources,
     super.key,
-    this.streakDays,
+    this.ritual,
+    this.week,
   });
 
-  /// Сколько дней подряд человек играл; null — серии нет или состояние не
-  /// читается. Строка — украшение: битый документ становится громким на тапе
-  /// «Играть», а не на входе в приложение, иначе экран ошибки появлялся бы
-  /// раньше, чем человек чего-либо попросил.
-  final int? streakDays;
+  /// Серия на сегодня; null — состояние не читается.
+  ///
+  /// Считает её `streakAsOf` в домене, экран только рисует. Это не церемония:
+  /// «показывать ли четыре дня, если вчера пропущен» — правило, а не вёрстка,
+  /// и виджет, решающий это сам, однажды разойдётся с тем, что засчитает
+  /// следующая партия.
+  ///
+  /// Ошибка чтения здесь молчит: ритуал — украшение, битый документ
+  /// становится громким на тапе «Играть».
+  final StreakView? ritual;
+
+  /// Семь дней недели для полосы под пламенем; null — журнал ещё читается.
+  ///
+  /// Отдельно от [ritual], потому что источник другой и он асинхронный:
+  /// сыгранные дни знает журнал событий, а не состояние серии. Место под
+  /// полосу занято заранее — карточка не прыгает, когда данные приедут.
+  final List<WeekDay>? week;
 
   final VoidCallback onPlay;
 
@@ -98,16 +124,32 @@ class PlayView extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: textTheme.bodyLarge,
               ),
-              if (streakDays case final days? when days > 0) ...[
-                const SizedBox(height: 16),
+              if (ritual case final view?) ...[
+                const SizedBox(height: 24),
+                StreakCard(ritual: view, week: week),
+                const SizedBox(height: 12),
                 Text(
-                  streakLabel(days),
-                  key: AppKeys.streak,
+                  ritualTodayLabel(view),
+                  key: AppKeys.today,
                   textAlign: TextAlign.center,
-                  style: textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color:
+                        view.playedToday
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
+                if (ritualFreezeLabel(view) case final freeze?) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    freeze,
+                    key: AppKeys.freeze,
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ],
               const SizedBox(height: 40),
               FilledButton(
@@ -117,7 +159,9 @@ class PlayView extends StatelessWidget {
                   minimumSize: WidgetStateProperty.all(const Size(220, 56)),
                   textStyle: WidgetStateProperty.all(textTheme.titleMedium),
                 ),
-                child: const Text('Играть'),
+                child: Text(
+                  ritual == null ? 'Играть' : ritualCallToAction(ritual!),
+                ),
               ),
               const SizedBox(height: 16),
               TextButton(

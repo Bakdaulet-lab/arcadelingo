@@ -11,7 +11,6 @@
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
-import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/domain/usecases/start_session.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -26,39 +25,6 @@ ReviewOutcome _correct() => const ReviewOutcome(
   responseTime: Duration(seconds: 1),
   timeLimit: Duration(seconds: 6),
 );
-
-/// Партия целиком; возвращает число ответов.
-///
-/// Число нужно не для красоты. Верный ответ уводит слово в третью коробку на
-/// трое суток, поэтому короткий сид кончается после первой же партии, и
-/// вторая оказывается пустой. Тест, который этого не заметит, будет
-/// ложно-зелёным: «серия не изменилась» станет означать «отвечать было
-/// нечего», а не «правило сработало».
-int _playThrough(ReviewSession session) {
-  var answered = 0;
-  while (true) {
-    final item = session.nextItem();
-    if (item == null) return answered;
-    session.report(_correct());
-    answered++;
-  }
-}
-
-/// Usecase на сиде, которого хватает на несколько партий подряд: короткая
-/// партия и длинный сид, чтобы каждой следующей было что показать.
-StartSession _usecase({
-  required DateTime Function() now,
-  required InMemoryStreakStore streaks,
-  InMemoryCardStore? cards,
-}) => StartSession(
-  cards: cards ?? InMemoryCardStore(),
-  streaks: streaks,
-  now: now,
-  target: 3,
-);
-
-/// Сид на несколько партий.
-List<ReviewItem> _seed() => wordItems(30);
 
 void main() {
   group('Не читается состояние — партии нет', () {
@@ -109,98 +75,13 @@ void main() {
     });
   });
 
-  group('Серия продвигается по ответу', () {
-    test('первый ответ дня записывает серию в хранилище', () {
-      final streaks = InMemoryStreakStore();
-      final usecase = StartSession(
-        cards: InMemoryCardStore(),
-        streaks: streaks,
-        now: () => _today,
-        target: 15,
-      );
-
-      final session = ok(usecase(items: wordItems(3), gameId: 'falling_words'));
-      session.nextItem();
-      session.report(_correct());
-
-      expect(streaks.saves, hasLength(1));
-      expect(streaks.state.current, 1);
-      expect(streaks.state.lastDay, StreakDay(2026, 8, 25));
-    });
-
-    test('остальные ответы того же дня не пишут ничего', () {
-      final streaks = InMemoryStreakStore();
-      final usecase = StartSession(
-        cards: InMemoryCardStore(),
-        streaks: streaks,
-        now: () => _today,
-        target: 15,
-      );
-
-      final answered = _playThrough(
-        ok(usecase(items: wordItems(3), gameId: 'falling_words')),
-      );
-
-      expect(answered, 3, reason: 'ответов несколько, а запись одна');
-      expect(
-        streaks.saves,
-        hasLength(1),
-        reason: 'серия меняется раз в день, а не раз в ответ',
-      );
-    });
-
-    test('вторая партия в тот же день серию не двигает', () {
-      final streaks = InMemoryStreakStore();
-      final usecase = _usecase(now: () => _today, streaks: streaks);
-
-      _playThrough(ok(usecase(items: _seed(), gameId: 'falling_words')));
-      final afterFirst = streaks.state;
-      final second = _playThrough(
-        ok(usecase(items: _seed(), gameId: 'falling_words')),
-      );
-
-      expect(
-        second,
-        greaterThan(0),
-        reason: 'иначе тест зелен оттого, что отвечать было нечего',
-      );
-      expect(streaks.state, afterFirst);
-    });
-
-    test('партия назавтра продлевает серию', () {
-      var now = _today;
-      final streaks = InMemoryStreakStore();
-      final usecase = _usecase(now: () => now, streaks: streaks);
-
-      _playThrough(ok(usecase(items: _seed(), gameId: 'falling_words')));
-      now = _today.add(const Duration(days: 1));
-      final second = _playThrough(
-        ok(usecase(items: _seed(), gameId: 'falling_words')),
-      );
-
-      expect(second, greaterThan(0));
-      expect(streaks.state.current, 2);
-      expect(streaks.state.best, 2);
-      expect(streaks.state.lastDay, StreakDay(2026, 8, 26));
-    });
-
-    test('пропущенный день обрывает серию, рекорд остаётся', () {
-      var now = _today;
-      final streaks = InMemoryStreakStore();
-      final usecase = _usecase(now: () => now, streaks: streaks);
-
-      for (final shift in [0, 1, 3]) {
-        now = _today.add(Duration(days: shift));
-        final answered = _playThrough(
-          ok(usecase(items: _seed(), gameId: 'falling_words')),
-        );
-        expect(answered, greaterThan(0), reason: 'день $shift: партия пустая');
-      }
-
-      expect(streaks.state.current, 1);
-      expect(streaks.state.best, 2);
-    });
-  });
+  // Группа «Серия продвигается по ответу» уехала целиком в
+  // `count_played_day_test.dart`: с Фазы 3 день засчитывает конец партии, а
+  // не первый ответ, и StartSession серию больше не двигает вовсе. Сценарии
+  // не выброшены — они те же самые, только у нового вызывающего.
+  //
+  // Чтение серии здесь осталось, и проверяет его группа «Ошибки хранилища»:
+  // битый документ обязан стать громким на входе в партию, а не на итогах.
 
   group('Карточки', () {
     test('состояние сохраняется в порт после каждого ответа', () {

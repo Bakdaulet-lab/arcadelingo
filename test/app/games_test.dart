@@ -46,23 +46,38 @@ class _FakeGame extends StatelessWidget {
 
   static const Key answerKey = Key('fake.answer');
 
+  /// «Раунд кончился» — то, что настоящая игра сообщает в момент показа
+  /// экрана итогов. Без этого вызова игра в ритуале не участвует: день
+  /// серии засчитывает законченная партия.
+  static const Key finishKey = Key('fake.finish');
+
   @override
   Widget build(BuildContext context) => Scaffold(
     body: Center(
-      child: FilledButton(
-        key: answerKey,
-        onPressed: () {
-          final item = launch.session.nextItem();
-          if (item == null) return;
-          launch.session.report(
-            const ReviewOutcome(
-              correct: true,
-              responseTime: Duration(seconds: 1),
-              timeLimit: Duration(seconds: 6),
-            ),
-          );
-        },
-        child: const Text('ответить'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FilledButton(
+            key: answerKey,
+            onPressed: () {
+              final item = launch.session.nextItem();
+              if (item == null) return;
+              launch.session.report(
+                const ReviewOutcome(
+                  correct: true,
+                  responseTime: Duration(seconds: 1),
+                  timeLimit: Duration(seconds: 6),
+                ),
+              );
+            },
+            child: const Text('ответить'),
+          ),
+          FilledButton(
+            key: finishKey,
+            onPressed: launch.onRoundOver,
+            child: const Text('закончить'),
+          ),
+        ],
       ),
     ),
   );
@@ -167,13 +182,18 @@ void main() {
       expect((_lastLaunch!.session as ObservedSession).gameId, _fakeId);
     });
 
-    testWidgets('доклад из неё доходит до наблюдателей: серия продлилась', (
+    // Путь целиком, включая новый его конец: с Фазы 3 день засчитывает не
+    // ответ, а сообщение игры о конце раунда. Игра, которая молчит, в
+    // ритуале не участвует, — и это проверяется тем же тестом.
+    testWidgets('ответ и конец раунда доходят до хоста: серия продлилась', (
       tester,
     ) async {
       await _pumpApp(tester, games: [_fakeEntry]);
       await _tapAndSettle(tester, AppKeys.play);
 
       await tester.tap(find.byKey(_FakeGame.answerKey));
+      await tester.pump();
+      await tester.tap(find.byKey(_FakeGame.finishKey));
       await tester.pump();
 
       final doc = (await SharedPreferences.getInstance()).getString(
@@ -183,7 +203,7 @@ void main() {
       expect(
         jsonDecode(doc!),
         containsPair('last_day', '2026-08-25'),
-        reason: 'путь целиком: игра → сессия → наблюдатель → prefs',
+        reason: 'путь целиком: игра → сессия → доклад → конец раунда → prefs',
       );
     });
 

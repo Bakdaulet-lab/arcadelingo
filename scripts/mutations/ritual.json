@@ -1,0 +1,128 @@
+[
+  {
+    "name": "игра не сообщает о конце раунда",
+    "file": "lib/features/games/falling_words/falling_words_game.dart",
+    "old": "      widget.onRoundOver?.call();",
+    "new": ""
+  },
+  {
+    "name": "хост не засчитывает день по концу раунда",
+    "file": "lib/app/app.dart",
+    "old": "                      onRoundOver: () {\n                        finished = true;\n                        _finishRound(sessionId);\n                      },",
+    "new": "                      onRoundOver: () {\n                        finished = true;\n                      },"
+  },
+  {
+    "name": "пустая сессия днём не считается",
+    "file": "lib/app/app.dart",
+    "old": "    if (session.isFinished) {\n      finished = true;\n      _finishRound(sessionId);\n    }",
+    "new": ""
+  },
+  {
+    "name": "уход с середины считается законченной партией",
+    "file": "lib/app/app.dart",
+    "old": "    var finished = false;",
+    "new": "    var finished = true;"
+  },
+  {
+    "name": "«бросил на середине» не записывается",
+    "file": "lib/app/app.dart",
+    "old": "              _record(AppEventKind.roundAbandon, sessionId: sessionId);",
+    "new": ""
+  },
+  {
+    "name": "конец раунда не записывается событием",
+    "file": "lib/app/app.dart",
+    "old": "    _record(AppEventKind.roundOver, sessionId: sessionId);",
+    "new": ""
+  },
+  {
+    "name": "ритуал показывает сырое состояние, а не пересчёт на сегодня",
+    "file": "lib/app/app.dart",
+    "old": "      Ok(:final value) => streakAsOf(value, StreakDay.of(widget.now())),",
+    "new": "      Ok(:final value) => streakAsOf(value, value.lastDay ?? StreakDay.of(widget.now())),"
+  },
+  {
+    "name": "серия не перечитывается после партии",
+    "file": "lib/app/app.dart",
+    "old": "            // Вернулись с партии: серия могла продлиться.\n            _refreshRitual();",
+    "new": ""
+  },
+  {
+    "name": "день засчитывается без записи в хранилище",
+    "file": "lib/domain/usecases/count_played_day.dart",
+    "old": "      unawaited(_streaks.save(after));",
+    "new": ""
+  },
+  {
+    "name": "серия пишется на каждую партию, а не раз в день",
+    "file": "lib/domain/usecases/count_played_day.dart",
+    "old": "    if (after != before) {",
+    "new": "    if (true) {"
+  },
+  {
+    "name": "битый документ серии молча становится пустым",
+    "file": "lib/domain/usecases/count_played_day.dart",
+    "old": "      case Err(:final failure):\n        return Err(failure);",
+    "new": "      case Err():\n        before = StreakState.empty;"
+  },
+  {
+    "name": "день берётся не из часов хоста",
+    "file": "lib/domain/usecases/count_played_day.dart",
+    "old": "    final after = advanceStreak(before, StreakDay.of(_now()));",
+    "new": "    final after = advanceStreak(before, StreakDay(2026, 1, 1));"
+  },
+  {
+    "name": "приглашение одинаково во всех состояниях",
+    "file": "lib/ui/ritual_labels.dart",
+    "old": "  if (view.playedToday) return 'Сыграть ещё раз';",
+    "new": "  if (false) return 'Сыграть ещё раз';"
+  },
+  {
+    "name": "о спасении серии заморозкой не зовут",
+    "file": "lib/ui/ritual_labels.dart",
+    "old": "  if (view.freezeWillCover) return 'Спасти серию';",
+    "new": ""
+  },
+  {
+    "name": "оборванная серия всё равно приглашает продолжить",
+    "file": "lib/ui/ritual_labels.dart",
+    "old": "  if (view.alive) return 'Продолжить серию';",
+    "new": "  return 'Продолжить серию';"
+  },
+  {
+    "name": "нулевая серия показывается строкой «Серия: 0 дней»",
+    "file": "lib/ui/ritual_labels.dart",
+    "old": "    view.days == 0 ? null : streakLabel(view.days);",
+    "new": "    streakLabel(view.days);"
+  },
+  {
+    "name": "потраченная заморозка молчит",
+    "file": "lib/ui/ritual_labels.dart",
+    "old": "  final spent = view.freeze.spentOn;\n  if (spent != null) {",
+    "new": "  final spent = view.freeze.spentOn;\n  if (false) {"
+  },
+  {
+    "name": "заморозка не говорит, когда вернётся",
+    "file": "lib/ui/ritual_labels.dart",
+    "old": "  return 'Заморозка вернётся через $left ${dayWord(left)}';",
+    "new": "  return 'Заморозки нет';"
+  },
+  {
+    "name": "до первой партии про заморозку всё равно рассказывают",
+    "file": "lib/ui/ritual_labels.dart",
+    "old": "  if (view.best == 0) return null;",
+    "new": ""
+  },
+  {
+    "name": "месяц не склоняется",
+    "file": "lib/ui/ritual_labels.dart",
+    "old": "  'августа',",
+    "new": "  'август',"
+  },
+  {
+    "name": "экран сам решает, показывать ли серию",
+    "file": "lib/app/app_views.dart",
+    "old": "                if (ritualStreakLabel(view) case final streak?) ...[",
+    "new": "                if ('Серия: ${view.days}' case final streak?) ...["
+  }
+]

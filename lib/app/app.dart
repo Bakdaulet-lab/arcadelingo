@@ -28,8 +28,12 @@ import 'package:arcadelingo/domain/ports/streak_store.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/session/observed_session.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
+import 'package:arcadelingo/domain/streak/streak.dart';
+import 'package:arcadelingo/domain/streak/streak_view.dart';
+import 'package:arcadelingo/domain/usecases/count_played_day.dart';
 import 'package:arcadelingo/domain/usecases/start_session.dart';
 import 'package:arcadelingo/ui/theme.dart';
+import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter/material.dart';
 
 /// Размер сессии из SPEC. Его задаёт хост: игра про эту цифру не знает и
@@ -134,11 +138,25 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  /// Сколько дней подряд человек играл; null — серии нет или документ не
-  /// читается. Строка — украшение, и ошибка чтения здесь молчит намеренно:
-  /// громкой она станет на тапе «Играть», а экран ошибки при входе в
-  /// приложение появлялся бы раньше, чем человек о чём-либо попросил.
-  int? _streakDays;
+  /// Серия глазами сегодняшнего дня; null — документ не читается.
+  ///
+  /// Не `state.current`, а пересчёт на сегодня: состояние знает последний
+  /// **засчитанный** день и об оборванной серии само не узнает — в полночь
+  /// у нас ничего не выполняется (`domain/streak/streak_view.dart`).
+  ///
+  /// Ошибка чтения здесь молчит намеренно: ритуал — украшение, громкой она
+  /// станет на тапе «Играть», а экран ошибки при входе в приложение
+  /// появлялся бы раньше, чем человек о чём-либо попросил.
+  StreakView? _ritual;
+
+  /// Семь дней недели для полосы; null — журнал ещё читается.
+  ///
+  /// Отдельным полем и асинхронно, потому что источник другой: сыгранные дни
+  /// знает журнал событий, а состояние серии помнит только длину текущей и
+  /// ничего до её обрыва. Человек, игравший в понедельник и вторник,
+  /// сорвавшийся в среду и вернувшийся в четверг, обязан увидеть галочки на
+  /// понедельнике и вторнике — вывод из `current` показал бы там пусто.
+  List<WeekDay>? _week;
 
   /// Причина, по которой не читается состояние; null — экран «Играть».
   Failure? _stateFailure;
@@ -150,7 +168,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ? PlayView(
           onPlay: _start,
           onSources: _openSources,
-          streakDays: _streakDays,
+          ritual: _ritual,
+          week: _week,
         )
         : StateErrorView(message: failure.message, onReset: _reset);
   }
@@ -172,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _refreshStreak();
+    _refreshRitual();
     // «Открыл приложение» — здесь, а не в `main.dart`: оттуда событие не
     // увидел бы ни один тест, а проводку без приборов проверять нечем.
     // Цена решения названа: на битом сиде домашнего экрана не существует, и
@@ -193,18 +212,67 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Перечитывает серию для строки на экране.
+  /// Перечитывает серию и пересчитывает её на сегодня.
   ///
   /// Тихо глотает [Err] — и только здесь. Это украшение: битый документ
   /// станет громким на тапе «Играть», где usecase вернёт причину и человек
   /// увидит экран ошибки. Падать при входе в приложение, до того как он о
   /// чём-либо попросил, было бы хуже.
-  void _refreshStreak() {
-    final days = switch (widget.streakStore.load()) {
-      Ok(:final value) => value.current,
-      Err() => 0,
+  void _refreshRitual() {
+    final today = StreakDay.of(widget.now());
+    final state = switch (widget.streakStore.load()) {
+      Ok(:final value) => value,
+      Err() => null,
     };
-    setState(() => _streakDays = days > 0 ? days : null);
+    setState(() => _ritual = state == null ? null : streakAsOf(state, today));
+    if (state != null) unawaited(_refreshWeek(state, today));
+  }
+
+  /// Собирает полосу недели: сыгранные дни — из журнала, замороженный — из
+  /// состояния.
+  ///
+  /// Журнал ведётся с Этапа 3.2, и дни до него в полосе пусты, сколько бы их
+  /// ни было сыграно. Восстанавливать их неоткуда, и притворяться, что
+  /// можно, хуже, чем показать пустой кружок (`SPEC.md`).
+  Future<void> _refreshWeek(StreakState state, StreakDay today) async {
+    var monday = today;
+    while (monday.weekday != DateTime.monday) {
+      monday = monday.previous;
+    }
+    var sunday = monday;
+    for (var i = 0; i < 6; i++) {
+      sunday = sunday.next;
+    }
+    final played = await widget.eventLog.daysWith(
+      kind: AppEventKind.roundOver,
+      from: monday,
+      to: sunday,
+    );
+    if (!mounted) return;
+    setState(() {
+      _week = weekStrip(
+        today: today,
+        played: played,
+        frozen: state.lastFrozenDay,
+      );
+    });
+  }
+
+  /// Партия кончилась: записать событие и засчитать день.
+  ///
+  /// Один путь на все концы партии — итоги, потерянные жизни и «на сегодня
+  /// всё». Разводить их значило бы завести второе правило «что считается
+  /// сыгранным днём», а второе правило однажды разойдётся с первым.
+  void _finishRound(String? sessionId) {
+    _record(AppEventKind.roundOver, sessionId: sessionId);
+    final counted =
+        CountPlayedDay(streaks: widget.streakStore, now: widget.now)();
+    if (counted case Err(:final failure)) {
+      // Досюда добраться нечем: документ читался при старте партии. Но если
+      // добрались — молчать хуже, чем показать причину, когда человек
+      // вернётся с итогов на домашний экран.
+      setState(() => _stateFailure = failure);
+    }
   }
 
   /// Тап «Играть»: собрать партию и показать её.
@@ -258,12 +326,27 @@ class _HomeScreenState extends State<HomeScreen> {
     await widget.streakStore.reset();
     if (!mounted) return;
     setState(() => _stateFailure = null);
-    _refreshStreak();
+    _refreshRitual();
     _start();
   }
 
   void _play(GameEntry game, ReviewSession session, String Function() footer) {
     final navigator = Navigator.of(context);
+    final sessionId = session is ObservedSession ? session.sessionId : null;
+    // Дошла ли партия до конца. По нему же отличается «бросил на середине»:
+    // ухода игра не сообщает, и не сообщать — правильно, потому что
+    // отсутствие конца и есть весь признак.
+    var finished = false;
+
+    // Сессия, пустая с самого начала: игра покажет «на сегодня всё». Это
+    // тоже законченный раунд — человек пришёл и сделал всё, что система
+    // позволила, а разложенный по коробкам Лейтнер делает такие дни
+    // неизбежными. Серия, наказывающая за прилежность, — сломанная серия.
+    if (session.isFinished) {
+      finished = true;
+      _finishRound(sessionId);
+    }
+
     unawaited(
       navigator
           .push(
@@ -278,13 +361,21 @@ class _HomeScreenState extends State<HomeScreen> {
                         _start();
                       },
                       onExit: navigator.pop,
+                      onRoundOver: () {
+                        finished = true;
+                        _finishRound(sessionId);
+                      },
                     ),
                   ),
             ),
           )
           .then((_) {
+            if (!mounted) return;
+            if (!finished) {
+              _record(AppEventKind.roundAbandon, sessionId: sessionId);
+            }
             // Вернулись с партии: серия могла продлиться.
-            if (mounted) _refreshStreak();
+            _refreshRitual();
           }),
     );
   }

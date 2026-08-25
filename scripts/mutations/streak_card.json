@@ -1,0 +1,140 @@
+[
+  {
+    "name": "пламя не растёт: одна ступень на все серии",
+    "file": "lib/ui/streak_flame.dart",
+    "old": "  if (days <= 2) return FlameTier.spark;",
+    "new": "  if (days <= 2) return FlameTier.steady;"
+  },
+  {
+    "name": "порог 6/7 сдвинут на день",
+    "file": "lib/ui/streak_flame.dart",
+    "old": "  if (days <= 6) return FlameTier.steady;",
+    "new": "  if (days <= 7) return FlameTier.steady;"
+  },
+  {
+    "name": "порог 13/14 сдвинут на день",
+    "file": "lib/ui/streak_flame.dart",
+    "old": "  if (days <= 13) return FlameTier.blaze;",
+    "new": "  if (days <= 14) return FlameTier.blaze;"
+  },
+  {
+    "name": "нулевая серия зажигает пламя",
+    "file": "lib/ui/streak_flame.dart",
+    "old": "  if (days <= 0) return FlameTier.none;",
+    "new": "  if (days < 0) return FlameTier.none;"
+  },
+  {
+    "name": "максимум не выше большого",
+    "file": "lib/ui/streak_flame.dart",
+    "old": "  FlameTier.inferno: 140,",
+    "new": "  FlameTier.inferno: 120,"
+  },
+  {
+    "name": "кегль числа не растёт со ступенью",
+    "file": "lib/ui/streak_flame.dart",
+    "old": "  FlameTier.blaze: 42,\n  FlameTier.inferno: 48,",
+    "new": "  FlameTier.blaze: 42,\n  FlameTier.inferno: 42,"
+  },
+  {
+    "name": "сыгранный сегодня день не зажигает пламя",
+    "file": "lib/ui/streak_flame.dart",
+    "old": "  if (view.playedToday) return FlameMood.lit;",
+    "new": ""
+  },
+  {
+    "name": "о спасении заморозкой пламя не тревожится",
+    "file": "lib/ui/streak_flame.dart",
+    "old": "  if (view.freezeWillCover) return FlameMood.atRisk;",
+    "new": ""
+  },
+  {
+    "name": "край тревожного пламени не отличается от обычного",
+    "file": "lib/ui/streak_flame.dart",
+    "old": "        ? Color.lerp(scheme.tertiary, scheme.error, flameRiskBlend)!",
+    "new": "        ? scheme.tertiary"
+  },
+  {
+    "name": "число на незажжённом пламени невидимо",
+    "file": "lib/ui/streak_flame.dart",
+    "old": "    mood == FlameMood.unlit ? scheme.onSurfaceVariant : scheme.surface;",
+    "new": "    scheme.surface;"
+  },
+  {
+    "name": "неделя начинается не с понедельника",
+    "file": "lib/ui/week_strip.dart",
+    "old": "  while (day.weekday != DateTime.monday) {",
+    "new": "  while (day.weekday != DateTime.sunday) {"
+  },
+  {
+    "name": "в неделе не семь дней",
+    "file": "lib/ui/week_strip.dart",
+    "old": "  for (var i = 0; i < 7; i++) {",
+    "new": "  for (var i = 0; i < 6; i++) {"
+  },
+  {
+    "name": "буква дня не совпадает с самим днём",
+    "file": "lib/ui/week_strip.dart",
+    "old": "        letter: weekdayLetters[day.weekday - 1],",
+    "new": "        letter: weekdayLetters[0],"
+  },
+  {
+    "name": "сегодня ничем не отмечен",
+    "file": "lib/ui/week_strip.dart",
+    "old": "        isToday: day == today,",
+    "new": "        isToday: false,"
+  },
+  {
+    "name": "будущие дни выглядят пропущенными",
+    "file": "lib/ui/week_strip.dart",
+    "old": "  if (day.compareTo(today) > 0) return WeekDayState.future;",
+    "new": ""
+  },
+  {
+    "name": "сыгранные дни из журнала не читаются",
+    "file": "lib/ui/week_strip.dart",
+    "old": "  if (played.contains(day)) return WeekDayState.played;",
+    "new": ""
+  },
+  {
+    "name": "замороженный день выглядит пропущенным",
+    "file": "lib/ui/week_strip.dart",
+    "old": "  if (day == frozen) return WeekDayState.frozen;",
+    "new": ""
+  },
+  {
+    "name": "сегодняшний день без партии считается пропущенным",
+    "file": "lib/ui/week_strip.dart",
+    "old": "  if (day == today) return WeekDayState.pending;",
+    "new": ""
+  },
+  {
+    "name": "журнал отдаёт дни без фильтра по роду события",
+    "file": "lib/data/log/drift_event_log.dart",
+    "old": "            events.kind.equalsValue(kind) &\n                events.localDay.isBetweenValues(",
+    "new": "            (events.kind.equalsValue(kind) | events.kind.isNotNull()) &\n                events.localDay.isBetweenValues("
+  },
+  {
+    "name": "хост берёт неделю не от сегодняшнего дня",
+    "file": "lib/app/app.dart",
+    "old": "    while (monday.weekday != DateTime.monday) {",
+    "new": "    while (false) {"
+  },
+  {
+    "name": "хост спрашивает журнал не про конец раунда",
+    "file": "lib/app/app.dart",
+    "old": "      kind: AppEventKind.roundOver,",
+    "new": "      kind: AppEventKind.roundStart,"
+  },
+  {
+    "name": "замороженный день до полосы не доезжает",
+    "file": "lib/app/app.dart",
+    "old": "        frozen: state.lastFrozenDay,",
+    "new": "        frozen: null,"
+  },
+  {
+    "name": "подпись снова повторяет число",
+    "file": "lib/ui/ritual_labels.dart",
+    "old": "    view.days == 0 ? null : '${dayWord(view.days)} подряд';",
+    "new": "    view.days == 0 ? null : '${view.days} ${dayWord(view.days)} подряд';"
+  }
+]

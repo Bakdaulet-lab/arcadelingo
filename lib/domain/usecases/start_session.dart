@@ -22,8 +22,6 @@ import '../review/review_contract.dart';
 import '../session/leitner_review_session.dart';
 import '../session/observed_session.dart';
 import '../srs/leitner.dart';
-import '../streak/streak.dart';
-import '../streak/streak_observer.dart';
 
 class StartSession {
   StartSession({
@@ -69,12 +67,14 @@ class StartSession {
       case Err(:final failure):
         return Err(failure);
     }
-    // Серия читается до создания сессии, а не при первом ответе: партия,
-    // которая началась и упала на середине, — худший из возможных исходов.
-    final StreakState streak;
+    // Серия читается до создания сессии, хотя двигает её теперь не эта
+    // партия, а её конец (`count_played_day.dart`). Чтение остаётся ради
+    // одного: битый документ обязан стать громким на входе, а не на экране
+    // итогов. Партия, которая началась и упала в конце, — худший из
+    // возможных исходов.
     switch (_streaks.load()) {
-      case Ok(:final value):
-        streak = value;
+      case Ok():
+        break;
       case Err(:final failure):
         return Err(failure);
     }
@@ -96,10 +96,7 @@ class StartSession {
         inner: inner,
         // Порядок наблюдателей значения не имеет: они не разговаривают
         // друг с другом и видят одно и то же событие.
-        observers: [
-          StreakObserver(store: _streaks, initial: streak),
-          LoggingObserver(log: _answerLog),
-        ],
+        observers: [LoggingObserver(log: _answerLog)],
         now: _now,
         gameId: gameId,
         // Момент старта, а не счётчик: партия длится минуты, столкнуться

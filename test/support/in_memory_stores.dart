@@ -99,6 +99,10 @@ class FailingStreakStore implements StreakStore {
 
   final String message;
 
+  /// Сколько раз пытались сбросить. Молчаливого сброса на битом документе
+  /// быть не должно ни у кого, и счётчик делает это проверяемым.
+  int resets = 0;
+
   @override
   Result<StreakState> load() => Err(Failure(message));
 
@@ -106,5 +110,8 @@ class FailingStreakStore implements StreakStore {
   Future<bool> save(StreakState state) async => true;
 
   @override
-  Future<bool> reset() async => true;
+  Future<bool> reset() async {
+    resets++;
+    return true;
+  }
 }

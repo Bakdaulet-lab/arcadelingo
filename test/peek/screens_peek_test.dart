@@ -23,6 +23,7 @@ import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution_view.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/ritual_views.dart';
 import 'peek_harness.dart';
 
 void main() {
@@ -46,7 +47,7 @@ void main() {
   testWidgets('домашний экран с серией', (tester) async {
     await pumpPeek(
       tester,
-      PlayView(onPlay: () {}, onSources: () {}, streakDays: 5),
+      PlayView(onPlay: () {}, onSources: () {}, ritual: ritualView(days: 5)),
     );
     await peek(tester, 'home_streak');
   });
