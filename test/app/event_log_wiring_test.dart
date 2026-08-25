@@ -13,6 +13,7 @@
 // схему не менять дважды.
 
 import 'package:arcadelingo/app/app.dart';
+import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
@@ -87,12 +88,14 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       WordarcadeApp(
-        store: LeitnerPrefsStore(instance),
-        streakStore: StreakPrefsStore(instance),
+        ports: AppPorts(
+          cards: LeitnerPrefsStore(instance),
+          streaks: StreakPrefsStore(instance),
+          events: log,
+        ),
         seed: seed ?? Ok(wordItems(3)),
         now: () => _now,
         games: const [_entry],
-        eventLog: log,
       ),
     );
   }

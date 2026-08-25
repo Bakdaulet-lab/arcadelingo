@@ -16,19 +16,14 @@ library;
 
 import 'dart:async';
 
+import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution_view.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/app/progress_view.dart';
 import 'package:arcadelingo/app/settings_view.dart';
-import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
-import 'package:arcadelingo/domain/ports/answer_log.dart';
-import 'package:arcadelingo/domain/ports/event_log.dart';
-import 'package:arcadelingo/domain/ports/reminders.dart';
-import 'package:arcadelingo/domain/ports/settings_store.dart';
-import 'package:arcadelingo/domain/ports/streak_store.dart';
 import 'package:arcadelingo/domain/reminders/reminder_policy.dart';
 import 'package:arcadelingo/domain/reminders/reminder_settings.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
@@ -43,10 +38,6 @@ import 'package:arcadelingo/ui/theme.dart';
 import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter/material.dart';
 
-/// Умолчание для спроса разрешения: платформы, у которой нечего спрашивать,
-/// для теста не существует.
-Future<bool> _alwaysAllowed() async => true;
-
 /// Размер сессии из SPEC. Его задаёт хост: игра про эту цифру не знает и
 /// заканчивает партию только по `nextItem() == null` и нулю жизней.
 const int sessionTarget = 15;
@@ -58,53 +49,22 @@ class WordarcadeApp extends StatelessWidget {
   /// [now] — шов для тестов, продакшн его не передаёт. Без него нельзя
   /// показать, что очередь строится в момент тапа, а не при старте.
   const WordarcadeApp({
-    required this.store,
-    required this.streakStore,
+    required this.ports,
     required this.seed,
     super.key,
     this.now = DateTime.now,
     this.games = wordarcadeGames,
-    this.answerLog = const NoopAnswerLog(),
-    this.eventLog = const NoopEventLog(),
-    this.reminders = const NoopReminders(),
-    this.settingsStore,
-    this.askReminderPermission = _alwaysAllowed,
   });
 
-  final LeitnerPrefsStore store;
+  /// Всё, что приложение получает снаружи (`app_ports.dart`).
+  final AppPorts ports;
 
-  /// Второй документ прогресса. Портом, а не конкретным стором: корень —
-  /// единственное место, которое знает и о `data/`, и о `domain/`.
-  final StreakStore streakStore;
   final Result<List<ReviewItem>> seed;
   final DateTime Function() now;
 
   /// Что приложение умеет запускать. Умолчание — реестр из `games.dart`;
   /// тест подменяет список, чтобы проверить подключение второй игры.
   final List<GameEntry> games;
-
-  /// История ответов. Умолчание — нулевой объект: приложение полноценно и
-  /// без неё, а тесты, которые о журнале не знают, о нём и не узнают.
-  /// Настоящий журнал подключает `main.dart` — корень знает и о `data/`.
-  final AnswerLog answerLog;
-
-  /// История событий: открыл, начал, доиграл, бросил. Тоже с нулевым
-  /// объектом умолчанием — приложение полноценно и без приборов.
-  final EventLog eventLog;
-
-  /// Напоминания. Нулевой объект умолчанием: приложение работает и молча.
-  final Reminders reminders;
-
-  /// Настройки напоминания; null — экран настроек недоступен, и это
-  /// умолчание тестов, которые о нём не знают.
-  final SettingsStore? settingsStore;
-
-  /// Спросить у системы разрешение на уведомления.
-  ///
-  /// Функцией, а не методом порта: разрешение — понятие платформы, а не
-  /// домена, и `Reminders` о нём знать не должен. Умолчание отвечает «да»:
-  /// платформы, у которой нечего спрашивать, для теста не существует.
-  final Future<bool> Function() askReminderPermission;
 
   @override
   Widget build(BuildContext context) {
@@ -119,16 +79,10 @@ class WordarcadeApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: switch (seed) {
         Ok(:final value) => HomeScreen(
-          store: store,
-          streakStore: streakStore,
+          ports: ports,
           items: value,
           now: now,
           games: games,
-          answerLog: answerLog,
-          eventLog: eventLog,
-          reminders: reminders,
-          settingsStore: settingsStore,
-          askReminderPermission: askReminderPermission,
         ),
         Err(:final failure) => SeedErrorView(message: failure.message),
       },
@@ -139,22 +93,14 @@ class WordarcadeApp extends StatelessWidget {
 /// Стартовый экран и всё, что нужно, чтобы начать партию.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
-    required this.store,
-    required this.streakStore,
+    required this.ports,
     required this.items,
     required this.now,
     required this.games,
-    required this.answerLog,
-    required this.eventLog,
-    required this.reminders,
-    required this.settingsStore,
-    required this.askReminderPermission,
     super.key,
   });
 
-  final LeitnerPrefsStore store;
-
-  final StreakStore streakStore;
+  final AppPorts ports;
 
   /// Сид целиком: сессия сама решает, что из него взять.
   final List<ReviewItem> items;
@@ -162,16 +108,6 @@ class HomeScreen extends StatefulWidget {
   final DateTime Function() now;
 
   final List<GameEntry> games;
-
-  final AnswerLog answerLog;
-
-  final EventLog eventLog;
-
-  final Reminders reminders;
-
-  final SettingsStore? settingsStore;
-
-  final Future<bool> Function() askReminderPermission;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -230,9 +166,9 @@ class _HomeScreenState extends State<HomeScreen> {
         MaterialPageRoute<void>(
           builder:
               (context) => ProgressScreen(
-                answers: widget.answerLog,
-                cards: widget.store,
-                streaks: widget.streakStore,
+                answers: widget.ports.answers,
+                cards: widget.ports.cards,
+                streaks: widget.ports.streaks,
                 now: widget.now,
               ),
         ),
@@ -245,8 +181,10 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Экрана нет, если хост не дал стор настроек: тесты, которые о них не
   /// знают, кнопку не увидят вовсе.
   void _openSettings() {
-    final store = widget.settingsStore;
-    if (store == null) return;
+    final store = widget.ports.settings;
+    if (store == null) {
+      return;
+    }
     unawaited(
       Navigator.of(context).push(
         MaterialPageRoute<void>(
@@ -266,9 +204,11 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Разрешение спрашивается ровно здесь — в момент, когда человек попросил
   /// напоминания, и нигде больше.
   Future<bool> _applySettings(ReminderSettings next) async {
-    final store = widget.settingsStore;
+    final store = widget.ports.settings;
     if (store == null) return false;
-    if (next.enabled && !await widget.askReminderPermission()) return false;
+    if (next.enabled && !await widget.ports.askReminderPermission()) {
+      return false;
+    }
     await store.save(next);
     await _rescheduleReminder(next);
     return true;
@@ -280,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// на день срабатывания, и чем свежее расписание, тем меньше шансов, что
   /// уведомление скажет про серию, которой уже нет.
   Future<void> _rescheduleReminder(ReminderSettings settings) async {
-    final streak = switch (widget.streakStore.load()) {
+    final streak = switch (widget.ports.streaks.load()) {
       Ok(:final value) => value,
       Err() => null,
     };
@@ -291,19 +231,25 @@ class _HomeScreenState extends State<HomeScreen> {
       now: widget.now(),
     );
     if (plan == null) {
-      await widget.reminders.cancelAll();
+      await widget.ports.reminders.cancelAll();
       _record(AppEventKind.reminderScheduled);
       return;
     }
     final (title, body) = reminderText(plan);
-    await widget.reminders.schedule(at: plan.at, title: title, body: body);
+    await widget.ports.reminders.schedule(
+      at: plan.at,
+      title: title,
+      body: body,
+    );
     _record(AppEventKind.reminderScheduled);
   }
 
   /// Перепланирует по тому, что лежит в хранилище настроек.
   void _refreshReminder() {
-    final store = widget.settingsStore;
-    if (store == null) return;
+    final store = widget.ports.settings;
+    if (store == null) {
+      return;
+    }
     final settings = switch (store.load()) {
       Ok(:final value) => value,
       Err() => ReminderSettings.defaults,
@@ -340,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// это потерянное наблюдение, а не потерянный прогресс.
   void _record(AppEventKind kind, {String? sessionId}) {
     unawaited(
-      widget.eventLog.append(
+      widget.ports.events.append(
         AppEvent.at(kind, widget.now(), sessionId: sessionId),
       ),
     );
@@ -354,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// чём-либо попросил, было бы хуже.
   void _refreshRitual() {
     final today = StreakDay.of(widget.now());
-    final state = switch (widget.streakStore.load()) {
+    final state = switch (widget.ports.streaks.load()) {
       Ok(:final value) => value,
       Err() => null,
     };
@@ -377,7 +323,7 @@ class _HomeScreenState extends State<HomeScreen> {
     for (var i = 0; i < 6; i++) {
       sunday = sunday.next;
     }
-    final played = await widget.eventLog.daysWith(
+    final played = await widget.ports.events.daysWith(
       kind: AppEventKind.roundOver,
       from: monday,
       to: sunday,
@@ -400,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _finishRound(String? sessionId) {
     _record(AppEventKind.roundOver, sessionId: sessionId);
     final counted =
-        CountPlayedDay(streaks: widget.streakStore, now: widget.now)();
+        CountPlayedDay(streaks: widget.ports.streaks, now: widget.now)();
     if (counted case Err(:final failure)) {
       // Досюда добраться нечем: документ читался при старте партии. Но если
       // добрались — молчать хуже, чем показать причину, когда человек
@@ -428,11 +374,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     final game = widget.games.first;
     final started = StartSession(
-      cards: widget.store,
-      streaks: widget.streakStore,
+      cards: widget.ports.cards,
+      streaks: widget.ports.streaks,
       now: widget.now,
       target: sessionTarget,
-      answerLog: widget.answerLog,
+      answerLog: widget.ports.answers,
     )(
       items: widget.items,
       gameId: game.id,
@@ -459,8 +405,8 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Сбрасывает **оба** документа прогресса. Серия — это прогресс, и
   /// оставить её после «Сбросить прогресс» значило бы сбросить наполовину.
   Future<void> _reset() async {
-    await widget.store.reset();
-    await widget.streakStore.reset();
+    await widget.ports.cards.reset();
+    await widget.ports.streaks.reset();
     if (!mounted) return;
     setState(() => _stateFailure = null);
     _refreshRitual();

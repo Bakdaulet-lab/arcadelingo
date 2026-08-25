@@ -16,6 +16,7 @@
 // успевает ответить. Тот же шов и та же причина, что у чтения ассета в 0.14.
 
 import 'package:arcadelingo/app/app.dart';
+import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/data/log/drift_answer_log.dart';
@@ -92,12 +93,14 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       WordarcadeApp(
-        store: LeitnerPrefsStore(prefs),
-        streakStore: StreakPrefsStore(prefs),
+        ports: AppPorts(
+          cards: LeitnerPrefsStore(prefs),
+          streaks: StreakPrefsStore(prefs),
+          answers: log,
+        ),
         seed: Ok(wordItems(3)),
         now: () => _t0,
         games: [_entry],
-        answerLog: log,
       ),
     );
   }
