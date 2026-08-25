@@ -14,6 +14,7 @@
 import 'dart:io';
 
 import 'package:arcadelingo/app/app.dart';
+import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/data/srs/leitner_codec.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
@@ -74,8 +75,7 @@ Future<LeitnerPrefsStore> _pumpApp(
     DefaultAssetBundle(
       bundle: _DiskBundle(),
       child: WordarcadeApp(
-        store: store,
-        streakStore: StreakPrefsStore(instance),
+        ports: AppPorts(cards: store, streaks: StreakPrefsStore(instance)),
         seed: seed ?? Ok(_items(3)),
         now: now ?? () => _t0,
       ),

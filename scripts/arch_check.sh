@@ -27,8 +27,11 @@ check() {
 # 1. domain/ ничего не знает про Flutter, data/ и features/
 check 'lib/domain/ импортирует Flutter' \
   lib/domain "^[[:space:]]*import[[:space:]]+'package:flutter/"
-check 'lib/domain/ импортирует data/ или features/' \
-  lib/domain "^[[:space:]]*import[[:space:]]+'.*(data|features)/"
+# `ui` в списке с 3.5: домен собирал текст напоминания и утащил в импорт
+# `lib/ui/streak_label.dart` — русский счёт дней. Правило «домен не знает
+# презентацию» было в CLAUDE.md словами, а гейт ловил только data и features.
+check 'lib/domain/ импортирует data/, features/ или ui/' \
+  lib/domain "^[[:space:]]*import[[:space:]]+'.*(data|features|ui)/"
 # Сторонних пакетов в domain нет вовсе, и до Этапа 2.3 это держалось само
 # собой: импортировать было нечего. С приходом drift правило перестало быть
 # даровым — порт AnswerLog обязан остаться интерфейсом, а БД жить в data/,

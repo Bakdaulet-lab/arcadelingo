@@ -13,6 +13,7 @@
 import 'dart:convert';
 
 import 'package:arcadelingo/app/app.dart';
+import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/data/srs/leitner_codec.dart';
@@ -104,12 +105,14 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       WordarcadeApp(
-        store: LeitnerPrefsStore(instance),
-        streakStore: StreakPrefsStore(instance),
+        ports: AppPorts(
+          cards: LeitnerPrefsStore(instance),
+          streaks: StreakPrefsStore(instance),
+          events: events,
+        ),
         seed: Ok(wordItems(words)),
         now: () => _now,
         games: const [_entry],
-        eventLog: events,
       ),
     );
   }

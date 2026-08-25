@@ -22,6 +22,7 @@ import 'dart:math' as math;
 
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
+import 'package:arcadelingo/features/games/falling_words/falling_words_run.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_views.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -68,6 +69,10 @@ Future<FakeReviewSession> _pumpGame(
       ),
     ),
   );
+  // Взвод перед первым падением (3.6) пропускается здесь, а не в каждом
+  // тесте: ни один из них не про взвод, а про то, что после него. Тесты
+  // самого взвода поднимают игру своим помощником и этой строки не имеют.
+  await tester.pump(FallingWordsRun.windUpTime);
   return session;
 }
 

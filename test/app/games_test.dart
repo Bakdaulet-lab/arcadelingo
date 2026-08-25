@@ -12,6 +12,7 @@
 import 'dart:convert';
 
 import 'package:arcadelingo/app/app.dart';
+import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
@@ -105,8 +106,10 @@ Future<void> _pumpApp(
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     WordarcadeApp(
-      store: LeitnerPrefsStore(instance),
-      streakStore: StreakPrefsStore(instance),
+      ports: AppPorts(
+        cards: LeitnerPrefsStore(instance),
+        streaks: StreakPrefsStore(instance),
+      ),
       seed: Ok(wordItems(3)),
       now: () => _t0,
       games: games ?? wordarcadeGames,

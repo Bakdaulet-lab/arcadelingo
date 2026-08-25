@@ -30,7 +30,12 @@ void main() {
   testWidgets('домашний экран', (tester) async {
     await pumpPeek(
       tester,
-      PlayView(onPlay: () {}, onProgress: () {}, onSources: () {}),
+      PlayView(
+        onPlay: () {},
+        onProgress: () {},
+        onSettings: () {},
+        onSources: () {},
+      ),
     );
     await peek(tester, 'home');
   });
@@ -53,6 +58,7 @@ void main() {
       PlayView(
         onPlay: () {},
         onProgress: () {},
+        onSettings: () {},
         onSources: () {},
         ritual: ritualView(days: 5),
       ),
@@ -67,7 +73,12 @@ void main() {
   testWidgets('домашний экран при системном шрифте 2×', (tester) async {
     await pumpPeek(
       tester,
-      PlayView(onPlay: () {}, onProgress: () {}, onSources: () {}),
+      PlayView(
+        onPlay: () {},
+        onProgress: () {},
+        onSettings: () {},
+        onSources: () {},
+      ),
       textScale: 2,
     );
     await peek(tester, 'home_text2x');
