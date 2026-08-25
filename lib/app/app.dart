@@ -19,6 +19,7 @@ import 'dart:async';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution_view.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
+import 'package:arcadelingo/domain/ports/streak_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/session/leitner_review_session.dart';
@@ -39,12 +40,17 @@ class WordarcadeApp extends StatelessWidget {
   /// показать, что очередь строится в момент тапа, а не при старте.
   const WordarcadeApp({
     required this.store,
+    required this.streakStore,
     required this.seed,
     super.key,
     this.now = DateTime.now,
   });
 
   final LeitnerPrefsStore store;
+
+  /// Второй документ прогресса. Портом, а не конкретным стором: корень —
+  /// единственное место, которое знает и о `data/`, и о `domain/`.
+  final StreakStore streakStore;
   final Result<List<ReviewItem>> seed;
   final DateTime Function() now;
 
@@ -58,7 +64,12 @@ class WordarcadeApp extends StatelessWidget {
       // что сборка отладочная, видно по фреймтаймам.
       debugShowCheckedModeBanner: false,
       home: switch (seed) {
-        Ok(:final value) => HomeScreen(store: store, items: value, now: now),
+        Ok(:final value) => HomeScreen(
+          store: store,
+          streakStore: streakStore,
+          items: value,
+          now: now,
+        ),
         Err(:final failure) => SeedErrorView(message: failure.message),
       },
     );
@@ -69,12 +80,15 @@ class WordarcadeApp extends StatelessWidget {
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     required this.store,
+    required this.streakStore,
     required this.items,
     required this.now,
     super.key,
   });
 
   final LeitnerPrefsStore store;
+
+  final StreakStore streakStore;
 
   /// Сид целиком: сессия сама решает, что из него взять.
   final List<ReviewItem> items;
@@ -86,6 +100,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  /// Сколько дней подряд человек играл; null — серии нет или документ не
+  /// читается. Строка — украшение, и ошибка чтения здесь молчит намеренно:
+  /// громкой она станет на тапе «Играть», а экран ошибки при входе в
+  /// приложение появлялся бы раньше, чем человек о чём-либо попросил.
+  int? _streakDays;
+
   /// Причина, по которой не читается состояние; null — экран «Играть».
   Failure? _stateFailure;
 
@@ -93,7 +113,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final failure = _stateFailure;
     return failure == null
-        ? PlayView(onPlay: _start, onSources: _openSources)
+        ? PlayView(
+          onPlay: _start,
+          onSources: _openSources,
+          streakDays: _streakDays,
+        )
         : StateErrorView(message: failure.message, onReset: _reset);
   }
 

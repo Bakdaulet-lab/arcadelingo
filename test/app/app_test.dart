@@ -17,6 +17,7 @@ import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/data/srs/leitner_codec.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
+import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
@@ -63,7 +64,8 @@ Future<LeitnerPrefsStore> _pumpApp(
   DateTime Function()? now,
 }) async {
   SharedPreferences.setMockInitialValues(prefs);
-  final store = LeitnerPrefsStore(await SharedPreferences.getInstance());
+  final instance = await SharedPreferences.getInstance();
+  final store = LeitnerPrefsStore(instance);
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
@@ -72,12 +74,29 @@ Future<LeitnerPrefsStore> _pumpApp(
       bundle: _DiskBundle(),
       child: WordarcadeApp(
         store: store,
+        streakStore: StreakPrefsStore(instance),
         seed: seed ?? Ok(_items(3)),
         now: now ?? () => _t0,
       ),
     ),
   );
   return store;
+}
+
+/// Документ серии из prefs; null — его ещё нет.
+Future<String?> _streakDoc() async =>
+    (await SharedPreferences.getInstance()).getString('streak_state');
+
+/// Партия целиком: [words] верных ответов и возврат на домашний экран.
+///
+/// Настоящий путь, а не вызов usecase'а напрямую: сценарии серии проверяются
+/// там же, где живёт человек, — через тап «Играть» и настоящие prefs.
+Future<void> _playRound(WidgetTester tester, {int words = 3}) async {
+  await _tapAndSettleRoute(tester, AppKeys.play);
+  for (var i = 1; i <= words; i++) {
+    await _answerCorrectly(tester, i);
+  }
+  await _tapAndSettleRoute(tester, FallingWordsKeys.exit);
 }
 
 /// Документ состояния из карточек по id слова.
@@ -218,6 +237,116 @@ void main() {
         findsNothing,
         reason: 'играть нечем, кнопку показывать незачем',
       );
+    });
+  });
+
+  group('Серия дней', () {
+    testWidgets('до первой партии строки серии нет', (tester) async {
+      await _pumpApp(tester);
+
+      expect(find.byKey(AppKeys.streak), findsNothing);
+      expect(await _streakDoc(), isNull);
+    });
+
+    testWidgets('партия сегодня → документ с сегодняшней датой', (
+      tester,
+    ) async {
+      await _pumpApp(tester);
+
+      await _playRound(tester);
+
+      final doc = await _streakDoc();
+      expect(doc, isNotNull);
+      expect(doc, contains('"last_day":"2026-08-23"'));
+      expect(doc, contains('"current":1'));
+    });
+
+    testWidgets('вторая партия в тот же день ничего не меняет', (tester) async {
+      await _pumpApp(tester);
+      await _playRound(tester);
+      final afterFirst = await _streakDoc();
+
+      await _playRound(tester);
+
+      expect(
+        await _streakDoc(),
+        afterFirst,
+        reason: 'вторая партия за день — не второй день серии',
+      );
+    });
+
+    // «Завтра» — присваивание, а не сутки ожидания: часы приходят в приложение
+    // функцией, и тест их подменяет.
+    testWidgets('партия назавтра продлевает серию', (tester) async {
+      var clock = _t0;
+      await _pumpApp(tester, now: () => clock);
+      await _playRound(tester);
+
+      clock = _t0.add(const Duration(days: 1));
+      await _playRound(tester);
+
+      final doc = await _streakDoc();
+      expect(doc, contains('"current":2'));
+      expect(doc, contains('"best":2'));
+      expect(doc, contains('"last_day":"2026-08-24"'));
+    });
+
+    testWidgets('пропущенный день обрывает серию, рекорд остаётся', (
+      tester,
+    ) async {
+      var clock = _t0;
+      await _pumpApp(tester, now: () => clock);
+      await _playRound(tester);
+      clock = _t0.add(const Duration(days: 1));
+      await _playRound(tester);
+
+      clock = _t0.add(const Duration(days: 3));
+      await _playRound(tester);
+
+      final doc = await _streakDoc();
+      expect(doc, contains('"current":1'));
+      expect(doc, contains('"best":2'));
+    });
+
+    testWidgets('после партии домашний экран показывает серию', (tester) async {
+      await _pumpApp(tester);
+
+      await _playRound(tester);
+
+      expect(find.byKey(AppKeys.streak), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(AppKeys.streak)).data,
+        'Серия: 1 день',
+      );
+    });
+
+    testWidgets('«Сбросить прогресс» убирает и серию тоже', (tester) async {
+      await _pumpApp(tester, prefs: {_key: 'битый документ'});
+      // Сначала запишем серию мимо экрана ошибки: он появится на тапе.
+      await _tapAndSettleRoute(tester, AppKeys.play);
+      expect(find.byKey(AppKeys.stateError), findsOneWidget);
+
+      await _tapAndSettleRoute(tester, AppKeys.reset);
+
+      expect(
+        await _streakDoc(),
+        isNull,
+        reason:
+            'серия — это прогресс, и «сбросить прогресс» её тоже сбрасывает',
+      );
+    });
+
+    testWidgets('битый документ серии тоже даёт экран ошибки', (tester) async {
+      await _pumpApp(tester, prefs: {'streak_state': 'битый документ'});
+
+      await _tapAndSettleRoute(tester, AppKeys.play);
+
+      expect(
+        find.byKey(AppKeys.stateError),
+        findsOneWidget,
+        reason: 'молчаливого сброса нет ни у карточек, ни у серии',
+      );
+      expect(find.byType(FallingWordsGame), findsNothing);
     });
   });
 
