@@ -16,11 +16,16 @@
 // Эталоны снимаются на Linux и принимаются человеком по артефакту прогона
 // CI: `--update-goldens` в проекте не работает ни у кого
 // (`docs/dev/goldens.md`).
+//
+// Кадр снимается **с корня**, как и восемь кадров игры. Первые три
+// кандидата снимались с `PlayView` и вышли 360×780 против 1080×2340 у
+// игровых — втрое грубее. Приняты они были до того, как расхождение
+// заметили, и переснимаются целиком: разрешение эталона — не деталь
+// оформления, а то, насколько мелкую правку он способен поймать.
 
 @Tags(['golden'])
 library;
 
-import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -35,10 +40,7 @@ void main() {
       week: weekStrip(today: ritualToday, played: const {}),
     );
 
-    await expectLater(
-      find.byType(PlayView),
-      matchesGoldenFile('images/ritual_fresh.png'),
-    );
+    await expectGolden(tester, 'ritual_fresh');
   });
 
   testWidgets('ритуал: сегодня сыграно, серия идёт', (tester) async {
@@ -51,10 +53,7 @@ void main() {
       ),
     );
 
-    await expectLater(
-      find.byType(PlayView),
-      matchesGoldenFile('images/ritual_played.png'),
-    );
+    await expectGolden(tester, 'ritual_played');
   });
 
   testWidgets('ритуал: серия под угрозой, заморозка спасёт', (tester) async {
@@ -64,9 +63,6 @@ void main() {
       week: weekStrip(today: ritualToday, played: {daysAgo(2)}),
     );
 
-    await expectLater(
-      find.byType(PlayView),
-      matchesGoldenFile('images/ritual_at_risk.png'),
-    );
+    await expectGolden(tester, 'ritual_at_risk');
   });
 }

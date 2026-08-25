@@ -80,6 +80,26 @@ class DriftAnswerLog implements AnswerLog {
     ];
   }
 
+  @override
+  Future<AnswerTotals> totals() async {
+    final answers = _db.answers;
+    final total = answers.id.count();
+    // CAST и SUM, а не COUNT(...) FILTER: последний новее, чем обязана
+    // понимать самая старая из трёх наших сборок sqlite (шапка базы).
+    final right = answers.correct.cast<int>().sum();
+    final days = answers.localDay.count(distinct: true);
+    final row =
+        await (_db.selectOnly(answers)
+          ..addColumns([total, right, days])).getSingle();
+    return AnswerTotals(
+      answers: row.read(total)!,
+      // На пустой таблице SUM даёт NULL, а не ноль: это ANSI, а не причуда
+      // sqlite. COUNT при этом честный ноль, поэтому подстраховка одна.
+      correct: row.read(right) ?? 0,
+      days: row.read(days)!,
+    );
+  }
+
   /// Общий хвост чтений: порядок и перевод строк в записи.
   ///
   /// Порядок задан здесь, а не в каждом методе: хронологический — обещание

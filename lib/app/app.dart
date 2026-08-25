@@ -19,6 +19,7 @@ import 'dart:async';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution_view.dart';
 import 'package:arcadelingo/app/games.dart';
+import 'package:arcadelingo/app/progress_view.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
@@ -167,6 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return failure == null
         ? PlayView(
           onPlay: _start,
+          onProgress: _openProgress,
           onSources: _openSources,
           ritual: _ritual,
           week: _week,
@@ -178,6 +180,26 @@ class _HomeScreenState extends State<HomeScreen> {
   ///
   /// Маршрутом, а не заменой домашнего экрана: стрелка «назад» в `AppBar`
   /// достаётся даром, и уйти с экрана можно всегда.
+  /// Тап «Прогресс»: показать, сколько пройдено за всё время.
+  ///
+  /// Маршрутом, как и «Источники»: стрелка «назад» в `AppBar` достаётся
+  /// даром, и уйти с экрана можно всегда.
+  void _openProgress() {
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder:
+              (context) => ProgressScreen(
+                answers: widget.answerLog,
+                cards: widget.store,
+                streaks: widget.streakStore,
+                now: widget.now,
+              ),
+        ),
+      ),
+    );
+  }
+
   void _openSources() {
     unawaited(
       Navigator.of(context).push(

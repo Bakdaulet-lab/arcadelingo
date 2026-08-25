@@ -28,7 +28,10 @@ import 'peek_harness.dart';
 
 void main() {
   testWidgets('домашний экран', (tester) async {
-    await pumpPeek(tester, PlayView(onPlay: () {}, onSources: () {}));
+    await pumpPeek(
+      tester,
+      PlayView(onPlay: () {}, onProgress: () {}, onSources: () {}),
+    );
     await peek(tester, 'home');
   });
 
@@ -47,7 +50,12 @@ void main() {
   testWidgets('домашний экран с серией', (tester) async {
     await pumpPeek(
       tester,
-      PlayView(onPlay: () {}, onSources: () {}, ritual: ritualView(days: 5)),
+      PlayView(
+        onPlay: () {},
+        onProgress: () {},
+        onSources: () {},
+        ritual: ritualView(days: 5),
+      ),
     );
     await peek(tester, 'home_streak');
   });
@@ -59,7 +67,7 @@ void main() {
   testWidgets('домашний экран при системном шрифте 2×', (tester) async {
     await pumpPeek(
       tester,
-      PlayView(onPlay: () {}, onSources: () {}),
+      PlayView(onPlay: () {}, onProgress: () {}, onSources: () {}),
       textScale: 2,
     );
     await peek(tester, 'home_text2x');

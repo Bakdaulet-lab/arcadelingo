@@ -4,10 +4,17 @@
 // ничем больше. Настройки, разъехавшиеся между кадрами, дали бы диффы, в
 // которых человек ищет смысл там, где его нет.
 //
-// Про размер PNG: он всегда 360×780, сколько бы ни стоял devicePixelRatio.
-// matchesGoldenFile снимает через captureImage → layer.toImage(paintBounds),
-// а там pixelRatio по умолчанию 1.0, то есть кадр в логических пикселях.
-// Смотреть на такой файл надо с зумом.
+// Про размер PNG. Утверждение «всегда 360×780», стоявшее здесь с 0.9, было
+// неправдой: так снимается **вложенный** виджет. `matchesGoldenFile` идёт
+// через `captureImage → layer.toImage`, и pixelRatio там 1.0 — то есть
+// логические пиксели. С корня (`MaterialApp`) кадр снимается физическими, и
+// восемь эталонов игры на самом деле 1080×2340.
+//
+// Отсюда правило, записанное в `docs/dev/goldens.md`: **все голдены
+// снимаются с корня**. Кадр вложенного виджета втрое грубее и сторожит
+// вёрстку хуже — сдвиг на 1 dp и разница в сглаживании кривых на нём
+// теряются. Снимок вложенного куска — это `test/peek/`, и он эталоном не
+// становится.
 
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
@@ -115,6 +122,7 @@ Future<void> pumpRitualGolden(
       debugShowCheckedModeBanner: false,
       home: PlayView(
         onPlay: () {},
+        onProgress: () {},
         onSources: () {},
         ritual: ritual,
         week: week,

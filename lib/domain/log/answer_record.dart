@@ -158,3 +158,47 @@ class DayTally {
   @override
   String toString() => 'DayTally($day: $correct/$answers)';
 }
+
+/// Всё, что накопилось за историю: одна строка чисел.
+///
+/// Отдельным запросом, а не суммой [DayTally] за всё время: сумма
+/// потребовала бы знать, с какого дня считать, а этого никто не знает без
+/// ещё одного запроса.
+class AnswerTotals {
+  const AnswerTotals({
+    required this.answers,
+    required this.correct,
+    required this.days,
+  });
+
+  /// Пусто: журнал ещё ничего не видел.
+  static const AnswerTotals empty = AnswerTotals(
+    answers: 0,
+    correct: 0,
+    days: 0,
+  );
+
+  /// Всего ответов за всё время. Слово, вернувшееся на повтор, — два ответа.
+  final int answers;
+
+  /// Из них верных.
+  final int correct;
+
+  /// Сколько разных дней в журнале есть хотя бы один ответ.
+  final int days;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AnswerTotals &&
+          answers == other.answers &&
+          correct == other.correct &&
+          days == other.days;
+
+  @override
+  int get hashCode => Object.hash(answers, correct, days);
+
+  @override
+  String toString() =>
+      'AnswerTotals(ответов: $answers, верных: $correct, дней: $days)';
+}

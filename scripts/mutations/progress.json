@@ -1,0 +1,116 @@
+[
+  {
+    "name": "граница «трудных» сдвинута: коробка 2 тоже трудная",
+    "file": "lib/domain/progress/word_progress.dart",
+    "old": "  if (card.box <= LeitnerCard.minBox) return WordStage.hard;",
+    "new": "  if (card.box <= LeitnerCard.minBox + 1) return WordStage.hard;"
+  },
+  {
+    "name": "граница «выученных» сдвинута: коробка 4 уже выучена",
+    "file": "lib/domain/progress/word_progress.dart",
+    "old": "  if (card.box >= LeitnerCard.maxBox) return WordStage.learned;",
+    "new": "  if (card.box >= LeitnerCard.maxBox - 1) return WordStage.learned;"
+  },
+  {
+    "name": "выученных не считают вовсе",
+    "file": "lib/domain/progress/word_progress.dart",
+    "old": "      case WordStage.learned:\n        learned++;",
+    "new": "      case WordStage.learned:\n        break;"
+  },
+  {
+    "name": "доля верных округляется вверх",
+    "file": "lib/domain/progress/word_progress.dart",
+    "old": "    answers == 0 ? null : correct * 100 ~/ answers;",
+    "new": "    answers == 0 ? null : (correct * 100 / answers).round();"
+  },
+  {
+    "name": "ноль ответов показывается как «0%»",
+    "file": "lib/domain/progress/word_progress.dart",
+    "old": "    answers == 0 ? null : correct * 100 ~/ answers;",
+    "new": "    answers == 0 ? 0 : correct * 100 ~/ answers;"
+  },
+  {
+    "name": "перевёрнутый отрезок молча даёт пустой ряд",
+    "file": "lib/domain/progress/day_series.dart",
+    "old": "  if (to.compareTo(from) < 0) {\n    throw ArgumentError('отрезок перевёрнут: $from..$to');\n  }",
+    "new": "  if (to.compareTo(from) < 0) {\n    return const [];\n  }"
+  },
+  {
+    "name": "пустые дни не достраиваются",
+    "file": "lib/domain/progress/day_series.dart",
+    "old": "    series.add(byDay[day] ?? DayTally(day: day, answers: 0, correct: 0));",
+    "new": "    series.add(byDay[day] ?? DayTally(day: day, answers: 1, correct: 1));"
+  },
+  {
+    "name": "сводка вне отрезка попадает в ряд",
+    "file": "lib/domain/progress/day_series.dart",
+    "old": "  final byDay = {for (final tally in tallies) tally.day: tally};",
+    "new": "  final byDay = {\n    for (final tally in tallies) tally.day: tally,\n    if (tallies.isNotEmpty) from: tallies.first,\n  };"
+  },
+  {
+    "name": "итоги считают верными все ответы",
+    "file": "lib/data/log/drift_answer_log.dart",
+    "old": "    final right = answers.correct.cast<int>().sum();\n    final days = answers.localDay.count(distinct: true);",
+    "new": "    final right = answers.id.count();\n    final days = answers.localDay.count(distinct: true);"
+  },
+  {
+    "name": "дни в итогах считаются с повторами",
+    "file": "lib/data/log/drift_answer_log.dart",
+    "old": "    final days = answers.localDay.count(distinct: true);",
+    "new": "    final days = answers.localDay.count();"
+  },
+  {
+    "name": "пустая таблица роняет итоги на NULL из SUM",
+    "file": "lib/data/log/drift_answer_log.dart",
+    "old": "      // На пустой таблице SUM даёт NULL, а не ноль: это ANSI, а не причуда\n      // sqlite. COUNT при этом честный ноль, поэтому подстраховка одна.\n      correct: row.read(right) ?? 0,",
+    "new": "      correct: row.read(right)!,"
+  },
+  {
+    "name": "экран берёт отрезок не в две недели",
+    "file": "lib/app/progress_view.dart",
+    "old": "const int progressDays = 14;",
+    "new": "const int progressDays = 7;"
+  },
+  {
+    "name": "пустой журнал показывает четыре нуля",
+    "file": "lib/app/progress_view.dart",
+    "old": "  bool get isEmpty => totals.answers == 0;",
+    "new": "  bool get isEmpty => false;"
+  },
+  {
+    "name": "лучшая серия до экрана не доезжает",
+    "file": "lib/app/progress_view.dart",
+    "old": "      Ok(:final value) => value.best,",
+    "new": "      Ok() => 0,"
+  },
+  {
+    "name": "карточки до экрана не доезжают",
+    "file": "lib/app/progress_view.dart",
+    "old": "      Ok(:final value) => value,\n      Err() => const {},",
+    "new": "      Ok() => const {},\n      Err() => const {},"
+  },
+  {
+    "name": "полоса берёт итоги вместо сводок по дням",
+    "file": "lib/app/progress_view.dart",
+    "old": "      series: fillDays(tallies: tallies, from: from, to: today),",
+    "new": "      series: fillDays(tallies: const [], from: from, to: today),"
+  },
+  {
+    "name": "вход на прогресс с домашнего экрана убран",
+    "file": "lib/app/app.dart",
+    "old": "          onProgress: _openProgress,",
+    "new": "          onProgress: () {},"
+  },
+  {
+    "name": "столбик не отличает день с ответом от дня без",
+    "file": "lib/app/progress_view.dart",
+    "old": "  if (answers == 0) return seriesHeight;",
+    "new": "  return seriesHeight;\n  // ignore: dead_code\n  if (answers == 0) return seriesHeight;"
+  },
+  {
+    "name": "один ответ рисуется невидимым столбиком",
+    "file": "lib/app/progress_view.dart",
+    "old": "  return share < seriesMinBar ? seriesMinBar : share;",
+    "new": "  return share;"
+  }
+]

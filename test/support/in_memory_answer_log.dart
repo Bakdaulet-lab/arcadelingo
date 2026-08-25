@@ -46,4 +46,11 @@ class InMemoryAnswerLog implements AnswerLog {
     final days = byDay.keys.toList()..sort();
     return [for (final day in days) byDay[day]!];
   }
+
+  @override
+  Future<AnswerTotals> totals() async => AnswerTotals(
+    answers: records.length,
+    correct: records.where((r) => r.correct).length,
+    days: {for (final r in records) r.localDay}.length,
+  );
 }

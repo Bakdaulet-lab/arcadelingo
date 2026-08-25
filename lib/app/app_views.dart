@@ -30,6 +30,12 @@ abstract final class AppKeys {
   /// «Сбросить прогресс» — только на экране ошибки состояния.
   static const Key reset = Key('app.reset');
 
+  /// Вход на «Прогресс» с домашнего экрана.
+  ///
+  /// Здесь же, где «Источники»: домашний экран открывают, когда не играют, и
+  /// оба этих экрана — про «посмотреть», а не про «сыграть».
+  static const Key progress = Key('app.progress');
+
   /// Вход на «Источники» с домашнего экрана.
   ///
   /// Домашний, а не конец партии: на итогах кнопка конкурировала бы с «Ещё
@@ -65,6 +71,7 @@ abstract final class AppKeys {
 class PlayView extends StatelessWidget {
   const PlayView({
     required this.onPlay,
+    required this.onProgress,
     required this.onSources,
     super.key,
     this.ritual,
@@ -97,6 +104,9 @@ class PlayView extends StatelessWidget {
   /// «Выйти» — двумя действиями, ради которых экран конца партии и
   /// существует. Домашний экран открывают, когда не играют.
   final VoidCallback onSources;
+
+  /// Вход на «Прогресс».
+  final VoidCallback onProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -163,16 +173,31 @@ class PlayView extends StatelessWidget {
                   ritual == null ? 'Играть' : ritualCallToAction(ritual!),
                 ),
               ),
-              const SizedBox(height: 16),
-              TextButton(
-                key: AppKeys.sources,
-                onPressed: onSources,
-                style: ButtonStyle(
-                  foregroundColor: WidgetStateProperty.all(
-                    Theme.of(context).colorScheme.onSurfaceVariant,
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    key: AppKeys.progress,
+                    onPressed: onProgress,
+                    style: ButtonStyle(
+                      foregroundColor: WidgetStateProperty.all(
+                        Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    child: const Text('Прогресс'),
                   ),
-                ),
-                child: const Text('Источники'),
+                  TextButton(
+                    key: AppKeys.sources,
+                    onPressed: onSources,
+                    style: ButtonStyle(
+                      foregroundColor: WidgetStateProperty.all(
+                        Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    child: const Text('Источники'),
+                  ),
+                ],
               ),
             ],
           ),
