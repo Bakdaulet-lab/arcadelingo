@@ -1,0 +1,68 @@
+[
+  {
+    "name": "пустая строка не разделяет блоки: всё слипается в один",
+    "file": "lib/app/attribution.dart",
+    "old": "    if (trimmed.isEmpty) {\n      flush();\n      continue;\n    }",
+    "new": "    if (trimmed.isEmpty) {\n      continue;\n    }"
+  },
+  {
+    "name": "мягкий перенос склеивается без пробела",
+    "file": "lib/app/attribution.dart",
+    "old": "  String get text => _parts.join(' ');",
+    "new": "  String get text => _parts.join();"
+  },
+  {
+    "name": "незнакомая конструкция молча становится абзацем",
+    "file": "lib/app/attribution.dart",
+    "old": "  if (_unsupported.hasMatch(line)) return AttributionBlockKind.unsupported;\n",
+    "new": ""
+  },
+  {
+    "name": "третий уровень заголовка принят за обычный текст",
+    "file": "lib/app/attribution.dart",
+    "old": "final RegExp _unsupported = RegExp(r'^(#{3,}|\\||\\[|!|-{3,}$|\\d+\\.\\s|\\*(?!\\*))');",
+    "new": "final RegExp _unsupported = RegExp(r'^(\\||\\[|!|-{3,}$|\\d+\\.\\s|\\*(?!\\*))');"
+  },
+  {
+    "name": "жирный не съедается: звёздочки уезжают на экран",
+    "file": "lib/app/attribution.dart",
+    "old": "    ('**', '**', AttributionStyle.bold),\n",
+    "new": ""
+  },
+  {
+    "name": "незакрытый маркер съедает остаток строки",
+    "file": "lib/app/attribution.dart",
+    "old": "    if (end <= start) continue;",
+    "new": "    if (end <= start) {\n      return _Marked(\n        text.substring(from + open.length),\n        style,\n        text.length - from,\n      );\n    }"
+  },
+  {
+    "name": "угловые скобки делают ссылкой любой текст",
+    "file": "lib/app/attribution.dart",
+    "old": "    if (style == AttributionStyle.link && !text.startsWith('<http', from)) {\n      continue;\n    }\n",
+    "new": ""
+  },
+  {
+    "name": "с домашнего экрана нет входа на «Источники»",
+    "file": "lib/app/app.dart",
+    "old": "        ? PlayView(onPlay: _start, onSources: _openSources)",
+    "new": "        ? PlayView(onPlay: _start, onSources: () {})"
+  },
+  {
+    "name": "с «Источников» не уйти: стрелки назад нет",
+    "file": "lib/app/attribution_view.dart",
+    "old": "    appBar: AppBar(title: const Text('Источники')),",
+    "new": "    appBar: AppBar(\n      title: const Text('Источники'),\n      automaticallyImplyLeading: false,\n    ),"
+  },
+  {
+    "name": "кнопка лицензий никуда не ведёт",
+    "file": "lib/app/attribution_view.dart",
+    "old": "                onPressed: () => showLicensePage(context: context),",
+    "new": "                onPressed: () {},"
+  },
+  {
+    "name": "отступ перестал продолжать пункт списка",
+    "file": "lib/app/attribution.dart",
+    "old": "    if (raw.startsWith('  ') && pending?.kind == AttributionBlockKind.bullet) {",
+    "new": "    if (false && pending?.kind == AttributionBlockKind.bullet) {"
+  }
+]

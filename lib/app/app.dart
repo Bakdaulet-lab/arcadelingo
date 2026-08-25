@@ -17,6 +17,7 @@ library;
 import 'dart:async';
 
 import 'package:arcadelingo/app/app_views.dart';
+import 'package:arcadelingo/app/attribution_view.dart';
 import 'package:arcadelingo/app/theme.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
@@ -92,8 +93,22 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final failure = _stateFailure;
     return failure == null
-        ? PlayView(onPlay: _start)
+        ? PlayView(onPlay: _start, onSources: _openSources)
         : StateErrorView(message: failure.message, onReset: _reset);
+  }
+
+  /// Тап «Источники»: показать содержимое `assets/ATTRIBUTION.md`.
+  ///
+  /// Маршрутом, а не заменой домашнего экрана: стрелка «назад» в `AppBar`
+  /// достаётся даром, и уйти с экрана можно всегда.
+  void _openSources() {
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => const AttributionScreen(),
+        ),
+      ),
+    );
   }
 
   /// Тап «Играть»: прочитать состояние и начать партию.

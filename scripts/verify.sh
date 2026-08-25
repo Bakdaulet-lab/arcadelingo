@@ -24,6 +24,17 @@ cd "$(dirname "$0")/.." || exit 1
 goldens="${WORDARCADE_GOLDENS:-off}"
 case "$goldens" in
   all)
+    # Страж платформы. На не-Linux кадры отрисуются, разойдутся с эталонами и
+    # положат рядом .new.png — файлы, неотличимые с виду от настоящих
+    # кандидатов. Принять такой «кандидат» руками по docs/dev/goldens.md — и
+    # эталоны молча станут windows-овыми. Дешевле отказаться.
+    if [ "$(uname -s)" != 'Linux' ]; then
+      echo "WORDARCADE_GOLDENS=all на $(uname -s): кадры заведомо разойдутся," >&2
+      echo 'а рядом с эталонами лягут кандидаты, которые нельзя принимать.' >&2
+      echo 'Эталоны сняты на Linux — docs/dev/goldens.md.' >&2
+      echo 'Быстрая петля из-под Windows: ./scripts/goldens_wsl.sh' >&2
+      exit 2
+    fi
     goldens_note='голдены: проверены здесь'
     ;;
   off)
@@ -65,10 +76,15 @@ if flutter analyze; then echo 'OK'; else status=1; fi
 
 step "Тесты ($goldens_note)"
 if [ -d test ]; then
+  # Снималка экранов (test/peek/) отсекается в обоих режимах и всегда: она
+  # ничего не проверяет и всегда зелёная, а зелёный навсегда шаг внутри гейта
+  # — это враньё про покрытие. Исключение живёт здесь, а не в dart_test.yaml,
+  # по измеренной причине: там оно победило бы и явный `--tags peek`, то есть
+  # сломало бы ручную съёмку. Подробности — в самом dart_test.yaml.
   if [ "$goldens" = 'off' ]; then
-    run_tests() { flutter test --exclude-tags golden; }
+    run_tests() { flutter test --exclude-tags 'golden || peek'; }
   else
-    run_tests() { flutter test; }
+    run_tests() { flutter test --exclude-tags peek; }
   fi
   if run_tests; then echo 'OK'; else status=1; fi
 else

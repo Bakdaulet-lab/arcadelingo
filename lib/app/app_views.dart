@@ -24,6 +24,19 @@ abstract final class AppKeys {
 
   /// «Сбросить прогресс» — только на экране ошибки состояния.
   static const Key reset = Key('app.reset');
+
+  /// Вход на «Источники» с домашнего экрана.
+  ///
+  /// Домашний, а не конец партии: на итогах кнопка конкурировала бы с «Ещё
+  /// раз» и «Выйти», ради которых экран и существует. Плюс домашний экран
+  /// не входит ни в один из восьми голденов.
+  static const Key sources = Key('app.sources');
+
+  /// Сам экран «Источники».
+  static const Key sourcesView = Key('app.sources_view');
+
+  /// «Полные тексты лицензий» → штатный `showLicensePage`.
+  static const Key licenses = Key('app.licenses');
 }
 
 /// Домашний экран: одна кнопка.
@@ -32,9 +45,16 @@ abstract final class AppKeys {
 /// собирается на текущий момент и, пролежав на этом экране до полуночи,
 /// протухла бы (0.6, `docs/dev/context.md`).
 class PlayView extends StatelessWidget {
-  const PlayView({required this.onPlay, super.key});
+  const PlayView({required this.onPlay, required this.onSources, super.key});
 
   final VoidCallback onPlay;
+
+  /// Вход на «Источники».
+  ///
+  /// Здесь, а не на итогах: там кнопка конкурировала бы с «Ещё раз» и
+  /// «Выйти» — двумя действиями, ради которых экран конца партии и
+  /// существует. Домашний экран открывают, когда не играют.
+  final VoidCallback onSources;
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +88,17 @@ class PlayView extends StatelessWidget {
                   textStyle: WidgetStateProperty.all(textTheme.titleMedium),
                 ),
                 child: const Text('Играть'),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                key: AppKeys.sources,
+                onPressed: onSources,
+                style: ButtonStyle(
+                  foregroundColor: WidgetStateProperty.all(
+                    Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                child: const Text('Источники'),
               ),
             ],
           ),

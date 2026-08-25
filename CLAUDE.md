@@ -12,6 +12,11 @@
 - Голдены: локально не гоняются вовсе (умолчание `WORDARCADE_GOLDENS=off`).
   Их платформа — Linux, сторожит CI. `--update-goldens` не работает ни у кого:
   компаратор бросает из `update()`. Приёмка эталона человеком — `docs/dev/goldens.md`
+- Голдены быстро, из-под Windows: `./scripts/goldens_wsl.sh` — те же кадры в WSL2,
+  байт-в-байт как на CI (измерено). Судьёй остаётся CI
+- Скриншот экрана для DoD, без заведения голдена:
+  `flutter test --tags peek test/peek/` → PNG в `test/peek/out/`.
+  Компаратор не участвует, эталоном такой снимок не станет — `docs/dev/goldens.md`
 - Кодоген: `dart run build_runner build --delete-conflicting-outputs`
 - Запуск на устройстве: `flutter run --release` (в debug анимации тормозят, судить о «фане» нельзя)
 
