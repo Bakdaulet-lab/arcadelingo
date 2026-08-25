@@ -10,6 +10,7 @@
 library;
 
 import 'package:arcadelingo/app/app.dart';
+import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/data/log/drift_answer_log.dart';
 import 'package:arcadelingo/data/log/drift_event_log.dart';
 import 'package:arcadelingo/data/log/history_database.dart';
@@ -38,16 +39,18 @@ Future<void> main() async {
   final reminders = await PluginReminders.start();
   runApp(
     WordarcadeApp(
-      store: LeitnerPrefsStore(prefs),
-      streakStore: StreakPrefsStore(prefs),
+      ports: AppPorts(
+        cards: LeitnerPrefsStore(prefs),
+        streaks: StreakPrefsStore(prefs),
+        // Файл открывается лениво, при первой записи: журнал не на пути
+        // старта, и ждать его здесь незачем.
+        answers: DriftAnswerLog(history),
+        events: DriftEventLog(history),
+        reminders: reminders,
+        settings: SettingsPrefsStore(prefs),
+        askReminderPermission: reminders.requestPermission,
+      ),
       seed: seed,
-      // Файл открывается лениво, при первой записи: журнал не на пути
-      // старта, и ждать его здесь незачем.
-      answerLog: DriftAnswerLog(history),
-      eventLog: DriftEventLog(history),
-      reminders: reminders,
-      settingsStore: SettingsPrefsStore(prefs),
-      askReminderPermission: reminders.requestPermission,
     ),
   );
 }

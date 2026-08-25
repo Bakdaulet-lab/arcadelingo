@@ -6,6 +6,7 @@
 // которых в `flutter test` нет, и проверяется руками на телефоне.
 
 import 'package:arcadelingo/app/app.dart';
+import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/app/settings_view.dart';
@@ -93,14 +94,16 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       WordarcadeApp(
-        store: LeitnerPrefsStore(instance),
-        streakStore: StreakPrefsStore(instance),
+        ports: AppPorts(
+          cards: LeitnerPrefsStore(instance),
+          streaks: StreakPrefsStore(instance),
+          reminders: reminders,
+          settings: withSettings ? SettingsPrefsStore(instance) : null,
+          askReminderPermission: () async => permissionGranted,
+        ),
         seed: Ok(wordItems(3)),
         now: () => _t0,
         games: const [_entry],
-        reminders: reminders,
-        settingsStore: withSettings ? SettingsPrefsStore(instance) : null,
-        askReminderPermission: () async => permissionGranted,
       ),
     );
     await tester.pumpAndSettle();
