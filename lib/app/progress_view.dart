@@ -289,7 +289,6 @@ class _Series extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final peak = days.fold(
       0,
       (best, day) => day.answers > best ? day.answers : best,
@@ -306,36 +305,57 @@ class _Series extends StatelessWidget {
         children: [
           for (final (index, day) in days.indexed) ...[
             if (index > 0) const SizedBox(width: seriesBarGap),
-            SizedBox(
-              width: seriesBarWidth,
-              height: seriesHeight,
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  width: seriesBarWidth,
-                  height: _barHeight(day.answers, peak),
-                  decoration: BoxDecoration(
-                    color:
-                        day.answers == 0
-                            ? scheme.surfaceContainerHighest
-                            : scheme.primary,
-                    borderRadius: BorderRadius.circular(seriesBarWidth / 2),
-                  ),
-                ),
-              ),
-            ),
+            SeriesBar(day: day, peak: peak),
           ],
         ],
       ),
     );
   }
+}
 
-  /// Высота столбика: доля от самого высокого дня отрезка, но не меньше
-  /// [seriesMinBar], если ответы были. День без ответов — дорожка во всю
-  /// высоту, чтобы полоса не рассыпалась на разрозненные палочки.
-  static double _barHeight(int answers, int peak) {
-    if (answers == 0) return seriesHeight;
-    final share = seriesHeight * answers / peak;
-    return share < seriesMinBar ? seriesMinBar : share;
+/// Один столбик полосы.
+///
+/// Отдельным публичным виджетом, а не вложенным `Container`, ровно ради
+/// проверяемости: «в полосе четырнадцать столбиков, и вот с какими числами»
+/// иначе выражается перебором анонимных `SizedBox`, то есть не выражается.
+/// Мутация «сократить отрезок до недели» до этого оставалась зелёной.
+class SeriesBar extends StatelessWidget {
+  const SeriesBar({required this.day, required this.peak, super.key});
+
+  final DayTally day;
+
+  /// Самый высокий день отрезка: по нему берётся доля.
+  final int peak;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: seriesBarWidth,
+      height: seriesHeight,
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Container(
+          width: seriesBarWidth,
+          height: barHeight(answers: day.answers, peak: peak),
+          decoration: BoxDecoration(
+            color:
+                day.answers == 0
+                    ? scheme.surfaceContainerHighest
+                    : scheme.primary,
+            borderRadius: BorderRadius.circular(seriesBarWidth / 2),
+          ),
+        ),
+      ),
+    );
   }
+}
+
+/// Высота столбика: доля от самого высокого дня отрезка, но не меньше
+/// [seriesMinBar], если ответы были. День без ответов — дорожка во всю
+/// высоту, чтобы полоса не рассыпалась на разрозненные палочки.
+double barHeight({required int answers, required int peak}) {
+  if (answers == 0) return seriesHeight;
+  final share = seriesHeight * answers / peak;
+  return share < seriesMinBar ? seriesMinBar : share;
 }

@@ -199,19 +199,74 @@ void main() {
   });
 
   group('Полоса за две недели', () {
+    /// Столбики полосы по порядку.
+    List<SeriesBar> bars(WidgetTester tester) =>
+        tester.widgetList<SeriesBar>(find.byType(SeriesBar)).toList();
+
+    // Литерал, а не `progressDays`: тест, сверяющийся с той же константой,
+    // которую проверяет, зелен при любом её значении. Мутация «сократить
+    // отрезок до недели» ловится только числом из SPEC.
     testWidgets('ровно четырнадцать столбиков', (tester) async {
       await log.append(_answer(day: 26, correct: true));
 
       await pumpScreen(tester);
 
-      final bars = find.descendant(
-        of: find.byKey(ProgressKeys.series),
-        matching: find.byType(SizedBox),
-      );
+      expect(bars(tester), hasLength(14));
+    });
+
+    testWidgets('столбики стоят в календарном порядке, последний — сегодня', (
+      tester,
+    ) async {
+      await log.append(_answer(day: 26, correct: true));
+
+      await pumpScreen(tester);
+
+      final days = bars(tester).map((b) => b.day.day).toList();
+      expect(days.last, StreakDay(2026, 8, 26));
+      expect(days.first, StreakDay(2026, 8, 13));
+      for (var i = 1; i < days.length; i++) {
+        expect(days[i], days[i - 1].next, reason: 'дырка на позиции $i');
+      }
+    });
+
+    // Мутация «полоса берёт пустые сводки» ловится только сверкой чисел:
+    // четырнадцать столбиков нарисуются и без единого ответа.
+    testWidgets('числа столбиков — это ответы тех дней', (tester) async {
+      await log.append(_answer(day: 24, correct: true));
+      await log.append(_answer(day: 24, correct: false));
+      await log.append(_answer(day: 26, correct: true));
+
+      await pumpScreen(tester);
+
+      final byDay = {
+        for (final bar in bars(tester)) bar.day.day: bar.day.answers,
+      };
+      expect(byDay[StreakDay(2026, 8, 24)], 2);
+      expect(byDay[StreakDay(2026, 8, 25)], 0);
+      expect(byDay[StreakDay(2026, 8, 26)], 1);
+    });
+
+    testWidgets('день с одним ответом виден, день без ответов — нет', (
+      tester,
+    ) async {
+      await log.append(_answer(day: 26, correct: true));
+      for (var i = 0; i < 40; i++) {
+        await log.append(_answer(day: 25, correct: true));
+      }
+
+      await pumpScreen(tester);
+
+      final byDay = {for (final bar in bars(tester)) bar.day.day: bar};
+      final lonely = byDay[StreakDay(2026, 8, 26)]!;
+      final empty = byDay[StreakDay(2026, 8, 23)]!;
+      final peak = lonely.peak;
+
       expect(
-        tester.widgetList(bars).length,
-        greaterThanOrEqualTo(progressDays),
+        barHeight(answers: lonely.day.answers, peak: peak),
+        greaterThanOrEqualTo(seriesMinBar),
+        reason: 'один ответ из сорока — всё равно видимый столбик',
       );
+      expect(empty.day.answers, 0);
     });
 
     testWidgets('день вне отрезка полосу не растит', (tester) async {
@@ -221,7 +276,7 @@ void main() {
 
       await pumpScreen(tester);
 
-      expect(find.byKey(ProgressKeys.series), findsOneWidget);
+      expect(bars(tester), hasLength(14));
       expect(
         valueOf(tester, ProgressKeys.answers, 'Всего'),
         '2',
@@ -277,9 +332,14 @@ void main() {
         ),
       );
 
+      expect(find.byKey(ProgressKeys.empty), findsNothing);
+
       await tester.tap(find.byKey(AppKeys.progress));
       await tester.pumpAndSettle();
-      expect(find.text('Прогресс'), findsWidgets);
+
+      // По ключу экрана, а не по тексту «Прогресс»: так называется и кнопка
+      // на домашнем, и тест проходил бы, никуда не перейдя.
+      expect(find.byKey(ProgressKeys.empty), findsOneWidget);
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();

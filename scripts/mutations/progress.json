@@ -38,8 +38,8 @@
   {
     "name": "пустые дни не достраиваются",
     "file": "lib/domain/progress/day_series.dart",
-    "old": "      byDay[day] ?? DayTally(day: day, answers: 0, correct: 0),",
-    "new": "      byDay[day] ?? DayTally(day: day, answers: 1, correct: 1),"
+    "old": "    series.add(byDay[day] ?? DayTally(day: day, answers: 0, correct: 0));",
+    "new": "    series.add(byDay[day] ?? DayTally(day: day, answers: 1, correct: 1));"
   },
   {
     "name": "сводка вне отрезка попадает в ряд",
@@ -62,7 +62,7 @@
   {
     "name": "пустая таблица роняет итоги на NULL из SUM",
     "file": "lib/data/log/drift_answer_log.dart",
-    "old": "      correct: row.read(right) ?? 0,",
+    "old": "      // На пустой таблице SUM даёт NULL, а не ноль: это ANSI, а не причуда\n      // sqlite. COUNT при этом честный ноль, поэтому подстраховка одна.\n      correct: row.read(right) ?? 0,",
     "new": "      correct: row.read(right)!,"
   },
   {
@@ -100,5 +100,17 @@
     "file": "lib/app/app.dart",
     "old": "          onProgress: _openProgress,",
     "new": "          onProgress: () {},"
+  },
+  {
+    "name": "столбик не отличает день с ответом от дня без",
+    "file": "lib/app/progress_view.dart",
+    "old": "  if (answers == 0) return seriesHeight;",
+    "new": "  return seriesHeight;\n  // ignore: dead_code\n  if (answers == 0) return seriesHeight;"
+  },
+  {
+    "name": "один ответ рисуется невидимым столбиком",
+    "file": "lib/app/progress_view.dart",
+    "old": "  return share < seriesMinBar ? seriesMinBar : share;",
+    "new": "  return share;"
   }
 ]
