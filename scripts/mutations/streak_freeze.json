@@ -1,0 +1,158 @@
+[
+  {
+    "name": "заморозка не тратится: пропуск обрывает серию всегда",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "  } else if (day == last.next.next && freezes > 0) {",
+    "new": "  } else if (false) {"
+  },
+  {
+    "name": "заморозка тратится и на разрыве в два дня",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "  } else if (day == last.next.next && freezes > 0) {",
+    "new": "  } else if (freezes > 0) {"
+  },
+  {
+    "name": "замороженный день не идёт в счёт серии",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "    current = state.current + 2;",
+    "new": "    current = state.current + 1;"
+  },
+  {
+    "name": "запас не уменьшается при трате",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "    freezes -= 1;\n    frozenDay = last.next;",
+    "new": "    frozenDay = last.next;"
+  },
+  {
+    "name": "факт траты не запоминается",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "    frozenDay = last.next;",
+    "new": ""
+  },
+  {
+    "name": "обрыв не стирает замороженный день чужой серии",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "    current = 1;\n    // У новой серии замороженных дней нет: тот, что был, спасал серию,\n    // которой больше не существует.\n    frozenDay = null;",
+    "new": "    current = 1;"
+  },
+  {
+    "name": "счётчик к заморозке не растёт",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "    daysSinceFreeze += 1;",
+    "new": ""
+  },
+  {
+    "name": "счётчик не обнуляется при выдаче заморозки",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "      freezes += 1;\n      daysSinceFreeze = 0;",
+    "new": "      freezes += 1;"
+  },
+  {
+    "name": "заморозка выдаётся на день раньше",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "    if (daysSinceFreeze >= daysToEarnFreeze) {",
+    "new": "    if (daysSinceFreeze >= daysToEarnFreeze - 1) {"
+  },
+  {
+    "name": "запас копится и при полной заморозке",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "  if (freezes < StreakState.maxFreezes) {",
+    "new": "  if (true) {"
+  },
+  {
+    "name": "день раньше последнего снова обрывает серию",
+    "file": "lib/domain/streak/streak.dart",
+    "old": "  if (last != null && day.compareTo(last) <= 0) return state;",
+    "new": "  if (last == day) return state;"
+  },
+  {
+    "name": "оборванная серия показывается как живая",
+    "file": "lib/domain/streak/streak_view.dart",
+    "old": "    days: alive ? state.current : 0,",
+    "new": "    days: state.current,"
+  },
+  {
+    "name": "пропуск одного дня считается живой серией и без заморозки",
+    "file": "lib/domain/streak/streak_view.dart",
+    "old": "    alive = available;\n    freezeWillCover = available;",
+    "new": "    alive = true;\n    freezeWillCover = available;"
+  },
+  {
+    "name": "о предстоящей трате заморозки не предупреждают",
+    "file": "lib/domain/streak/streak_view.dart",
+    "old": "    freezeWillCover = available;",
+    "new": "    freezeWillCover = false;"
+  },
+  {
+    "name": "факт траты заморозки не доезжает до представления",
+    "file": "lib/domain/streak/streak_view.dart",
+    "old": "      spentOn: alive ? state.lastFrozenDay : null,",
+    "new": "      spentOn: null,"
+  },
+  {
+    "name": "оборванная серия хвастается замороженным днём",
+    "file": "lib/domain/streak/streak_view.dart",
+    "old": "      spentOn: alive ? state.lastFrozenDay : null,",
+    "new": "      spentOn: state.lastFrozenDay,"
+  },
+  {
+    "name": "сколько дней до следующей заморозки — не считается",
+    "file": "lib/domain/streak/streak_view.dart",
+    "old": "  final daysToNext = available ? 0 : daysToEarnFreeze - state.daysSinceFreeze;",
+    "new": "  final daysToNext = available ? 0 : daysToEarnFreeze;"
+  },
+  {
+    "name": "«сыграно сегодня» не видит дня из будущего",
+    "file": "lib/domain/streak/streak_view.dart",
+    "old": "  final playedToday = last != null && today.compareTo(last) <= 0;",
+    "new": "  final playedToday = last != null && today == last;"
+  },
+  {
+    "name": "документ v1 больше не читается",
+    "file": "lib/data/streak/streak_codec.dart",
+    "old": "const Set<int> _readableVersions = {1, 2};",
+    "new": "const Set<int> _readableVersions = {2};"
+  },
+  {
+    "name": "миграция выдаёт заморозку в подарок",
+    "file": "lib/data/streak/streak_codec.dart",
+    "old": "  var freezes = 0;\n  var daysSinceFreeze = 0;",
+    "new": "  var freezes = StreakState.maxFreezes;\n  var daysSinceFreeze = 0;"
+  },
+  {
+    "name": "запас не пишется в документ",
+    "file": "lib/data/streak/streak_codec.dart",
+    "old": "    'freezes': state.freezes,\n    'days_since_freeze': state.daysSinceFreeze,",
+    "new": ""
+  },
+  {
+    "name": "замороженный день не пишется",
+    "file": "lib/data/streak/streak_codec.dart",
+    "old": "    if (frozen != null) 'frozen_day': _formatDay(frozen),",
+    "new": ""
+  },
+  {
+    "name": "битый запас доезжает до конструктора вместо Err",
+    "file": "lib/data/streak/streak_codec.dart",
+    "old": "    if (rawFreezes is! int ||\n        rawFreezes < 0 ||\n        rawFreezes > StreakState.maxFreezes) {",
+    "new": "    if (rawFreezes is! int) {"
+  },
+  {
+    "name": "несогласованный запас пропускается",
+    "file": "lib/data/streak/streak_codec.dart",
+    "old": "    if (freezes == StreakState.maxFreezes && rawSince != 0) {",
+    "new": "    if (false) {"
+  },
+  {
+    "name": "frozen_day принимает момент с зоной",
+    "file": "lib/data/streak/streak_codec.dart",
+    "old": "      final parsed = _dayFormat.firstMatch(rawFrozen);\n      if (parsed == null) {",
+    "new": "      final parsed = RegExp(r'^(\\d{4})-(\\d{2})-(\\d{2})').firstMatch(rawFrozen);\n      if (parsed == null) {"
+  },
+  {
+    "name": "frozen_day не сверяется с last_day",
+    "file": "lib/data/streak/streak_codec.dart",
+    "old": "      if (day == null || frozenDay.compareTo(day) >= 0) {",
+    "new": "      if (false) {"
+  }
+]
