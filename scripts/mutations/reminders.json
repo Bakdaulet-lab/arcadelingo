@@ -80,14 +80,14 @@
   {
     "name": "слова: угроза и живая серия говорят одно и то же",
     "file": "lib/ui/reminder_labels.dart",
-    "old": "        '${streakLabel(plan.days)} под угрозой',",
-    "new": "        streakLabel(plan.days),"
+    "old": "    '${streakLabel(plan.days)} под угрозой',",
+    "new": "    streakLabel(plan.days),"
   },
   {
     "name": "число дней в тексте выдумано",
     "file": "lib/ui/reminder_labels.dart",
-    "old": "      ReminderReason.keepGoing => (\n        streakLabel(plan.days),",
-    "new": "      ReminderReason.keepGoing => (\n        streakLabel(1),"
+    "old": "  ReminderReason.keepGoing => (\n    streakLabel(plan.days),",
+    "new": "  ReminderReason.keepGoing => (\n    streakLabel(1),"
   },
   {
     "name": "хост не перепланирует на открытии",
