@@ -10,6 +10,7 @@
 /// сбрасывать нечего, и кнопки здесь не будет.
 library;
 
+import 'package:arcadelingo/app/theme.dart';
 import 'package:flutter/material.dart';
 
 /// Ключи экранов хоста. Тест ищет по ним то, что не опознать по тексту:
@@ -67,11 +68,14 @@ class PlayView extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Wordarcade',
+                'Arcadelingo',
                 textAlign: TextAlign.center,
-                style: textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                // `withWeight`, а не `copyWith(fontWeight:)`. Оси `wght`
+                // обычный fontWeight не двигает (шапка lib/app/theme.dart), и
+                // заголовок всё это время рисовался обычным начертанием, а не
+                // жирным. Заметно ровно здесь: это единственная строка в
+                // приложении, набранная кеглем displaySmall.
+                style: withWeight(textTheme.displaySmall!, FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(

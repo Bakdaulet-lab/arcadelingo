@@ -1,18 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is off -->
-    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <!-- Show a splash screen on the activity. Automatically removed when
-             the Flutter engine draws its first frame -->
+    <!-- Окно, пока поднимается процесс и движок. Приложение тёмное всегда,
+         поэтому и тема окна тёмная всегда: варианта values-night больше нет.
+         Два файла, которые обязаны совпадать, рано или поздно разъезжаются —
+         этот проект уже платил за такую копию в голденах. -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:statusBarColor">@color/brand_surface</item>
+        <item name="android:navigationBarColor">@color/brand_surface</item>
+        <!-- Android 12+ рисует свой сплеш и windowBackground для него не
+             читает: без этой строки фон взялся бы из colorBackground темы, а
+             у Theme.Black это чистый чёрный — шов с #0D0A12 виден. На API
+             ниже 31 атрибут просто не читают. -->
+        <item name="android:windowSplashScreenBackground">@color/brand_surface</item>
     </style>
-    <!-- Theme applied to the Android Window as soon as the process has started.
-         This theme determines the color of the Android Window while your
-         Flutter UI initializes, as well as behind your Flutter UI while its
-         running.
 
-         This Theme is only used starting with V2 of Flutter's Android embedding. -->
-    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowBackground">?android:colorBackground</item>
+    <!-- Окно после старта процесса и фон за Flutter-интерфейсом всё время,
+         пока приложение живёт. Здесь была белая Theme.Light: именно она и
+         давала вспышку между сплешем и первым кадром. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/brand_surface</item>
+        <item name="android:statusBarColor">@color/brand_surface</item>
+        <item name="android:navigationBarColor">@color/brand_surface</item>
     </style>
 </resources>

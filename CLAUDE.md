@@ -12,6 +12,10 @@
 - Голдены: локально не гоняются вовсе (умолчание `WORDARCADE_GOLDENS=off`).
   Их платформа — Linux, сторожит CI. `--update-goldens` не работает ни у кого:
   компаратор бросает из `update()`. Приёмка эталона человеком — `docs/dev/goldens.md`
+- Иконка лаунчера: `flutter test tool/brand/render_icons.dart` — рисует три
+  варианта в `tool/out/icons/` и ничего не трогает в репозитории.
+  `BRAND_ICON=block flutter test tool/brand/render_icons.dart` ставит выбранный
+  в `android/` и `ios/`. Не `dart run`: рисунку нужны `dart:ui` и Rubik из ассетов
 - Кодоген: `dart run build_runner build --delete-conflicting-outputs`
 - Запуск на устройстве: `flutter run --release` (в debug анимации тормозят, судить о «фане» нельзя)
 

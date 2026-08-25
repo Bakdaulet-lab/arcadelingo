@@ -51,7 +51,9 @@ class WordarcadeApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Wordarcade',
+      // Подпись в списке недавних задач Android. Это тоже отображаемое имя
+      // приложения, просто второе: под иконкой стоит @string/app_name.
+      title: 'Arcadelingo',
       theme: wordarcadeTheme(),
       // Баннер перекрывает верхний правый угол, где живёт счёт, и попадал бы
       // в каждый голден (задача 0.9). Пользы от него нет и в отладке: то,
