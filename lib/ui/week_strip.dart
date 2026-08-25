@@ -83,5 +83,34 @@ List<WeekDay> weekStrip({
   required Set<StreakDay> played,
   StreakDay? frozen,
 }) {
-  throw UnimplementedError('weekStrip');
+  var day = today;
+  while (day.weekday != DateTime.monday) {
+    day = day.previous;
+  }
+  final week = <WeekDay>[];
+  for (var i = 0; i < 7; i++) {
+    week.add(
+      WeekDay(
+        day: day,
+        letter: weekdayLetters[day.weekday - 1],
+        state: _stateOf(day, today: today, played: played, frozen: frozen),
+        isToday: day == today,
+      ),
+    );
+    day = day.next;
+  }
+  return week;
+}
+
+WeekDayState _stateOf(
+  StreakDay day, {
+  required StreakDay today,
+  required Set<StreakDay> played,
+  required StreakDay? frozen,
+}) {
+  if (day.compareTo(today) > 0) return WeekDayState.future;
+  if (played.contains(day)) return WeekDayState.played;
+  if (day == frozen) return WeekDayState.frozen;
+  if (day == today) return WeekDayState.pending;
+  return WeekDayState.missed;
 }

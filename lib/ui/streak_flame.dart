@@ -78,18 +78,28 @@ const double flameRiskBlend = 0.55;
 /// бывает (инвариант `StreakState`), но ноль и меньше дают одну и ту же
 /// ступень: функция не место сторожить чужой инвариант.
 FlameTier flameTier(int days) {
-  throw UnimplementedError('flameTier');
+  if (days <= 0) return FlameTier.none;
+  if (days <= 2) return FlameTier.spark;
+  if (days <= 6) return FlameTier.steady;
+  if (days <= 13) return FlameTier.blaze;
+  return FlameTier.inferno;
 }
 
 /// Настроение по сегодняшнему состоянию серии.
 FlameMood flameMood(StreakView view) {
-  throw UnimplementedError('flameMood');
+  // Порядок значим: «сыграно» побеждает «под угрозой». Состояние, в котором
+  // истинны оба, бывает — сыграл в день, следующий за пропущенным, — и
+  // тревожиться там уже не о чем.
+  if (view.playedToday) return FlameMood.lit;
+  if (view.freezeWillCover) return FlameMood.atRisk;
+  return FlameMood.unlit;
 }
 
 /// Цвет края пламени: янтарь, а под угрозой — сведённый к малиновому.
-Color flameEdgeColor(ColorScheme scheme, FlameMood mood) {
-  throw UnimplementedError('flameEdgeColor');
-}
+Color flameEdgeColor(ColorScheme scheme, FlameMood mood) =>
+    mood == FlameMood.atRisk
+        ? Color.lerp(scheme.tertiary, scheme.error, flameRiskBlend)!
+        : scheme.tertiary;
 
 /// Цвет числа дней.
 ///
@@ -97,6 +107,5 @@ Color flameEdgeColor(ColorScheme scheme, FlameMood mood) {
 /// сверху. На незажжённом заливки нет, вырезать не из чего, и число берёт
 /// цвет обычной подписи — иначе оно стало бы невидимым на тёмной карточке.
 /// Пробел найден при рисовании и дописан в SPEC отдельной строкой.
-Color flameDigitColor(ColorScheme scheme, FlameMood mood) {
-  throw UnimplementedError('flameDigitColor');
-}
+Color flameDigitColor(ColorScheme scheme, FlameMood mood) =>
+    mood == FlameMood.unlit ? scheme.onSurfaceVariant : scheme.surface;

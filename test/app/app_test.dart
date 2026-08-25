@@ -15,7 +15,6 @@ import 'dart:io';
 
 import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_views.dart';
-import 'package:arcadelingo/ui/streak_card.dart';
 import 'package:arcadelingo/data/srs/leitner_codec.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
@@ -24,6 +23,7 @@ import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_views.dart';
+import 'package:arcadelingo/ui/streak_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';

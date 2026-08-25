@@ -58,28 +58,34 @@ void main() {
     });
   });
 
-  group('Строка серии', () {
-    test('живая серия — с правильной формой слова', () {
-      expect(ritualStreakLabel(ritualView(days: 1)), 'Серия: 1 день');
-      expect(ritualStreakLabel(ritualView(days: 3)), 'Серия: 3 дня');
-      expect(ritualStreakLabel(ritualView(days: 11)), 'Серия: 11 дней');
+  group('Подпись под пламенем', () {
+    // Число не повторяется: оно нарисовано в пламени крупно, а подпись
+    // объясняет, что это за число (задача 3.3.1).
+    test('живая серия — форма слова без числа', () {
+      expect(ritualStreakLabel(ritualView(days: 1)), 'день подряд');
+      expect(ritualStreakLabel(ritualView(days: 3)), 'дня подряд');
+      expect(ritualStreakLabel(ritualView(days: 11)), 'дней подряд');
+    });
+
+    test('числа в подписи нет', () {
+      expect(ritualStreakLabel(ritualView(days: 42)), isNot(contains('42')));
     });
 
     // Ноль дней — это не «Серия: 0 дней», а отсутствие строки. У того, кто
     // ещё не играл, и у того, кто серию оборвал, на экране одинаково пусто;
     // разница между ними — в кнопке.
-    test('серии нет — строки нет', () {
+    test('серии нет — подписи нет', () {
       expect(ritualStreakLabel(ritualView()), isNull);
     });
 
-    test('оборванная серия — строки тоже нет', () {
+    test('оборванная серия — подписи тоже нет', () {
       expect(ritualStreakLabel(ritualView(days: 6, lastOffset: 3)), isNull);
     });
 
     test('под угрозой, но живая — строка на месте', () {
       expect(
         ritualStreakLabel(ritualView(days: 6, lastOffset: 2, freezes: 1)),
-        'Серия: 6 дней',
+        'дней подряд',
       );
     });
   });

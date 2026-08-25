@@ -48,8 +48,13 @@ Future<void> _pump(
   );
 }
 
-double _flameHeight(WidgetTester tester) =>
-    tester.getSize(find.byType(CustomPaint).first).height;
+/// Пламя ищется по кисти, а не как «первый CustomPaint»: их в дереве
+/// Material хватает и без нашего.
+final Finder _flame = find.byWidgetPredicate(
+  (widget) => widget is CustomPaint && widget.painter is FlamePainter,
+);
+
+double _flameHeight(WidgetTester tester) => tester.getSize(_flame).height;
 
 void main() {
   group('Пламя растёт вместе с серией', () {

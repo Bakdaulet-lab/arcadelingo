@@ -21,12 +21,10 @@
 library;
 
 import 'package:arcadelingo/app/app_views.dart';
+import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/golden_harness.dart';
-
-import 'package:arcadelingo/ui/week_strip.dart';
-
 import '../support/ritual_views.dart';
 
 void main() {

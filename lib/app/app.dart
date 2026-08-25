@@ -30,10 +30,10 @@ import 'package:arcadelingo/domain/session/observed_session.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
-import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:arcadelingo/domain/usecases/count_played_day.dart';
 import 'package:arcadelingo/domain/usecases/start_session.dart';
 import 'package:arcadelingo/ui/theme.dart';
+import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter/material.dart';
 
 /// Размер сессии из SPEC. Его задаёт хост: игра про эту цифру не знает и

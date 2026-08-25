@@ -13,8 +13,8 @@ library;
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/ui/ritual_labels.dart';
 import 'package:arcadelingo/ui/streak_card.dart';
-import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:arcadelingo/ui/theme.dart';
+import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter/material.dart';
 
 /// Ключи экранов хоста. Тест ищет по ним то, что не опознать по тексту:

@@ -75,8 +75,19 @@ class DriftEventLog implements EventLog {
     required AppEventKind kind,
     required StreakDay from,
     required StreakDay to,
-  }) {
-    throw UnimplementedError('DriftEventLog.daysWith');
+  }) async {
+    final events = _db.events;
+    final query =
+        _db.selectOnly(events, distinct: true)
+          ..addColumns([events.localDay])
+          ..where(
+            events.kind.equalsValue(kind) &
+                events.localDay.isBetweenValues(encodeDay(from), encodeDay(to)),
+          );
+    return {
+      for (final row in await query.get())
+        decodeDay(row.read(events.localDay)!)!,
+    };
   }
 
   AppEvent _toEvent(Event row) => AppEvent(

@@ -21,8 +21,8 @@ import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
-import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
+import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/ui/streak_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -89,9 +89,14 @@ void main() {
     WidgetTester tester, {
     Map<String, Object> prefs = const {},
     int words = 3,
+    DateTime? now,
+    List<AppEvent> history = const [],
   }) async {
-    _now = _t0;
+    _now = now ?? _t0;
     events = InMemoryEventLog();
+    // Журнал наполняется ДО первого кадра: домашний экран читает его в
+    // initState, и дописанное потом он бы уже не увидел.
+    events.events.addAll(history);
     SharedPreferences.setMockInitialValues(prefs);
     final instance = await SharedPreferences.getInstance();
     tester.view.physicalSize = const Size(1080, 2340);
@@ -274,9 +279,11 @@ void main() {
     testWidgets('сыгранные дни приходят из журнала, а не из длины серии', (
       tester,
     ) async {
-      _now = _t0.add(const Duration(days: 1)); // четверг 27 августа
+      // Четверг. Серия оборвалась средой и знает только про четверг; журнал
+      // помнит понедельник и вторник — до обрыва.
       await pumpApp(
         tester,
+        now: DateTime(2026, 8, 27, 10),
         prefs: {
           'streak_state': jsonEncode({
             'version': 2,
@@ -287,24 +294,45 @@ void main() {
             'days_since_freeze': 1,
           }),
         },
+        history: [
+          for (final day in [24, 25])
+            AppEvent(
+              kind: AppEventKind.roundOver,
+              at: DateTime.utc(2026, 8, day, 12),
+              localDay: StreakDay(2026, 8, day),
+            ),
+        ],
       );
-      // Журнал помнит понедельник и вторник — до обрыва.
-      for (final day in ['2026-08-24', '2026-08-25']) {
-        await events.append(
-          AppEvent(
-            kind: AppEventKind.roundOver,
-            at: DateTime.utc(2026, 8, 24, 12),
-            localDay: StreakDay(2026, 8, int.parse(day.split('-').last)),
-          ),
-        );
-      }
-      await tester.pump();
       await tester.pumpAndSettle();
 
       expect(
         find.byIcon(Icons.check),
         findsNWidgets(2),
         reason: 'состояние серии этих дней не помнит, а журнал помнит',
+      );
+    });
+
+    testWidgets('пустой журнал — неделя без галочек', (tester) async {
+      await pumpApp(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(weekStripKey), findsOneWidget);
+      expect(find.byIcon(Icons.check), findsNothing);
+    });
+
+    testWidgets('законченная партия ставит галочку на сегодня', (tester) async {
+      await pumpApp(tester);
+      await enterGame(tester);
+      await tester.tap(find.byKey(_TwoTapGame.finish));
+      await tester.pump();
+
+      await leaveGame(tester);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byIcon(Icons.check),
+        findsOneWidget,
+        reason: 'событие roundOver только что записано — журнал его видит',
       );
     });
   });

@@ -12,9 +12,9 @@
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
-import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/ui/theme.dart';
+import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
