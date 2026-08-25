@@ -1,0 +1,98 @@
+[
+  {
+    "name": "миграция не создаёт таблицу событий",
+    "file": "lib/data/log/history_database.dart",
+    "old": "        await m.createTable(events);",
+    "new": ""
+  },
+  {
+    "name": "миграция забывает индексы событий",
+    "file": "lib/data/log/history_database.dart",
+    "old": "        await m.create(eventsKind);\n        await m.create(eventsDay);",
+    "new": ""
+  },
+  {
+    "name": "миграция срабатывает и на уже мигрированной базе",
+    "file": "lib/data/log/history_database.dart",
+    "old": "      if (from < 2) {",
+    "new": "      if (true) {"
+  },
+  {
+    "name": "версия схемы не поднята",
+    "file": "lib/data/log/history_database.dart",
+    "old": "  int get schemaVersion => 2;",
+    "new": "  int get schemaVersion => 1;"
+  },
+  {
+    "name": "момент события теряет доли секунды",
+    "file": "lib/data/log/drift_event_log.dart",
+    "old": "          atUtcMicros: event.at.toUtc().microsecondsSinceEpoch,",
+    "new": "          atUtcMicros: event.at.toUtc().millisecondsSinceEpoch * 1000000,"
+  },
+  {
+    "name": "партия к событию не пишется",
+    "file": "lib/data/log/drift_event_log.dart",
+    "old": "          sessionId: Value(event.sessionId),",
+    "new": "          sessionId: const Value(null),"
+  },
+  {
+    "name": "день события считается из момента, а не хранится",
+    "file": "lib/data/log/drift_event_log.dart",
+    "old": "    localDay: decodeDay(row.localDay)!,",
+    "new": "    localDay: StreakDay.of(\n      DateTime.fromMicrosecondsSinceEpoch(row.atUtcMicros, isUtc: true),\n    ),"
+  },
+  {
+    "name": "день не фильтруется: forDay отдаёт всё подряд",
+    "file": "lib/data/log/drift_event_log.dart",
+    "old": "          ..where((row) => row.localDay.equals(encodeDay(day)))",
+    "new": ""
+  },
+  {
+    "name": "события дня идут в порядке БД, а не хронологически",
+    "file": "lib/data/log/drift_event_log.dart",
+    "old": "          ..orderBy([\n            (row) => OrderingTerm.asc(row.atUtcMicros),\n            (row) => OrderingTerm.asc(row.id),\n          ]);",
+    "new": ";"
+  },
+  {
+    "name": "воронка не группирует по роду события",
+    "file": "lib/data/log/drift_event_log.dart",
+    "old": "          ..groupBy([events.kind]);",
+    "new": ";"
+  },
+  {
+    "name": "границы отрезка воронки исключаются",
+    "file": "lib/data/log/drift_event_log.dart",
+    "old": "            events.localDay.isBetweenValues(encodeDay(from), encodeDay(to)),",
+    "new": "            events.localDay.isBiggerThanValue(encodeDay(from)) &\n                events.localDay.isSmallerThanValue(encodeDay(to)),"
+  },
+  {
+    "name": "«открыл приложение» не записывается",
+    "file": "lib/app/app.dart",
+    "old": "    _record(AppEventKind.appOpen);",
+    "new": ""
+  },
+  {
+    "name": "«партия началась» не записывается",
+    "file": "lib/app/app.dart",
+    "old": "        _record(\n          AppEventKind.roundStart,\n          sessionId: value is ObservedSession ? value.sessionId : null,\n        );",
+    "new": ""
+  },
+  {
+    "name": "начало партии пишется без ключа партии",
+    "file": "lib/app/app.dart",
+    "old": "          sessionId: value is ObservedSession ? value.sessionId : null,",
+    "new": "          sessionId: null,"
+  },
+  {
+    "name": "события пишутся настоящими часами, а не часами хоста",
+    "file": "lib/app/app.dart",
+    "old": "        AppEvent.at(kind, widget.now(), sessionId: sessionId),",
+    "new": "        AppEvent.at(kind, DateTime(2000), sessionId: sessionId),"
+  },
+  {
+    "name": "день события берётся не из его момента",
+    "file": "lib/domain/events/app_event.dart",
+    "old": "        localDay: StreakDay.of(at),",
+    "new": "        localDay: StreakDay(2026, 1, 1),"
+  }
+]
