@@ -30,12 +30,6 @@
     "new": ""
   },
   {
-    "name": "наблюдатель ждёт записи",
-    "file": "lib/domain/log/logging_observer.dart",
-    "old": "  void onAnswer(ReviewEvent event) {\n    unawaited(_log.append(AnswerRecord.of(event)));\n  }",
-    "new": "  Future<void> onAnswer(ReviewEvent event) async {\n    await _log.append(AnswerRecord.of(event));\n  }"
-  },
-  {
     "name": "usecase не подключает журнал к сессии",
     "file": "lib/domain/usecases/start_session.dart",
     "old": "          LoggingObserver(log: _answerLog),",

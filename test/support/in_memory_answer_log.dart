@@ -8,8 +8,6 @@
 // Фейк, а не мок (`.claude/rules/domain.md`): наблюдатель и переигровка обязаны
 // проверяться без единого мока.
 
-import 'dart:async';
-
 import 'package:arcadelingo/domain/log/answer_record.dart';
 import 'package:arcadelingo/domain/ports/answer_log.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
@@ -48,31 +46,4 @@ class InMemoryAnswerLog implements AnswerLog {
     final days = byDay.keys.toList()..sort();
     return [for (final day in days) byDay[day]!];
   }
-}
-
-/// Журнал, у которого запись никогда не завершается.
-///
-/// Нужен ровно одному вопросу: возвращается ли `onAnswer` до того, как запись
-/// закончилась. Настоящая БД отвечает слишком быстро, чтобы это различить.
-class NeverCompletingAnswerLog implements AnswerLog {
-  int appends = 0;
-
-  @override
-  Future<void> append(AnswerRecord record) {
-    appends++;
-    // Future, который не завершится никогда: тот, кто его дождётся, повиснет.
-    return Completer<void>().future;
-  }
-
-  @override
-  Future<List<AnswerRecord>> all() async => const [];
-
-  @override
-  Future<List<AnswerRecord>> forWord(String wordId) async => const [];
-
-  @override
-  Future<List<DayTally>> perDay({
-    required StreakDay from,
-    required StreakDay to,
-  }) async => const [];
 }

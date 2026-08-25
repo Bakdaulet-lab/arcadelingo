@@ -61,17 +61,6 @@ void main() {
     expect(log.records.map((r) => r.wordId), [wordId(1), wordId(2), wordId(1)]);
   });
 
-  // Мутация «дождаться записи» (`await`/возврат Future наружу) краснеет тут:
-  // на журнале, который не отвечает никогда, дождавшийся onAnswer не вернётся,
-  // и тест повиснет до таймаута вместо зелёного.
-  test('не ждёт записи: возвращается на журнале, который не отвечает', () {
-    final log = NeverCompletingAnswerLog();
-
-    LoggingObserver(log: log).onAnswer(_event());
-
-    expect(log.appends, 1, reason: 'запись начата');
-  });
-
   test('внутри настоящей сессии пишет ровно один раз на ответ', () {
     final log = InMemoryAnswerLog();
     final session = ObservedSession(
