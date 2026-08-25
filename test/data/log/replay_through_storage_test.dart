@@ -20,8 +20,8 @@
 // разошёлся бы на столько же — коробка при этом та же самая всегда. Предел
 // записан в `domain/log/replay.dart` и в `docs/dev/context.md`.
 
-import 'package:arcadelingo/data/log/answer_database.dart';
 import 'package:arcadelingo/data/log/drift_answer_log.dart';
+import 'package:arcadelingo/data/log/history_database.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/log/replay.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
@@ -73,13 +73,13 @@ ReviewOutcome _wrong() => const ReviewOutcome(
 void main() {
   setUpAll(useTestSqlite);
 
-  late AnswerDatabase db;
+  late HistoryDatabase db;
   late DriftAnswerLog log;
   late InMemoryCardStore cards;
   late InMemoryStreakStore streaks;
 
   setUp(() {
-    db = AnswerDatabase(NativeDatabase.memory());
+    db = HistoryDatabase(NativeDatabase.memory());
     log = DriftAnswerLog(db);
     cards = InMemoryCardStore();
     streaks = InMemoryStreakStore();

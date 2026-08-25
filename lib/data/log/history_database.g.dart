@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'answer_database.dart';
+part of 'history_database.dart';
 
 // ignore_for_file: type=lint
 class $AnswersTable extends Answers with TableInfo<$AnswersTable, Answer> {
@@ -703,9 +703,9 @@ class AnswersCompanion extends UpdateCompanion<Answer> {
   }
 }
 
-abstract class _$AnswerDatabase extends GeneratedDatabase {
-  _$AnswerDatabase(QueryExecutor e) : super(e);
-  $AnswerDatabaseManager get managers => $AnswerDatabaseManager(this);
+abstract class _$HistoryDatabase extends GeneratedDatabase {
+  _$HistoryDatabase(QueryExecutor e) : super(e);
+  $HistoryDatabaseManager get managers => $HistoryDatabaseManager(this);
   late final $AnswersTable answers = $AnswersTable(this);
   late final Index answersWord = Index(
     'answers_word',
@@ -756,7 +756,7 @@ typedef $$AnswersTableUpdateCompanionBuilder =
     });
 
 class $$AnswersTableFilterComposer
-    extends Composer<_$AnswerDatabase, $AnswersTable> {
+    extends Composer<_$HistoryDatabase, $AnswersTable> {
   $$AnswersTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -822,7 +822,7 @@ class $$AnswersTableFilterComposer
 }
 
 class $$AnswersTableOrderingComposer
-    extends Composer<_$AnswerDatabase, $AnswersTable> {
+    extends Composer<_$HistoryDatabase, $AnswersTable> {
   $$AnswersTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -887,7 +887,7 @@ class $$AnswersTableOrderingComposer
 }
 
 class $$AnswersTableAnnotationComposer
-    extends Composer<_$AnswerDatabase, $AnswersTable> {
+    extends Composer<_$HistoryDatabase, $AnswersTable> {
   $$AnswersTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -938,7 +938,7 @@ class $$AnswersTableAnnotationComposer
 class $$AnswersTableTableManager
     extends
         RootTableManager<
-          _$AnswerDatabase,
+          _$HistoryDatabase,
           $AnswersTable,
           Answer,
           $$AnswersTableFilterComposer,
@@ -946,11 +946,11 @@ class $$AnswersTableTableManager
           $$AnswersTableAnnotationComposer,
           $$AnswersTableCreateCompanionBuilder,
           $$AnswersTableUpdateCompanionBuilder,
-          (Answer, BaseReferences<_$AnswerDatabase, $AnswersTable, Answer>),
+          (Answer, BaseReferences<_$HistoryDatabase, $AnswersTable, Answer>),
           Answer,
           PrefetchHooks Function()
         > {
-  $$AnswersTableTableManager(_$AnswerDatabase db, $AnswersTable table)
+  $$AnswersTableTableManager(_$HistoryDatabase db, $AnswersTable table)
     : super(
         TableManagerState(
           db: db,
@@ -1030,7 +1030,7 @@ class $$AnswersTableTableManager
 
 typedef $$AnswersTableProcessedTableManager =
     ProcessedTableManager<
-      _$AnswerDatabase,
+      _$HistoryDatabase,
       $AnswersTable,
       Answer,
       $$AnswersTableFilterComposer,
@@ -1038,14 +1038,14 @@ typedef $$AnswersTableProcessedTableManager =
       $$AnswersTableAnnotationComposer,
       $$AnswersTableCreateCompanionBuilder,
       $$AnswersTableUpdateCompanionBuilder,
-      (Answer, BaseReferences<_$AnswerDatabase, $AnswersTable, Answer>),
+      (Answer, BaseReferences<_$HistoryDatabase, $AnswersTable, Answer>),
       Answer,
       PrefetchHooks Function()
     >;
 
-class $AnswerDatabaseManager {
-  final _$AnswerDatabase _db;
-  $AnswerDatabaseManager(this._db);
+class $HistoryDatabaseManager {
+  final _$HistoryDatabase _db;
+  $HistoryDatabaseManager(this._db);
   $$AnswersTableTableManager get answers =>
       $$AnswersTableTableManager(_db, _db.answers);
 }

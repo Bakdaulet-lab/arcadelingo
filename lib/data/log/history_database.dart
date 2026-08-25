@@ -1,4 +1,9 @@
-/// Журнал ответов в SQLite через Drift: одна таблица, схема v1.
+/// История в SQLite через Drift: пока одна таблица ответов, схема v1.
+///
+/// Имя базы — `HistoryDatabase`, а не `AnswerDatabase`: рядом с ответами
+/// на Этапе 3.2 ложится журнал событий, и база перестаёт быть про один
+/// вид записей. **Имя файла на устройстве при этом не меняется**
+/// (`wordarcade_answers`) — переименование осиротило бы уже записанное.
 ///
 /// Почему БД, а не третий JSON-документ в prefs. Журнал растёт без потолка —
 /// 15 ответов в день это ~5 500 строк в год, — и документ пришлось бы
@@ -34,7 +39,7 @@ library;
 import 'package:arcadelingo/domain/srs/review_grade.dart';
 import 'package:drift/drift.dart';
 
-part 'answer_database.g.dart';
+part 'history_database.g.dart';
 
 /// Ответы: append-only, строки не меняются и не удаляются.
 @TableIndex(name: 'answers_word', columns: {#wordId})
@@ -77,8 +82,8 @@ class Answers extends Table {
 }
 
 @DriftDatabase(tables: [Answers])
-class AnswerDatabase extends _$AnswerDatabase {
-  AnswerDatabase(super.e);
+class HistoryDatabase extends _$HistoryDatabase {
+  HistoryDatabase(super.e);
 
   /// Версия схемы. Растёт вместе с изменениями таблицы; переход пишется
   /// явной миграцией — той же дисциплиной, что `version` в документах prefs.
