@@ -129,6 +129,12 @@ class HistoryDatabase extends _$HistoryDatabase {
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
+      // Страж версии мутацией не ловится — проверено: на уже мигрированной
+      // базе `onUpgrade` не вызывается вовсе, и `if (true)` неотличим от
+      // `if (from < 2)`. Он стоит за тем, чтобы переход 2 → 3 не пересоздал
+      // `events`, и станет наблюдаемым в тот день, когда версий станет три.
+      // Мутация из списка убрана как театр, страж остался — тот же разбор,
+      // что у второго ключа сортировки в 2.3 (`context.md`).
       if (from < 2) {
         await m.createTable(events);
         // Индексы отдельно: `createTable` создаёт только таблицу, а

@@ -12,12 +12,6 @@
     "new": ""
   },
   {
-    "name": "миграция срабатывает и на уже мигрированной базе",
-    "file": "lib/data/log/history_database.dart",
-    "old": "      if (from < 2) {",
-    "new": "      if (true) {"
-  },
-  {
     "name": "версия схемы не поднята",
     "file": "lib/data/log/history_database.dart",
     "old": "  int get schemaVersion => 2;",

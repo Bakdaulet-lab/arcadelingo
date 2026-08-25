@@ -92,7 +92,15 @@ void main() {
         ),
       );
 
-      expect(await log.forDay(StreakDay(2026, 8, 27)), hasLength(1));
+      final read = await log.forDay(StreakDay(2026, 8, 27));
+      expect(read, hasLength(1));
+      expect(
+        read.single.localDay,
+        StreakDay(2026, 8, 27),
+        reason:
+            'выборка по колонке нашла бы строку и при неверном разборе — '
+            'проверять надо то, что прочитано, а не то, что нашлось',
+      );
       expect(await log.forDay(StreakDay(2026, 8, 26)), isEmpty);
     });
 
