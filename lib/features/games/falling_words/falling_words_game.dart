@@ -88,6 +88,16 @@ class FallingWordsGame extends StatefulWidget {
 class _FallingWordsGameState extends State<FallingWordsGame>
     with TickerProviderStateMixin {
   late final FallingWordsRun _run;
+
+  /// Взвод перед первым падением.
+  ///
+  /// Свой контроллер, а не удлинение падения: `responseTime` отсчитывается
+  /// от начала падения, и взвод, вшитый в тот же контроллер, пришлось бы
+  /// вычитать из каждого ответа. И не переиспользование контроллера
+  /// подсветки: его значение читает джус, и связь «взвод дёргает тряску»
+  /// ждала бы своего часа.
+  late final AnimationController _windUp;
+
   late final AnimationController _fall;
   late final AnimationController _reveal;
   late final AppLifecycleListener _lifecycle;
@@ -96,6 +106,15 @@ class _FallingWordsGameState extends State<FallingWordsGame>
   /// paused` и обратно), поэтому пауза и возврат обязаны быть
   /// идемпотентными.
   bool _paused = false;
+
+  /// Идёт взвод перед первым падением: слово наверху, ничего не движется,
+  /// тапы не принимаются.
+  ///
+  /// Флагом виджета, а не фазой `FallingWordsRun`: взвод — про то, что
+  /// человек ещё не нашёл кнопки на экране, а не про правила игры. Чистый
+  /// класс о нём не знает, и его тесты от появления взвода не изменились ни
+  /// одной строкой.
+  bool _windingUp = false;
 
   /// Ответ хоста на «что дальше», взятый на входе в итоги. Не в `build`:
   /// на итогах ничего не меняется, а хост считал бы очередь заново на
@@ -109,6 +128,13 @@ class _FallingWordsGameState extends State<FallingWordsGame>
       session: widget.session,
       random: Random(widget.seed),
     );
+    _windUp = AnimationController(
+      vsync: this,
+      duration: FallingWordsRun.windUpTime,
+      // `preserve` — как у падения: взвод игровое время, и системное
+      // «убрать анимации» его не отменяет.
+      animationBehavior: AnimationBehavior.preserve,
+    )..addListener(_onWindUpTick);
     _fall = AnimationController(
       vsync: this,
       duration: FallingWordsRun.baseFallTime,
@@ -121,7 +147,10 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     )..addListener(_onRevealTick);
     _lifecycle = AppLifecycleListener(onStateChange: _onLifecycle);
     _run.start();
-    if (_run.phase == FallingPhase.falling) _startFall();
+    if (_run.phase == FallingPhase.falling) {
+      _windingUp = true;
+      _windUp.forward(from: 0);
+    }
   }
 
   @override
@@ -131,6 +160,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     // внутри abandon().
     _run.abandon(_elapsed);
     _lifecycle.dispose();
+    _windUp.dispose();
     _fall.dispose();
     _reveal.dispose();
     super.dispose();
@@ -153,6 +183,13 @@ class _FallingWordsGameState extends State<FallingWordsGame>
   void _startReveal() {
     _reveal.duration = _run.revealTime;
     _reveal.forward(from: 0);
+  }
+
+  void _onWindUpTick() {
+    if (!_windingUp || _windUp.value < 1) return;
+    _windUp.stop();
+    setState(() => _windingUp = false);
+    _startFall();
   }
 
   void _onFallTick() {
@@ -184,6 +221,9 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     // при `_paused == true` игра поехала бы дальше, а ядру ушёл бы
     // таймаут по слову, которого никто не видел.
     if (_paused) return;
+    // 700 мс взвода даны на то, чтобы найти кнопки, а не ответить: тап в
+    // этом окне — рефлекс, а не ответ (`SPEC.md`).
+    if (_windingUp) return;
     if (!_run.choose(index, _elapsed)) return;
     _fall.stop();
     _feel();
@@ -230,6 +270,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
   void _pause() {
     if (_paused) return;
     _paused = true;
+    _windUp.stop();
     _fall.stop();
     _reveal.stop();
   }
@@ -239,7 +280,8 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     _paused = false;
     switch (_run.phase) {
       case FallingPhase.falling:
-        _fall.forward();
+        // Взвод пауз не боится: 700 мс не сгорают в фоне.
+        _windingUp ? _windUp.forward() : _fall.forward();
       case FallingPhase.reveal:
         _reveal.forward();
       case FallingPhase.over:
