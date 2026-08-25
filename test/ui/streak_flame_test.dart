@@ -127,14 +127,30 @@ void main() {
       expect(flameMood(ritualView(days: 4, lastOffset: 2)), FlameMood.unlit);
     });
 
-    // Порядок проверок в реализации виден только так: состояние, в котором
-    // оба признака истинны, конструируется через «сыграл в день, следующий
-    // за пропуском», и там playedToday обязан победить.
-    test('сыграно побеждает тревогу', () {
-      final view = ritualView(days: 6, daysSinceFreeze: 1, frozenOffset: 1);
+    // Проверялся «порядок условий», а порядок здесь ни на что не влияет:
+    // `streakAsOf` не выдаёт состояний, где истинны оба признака. Мутация
+    // «поменять их местами» это и показала — она осталась зелёной.
+    // Настоящий инвариант ниже, и он наблюдаем.
+    test('сыграно и тревога не бывают одновременно', () {
+      final views = [
+        ritualView(),
+        ritualView(days: 4),
+        ritualView(days: 4, lastOffset: 1),
+        ritualView(days: 4, lastOffset: 2),
+        ritualView(days: 4, lastOffset: 2, freezes: 1),
+        ritualView(days: 6, daysSinceFreeze: 1, frozenOffset: 1),
+        ritualView(days: 9, lastOffset: 5, freezes: 1),
+      ];
 
-      expect(view.playedToday, isTrue);
-      expect(flameMood(view), FlameMood.lit);
+      for (final view in views) {
+        expect(
+          view.playedToday && view.freezeWillCover,
+          isFalse,
+          reason:
+              'сыграно значит «сегодня уже засчитано», тревога — «между '
+              'последним засчитанным и сегодня зияет день»: $view',
+        );
+      }
     });
   });
 

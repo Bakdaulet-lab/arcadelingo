@@ -224,6 +224,86 @@ void main() {
     });
   });
 
+  group('Дни с событием', () {
+    Future<void> on(StreakDay day, AppEventKind kind) => log.append(
+      _event(
+        kind,
+        at: DateTime.utc(day.year, day.month, day.day, 12),
+        day: day,
+      ),
+    );
+
+    test(
+      'день попадает в множество один раз, сколько бы событий ни было',
+      () async {
+        final day = StreakDay(2026, 8, 26);
+        await on(day, AppEventKind.roundOver);
+        await on(day, AppEventKind.roundOver);
+        await on(day, AppEventKind.roundOver);
+
+        expect(
+          await log.daysWith(kind: AppEventKind.roundOver, from: day, to: day),
+          {day},
+        );
+      },
+    );
+
+    // Мутация «убрать фильтр по роду» краснеет только здесь: без этого теста
+    // запрос отдавал бы дни, в которые партию начали и бросили, как дни с
+    // законченной партией.
+    test('другой род события день не приводит', () async {
+      final day = StreakDay(2026, 8, 26);
+      await on(day, AppEventKind.roundStart);
+      await on(day, AppEventKind.roundAbandon);
+
+      expect(
+        await log.daysWith(kind: AppEventKind.roundOver, from: day, to: day),
+        isEmpty,
+      );
+    });
+
+    test('границы отрезка включаются, соседи — нет', () async {
+      for (final d in [24, 25, 26, 27]) {
+        await on(StreakDay(2026, 8, d), AppEventKind.roundOver);
+      }
+
+      expect(
+        await log.daysWith(
+          kind: AppEventKind.roundOver,
+          from: StreakDay(2026, 8, 25),
+          to: StreakDay(2026, 8, 26),
+        ),
+        {StreakDay(2026, 8, 25), StreakDay(2026, 8, 26)},
+      );
+    });
+
+    test('за отрезок ничего не случилось — пустое множество', () async {
+      await on(StreakDay(2026, 8, 26), AppEventKind.roundOver);
+
+      expect(
+        await log.daysWith(
+          kind: AppEventKind.roundOver,
+          from: StreakDay(2026, 9, 1),
+          to: StreakDay(2026, 9, 30),
+        ),
+        isEmpty,
+      );
+    });
+
+    test('день возвращается разобранным, а не строкой', () async {
+      final day = StreakDay(2026, 3, 7);
+      await on(day, AppEventKind.roundOver);
+
+      final days = await log.daysWith(
+        kind: AppEventKind.roundOver,
+        from: StreakDay(2026, 3, 1),
+        to: StreakDay(2026, 3, 31),
+      );
+
+      expect(days.single, day);
+    });
+  });
+
   group('Соседство с ответами', () {
     test('события не попадают в журнал ответов и наоборот', () async {
       await log.append(_event(AppEventKind.roundStart, sessionId: 'сессия-1'));

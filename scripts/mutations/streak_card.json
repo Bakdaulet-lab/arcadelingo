@@ -48,12 +48,6 @@
     "new": ""
   },
   {
-    "name": "тревога побеждает сыгранный день",
-    "file": "lib/ui/streak_flame.dart",
-    "old": "  if (view.playedToday) return FlameMood.lit;\n  if (view.freezeWillCover) return FlameMood.atRisk;",
-    "new": "  if (view.freezeWillCover) return FlameMood.atRisk;\n  if (view.playedToday) return FlameMood.lit;"
-  },
-  {
     "name": "край тревожного пламени не отличается от обычного",
     "file": "lib/ui/streak_flame.dart",
     "old": "        ? Color.lerp(scheme.tertiary, scheme.error, flameRiskBlend)!",

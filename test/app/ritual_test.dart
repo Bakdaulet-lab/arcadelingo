@@ -320,6 +320,35 @@ void main() {
       expect(find.byIcon(Icons.check), findsNothing);
     });
 
+    // Мутация «frozen: null» краснеет только здесь: полоса умеет рисовать щит
+    // (это проверяет streak_card_test), но доезжает ли до неё замороженный
+    // день из состояния — видно лишь с уровня хоста.
+    testWidgets('замороженный день приходит из состояния серии', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        prefs: {
+          'streak_state': jsonEncode({
+            'version': 2,
+            'current': 6,
+            'best': 9,
+            'last_day': '2026-08-26',
+            'freezes': 0,
+            'days_since_freeze': 1,
+            'frozen_day': '2026-08-25',
+          }),
+        },
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byIcon(Icons.shield),
+        findsOneWidget,
+        reason: 'журнал о замороженном дне не знает — в него ничего не писали',
+      );
+    });
+
     testWidgets('законченная партия ставит галочку на сегодня', (tester) async {
       await pumpApp(tester);
       await enterGame(tester);
