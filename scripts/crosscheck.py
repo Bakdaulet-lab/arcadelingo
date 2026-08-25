@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
-"""Сверка черновика порции со всем сидом — то, чего валидатор увидеть не может.
+"""Сверка черновиков порций со всем сидом и друг с другом.
 
 Валидатор ловит точные совпадения: столкновение переводов, одинаковый набор
 из четырёх вариантов, взаимные обманки. Приблизительные совпадения —
 однокоренные переводы, почти-синонимы, слова, различающиеся одной буквой, —
-механически не видны, а на сиде в двести слов глазами уже не проверяются.
+механически не видны, а на сиде в двести с лишним слов глазами уже не
+проверяются.
+
+Порций можно передать несколько, и это не удобство, а необходимость: при
+двойном заходе валидатор увидит столкновение между порцией 6 и порцией 7
+только при сведении второй — то есть после того, как обе вычитаны. Здесь они
+сверяются друг с другом до вычитки.
 
 Скрипт ничего не решает и ничего не пишет: он печатает кандидатов, а решение
 принимает вычитывающий. Найденные пары уходят либо в правки порции, либо в
@@ -13,11 +19,14 @@
 Запуск (шаг чеклиста порции, до `--dry-run`):
 
     python scripts/crosscheck.py assets/words_seed.json tool/out/portion_NN.json
+    python scripts/crosscheck.py assets/words_seed.json tool/out/portion_06.json \
+        tool/out/portion_07.json
 
 Отклонённые записи и нерешённые ничьи пропускаются: у них нечего сверять.
 """
 import io
 import json
+import os
 import sys
 
 # Режем приставки и окончания, чтобы сравнивать корни, а не словоформы.
@@ -51,21 +60,35 @@ def stem(word):
     return w
 
 
+class Entry:
+    """Слово с указанием, откуда оно: из сида или из конкретной порции."""
+
+    def __init__(self, source, word):
+        self.source = source
+        self.id = word['id']
+        self.translation = word['translation']
+        self.distractors = list(word['distractors'])
+
+    def __str__(self):
+        return '%s (%s)' % (self.id, self.source)
+
+
 def read_words(path):
-    document = json.loads(io.open(path, encoding='utf-8').read())
-    return document['words']
+    return json.loads(io.open(path, encoding='utf-8').read())['words']
 
 
-def draft_of(words):
-    """Записи порции, которые вообще подлежат сверке."""
-    ready = {}
-    for word in words:
-        if 'reject' in word:
+def entries_of(path, source, drafts_only):
+    """Записи, которые вообще подлежат сверке."""
+    result = []
+    skipped = 0
+    for word in read_words(path):
+        if drafts_only and ('reject' in word
+                            or not word.get('translation')
+                            or not word.get('part_of_speech')):
+            skipped += 1
             continue
-        if not word.get('translation') or not word.get('part_of_speech'):
-            continue
-        ready[word['id']] = (word['translation'], list(word['distractors']))
-    return ready
+        result.append(Entry(source, word))
+    return result, skipped
 
 
 def section(title):
@@ -73,77 +96,111 @@ def section(title):
     print('=== %s ===' % title)
 
 
+def report(lines):
+    print('\n'.join(lines) if lines else '  нет')
+
+
 def main():
     try:
         sys.stdout.reconfigure(encoding='utf-8')
     except AttributeError:
         pass
-    seed = read_words(sys.argv[1])
-    words = read_words(sys.argv[2])
-    draft = draft_of(words)
+    seed, _ = entries_of(sys.argv[1], 'сид', drafts_only=False)
 
-    skipped = len(words) - len(draft)
-    print('сид: %d слов; в порции к сверке: %d (пропущено %d — отказы и ничьи)'
-          % (len(seed), len(draft), skipped))
+    drafts = []
+    for path in sys.argv[2:]:
+        name = 'порция ' + os.path.basename(path).replace(
+            'portion_', '').replace('.json', '').lstrip('0')
+        words, skipped = entries_of(path, name, drafts_only=True)
+        drafts.append((name, words, skipped))
+        print('%s: к сверке %d (пропущено %d — отказы и ничьи)'
+              % (name, len(words), skipped))
+    print('сид: %d слов' % len(seed))
 
-    seed_by_translation = {w['translation']: w['id'] for w in seed}
+    checked = [word for _, words, _ in drafts for word in words]
+    everything = seed + checked
+
+    def others(word):
+        """Всё, с чем сверяется запись: сид и все прочие черновики."""
+        return [other for other in everything if other.id != word.id]
+
+    seen_pairs = set()
+
+    def once(a, b):
+        """Пара «черновик против черновика» не должна печататься дважды."""
+        key = tuple(sorted((a.id, b.id)))
+        if key in seen_pairs:
+            return False
+        seen_pairs.add(key)
+        return True
 
     section('1. точное столкновение переводов (это же поймает валидатор)')
-    hits = [(i, t) for i, (t, _) in draft.items() if t in seed_by_translation]
-    for i, t in hits:
-        print('  %s → «%s» уже перевод слова %s' % (i, t, seed_by_translation[t]))
-    if not hits:
-        print('  нет')
+    lines = []
+    for word in checked:
+        for other in others(word):
+            if other.translation == word.translation and once(word, other):
+                lines.append('  %s и %s — оба «%s»'
+                             % (word, other, word.translation))
+    report(lines)
 
-    section('2. общий корень перевода со словом сида')
-    found = []
-    for i, (t, _) in draft.items():
-        st = stem(t)
+    seen_pairs.clear()
+    section('2. общий корень перевода')
+    lines = []
+    for word in checked:
+        st = stem(word.translation)
         if len(st) < MIN_STEM:
             continue
-        for w in seed:
-            if stem(w['translation']) == st:
-                found.append('  %s «%s» ~ %s «%s» (корень «%s»)'
-                             % (i, t, w['id'], w['translation'], st))
-    print('\n'.join(found) if found else '  нет')
+        for other in others(word):
+            if stem(other.translation) == st and once(word, other):
+                lines.append('  %s «%s» ~ %s «%s» (корень «%s»)'
+                             % (word, word.translation, other,
+                                other.translation, st))
+    report(lines)
 
-    section('3. общий корень английского слова со словом сида')
-    found = []
-    for i in draft:
-        for w in seed:
-            sid = w['id']
-            if i == sid:
-                continue
-            if (i.startswith(sid) or sid.startswith(i)
-                    or (len(i) >= MIN_STEM and len(sid) >= MIN_STEM
-                        and i[:MIN_STEM] == sid[:MIN_STEM])):
-                found.append('  %s ~ %s' % (i, sid))
-    print('\n'.join(found) if found else '  нет')
+    seen_pairs.clear()
+    section('3. общий корень английского слова')
+    lines = []
+    for word in checked:
+        for other in others(word):
+            a, b = word.id, other.id
+            if (a.startswith(b) or b.startswith(a)
+                    or (len(a) >= MIN_STEM and len(b) >= MIN_STEM
+                        and a[:MIN_STEM] == b[:MIN_STEM])):
+                if once(word, other):
+                    lines.append('  %s ~ %s' % (word, other))
+    report(lines)
 
+    seen_pairs.clear()
     section('4. зеркальные пары, которые появятся')
-    found = []
-    for i, (t, ds) in draft.items():
-        for w in seed:
-            if w['translation'] in ds and t in w['distractors']:
-                found.append('  %s ↔ %s' % (i, w['id']))
-    print('\n'.join(found) if found else '  нет')
+    lines = []
+    for word in checked:
+        for other in others(word):
+            if (other.translation in word.distractors
+                    and word.translation in other.distractors
+                    and once(word, other)):
+                lines.append('  %s ↔ %s' % (word, other))
+    report(lines)
 
+    seen_pairs.clear()
     section('5. одинаковый набор из четырёх (это же поймает валидатор)')
-    sets = {frozenset([w['translation']] + w['distractors']): w['id'] for w in seed}
-    found = []
-    for i, (t, ds) in draft.items():
-        key = frozenset([t] + ds)
-        if key in sets:
-            found.append('  %s = %s' % (i, sets[key]))
-    print('\n'.join(found) if found else '  нет')
+    lines = []
+    for word in checked:
+        key = frozenset([word.translation] + word.distractors)
+        for other in others(word):
+            if frozenset([other.translation] + other.distractors) == key:
+                if once(word, other):
+                    lines.append('  %s = %s' % (word, other))
+    report(lines)
 
-    section('6. мой перевод уже стоит обманкой у слова сида (одностороннее)')
-    found = []
-    for i, (t, _) in draft.items():
-        owners = [w['id'] for w in seed if t in w['distractors']]
+    section('6. перевод уже стоит обманкой у другого слова (одностороннее)')
+    lines = []
+    for word in checked:
+        owners = [str(other) for other in others(word)
+                  if word.translation in other.distractors]
         if owners:
-            found.append('  «%s» (%s) — обманка у: %s' % (t, i, ', '.join(owners)))
-    print('\n'.join(found) if found else '  нет')
+            lines.append('  «%s» (%s) — обманка у: %s'
+                         % (word.translation, word, ', '.join(owners)))
+    report(lines)
 
     print()
     print('Ничего не записано: это отчёт. Пары, которые решишь считать')
