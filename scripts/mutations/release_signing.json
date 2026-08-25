@@ -1,0 +1,50 @@
+[
+  {
+    "name": "правило *.jks убрано из корневого .gitignore",
+    "file": ".gitignore",
+    "old": "*.keystore\n*.jks\n",
+    "new": "*.keystore\n"
+  },
+  {
+    "name": "правило *.keystore убрано из корневого .gitignore",
+    "file": ".gitignore",
+    "old": "android/key.properties\n*.keystore\n",
+    "new": "android/key.properties\n"
+  },
+  {
+    "name": "кто-то добавил исключение для key.properties в android/.gitignore",
+    "file": "android/.gitignore",
+    "old": "key.properties\n**/*.keystore",
+    "new": "key.properties\n!key.properties\n**/*.keystore"
+  },
+  {
+    "name": "сообщение об отказе перестало называть docs/dev/release.md",
+    "file": "android/app/build.gradle.kts",
+    "old": "Создай ключ по docs/dev/release.md — там команда keytool с разбором каждого",
+    "new": "Создай ключ по документации проекта — там команда keytool с разбором каждого"
+  },
+  {
+    "name": "keyAlias выпал из списка обязательных полей: пустой alias вместо сообщения",
+    "file": "android/app/build.gradle.kts",
+    "old": "listOf(\"storeFile\", \"storePassword\", \"keyAlias\", \"keyPassword\")",
+    "new": "listOf(\"storeFile\", \"storePassword\", \"keyPassword\")"
+  },
+  {
+    "name": "keyPassword проверяется, но читается пароль хранилища",
+    "file": "android/app/build.gradle.kts",
+    "old": "keyPassword = keyProperties.getProperty(\"keyPassword\")",
+    "new": "keyPassword = keyProperties.getProperty(\"storePassword\")"
+  },
+  {
+    "name": "релиз снова подписывается отладочным ключом",
+    "file": "android/app/build.gradle.kts",
+    "old": "signingConfig = signingConfigs.getByName(\"release\")",
+    "new": "signingConfig = signingConfigs.getByName(\"debug\")"
+  },
+  {
+    "name": "инструкция перестала показывать строку keyAlias=",
+    "file": "docs/dev/release.md",
+    "old": "keyAlias=upload\n",
+    "new": "alias=upload\n"
+  }
+]
