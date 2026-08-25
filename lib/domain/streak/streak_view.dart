@@ -94,5 +94,48 @@ class StreakView {
 /// ([advanceStreak]), а не в момент показа экрана. Здесь только предсказание —
 /// то самое, которое человек должен увидеть до того, как решит играть.
 StreakView streakAsOf(StreakState state, StreakDay today) {
-  throw UnimplementedError('streakAsOf');
+  final last = state.lastDay;
+  final available = state.freezes > 0;
+  final daysToNext = available ? 0 : daysToEarnFreeze - state.daysSinceFreeze;
+
+  // Играть сегодня уже незачем: день засчитан. Сюда же попадает случай
+  // «последний день оказался в будущем» — часы, переведённые вперёд: игра на
+  // таком дне ничего не изменит (`advanceStreak` вернёт то же состояние), и
+  // звать человека к экрану было бы обманом.
+  final playedToday = last != null && today.compareTo(last) <= 0;
+
+  final bool alive;
+  final bool freezeWillCover;
+  if (last == null) {
+    alive = false;
+    freezeWillCover = false;
+  } else if (playedToday || today == last.next) {
+    alive = true;
+    freezeWillCover = false;
+  } else if (today == last.next.next) {
+    // Пропущен ровно один день: серия жива ровно настолько, насколько есть
+    // чем его прикрыть.
+    alive = available;
+    freezeWillCover = available;
+  } else {
+    alive = false;
+    freezeWillCover = false;
+  }
+
+  return StreakView(
+    // Оборванную серию показываем нулём, а не последним известным числом:
+    // «Серия: 3 дня» на мёртвой серии — ровно то враньё, ради которого эта
+    // функция и появилась.
+    days: alive ? state.current : 0,
+    best: state.best,
+    playedToday: playedToday,
+    alive: alive,
+    freezeWillCover: freezeWillCover,
+    freeze: FreezeStatus(
+      available: available,
+      // Замороженный день имеет смысл, пока жива серия, которую он спас.
+      spentOn: alive ? state.lastFrozenDay : null,
+      daysToNext: daysToNext,
+    ),
+  );
 }
