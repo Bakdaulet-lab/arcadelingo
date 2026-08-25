@@ -88,5 +88,32 @@
     "file": "lib/app/app_views.dart",
     "old": "style: withWeight(textTheme.displaySmall!, FontWeight.bold),",
     "new": "style: textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),"
+  },
+  {
+    "name": "иконка объявляет не ту плотность: hdpi выдаёт себя за mdpi",
+    "file": "android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+    "kind": "bytes",
+    "old": "49 48 44 52 00 00 00 48 00 00 00 48 08 02",
+    "new": "49 48 44 52 00 00 00 30 00 00 00 48 08 02"
+  },
+  {
+    "name": "альфа в легаси-иконке: тип цвета 2 подменён на 6",
+    "file": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+    "kind": "bytes",
+    "old": "49 48 44 52 00 00 00 30 00 00 00 30 08 02",
+    "new": "49 48 44 52 00 00 00 30 00 00 00 30 08 06"
+  },
+  {
+    "name": "слой адаптивной иконки без альфы: тип цвета 6 подменён на 2",
+    "file": "android/app/src/main/res/drawable-xhdpi/ic_launcher_foreground.png",
+    "kind": "bytes",
+    "old": "49 48 44 52 00 00 00 D8 00 00 00 D8 08 06",
+    "new": "49 48 44 52 00 00 00 D8 00 00 00 D8 08 02"
+  },
+  {
+    "name": "values-night/styles.xml вернулся: вторая копия тех же стилей",
+    "file": "android/app/src/main/res/values-night/styles.xml",
+    "kind": "create",
+    "content": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <style name=\"LaunchTheme\" parent=\"@android:style/Theme.Black.NoTitleBar\">\n        <item name=\"android:windowBackground\">@drawable/launch_background</item>\n    </style>\n</resources>\n"
   }
 ]
