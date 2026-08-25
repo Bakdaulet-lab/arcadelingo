@@ -313,6 +313,46 @@ void main() {
     });
   });
 
+  // Высота столбика — чистая арифметика, и проверяется как арифметика.
+  // Через виджет её видно только косвенно: мутация «всегда во всю высоту»
+  // оставалась зелёной, потому что ни один тест не сравнивал столбики между
+  // собой.
+  group('Высота столбика', () {
+    test('день без ответов — дорожка во всю высоту', () {
+      expect(barHeight(answers: 0, peak: 40), seriesHeight);
+    });
+
+    test('самый высокий день занимает всю высоту', () {
+      expect(barHeight(answers: 40, peak: 40), seriesHeight);
+    });
+
+    test('половина пика — половина высоты', () {
+      expect(barHeight(answers: 20, peak: 40), seriesHeight / 2);
+    });
+
+    test('маленький день строго ниже пика', () {
+      expect(
+        barHeight(answers: 1, peak: 40),
+        lessThan(barHeight(answers: 40, peak: 40)),
+        reason: 'иначе полоса перестаёт быть полосой',
+      );
+    });
+
+    test('один ответ из сорока всё равно виден', () {
+      expect(
+        barHeight(answers: 1, peak: 40),
+        greaterThanOrEqualTo(seriesMinBar),
+      );
+    });
+
+    test('день с ответом и день без отличаются высотой', () {
+      expect(
+        barHeight(answers: 1, peak: 40),
+        isNot(barHeight(answers: 0, peak: 40)),
+      );
+    });
+  });
+
   group('Вход с домашнего экрана', () {
     testWidgets('кнопка «Прогресс» открывает экран и с него можно уйти', (
       tester,
