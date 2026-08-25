@@ -22,5 +22,16 @@ List<DayTally> fillDays({
   required StreakDay from,
   required StreakDay to,
 }) {
-  throw UnimplementedError('fillDays');
+  if (to.compareTo(from) < 0) {
+    throw ArgumentError('отрезок перевёрнут: $from..$to');
+  }
+  final byDay = {for (final tally in tallies) tally.day: tally};
+  final series = <DayTally>[];
+  var day = from;
+  while (true) {
+    series.add(byDay[day] ?? DayTally(day: day, answers: 0, correct: 0));
+    if (day == to) break;
+    day = day.next;
+  }
+  return series;
 }

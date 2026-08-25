@@ -260,7 +260,12 @@ class _Block extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(label, style: textTheme.bodyMedium),
+                  // Подпись гибкая, значение — нет. Длинное значение
+                  // («Лучшая серия — 21 день») переполняло строку уже при
+                  // обычном шрифте, а при системном 2× — тем более. Ужимать
+                  // надо подпись: значение и есть то, ради чего строка.
+                  Expanded(child: Text(label, style: textTheme.bodyMedium)),
+                  const SizedBox(width: 12),
                   Text(
                     value,
                     style: withWeight(

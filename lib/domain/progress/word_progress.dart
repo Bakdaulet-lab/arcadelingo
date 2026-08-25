@@ -25,7 +25,9 @@ enum WordStage {
 
 /// Группа слова по его карточке.
 WordStage stageOf(LeitnerCard card) {
-  throw UnimplementedError('stageOf');
+  if (card.box <= LeitnerCard.minBox) return WordStage.hard;
+  if (card.box >= LeitnerCard.maxBox) return WordStage.learned;
+  return WordStage.learning;
 }
 
 /// Сколько слов в каждой группе.
@@ -65,7 +67,20 @@ class WordCounts {
 
 /// Подсчёт групп по карте карточек.
 WordCounts countWords(Map<String, LeitnerCard> cards) {
-  throw UnimplementedError('countWords');
+  var hard = 0;
+  var learning = 0;
+  var learned = 0;
+  for (final card in cards.values) {
+    switch (stageOf(card)) {
+      case WordStage.hard:
+        hard++;
+      case WordStage.learning:
+        learning++;
+      case WordStage.learned:
+        learned++;
+    }
+  }
+  return WordCounts(hard: hard, learning: learning, learned: learned);
 }
 
 /// Доля верных ответов в процентах, или null — отвечать было нечего.
@@ -76,6 +91,5 @@ WordCounts countWords(Map<String, LeitnerCard> cards) {
 ///
 /// Ноль ответов даёт **null**, а не ноль: «0%» означает «всё неверно», и
 /// показывать это тому, кто ещё не играл, — враньё.
-int? accuracyPercent({required int answers, required int correct}) {
-  throw UnimplementedError('accuracyPercent');
-}
+int? accuracyPercent({required int answers, required int correct}) =>
+    answers == 0 ? null : correct * 100 ~/ answers;
