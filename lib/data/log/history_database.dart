@@ -128,8 +128,17 @@ class HistoryDatabase extends _$HistoryDatabase {
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
-    // Заглушка красного коммита: переход не написан, и тесты миграции
-    // краснеют на том, ради чего этап и затевался.
-    onUpgrade: (m, from, to) async {},
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(events);
+        // Индексы отдельно: `createTable` создаёт только таблицу, а
+        // `createAll` при переходе не годится — он попытался бы создать и
+        // `answers`, которая уже есть. Забыть их здесь значит получить базу,
+        // где на новых устройствах индексы есть, а на обновившихся нет;
+        // разница проявится не ошибкой, а медленным экраном.
+        await m.create(eventsKind);
+        await m.create(eventsDay);
+      }
+    },
   );
 }

@@ -30,6 +30,10 @@ import '../support/review_items.dart';
 
 final DateTime _t0 = DateTime.utc(2026, 8, 26, 10);
 
+/// Часы хоста. Подвижные: ключ партии — это момент её старта, и две партии с
+/// одинаковым ключом ничего не доказали бы.
+DateTime _now = _t0;
+
 /// Игра из одной кнопки: спросить слово и доложить верный ответ.
 class _OneTapGame extends StatelessWidget {
   const _OneTapGame(this.launch);
@@ -75,6 +79,7 @@ void main() {
     Map<String, Object> prefs = const {},
   }) async {
     log = InMemoryEventLog();
+    _now = _t0;
     SharedPreferences.setMockInitialValues(prefs);
     final instance = await SharedPreferences.getInstance();
     tester.view.physicalSize = const Size(1080, 2340);
@@ -85,7 +90,7 @@ void main() {
         store: LeitnerPrefsStore(instance),
         streakStore: StreakPrefsStore(instance),
         seed: seed ?? Ok(wordItems(3)),
-        now: () => _t0,
+        now: () => _now,
         games: const [_entry],
         eventLog: log,
       ),
@@ -146,15 +151,26 @@ void main() {
       await startRound(tester);
       await tester.tap(find.byKey(_OneTapGame.answer));
       await tester.pump();
-      await tester.pageBack();
+      // Системное «назад», а не `pageBack()`: у фейковой игры нет AppBar,
+      // да и уходят из партии именно так.
+      await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
+      _now = _t0.add(const Duration(minutes: 5));
 
       await startRound(tester);
 
+      final starts =
+          log.events
+              .where((e) => e.kind == AppEventKind.roundStart)
+              .map((e) => e.sessionId)
+              .toList();
+      expect(starts, hasLength(2));
       expect(
-        log.kinds.where((k) => k == AppEventKind.roundStart).length,
-        2,
-        reason: 'каждая партия начинается заново, и это видно',
+        starts.toSet(),
+        hasLength(2),
+        reason:
+            'ключ у каждой партии свой — иначе события двух партий '
+            'склеятся в одну',
       );
     });
 
@@ -167,9 +183,11 @@ void main() {
       await startRound(tester);
 
       expect(find.byType(_OneTapGame), findsNothing);
-      expect(log.kinds, [
-        AppEventKind.appOpen,
-      ], reason: 'экран ошибки — не начало партии');
+      expect(
+        log.kinds,
+        orderedEquals(const [AppEventKind.appOpen]),
+        reason: 'экран ошибки — не начало партии',
+      );
     });
   });
 
