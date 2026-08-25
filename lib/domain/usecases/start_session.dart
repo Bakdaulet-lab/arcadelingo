@@ -14,6 +14,8 @@ library;
 import 'dart:async';
 
 import '../core/result.dart';
+import '../log/logging_observer.dart';
+import '../ports/answer_log.dart';
 import '../ports/card_store.dart';
 import '../ports/streak_store.dart';
 import '../review/review_contract.dart';
@@ -29,15 +31,22 @@ class StartSession {
     required StreakStore streaks,
     required DateTime Function() now,
     required int target,
+    AnswerLog answerLog = const NoopAnswerLog(),
   }) : _cards = cards,
        _streaks = streaks,
        _now = now,
-       _target = target;
+       _target = target,
+       _answerLog = answerLog;
 
   final CardStore _cards;
   final StreakStore _streaks;
   final DateTime Function() _now;
   final int _target;
+
+  /// Журнал ответов. С умолчанием, а не обязательным параметром: истории у
+  /// приложения не было до Этапа 2.3, и партия без неё полноценна. Тесты,
+  /// которые о журнале не знают, получают нулевой объект и не меняются.
+  final AnswerLog _answerLog;
 
   /// Партия по состоянию хранилищ на текущий момент, или [Err], если
   /// состояние не читается.
@@ -85,7 +94,12 @@ class StartSession {
     return Ok(
       ObservedSession(
         inner: inner,
-        observers: [StreakObserver(store: _streaks, initial: streak)],
+        // Порядок наблюдателей значения не имеет: они не разговаривают
+        // друг с другом и видят одно и то же событие.
+        observers: [
+          StreakObserver(store: _streaks, initial: streak),
+          LoggingObserver(log: _answerLog),
+        ],
         now: _now,
         gameId: gameId,
         // Момент старта, а не счётчик: партия длится минуты, столкнуться

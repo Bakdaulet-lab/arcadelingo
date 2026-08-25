@@ -21,6 +21,7 @@ import 'package:arcadelingo/app/attribution_view.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
+import 'package:arcadelingo/domain/ports/answer_log.dart';
 import 'package:arcadelingo/domain/ports/streak_store.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
@@ -45,6 +46,7 @@ class WordarcadeApp extends StatelessWidget {
     super.key,
     this.now = DateTime.now,
     this.games = wordarcadeGames,
+    this.answerLog = const NoopAnswerLog(),
   });
 
   final LeitnerPrefsStore store;
@@ -58,6 +60,11 @@ class WordarcadeApp extends StatelessWidget {
   /// Что приложение умеет запускать. Умолчание — реестр из `games.dart`;
   /// тест подменяет список, чтобы проверить подключение второй игры.
   final List<GameEntry> games;
+
+  /// История ответов. Умолчание — нулевой объект: приложение полноценно и
+  /// без неё, а тесты, которые о журнале не знают, о нём и не узнают.
+  /// Настоящий журнал подключает `main.dart` — корень знает и о `data/`.
+  final AnswerLog answerLog;
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +82,7 @@ class WordarcadeApp extends StatelessWidget {
           items: value,
           now: now,
           games: games,
+          answerLog: answerLog,
         ),
         Err(:final failure) => SeedErrorView(message: failure.message),
       },
@@ -90,6 +98,7 @@ class HomeScreen extends StatefulWidget {
     required this.items,
     required this.now,
     required this.games,
+    required this.answerLog,
     super.key,
   });
 
@@ -103,6 +112,8 @@ class HomeScreen extends StatefulWidget {
   final DateTime Function() now;
 
   final List<GameEntry> games;
+
+  final AnswerLog answerLog;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -184,6 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
       streaks: widget.streakStore,
       now: widget.now,
       target: sessionTarget,
+      answerLog: widget.answerLog,
     )(
       items: widget.items,
       gameId: game.id,
