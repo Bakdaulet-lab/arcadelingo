@@ -37,19 +37,19 @@
   },
   {
     "name": "тема потеряла гарнитуру: текст ушёл в запасной шрифт",
-    "file": "lib/app/theme.dart",
+    "file": "lib/ui/theme.dart",
     "old": "    fontFamily: wordarcadeFont,\n",
     "new": ""
   },
   {
     "name": "ось веса не проставляется: весь текст стал Light 300",
-    "file": "lib/app/theme.dart",
+    "file": "lib/ui/theme.dart",
     "old": "  fontVariations: [FontVariation('wght', weight.value.toDouble())],\n",
     "new": ""
   },
   {
     "name": "палитра вернулась к пастели fromSeed",
-    "file": "lib/app/theme.dart",
+    "file": "lib/ui/theme.dart",
     "old": "  surface: const Color(0xFF0D0A12),\n",
     "new": ""
   },

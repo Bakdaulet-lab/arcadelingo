@@ -44,8 +44,8 @@
   {
     "name": "с домашнего экрана нет входа на «Источники»",
     "file": "lib/app/app.dart",
-    "old": "        ? PlayView(onPlay: _start, onSources: _openSources)",
-    "new": "        ? PlayView(onPlay: _start, onSources: () {})"
+    "old": "          onSources: _openSources,",
+    "new": "          onSources: () {},"
   },
   {
     "name": "с «Источников» не уйти: стрелки назад нет",

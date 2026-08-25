@@ -60,3 +60,6 @@ tool/out/*
 # Превью иконок: их пересоздаёт tool/brand/render_icons.dart за секунду.
 # В репозиторий едет только то, что попадает в сборку, — android/ и ios/
 tool/out/icons/
+
+# Байткод Python: появляется, если scripts/mutate.py импортировать модулем
+__pycache__/
