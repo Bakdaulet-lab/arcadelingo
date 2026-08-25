@@ -30,6 +30,7 @@ Future<void> _pump(WidgetTester tester, {StreakView? ritual}) =>
         home: PlayView(
           onPlay: () {},
           onProgress: () {},
+          onSettings: () {},
           onSources: () {},
           ritual: ritual,
         ),

@@ -1,0 +1,140 @@
+[
+  {
+    "name": "выключенные напоминания всё равно ставятся",
+    "file": "lib/domain/reminders/reminder_policy.dart",
+    "old": "  if (!settings.enabled) return null;",
+    "new": ""
+  },
+  {
+    "name": "сыгранный сегодня день не уводит напоминание на завтра",
+    "file": "lib/domain/reminders/reminder_policy.dart",
+    "old": "      !playedToday && now.isBefore(todayAt)",
+    "new": "      now.isBefore(todayAt)"
+  },
+  {
+    "name": "прошедшее время не уводит напоминание на завтра",
+    "file": "lib/domain/reminders/reminder_policy.dart",
+    "old": "      !playedToday && now.isBefore(todayAt)",
+    "new": "      !playedToday"
+  },
+  {
+    "name": "ровно в назначенный момент напоминание ставится на сейчас",
+    "file": "lib/domain/reminders/reminder_policy.dart",
+    "old": "      !playedToday && now.isBefore(todayAt)",
+    "new": "      !playedToday && !now.isAfter(todayAt)"
+  },
+  {
+    "name": "час напоминания выдуман, а не взят из настроек",
+    "file": "lib/domain/reminders/reminder_policy.dart",
+    "old": "  final todayAt = settings.at.on(now);",
+    "new": "  final todayAt = const ReminderTime(20, 0).on(now);"
+  },
+  {
+    "name": "повод считается на сегодня, а не на день срабатывания",
+    "file": "lib/domain/reminders/reminder_policy.dart",
+    "old": "  final view = streakAsOf(streak, StreakDay.of(at));",
+    "new": "  final view = streakAsOf(streak, StreakDay.of(now));"
+  },
+  {
+    "name": "об угрозе серии не предупреждают",
+    "file": "lib/domain/reminders/reminder_policy.dart",
+    "old": "  if (view.freezeWillCover) return ReminderReason.atRisk;",
+    "new": ""
+  },
+  {
+    "name": "живая серия и её отсутствие зовут одинаково",
+    "file": "lib/domain/reminders/reminder_policy.dart",
+    "old": "  return view.alive ? ReminderReason.keepGoing : ReminderReason.start;",
+    "new": "  return ReminderReason.start;"
+  },
+  {
+    "name": "время суток принимает 24 часа",
+    "file": "lib/domain/reminders/reminder_settings.dart",
+    "old": "      hour < 0 || hour > 23 || minute < 0 || minute > 59",
+    "new": "      hour < 0 || minute < 0"
+  },
+  {
+    "name": "время накладывается на день со сдвигом даты",
+    "file": "lib/domain/reminders/reminder_settings.dart",
+    "old": "      DateTime(day.year, day.month, day.day, hour, minute);",
+    "new": "      DateTime(day.year, day.month, day.day + 1, hour, minute);"
+  },
+  {
+    "name": "умолчание включает напоминания без спроса",
+    "file": "lib/domain/reminders/reminder_settings.dart",
+    "old": "    enabled: false,\n    at: ReminderTime(20, 0),",
+    "new": "    enabled: true,\n    at: ReminderTime(20, 0),"
+  },
+  {
+    "name": "битые настройки доезжают до конструктора вместо Err",
+    "file": "lib/data/settings/settings_codec.dart",
+    "old": "  final at = ReminderTime.tryCreate(hour, minute);\n  if (at == null) {",
+    "new": "  final at = ReminderTime.tryCreate(hour, minute);\n  if (false) {"
+  },
+  {
+    "name": "стор настроек молча сбрасывает битый документ",
+    "file": "lib/data/settings/settings_prefs_store.dart",
+    "old": "    if (raw == null) return const Ok(ReminderSettings.defaults);\n    return decodeSettings(raw);",
+    "new": "    if (raw == null) return const Ok(ReminderSettings.defaults);\n    final read = decodeSettings(raw);\n    return read is Err ? const Ok(ReminderSettings.defaults) : read;"
+  },
+  {
+    "name": "слова: угроза и живая серия говорят одно и то же",
+    "file": "lib/ui/reminder_labels.dart",
+    "old": "    '${streakLabel(plan.days)} под угрозой',",
+    "new": "    streakLabel(plan.days),"
+  },
+  {
+    "name": "число дней в тексте выдумано",
+    "file": "lib/ui/reminder_labels.dart",
+    "old": "  ReminderReason.keepGoing => (\n    streakLabel(plan.days),",
+    "new": "  ReminderReason.keepGoing => (\n    streakLabel(1),"
+  },
+  {
+    "name": "хост не перепланирует на открытии",
+    "file": "lib/app/app.dart",
+    "old": "    _record(AppEventKind.appOpen);\n    _refreshReminder();",
+    "new": "    _record(AppEventKind.appOpen);"
+  },
+  {
+    "name": "хост не перепланирует после партии",
+    "file": "lib/app/app.dart",
+    "old": "    // Серия изменилась — значит изменился и повод напоминания: сегодня уже\n    // сыграно, звать сегодня незачем.\n    _refreshReminder();",
+    "new": ""
+  },
+  {
+    "name": "выключенное напоминание не снимается, а забывается",
+    "file": "lib/app/app.dart",
+    "old": "      await widget.reminders.cancelAll();",
+    "new": ""
+  },
+  {
+    "name": "разрешение не спрашивается",
+    "file": "lib/app/app.dart",
+    "old": "    if (next.enabled && !await widget.askReminderPermission()) return false;",
+    "new": ""
+  },
+  {
+    "name": "отказ системы всё равно сохраняет настройку",
+    "file": "lib/app/app.dart",
+    "old": "    if (next.enabled && !await widget.askReminderPermission()) return false;",
+    "new": "    if (next.enabled) await widget.askReminderPermission();"
+  },
+  {
+    "name": "битая серия всё равно даёт напоминание",
+    "file": "lib/app/app.dart",
+    "old": "    if (streak == null) return;",
+    "new": ""
+  },
+  {
+    "name": "экран настроек принимает отказ за успех",
+    "file": "lib/app/settings_view.dart",
+    "old": "      _denied = !ok;\n      if (ok) _settings = next;",
+    "new": "      _denied = false;\n      _settings = next;"
+  },
+  {
+    "name": "строка времени активна при выключенном напоминании",
+    "file": "lib/app/settings_view.dart",
+    "old": "            enabled: _settings.enabled,\n            onTap: _settings.enabled ? _pickTime : null,",
+    "new": "            enabled: true,\n            onTap: _pickTime,"
+  }
+]

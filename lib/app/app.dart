@@ -20,12 +20,17 @@ import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution_view.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/app/progress_view.dart';
+import 'package:arcadelingo/app/settings_view.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
 import 'package:arcadelingo/domain/ports/answer_log.dart';
 import 'package:arcadelingo/domain/ports/event_log.dart';
+import 'package:arcadelingo/domain/ports/reminders.dart';
+import 'package:arcadelingo/domain/ports/settings_store.dart';
 import 'package:arcadelingo/domain/ports/streak_store.dart';
+import 'package:arcadelingo/domain/reminders/reminder_policy.dart';
+import 'package:arcadelingo/domain/reminders/reminder_settings.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/session/observed_session.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
@@ -33,9 +38,14 @@ import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/domain/usecases/count_played_day.dart';
 import 'package:arcadelingo/domain/usecases/start_session.dart';
+import 'package:arcadelingo/ui/reminder_labels.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter/material.dart';
+
+/// Умолчание для спроса разрешения: платформы, у которой нечего спрашивать,
+/// для теста не существует.
+Future<bool> _alwaysAllowed() async => true;
 
 /// Размер сессии из SPEC. Его задаёт хост: игра про эту цифру не знает и
 /// заканчивает партию только по `nextItem() == null` и нулю жизней.
@@ -56,6 +66,9 @@ class WordarcadeApp extends StatelessWidget {
     this.games = wordarcadeGames,
     this.answerLog = const NoopAnswerLog(),
     this.eventLog = const NoopEventLog(),
+    this.reminders = const NoopReminders(),
+    this.settingsStore,
+    this.askReminderPermission = _alwaysAllowed,
   });
 
   final LeitnerPrefsStore store;
@@ -79,6 +92,20 @@ class WordarcadeApp extends StatelessWidget {
   /// объектом умолчанием — приложение полноценно и без приборов.
   final EventLog eventLog;
 
+  /// Напоминания. Нулевой объект умолчанием: приложение работает и молча.
+  final Reminders reminders;
+
+  /// Настройки напоминания; null — экран настроек недоступен, и это
+  /// умолчание тестов, которые о нём не знают.
+  final SettingsStore? settingsStore;
+
+  /// Спросить у системы разрешение на уведомления.
+  ///
+  /// Функцией, а не методом порта: разрешение — понятие платформы, а не
+  /// домена, и `Reminders` о нём знать не должен. Умолчание отвечает «да»:
+  /// платформы, у которой нечего спрашивать, для теста не существует.
+  final Future<bool> Function() askReminderPermission;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -99,6 +126,9 @@ class WordarcadeApp extends StatelessWidget {
           games: games,
           answerLog: answerLog,
           eventLog: eventLog,
+          reminders: reminders,
+          settingsStore: settingsStore,
+          askReminderPermission: askReminderPermission,
         ),
         Err(:final failure) => SeedErrorView(message: failure.message),
       },
@@ -116,6 +146,9 @@ class HomeScreen extends StatefulWidget {
     required this.games,
     required this.answerLog,
     required this.eventLog,
+    required this.reminders,
+    required this.settingsStore,
+    required this.askReminderPermission,
     super.key,
   });
 
@@ -133,6 +166,12 @@ class HomeScreen extends StatefulWidget {
   final AnswerLog answerLog;
 
   final EventLog eventLog;
+
+  final Reminders reminders;
+
+  final SettingsStore? settingsStore;
+
+  final Future<bool> Function() askReminderPermission;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -169,6 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ? PlayView(
           onPlay: _start,
           onProgress: _openProgress,
+          onSettings: _openSettings,
           onSources: _openSources,
           ritual: _ritual,
           week: _week,
@@ -200,6 +240,77 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Тап «Настройки»: единственная настройка — напоминание.
+  ///
+  /// Экрана нет, если хост не дал стор настроек: тесты, которые о них не
+  /// знают, кнопку не увидят вовсе.
+  void _openSettings() {
+    final store = widget.settingsStore;
+    if (store == null) return;
+    unawaited(
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder:
+              (context) =>
+                  SettingsScreen(store: store, onApply: _applySettings),
+        ),
+      ),
+    );
+  }
+
+  /// Применяет выбор человека: спрашивает разрешение, сохраняет, ставит или
+  /// снимает напоминание.
+  ///
+  /// Возвращает `false`, если система не дала разрешения: экран настроек
+  /// обязан это показать, а не притвориться, что переключатель включился.
+  /// Разрешение спрашивается ровно здесь — в момент, когда человек попросил
+  /// напоминания, и нигде больше.
+  Future<bool> _applySettings(ReminderSettings next) async {
+    final store = widget.settingsStore;
+    if (store == null) return false;
+    if (next.enabled && !await widget.askReminderPermission()) return false;
+    await store.save(next);
+    await _rescheduleReminder(next);
+    return true;
+  }
+
+  /// Ставит напоминание по текущему состоянию или снимает его.
+  ///
+  /// Зовётся на открытии приложения и после каждой партии: повод считается
+  /// на день срабатывания, и чем свежее расписание, тем меньше шансов, что
+  /// уведомление скажет про серию, которой уже нет.
+  Future<void> _rescheduleReminder(ReminderSettings settings) async {
+    final streak = switch (widget.streakStore.load()) {
+      Ok(:final value) => value,
+      Err() => null,
+    };
+    if (streak == null) return;
+    final plan = planReminder(
+      settings: settings,
+      streak: streak,
+      now: widget.now(),
+    );
+    if (plan == null) {
+      await widget.reminders.cancelAll();
+      _record(AppEventKind.reminderScheduled);
+      return;
+    }
+    final (title, body) = reminderText(plan);
+    await widget.reminders.schedule(at: plan.at, title: title, body: body);
+    _record(AppEventKind.reminderScheduled);
+  }
+
+  /// Перепланирует по тому, что лежит в хранилище настроек.
+  void _refreshReminder() {
+    final store = widget.settingsStore;
+    if (store == null) return;
+    final settings = switch (store.load()) {
+      Ok(:final value) => value,
+      Err() => ReminderSettings.defaults,
+    };
+    unawaited(_rescheduleReminder(settings));
+  }
+
   void _openSources() {
     unawaited(
       Navigator.of(context).push(
@@ -219,6 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Цена решения названа: на битом сиде домашнего экрана не существует, и
     // события не будет. Битый сид — дефект сборки, играть всё равно нечем.
     _record(AppEventKind.appOpen);
+    _refreshReminder();
   }
 
   /// Пишет событие часами хоста и не ждёт записи.
@@ -295,6 +407,9 @@ class _HomeScreenState extends State<HomeScreen> {
       // вернётся с итогов на домашний экран.
       setState(() => _stateFailure = failure);
     }
+    // Серия изменилась — значит изменился и повод напоминания: сегодня уже
+    // сыграно, звать сегодня незачем.
+    _refreshReminder();
   }
 
   /// Тап «Играть»: собрать партию и показать её.
