@@ -9,7 +9,9 @@
 // а там pixelRatio по умолчанию 1.0, то есть кадр в логических пикселях.
 // Смотреть на такой файл надо с зумом.
 
+import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -90,4 +92,24 @@ Future<void> answerGolden(WidgetTester tester, int i) async {
   await tester.pump(const Duration(seconds: 1));
   await tapGolden(tester, wordTranslation(i));
   await tester.pump(const Duration(milliseconds: 300));
+}
+
+/// Домашний экран с ритуалом, готовый к съёмке.
+///
+/// Те же размер, плотность и масштаб текста, что и у восьми кадров игры:
+/// эталоны обязаны отличаться тем, что на них нарисовано, и ничем больше.
+Future<void> pumpRitualGolden(WidgetTester tester, StreakView ritual) async {
+  tester.view.physicalSize = goldenPhysicalSize;
+  tester.view.devicePixelRatio = goldenDevicePixelRatio;
+  tester.platformDispatcher.textScaleFactorTestValue = 1;
+  addTearDown(tester.view.reset);
+  addTearDown(tester.platformDispatcher.clearAllTestValues);
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: wordarcadeTheme(platform: TargetPlatform.android),
+      debugShowCheckedModeBanner: false,
+      home: PlayView(onPlay: () {}, onSources: () {}, ritual: ritual),
+    ),
+  );
+  await tester.pump();
 }

@@ -13,20 +13,24 @@
 // был бы зелёным ровно на той ошибке, ради которой он написан.
 
 import 'package:arcadelingo/app/app_views.dart';
+import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/ui/streak_label.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/ritual_views.dart';
+
 /// Имя, утверждённое автором.
 const String appName = 'Arcadelingo';
 
-Future<void> _pump(WidgetTester tester, {int? streakDays}) => tester.pumpWidget(
-  MaterialApp(
-    theme: wordarcadeTheme(platform: TargetPlatform.android),
-    home: PlayView(onPlay: () {}, onSources: () {}, streakDays: streakDays),
-  ),
-);
+Future<void> _pump(WidgetTester tester, {StreakView? ritual}) =>
+    tester.pumpWidget(
+      MaterialApp(
+        theme: wordarcadeTheme(platform: TargetPlatform.android),
+        home: PlayView(onPlay: () {}, onSources: () {}, ritual: ritual),
+      ),
+    );
 
 void main() {
   testWidgets('домашний экран назван так же, как иконка', (tester) async {
@@ -57,7 +61,7 @@ void main() {
   });
 
   testWidgets('марка и серия стоят на экране вместе', (tester) async {
-    await _pump(tester, streakDays: 5);
+    await _pump(tester, ritual: ritualView(days: 5));
     expect(find.text(appName), findsOneWidget);
     expect(find.text(streakLabel(5)), findsOneWidget);
     expect(find.byKey(AppKeys.streak), findsOneWidget);

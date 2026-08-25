@@ -50,6 +50,7 @@ class FallingWordsGame extends StatefulWidget {
     super.key,
     this.seed,
     this.summaryFooter,
+    this.onRoundOver,
   });
 
   final ReviewSession session;
@@ -67,6 +68,18 @@ class FallingWordsGame extends StatefulWidget {
   /// повторению — вопрос к хосту, и ответ на него к этому моменту уже
   /// учитывает последний доклад.
   final String Function()? summaryFooter;
+
+  /// Партия дошла до конца — итогов или потерянных жизней.
+  ///
+  /// Единственное, что игра сообщает хосту сверх контракта `ReviewSession`, и
+  /// сообщает потому, что больше об этом узнать неоткуда: жизни живут внутри
+  /// игры, и «доиграл» от «бросил на середине» снаружи не отличить. День
+  /// серии засчитывает законченная партия (`lib/app/games.dart`).
+  ///
+  /// Зовётся там же, где спрашивается [summaryFooter], — в момент перехода к
+  /// экрану конца, ровно один раз за партию. Уход с середины сюда не
+  /// попадает: там `dispose` докладывает неответ, а экрана конца не бывает.
+  final VoidCallback? onRoundOver;
 
   @override
   State<FallingWordsGame> createState() => _FallingWordsGameState();
@@ -156,7 +169,10 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     if (_run.phase != FallingPhase.reveal || _reveal.value < 1) return;
     _reveal.stop();
     _run.advance();
-    if (_run.phase == FallingPhase.over) _footer = widget.summaryFooter?.call();
+    if (_run.phase == FallingPhase.over) {
+      _footer = widget.summaryFooter?.call();
+      widget.onRoundOver?.call();
+    }
     setState(() {});
     if (_run.phase == FallingPhase.falling) _startFall();
   }

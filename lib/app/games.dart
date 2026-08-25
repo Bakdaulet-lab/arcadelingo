@@ -29,6 +29,7 @@ class GameLaunch {
     required this.summaryFooter,
     required this.onPlayAgain,
     required this.onExit,
+    required this.onRoundOver,
   });
 
   /// Сессия, уже собранная usecase'ом и обёрнутая наблюдателями.
@@ -42,6 +43,22 @@ class GameLaunch {
 
   /// «Выйти» с экранов конца партии.
   final VoidCallback onExit;
+
+  /// Партия дошла до конца: игра показала экран итогов или «жизни кончились».
+  ///
+  /// **Обязательный шаг ритуала.** День серии засчитывает законченная партия,
+  /// а выход на восьмом слове днём не считается, — и узнать о конце раунда
+  /// хост может только от игры: жизни живут внутри неё.
+  ///
+  /// Отклонённая альтернатива записана вместе с причиной: считать конец
+  /// снаружи, по трём событиям с `correct == false` в одной партии, дешевле
+  /// сегодня, но дублирует правило жизней вне игры и начнёт врать молча в
+  /// день, когда жизней станет пять.
+  ///
+  /// Зовётся **ровно один раз** за партию, в момент показа экрана конца.
+  /// Уход с середины — не конец: там игра докладывает неответ и молчит,
+  /// а «бросил» считает хост по тому, что этого вызова не было.
+  final VoidCallback onRoundOver;
 }
 
 /// Одна игра в реестре.
@@ -79,4 +96,5 @@ Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
   summaryFooter: launch.summaryFooter,
   onPlayAgain: launch.onPlayAgain,
   onExit: launch.onExit,
+  onRoundOver: launch.onRoundOver,
 );
