@@ -50,17 +50,46 @@ class NinjaFlight {
 /// Симметрично, а не первые подряд: один объект — по центру, два — по краям
 /// (`SPEC.md`). Волна из одного объекта на дорожке 0.20 выглядела бы
 /// поломкой вёрстки, а не решением.
-List<int> laneSlotsFor(int count) => throw UnimplementedError();
+List<int> laneSlotsFor(int count) {
+  if (count < 0 || count > laneFractions.length) {
+    throw ArgumentError.value(
+      count,
+      'count',
+      'дорожек всего ${laneFractions.length}',
+    );
+  }
+  return switch (count) {
+    0 => const [],
+    1 => const [1],
+    2 => const [0, 2],
+    _ => const [0, 1, 2],
+  };
+}
 
 /// Параметры полёта для дорожки [slot] на поле [width] × [height].
 NinjaFlight flightForSlot(
   int slot, {
   required double width,
   required double height,
-}) => throw UnimplementedError();
+}) {
+  if (slot < 0 || slot >= laneFractions.length) {
+    throw ArgumentError.value(
+      slot,
+      'slot',
+      'дорожки 0..${laneFractions.length - 1}',
+    );
+  }
+  return NinjaFlight(
+    lane: laneFractions[slot] * width,
+    // Знак чередуется по дорожкам: без этого соседи сносились бы в одну
+    // сторону и расстояние между ними за полёт не менялось бы вовсе.
+    drift: driftFraction * width * (slot.isEven ? 1 : -1),
+    apex: apexFractions[slot] * height,
+  );
+}
 
 /// Нижняя кромка полёта: объект стартует и садится под ней, а не на ней.
-double flightBottom(double height) => throw UnimplementedError();
+double flightBottom(double height) => height + objectRadius;
 
 /// Где объект в долю полёта [t].
 ///
@@ -73,4 +102,4 @@ Offset trajectory({
   required double drift,
   required double apex,
   required double bottom,
-}) => throw UnimplementedError();
+}) => Offset(lane + drift * t, bottom - apex * 4 * t * (1 - t));
