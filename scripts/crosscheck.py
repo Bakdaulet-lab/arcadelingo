@@ -37,9 +37,17 @@ def stem(word):
         if len(w) - len(prefix) >= MIN_STEM and w.startswith(prefix):
             w = w[len(prefix):]
             break
-    for ending in sorted(ENDINGS, key=len, reverse=True):
-        if len(w) - len(ending) >= 3 and w.endswith(ending):
-            return w[:-len(ending)]
+    # Окончание снимается дважды, а не один раз: «тренироваться» после «ться»
+    # оставляет «тренирова», и от «тренировки» («трениров») это уже отличается
+    # одной буквой. На порции 5 пара practice/exercise так и не нашлась —
+    # скрипт молчал ровно там, где обязан был говорить.
+    for _ in range(2):
+        for ending in sorted(ENDINGS, key=len, reverse=True):
+            if len(w) - len(ending) >= 3 and w.endswith(ending):
+                w = w[:-len(ending)]
+                break
+        else:
+            break
     return w
 
 

@@ -25,13 +25,13 @@
   },
   {
     "name": "текст поля потерял контраст к фону",
-    "file": "lib/app/theme.dart",
+    "file": "lib/ui/theme.dart",
     "old": "  onSurface: const Color(0xFFF2ECFF),",
     "new": "  onSurface: const Color(0xFF3A3346),"
   },
   {
     "name": "«+N» потерял контраст к разогретому полю",
-    "file": "lib/app/theme.dart",
+    "file": "lib/ui/theme.dart",
     "old": "  primary: const Color(0xFF3DFFC0),",
     "new": "  primary: const Color(0xFF12604B),"
   },

@@ -20,14 +20,14 @@
   {
     "name": "тот же день считается новым днём серии",
     "file": "lib/domain/streak/streak.dart",
-    "old": "  if (last == day) return state;",
-    "new": ""
+    "old": "  if (last != null && day.compareTo(last) <= 0) return state;",
+    "new": "  if (last != null && day.compareTo(last) < 0) return state;"
   },
   {
     "name": "разрыв продлевает серию вместо того, чтобы начать заново",
     "file": "lib/domain/streak/streak.dart",
-    "old": "  final current = last != null && day == last.next ? state.current + 1 : 1;",
-    "new": "  final current = state.current + 1;"
+    "old": "  } else {\n    current = 1;\n    // У новой серии замороженных дней нет",
+    "new": "  } else {\n    current = state.current + 1;\n    // У новой серии замороженных дней нет"
   },
   {
     "name": "несуществующая дата молча уезжает на следующий месяц",
