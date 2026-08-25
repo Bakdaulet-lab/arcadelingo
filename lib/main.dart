@@ -11,6 +11,7 @@ library;
 
 import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
+import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
 import 'package:arcadelingo/data/words/words_seed_loader.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/foundation.dart';
@@ -23,7 +24,13 @@ Future<void> main() async {
   _registerFontLicense();
   final prefs = await SharedPreferences.getInstance();
   final seed = await loadWordsSeed();
-  runApp(WordarcadeApp(store: LeitnerPrefsStore(prefs), seed: seed));
+  runApp(
+    WordarcadeApp(
+      store: LeitnerPrefsStore(prefs),
+      streakStore: StreakPrefsStore(prefs),
+      seed: seed,
+    ),
+  );
 }
 
 /// Отдаёт лицензию шрифта в `showLicensePage`.

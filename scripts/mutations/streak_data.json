@@ -1,0 +1,14 @@
+[
+  {
+    "name": "кодек принимает момент с зоной как день",
+    "file": "lib/data/streak/streak_codec.dart",
+    "old": "  final parsed = _dayFormat.firstMatch(rawDay);",
+    "new": "  final loose = DateTime.tryParse(rawDay);\n  final parsed = loose == null ? null : _dayFormat.firstMatch('${loose.year.toString().padLeft(4, '0')}-${loose.month.toString().padLeft(2, '0')}-${loose.day.toString().padLeft(2, '0')}');"
+  },
+  {
+    "name": "битая серия молча становится пустой",
+    "file": "lib/data/streak/streak_prefs_store.dart",
+    "old": "    if (raw == null) return Ok(StreakState.empty);\n    return decodeStreakState(raw);",
+    "new": "    if (raw == null) return Ok(StreakState.empty);\n    final decoded = decodeStreakState(raw);\n    return decoded is Err<StreakState> ? Ok(StreakState.empty) : decoded;"
+  }
+]
