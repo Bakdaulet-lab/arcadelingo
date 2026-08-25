@@ -1,0 +1,92 @@
+[
+  {
+    "name": "имя под иконкой Android перестало быть Arcadelingo",
+    "file": "android/app/src/main/res/values/strings.xml",
+    "old": "<string name=\"app_name\">Arcadelingo</string>",
+    "new": "<string name=\"app_name\">arcadelingo</string>"
+  },
+  {
+    "name": "label снова строкой в манифесте, а не ссылкой на ресурс",
+    "file": "android/app/src/main/AndroidManifest.xml",
+    "old": "android:label=\"@string/app_name\"",
+    "new": "android:label=\"arcadelingo\""
+  },
+  {
+    "name": "CFBundleDisplayName разошёлся с именем",
+    "file": "ios/Runner/Info.plist",
+    "old": "<key>CFBundleDisplayName</key>\n\t<string>Arcadelingo</string>",
+    "new": "<key>CFBundleDisplayName</key>\n\t<string>arcadelingo</string>"
+  },
+  {
+    "name": "CFBundleName разошёлся с DisplayName",
+    "file": "ios/Runner/Info.plist",
+    "old": "<key>CFBundleName</key>\n\t<string>Arcadelingo</string>",
+    "new": "<key>CFBundleName</key>\n\t<string>arcadelingo</string>"
+  },
+  {
+    "name": "подпись в списке недавних задач осталась старой",
+    "file": "lib/app/app.dart",
+    "old": "title: 'Arcadelingo',",
+    "new": "title: 'Wordarcade',"
+  },
+  {
+    "name": "brand_surface разошёлся с surface из темы на единицу в синем",
+    "file": "android/app/src/main/res/values/colors.xml",
+    "old": "<color name=\"brand_surface\">#FF0D0A12</color>",
+    "new": "<color name=\"brand_surface\">#FF0D0A13</color>"
+  },
+  {
+    "name": "LaunchTheme снова светлая — та самая белая вспышка",
+    "file": "android/app/src/main/res/values/styles.xml",
+    "old": "<style name=\"LaunchTheme\" parent=\"@android:style/Theme.Black.NoTitleBar\">",
+    "new": "<style name=\"LaunchTheme\" parent=\"@android:style/Theme.Light.NoTitleBar\">"
+  },
+  {
+    "name": "фон сплеша Android 12+ не задан: система возьмёт чистый чёрный",
+    "file": "android/app/src/main/res/values/styles.xml",
+    "old": "        <item name=\"android:windowSplashScreenBackground\">@color/brand_surface</item>\n",
+    "new": ""
+  },
+  {
+    "name": "цвет статус-бара выпал из NormalTheme",
+    "file": "android/app/src/main/res/values/styles.xml",
+    "old": "        <item name=\"android:statusBarColor\">@color/brand_surface</item>\n        <item name=\"android:navigationBarColor\">@color/brand_surface</item>\n    </style>\n</resources>",
+    "new": "    </style>\n</resources>"
+  },
+  {
+    "name": "фон сплеша снова белый",
+    "file": "android/app/src/main/res/drawable/launch_background.xml",
+    "old": "<item android:drawable=\"@color/brand_surface\" />",
+    "new": "<item android:drawable=\"@android:color/white\" />"
+  },
+  {
+    "name": "стартовый экран iOS снова белый",
+    "file": "ios/Runner/Base.lproj/LaunchScreen.storyboard",
+    "old": "red=\"0.050980392156862744\" green=\"0.039215686274509803\" blue=\"0.070588235294117646\"",
+    "new": "red=\"1\" green=\"1\" blue=\"1\""
+  },
+  {
+    "name": "monochrome выпал из adaptive-icon: тематические иконки покажут заглушку",
+    "file": "android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+    "old": "    <monochrome android:drawable=\"@drawable/ic_launcher_monochrome\" />\n",
+    "new": ""
+  },
+  {
+    "name": "applicationId «причёсан заодно»",
+    "file": "android/app/build.gradle.kts",
+    "old": "applicationId = \"com.baks.arcadelingo\"",
+    "new": "applicationId = \"com.baks.wordarcade\""
+  },
+  {
+    "name": "заголовок домашнего экрана снова назван старым именем",
+    "file": "lib/app/app_views.dart",
+    "old": "                'Arcadelingo',",
+    "new": "                'Wordarcade',"
+  },
+  {
+    "name": "вес заголовка снова через copyWith: fontWeight на Rubik инертен",
+    "file": "lib/app/app_views.dart",
+    "old": "style: withWeight(textTheme.displaySmall!, FontWeight.bold),",
+    "new": "style: textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),"
+  }
+]
