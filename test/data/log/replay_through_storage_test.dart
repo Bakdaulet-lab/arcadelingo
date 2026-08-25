@@ -27,6 +27,7 @@ import 'package:arcadelingo/domain/log/replay.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
+import 'package:arcadelingo/domain/usecases/count_played_day.dart';
 import 'package:arcadelingo/domain/usecases/start_session.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -114,6 +115,11 @@ void main() {
       // Между ответами время идёт — внутри одного не идёт.
       clock.advance(const Duration(seconds: 7));
     }
+    // То, что делает хост, когда партия дошла до конца. С Фазы 3 серию
+    // двигает конец партии, а не ответ, и без этого вызова серия осталась бы
+    // нулевой — проверка-здоровье ниже стала бы сравнивать ноль с тремя и
+    // проходить ни о чём.
+    CountPlayedDay(streaks: streaks, now: clock.call)();
     return answered;
   }
 

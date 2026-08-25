@@ -19,26 +19,38 @@ import 'package:arcadelingo/ui/streak_label.dart';
 /// спасти или сыграть ещё раз. «Играть» на всех четырёх случаях сразу
 /// превратило бы ритуал обратно в экран с кнопкой.
 String ritualCallToAction(StreakView view) {
-  throw UnimplementedError('ritualCallToAction');
+  if (view.playedToday) return 'Сыграть ещё раз';
+  if (view.freezeWillCover) return 'Спасти серию';
+  if (view.alive) return 'Продолжить серию';
+  return 'Играть';
 }
 
 /// Что с сегодняшним днём: засчитан или ещё нет.
-String ritualTodayLabel(StreakView view) {
-  throw UnimplementedError('ritualTodayLabel');
-}
+String ritualTodayLabel(StreakView view) =>
+    view.playedToday ? 'Сегодня сыграно' : 'Сегодня ещё не сыграно';
 
 /// Строка серии, или null — показывать нечего.
 ///
 /// Ноль дней это не «Серия: 0 дней», а отсутствие строки: у человека,
 /// который ещё не играл, и у человека, который серию оборвал, на экране
 /// одинаково пусто. Разница между ними — в кнопке, а не в счётчике.
-String? ritualStreakLabel(StreakView view) {
-  throw UnimplementedError('ritualStreakLabel');
-}
+String? ritualStreakLabel(StreakView view) =>
+    view.days == 0 ? null : streakLabel(view.days);
 
 /// Состояние запаса заморозок словами, или null — говорить нечего.
 String? ritualFreezeLabel(StreakView view) {
-  throw UnimplementedError('ritualFreezeLabel');
+  // До первой партии говорить не о чем: человек ещё не знает ни про серию,
+  // ни про заморозку, и «вернётся через семь дней» было бы обещанием
+  // непонятно чего.
+  if (view.best == 0) return null;
+  if (view.freeze.available) return 'Заморозка в запасе';
+  final spent = view.freeze.spentOn;
+  if (spent != null) {
+    return 'Заморозка потрачена за '
+        '${spent.day} ${monthInGenitive(spent.month)}';
+  }
+  final left = view.freeze.daysToNext;
+  return 'Заморозка вернётся через $left ${dayWord(left)}';
 }
 
 /// Название месяца в родительном падеже: «27 **августа**».
@@ -46,6 +58,18 @@ String? ritualFreezeLabel(StreakView view) {
 /// Своя таблица, а не `intl`: двенадцать строк против пакета с локалями,
 /// который в проекте больше никому не нужен. Появится второй потребитель дат
 /// — вернуться к вопросу.
-String monthInGenitive(int month) {
-  throw UnimplementedError('monthInGenitive');
-}
+String monthInGenitive(int month) =>
+    const [
+      'января',
+      'февраля',
+      'марта',
+      'апреля',
+      'мая',
+      'июня',
+      'июля',
+      'августа',
+      'сентября',
+      'октября',
+      'ноября',
+      'декабря',
+    ][month - 1];

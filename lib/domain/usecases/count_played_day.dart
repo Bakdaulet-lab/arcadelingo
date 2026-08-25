@@ -42,6 +42,23 @@ class CountPlayedDay {
   /// Если день уже засчитан, [advanceStreak] вернёт то же состояние, и
   /// записи не будет вовсе: серия меняется раз в день, а не раз в партию.
   Result<StreakState> call() {
-    throw UnimplementedError('CountPlayedDay');
+    final StreakState before;
+    switch (_streaks.load()) {
+      case Ok(:final value):
+        before = value;
+      case Err(:final failure):
+        return Err(failure);
+    }
+    final after = advanceStreak(before, StreakDay.of(_now()));
+    // Сравнение по значению: `advanceStreak` вправе вернуть новый объект с
+    // теми же полями, а писать в хранилище, когда писать нечего, значит
+    // трогать документ на каждой второй партии за день.
+    if (after != before) {
+      // `unawaited`, как и везде: обработчик конца партии синхронен, ждать
+      // запись некому. Потеря строки в полёте при убийстве приложения даёт
+      // «серия не продлилась сегодня», и это чинится следующей партией.
+      unawaited(_streaks.save(after));
+    }
+    return Ok(after);
   }
 }
