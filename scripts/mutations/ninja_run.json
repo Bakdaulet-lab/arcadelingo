@@ -1,0 +1,206 @@
+[
+  {
+    "name": "страж «уже отвечено» в slice() убран",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "  bool slice(int index, Duration elapsed) {\n    if (_phase != NinjaPhase.flying) return false;\n",
+    "new": "  bool slice(int index, Duration elapsed) {\n"
+  },
+  {
+    "name": "страж «уже отвечено» в timeout() убран",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "  bool timeout() {\n    if (_phase != NinjaPhase.flying) return false;\n",
+    "new": "  bool timeout() {\n"
+  },
+  {
+    "name": "выход из игры молчит: неответ не докладывается",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "    _combo = 0;\n    _report(correct: false, elapsed: elapsed);",
+    "new": "    _combo = 0;"
+  },
+  {
+    "name": "выход докладывает и вне фазы полёта",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "  void abandon(Duration elapsed) {\n    if (_phase != NinjaPhase.flying) return;\n",
+    "new": "  void abandon(Duration elapsed) {\n"
+  },
+  {
+    "name": "множитель — серия, а не серия плюс один",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "  int get scoreMultiplier => _combo + 1;",
+    "new": "  int get scoreMultiplier => _combo;"
+  },
+  {
+    "name": "пол времени полёта убран: волна разгоняется без предела",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "    return reduced < minFlightTime ? minFlightTime : reduced;",
+    "new": "    return reduced;"
+  },
+  {
+    "name": "шаг ускорения вдвое мельче",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "  static const Duration flightTimeStep = Duration(milliseconds: 200);",
+    "new": "  static const Duration flightTimeStep = Duration(milliseconds: 100);"
+  },
+  {
+    "name": "промах не стоит жизни",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "      _combo = 0;\n      _lives--;",
+    "new": "      _combo = 0;"
+  },
+  {
+    "name": "жизни кончились, а партия продолжается",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "    if (_lives == 0) {\n      _phase = NinjaPhase.over;\n      return;\n    }\n",
+    "new": ""
+  },
+  {
+    "name": "бонус «в последний момент» достаётся и промаху",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "    } else {\n      _combo = 0;",
+    "new": "    } else {\n      _nearMiss = isNearMiss(responseTime: elapsed, timeLimit: _timeLimit);\n      _combo = 0;"
+  },
+  {
+    "name": "бонус искажает responseTime, уходящую в ядро",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "        responseTime: elapsed,",
+    "new": "        responseTime: _nearMiss ? _timeLimit : elapsed,"
+  },
+  {
+    "name": "страж времени реза не смотрит на верхнюю границу",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "    if (elapsed < Duration.zero || elapsed > _timeLimit) {",
+    "new": "    if (elapsed < Duration.zero) {"
+  },
+  {
+    "name": "страж индекса объекта убран",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "    if (index < 0 || index >= _options.length) {\n      throw ArgumentError.value(index, 'index', 'нет такого объекта в волне');\n    }\n",
+    "new": ""
+  },
+  {
+    "name": "обманки берутся первыми двумя, без перемешивания",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "    final decoys = List.of(item.distractors)..shuffle(_random);",
+    "new": "    final decoys = List.of(item.distractors);"
+  },
+  {
+    "name": "объекты не перемешиваются: верный всегда на первой дорожке",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "    final order = List<int>.generate(variants.length, (i) => i)\n      ..shuffle(_random);",
+    "new": "    final order = List<int>.generate(variants.length, (i) => i);"
+  },
+  {
+    "name": "волна поднимает все обманки, а не две",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "...decoys.take(maxObjects - 1)",
+    "new": "...decoys.take(maxObjects)"
+  },
+  {
+    "name": "подсветка реза и промаха одной длины",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "      _verdict == Verdict.correct ? correctReveal : wrongReveal;",
+    "new": "      wrongReveal;"
+  },
+  {
+    "name": "апекс не нормирован: подъём вчетверо ниже обещанного",
+    "file": "lib/features/games/ninja_slash/ninja_trajectory.dart",
+    "old": "}) => Offset(lane + drift * t, bottom - apex * 4 * t * (1 - t));",
+    "new": "}) => Offset(lane + drift * t, bottom - apex * t * (1 - t));"
+  },
+  {
+    "name": "три апекса стали одним: объекты встают в строку",
+    "file": "lib/features/games/ninja_slash/ninja_trajectory.dart",
+    "old": "const List<double> apexFractions = [0.62, 0.78, 0.70];",
+    "new": "const List<double> apexFractions = [0.62, 0.62, 0.62];"
+  },
+  {
+    "name": "дрейф не чередует знак: соседи сносятся в одну сторону",
+    "file": "lib/features/games/ninja_slash/ninja_trajectory.dart",
+    "old": "    drift: driftFraction * width * (slot.isEven ? 1 : -1),",
+    "new": "    drift: driftFraction * width,"
+  },
+  {
+    "name": "один объект встаёт на край, а не по центру",
+    "file": "lib/features/games/ninja_slash/ninja_trajectory.dart",
+    "old": "    1 => const [1],",
+    "new": "    1 => const [0],"
+  },
+  {
+    "name": "нижняя кромка без радиуса: объект появляется на краю",
+    "file": "lib/features/games/ninja_slash/ninja_trajectory.dart",
+    "old": "double flightBottom(double height) => height + objectRadius;",
+    "new": "double flightBottom(double height) => height;"
+  },
+  {
+    "name": "страж дорожек убран",
+    "file": "lib/features/games/ninja_slash/ninja_trajectory.dart",
+    "old": "  if (count < 0 || count > laneFractions.length) {",
+    "new": "  if (count < 0) {"
+  },
+  {
+    "name": "порог свайпа строгий: ровно 16 dp уже не режет",
+    "file": "lib/features/games/ninja_slash/ninja_geometry.dart",
+    "old": "bool swipeCounts(double travelled) => travelled >= sliceThreshold;",
+    "new": "bool swipeCounts(double travelled) => travelled > sliceThreshold;"
+  },
+  {
+    "name": "расстояние считается до начала жеста, а не до отрезка",
+    "file": "lib/features/games/ninja_slash/ninja_geometry.dart",
+    "old": "}) => _distanceToSegment(from: from, to: to, point: center) <= radius;",
+    "new": "}) => (center - from).distance <= radius;"
+  },
+  {
+    "name": "проекция не зажата в отрезок: режет бесконечная прямая",
+    "file": "lib/features/games/ninja_slash/ninja_geometry.dart",
+    "old": "  final t = ((offset.dx * segment.dx + offset.dy * segment.dy) / lengthSquared)\n      .clamp(0.0, 1.0);",
+    "new": "  final t = (offset.dx * segment.dx + offset.dy * segment.dy) / lengthSquared;"
+  },
+  {
+    "name": "режется первый задетый, а не ближний к началу",
+    "file": "lib/features/games/ninja_slash/ninja_geometry.dart",
+    "old": "    if (distance < best) {",
+    "new": "    if (nearest == null) {"
+  },
+  {
+    "name": "касание края не режет: граница стала строгой",
+    "file": "lib/features/games/ninja_slash/ninja_geometry.dart",
+    "old": "point: center) <= radius;",
+    "new": "point: center) < radius;"
+  },
+  {
+    "name": "порог серии для среднего отклика сдвинут",
+    "file": "lib/features/games/ninja_slash/ninja_slash_juice.dart",
+    "old": "const int comboHapticFrom = 5;",
+    "new": "const int comboHapticFrom = 4;"
+  },
+  {
+    "name": "рез в последний момент рукой не слышен",
+    "file": "lib/features/games/ninja_slash/ninja_slash_juice.dart",
+    "old": "  if (nearMiss || combo >= comboHapticFrom) return Haptic.medium;",
+    "new": "  if (combo >= comboHapticFrom) return Haptic.medium;"
+  },
+  {
+    "name": "тряска разгоняется, а не бьёт: синус вместо косинуса",
+    "file": "lib/features/games/ninja_slash/ninja_slash_juice.dart",
+    "old": "  return (1 - progress) * cos(2 * pi * shakeOscillations * progress);",
+    "new": "  return (1 - progress) * sin(2 * pi * shakeOscillations * progress);"
+  },
+  {
+    "name": "тряска не зажата: за окном продолжает колебаться",
+    "file": "lib/features/games/ninja_slash/ninja_slash_juice.dart",
+    "old": "  final progress = t.clamp(0.0, 1.0);",
+    "new": "  final progress = t;"
+  },
+  {
+    "name": "нулевой лимит объявляется последним моментом",
+    "file": "lib/features/games/ninja_slash/ninja_slash_juice.dart",
+    "old": "  if (timeLimit <= Duration.zero) return false;\n",
+    "new": ""
+  },
+  {
+    "name": "порог «в последний момент» строгий: ровно 85% уже не бонус",
+    "file": "lib/features/games/ninja_slash/ninja_slash_juice.dart",
+    "old": "nearMissDenominator >=\n      timeLimit.inMicroseconds",
+    "new": "nearMissDenominator >\n      timeLimit.inMicroseconds"
+  }
+]
