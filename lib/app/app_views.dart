@@ -30,6 +30,9 @@ abstract final class AppKeys {
   /// «Сбросить прогресс» — только на экране ошибки состояния.
   static const Key reset = Key('app.reset');
 
+  /// Вход на «Настройки» с домашнего экрана.
+  static const Key settings = Key('app.settings');
+
   /// Вход на «Прогресс» с домашнего экрана.
   ///
   /// Здесь же, где «Источники»: домашний экран открывают, когда не играют, и
@@ -72,6 +75,7 @@ class PlayView extends StatelessWidget {
   const PlayView({
     required this.onPlay,
     required this.onProgress,
+    required this.onSettings,
     required this.onSources,
     super.key,
     this.ritual,
@@ -107,6 +111,9 @@ class PlayView extends StatelessWidget {
 
   /// Вход на «Прогресс».
   final VoidCallback onProgress;
+
+  /// Вход на «Настройки».
+  final VoidCallback onSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -174,8 +181,12 @@ class PlayView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              // `Wrap`, а не `Row`: три ссылки в строку не помещаются на
+              // экране 360 dp — тест поймал переполнение на 127 px, — а при
+              // системном шрифте 2× не поместились бы и две. Перенос на
+              // вторую строку честнее, чем обрезанная третья кнопка.
+              Wrap(
+                alignment: WrapAlignment.center,
                 children: [
                   TextButton(
                     key: AppKeys.progress,
@@ -186,6 +197,16 @@ class PlayView extends StatelessWidget {
                       ),
                     ),
                     child: const Text('Прогресс'),
+                  ),
+                  TextButton(
+                    key: AppKeys.settings,
+                    onPressed: onSettings,
+                    style: ButtonStyle(
+                      foregroundColor: WidgetStateProperty.all(
+                        Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    child: const Text('Настройки'),
                   ),
                   TextButton(
                     key: AppKeys.sources,

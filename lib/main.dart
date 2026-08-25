@@ -13,6 +13,8 @@ import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/data/log/drift_answer_log.dart';
 import 'package:arcadelingo/data/log/drift_event_log.dart';
 import 'package:arcadelingo/data/log/history_database.dart';
+import 'package:arcadelingo/data/notifications/plugin_reminders.dart';
+import 'package:arcadelingo/data/settings/settings_prefs_store.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
 import 'package:arcadelingo/data/words/words_seed_loader.dart';
@@ -31,6 +33,9 @@ Future<void> main() async {
   // Одна база на два журнала: у них одна природа и одна миграция. Файл
   // открывается лениво, при первой записи, — журналы не на пути старта.
   final history = HistoryDatabase(driftDatabase(name: 'wordarcade_answers'));
+  // База зон и плагин поднимаются один раз: база IANA весит сотни килобайт,
+  // и грузить её на каждое планирование незачем.
+  final reminders = await PluginReminders.start();
   runApp(
     WordarcadeApp(
       store: LeitnerPrefsStore(prefs),
@@ -40,6 +45,9 @@ Future<void> main() async {
       // старта, и ждать его здесь незачем.
       answerLog: DriftAnswerLog(history),
       eventLog: DriftEventLog(history),
+      reminders: reminders,
+      settingsStore: SettingsPrefsStore(prefs),
+      askReminderPermission: reminders.requestPermission,
     ),
   );
 }

@@ -123,6 +123,7 @@ Future<void> pumpRitualGolden(
       home: PlayView(
         onPlay: () {},
         onProgress: () {},
+        onSettings: () {},
         onSources: () {},
         ritual: ritual,
         week: week,
