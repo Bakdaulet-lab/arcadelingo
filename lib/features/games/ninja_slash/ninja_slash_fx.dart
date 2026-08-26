@@ -21,19 +21,19 @@ import 'package:flutter/animation.dart';
 // ---------------------------------------------------------------- след ----
 
 /// Ширина следа у головы, dp; к хвосту он сходит в остриё.
-const double trailHeadWidth = 10;
+const double trailHeadWidth = 14;
 
 /// Во сколько раз слой свечения шире следа.
 const double trailGlowWidth = 2.4;
 
 /// Альфа слоя свечения.
-const double trailGlowAlpha = 0.45;
+const double trailGlowAlpha = 0.6;
 
 /// Размытие слоя свечения, dp.
 const double trailGlowBlur = 6;
 
 /// Во сколько раз ядро уже следа.
-const double trailCoreWidth = 0.45;
+const double trailCoreWidth = 0.5;
 
 /// Сколько живёт точка следа: дольше — размазня, короче — след не виден.
 const Duration trailLife = Duration(milliseconds: 300);
