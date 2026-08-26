@@ -586,5 +586,11 @@
     "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
     "old": "    if (!swipeCounts(_travelled)) return;",
     "new": "    if (!swipeCounts(_travelled)) return;\n    if (event.down) return;"
+  },
+  {
+    "name": "свечение кромок рисуется под виньеткой, а не поверх",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "    if (rim) _rim(canvas, size);\n  }",
+    "new": "  }"
   }
 ]

@@ -1314,6 +1314,29 @@ void main() {
     });
   });
 
+  group('Читаемость на пике серии', () {
+    // Свечение кромок, подсветка верха и тон поля складываются у верхней
+    // кромки — ровно там, где стоит слово. Каждое по отдельности проверено
+    // числами; вместе их проверяет только матчер контраста.
+    testWidgets('на серии 8 слово наверху всё ещё читается', (tester) async {
+      await _pumpGame(tester);
+      final handle = tester.ensureSemantics();
+
+      for (var i = 1; i <= 8; i++) {
+        await _answerCorrectly(tester, i);
+      }
+      await tester.pump(const Duration(milliseconds: 900));
+
+      expect(
+        tester.widget<FieldLighting>(find.byKey(NinjaKeys.fieldLight)).combo,
+        8,
+        reason: 'иначе кейс пустой: пика серии нет',
+      );
+      await expectLater(tester, meetsGuideline(textContrastGuideline));
+      handle.dispose();
+    });
+  });
+
   group('Звук', () {
     testWidgets('верный рез, горячий рез и промах звучат по-разному', (
       tester,

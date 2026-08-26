@@ -1244,23 +1244,6 @@ class _LightingPainter extends CustomPainter {
           colors: [_clear, _black.withValues(alpha: bottomDarkAlpha)],
         ).createShader(bottom),
     );
-    // Свечение кромок на пике серии — до виньетки, чтобы та его пригасила
-    // по углам, а не наоборот.
-    if (rim) {
-      final all = Offset.zero & size;
-      canvas.drawRect(
-        all,
-        Paint()
-          ..shader = RadialGradient(
-            radius: 1.0,
-            colors: [
-              accent.withValues(alpha: 0),
-              accent.withValues(alpha: rimGlowAlpha),
-            ],
-            stops: [1 - rimGlowInset / size.shortestSide, 1],
-          ).createShader(all),
-      );
-    }
     // Виньетка: центр остаётся чистым, углы уходят в черноту.
     final all = Offset.zero & size;
     canvas.drawRect(
@@ -1271,6 +1254,55 @@ class _LightingPainter extends CustomPainter {
           colors: [_clear, _black.withValues(alpha: vignetteAlpha)],
           stops: const [vignetteInner, 1],
         ).createShader(all),
+    );
+    if (rim) _rim(canvas, size);
+  }
+
+  /// Свечение кромок: четыре полосы по краям, каждая гаснет внутрь.
+  ///
+  /// Полосами, а не радиальным градиентом. Первая редакция была радиальной,
+  /// и кадр `ninja_flight` показал, во что она превращается: мята доходила
+  /// только до углов, то есть читалась не как светящиеся кромки, а как
+  /// цветная виньетка — которую настоящая виньетка тут же и съедала. Числами
+  /// это не ловилось.
+  ///
+  /// И **поверх** виньетки, а не под ней: свечение — награда за восьмую
+  /// серию, и затемнять её тем же, что затемняет всё остальное, значит
+  /// выдать награду и отобрать в том же кадре.
+  void _rim(Canvas canvas, Size size) {
+    final lit = accent.withValues(alpha: rimGlowAlpha);
+    final gone = accent.withValues(alpha: 0);
+    void band(Rect area, Alignment from, Alignment to) {
+      canvas.drawRect(
+        area,
+        Paint()
+          ..shader = LinearGradient(
+            begin: from,
+            end: to,
+            colors: [lit, gone],
+          ).createShader(area),
+      );
+    }
+
+    band(
+      Rect.fromLTWH(0, 0, size.width, rimGlowInset),
+      Alignment.topCenter,
+      Alignment.bottomCenter,
+    );
+    band(
+      Rect.fromLTWH(0, size.height - rimGlowInset, size.width, rimGlowInset),
+      Alignment.bottomCenter,
+      Alignment.topCenter,
+    );
+    band(
+      Rect.fromLTWH(0, 0, rimGlowInset, size.height),
+      Alignment.centerLeft,
+      Alignment.centerRight,
+    );
+    band(
+      Rect.fromLTWH(size.width - rimGlowInset, 0, rimGlowInset, size.height),
+      Alignment.centerRight,
+      Alignment.centerLeft,
     );
   }
 
