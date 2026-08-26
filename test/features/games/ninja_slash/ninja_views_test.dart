@@ -507,7 +507,10 @@ void main() {
     // Иначе «рисуется ли свечение вообще» и «поверх ли виньетки» сторожил бы
     // только голден, а он локально не гоняется. Мутации «не рисовать» и
     // «рисовать под виньеткой» обе краснеют здесь.
-    Future<int> greenAtEdge(WidgetTester tester, int combo) async {
+    /// Зелёный канал в точке [at] (в долях ширины и высоты) при серии
+    /// [combo]. Зелёный, потому что акцент мятный: его прибавка видна
+    /// именно в нём.
+    Future<int> greenAt(WidgetTester tester, int combo, Offset at) async {
       final key = GlobalKey();
       await tester.pumpWidget(
         MaterialApp(
@@ -535,22 +538,45 @@ void main() {
         // Размер берётся у самой картинки: `toImage` снимает логическими
         // пикселями, а не физическими, и умножение на плотность экрана
         // уводило индекс за буфер.
-        const x = 5;
-        final y = image.height ~/ 2;
+        final x = (image.width * at.dx).round();
+        final y = (image.height * at.dy).round();
         return bytes!.getUint8((y * image.width + x) * 4 + 1);
       }))!;
     }
 
+    /// Середина левой кромки: виньетки там нет вовсе.
+    const edge = Offset(0.02, 0.5);
+
+    /// Верхний левый угол: там сходятся две полосы свечения — и там же
+    /// сильнее всего кусает виньетка.
+    const corner = Offset(0.02, 0.01);
+
     testWidgets('на пике кромка мятная, до пика — нет', (tester) async {
-      final cold = await greenAtEdge(tester, 0);
-      final hot = await greenAtEdge(tester, 8);
+      final cold = await greenAt(tester, 0, edge);
+      final hot = await greenAt(tester, 8, edge);
 
       expect(
         hot,
         greaterThan(cold + 20),
+        reason: 'свечение не нарисовано вовсе — ровно то, что показал кадр',
+      );
+    });
+
+    // Порядок рисования: свечение поверх виньетки, а не под ней. Под ней
+    // угол — самое тёмное место кадра, и награда за восьмую серию гасится
+    // тем же, что гасит всё остальное.
+    testWidgets('в углу светится сильнее, чем на середине кромки', (
+      tester,
+    ) async {
+      final atEdge = await greenAt(tester, 8, edge);
+      final atCorner = await greenAt(tester, 8, corner);
+
+      expect(
+        atCorner,
+        greaterThan(atEdge),
         reason:
-            'свечение либо не нарисовано вовсе, либо съедено виньеткой — '
-            'ровно то, что показал кадр ninja_flight',
+            'в углу сходятся две полосы; если он темнее — их съела '
+            'виньетка, то есть свечение рисуется под ней',
       );
     });
   });
