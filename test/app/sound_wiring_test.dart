@@ -21,10 +21,14 @@ import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
+import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
+import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_views.dart';
+import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/fake_review_session.dart';
 import '../support/fake_sounds.dart';
 import '../support/review_items.dart';
 
@@ -198,5 +202,48 @@ void main() {
           'настройка читается в момент запуска партии, а не при старте '
           'приложения',
     );
+  });
+
+  // Всё выше проверяло путь «настройка → GameLaunch» на подставной игре.
+  // Здесь проверяется последнее звено: что **настоящая запись реестра**
+  // отдаёт звук в игру. Мутация «sounds: const NoopSounds()» в билдере
+  // проходила мимо всех тестов, потому что билдер никто не звал.
+  testWidgets('запись реестра отдаёт звук настоящей игре', (tester) async {
+    final sounds = FakeSounds();
+    final session = FakeReviewSession(wordItems(3));
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: wordarcadeTheme(),
+        home: ninjaSlashEntry.build(
+          GameLaunch(
+            session: session,
+            summaryFooter: () => '',
+            onPlayAgain: () {},
+            onExit: () {},
+            onRoundOver: () {},
+            sounds: sounds,
+          ),
+        ),
+      ),
+    );
+    await tester.pump(NinjaRun.windUpTime);
+    await tester.pump(const Duration(seconds: 1));
+
+    final field = tester.widget<NinjaField>(find.byType(NinjaField));
+    final index = field.objects.indexWhere(
+      (o) => o.label == wordTranslation(1),
+    );
+    final centre = tester.getCenter(find.byKey(NinjaKeys.objectAt(index)));
+    final gesture = await tester.startGesture(centre - const Offset(60, 0));
+    await gesture.moveTo(centre + const Offset(60, 0));
+    await gesture.up();
+    await tester.pump();
+
+    expect(session.reports, hasLength(1), reason: 'рез состоялся');
+    expect(sounds.played, [GameSound.slice]);
   });
 }

@@ -1131,9 +1131,15 @@ void main() {
     /// друга, и такой отрезок не приближается к соседям ближе 68 dp — то
     /// есть задеть их не может ни при каком апексе. С ±80 задевал, и тест
     /// падал не потому, что касание вскользь не работает.
-    Future<void> pass(WidgetTester tester, double offset) async {
+    Future<void> pass(
+      WidgetTester tester,
+      double offset, {
+      int word = 1,
+      int? index,
+    }) async {
       final centre =
-          _objectCenter(tester, _correctIndex(tester, 1)) + Offset(0, offset);
+          _objectCenter(tester, index ?? _correctIndex(tester, word)) +
+          Offset(0, offset);
       final gesture = await tester.startGesture(centre - const Offset(40, 0));
       await gesture.moveTo(centre + const Offset(40, 0));
       await gesture.up();
@@ -1206,6 +1212,66 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
 
       expect(find.byKey(NinjaKeys.graze), findsOneWidget);
+    });
+
+    // Мутация «не сбрасывать `_grazeAt` на новой волне» проходила мимо:
+    // все проверки жили внутри одной волны.
+    testWidgets('на новой волне касание считается заново', (tester) async {
+      final haptics = _captureHaptics(tester);
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await pass(tester, 45);
+      expect(haptics, hasLength(1), reason: 'первая волна');
+      await _answerCorrectly(tester, 1);
+      await tester.pump(const Duration(seconds: 1));
+      await pass(tester, 45, word: 2);
+
+      expect(
+        haptics,
+        hasLength(3),
+        reason: 'касание вскользь, верный рез и снова касание на второй волне',
+      );
+    });
+
+    // Мутация «мерить до первого объекта, а не до верного» проходила мимо,
+    // пока верный стоял на первой дорожке: два выражения совпадали. Волна
+    // выбирается такая, где он не первый.
+    testWidgets('меряется до верного объекта, а не до любого', (tester) async {
+      final haptics = _captureHaptics(tester);
+      await _pumpGame(tester);
+      var word = 1;
+      await tester.pump(const Duration(seconds: 1));
+      while (_correctIndex(tester, word) == 0) {
+        await _answerCorrectly(tester, word);
+        word++;
+        await tester.pump(const Duration(seconds: 1));
+      }
+      final before = haptics.length;
+
+      // Мимо объекта на первой дорожке — а он здесь заведомо неверный.
+      await pass(tester, 45, index: 0);
+
+      expect(find.byKey(NinjaKeys.graze), findsNothing);
+      expect(haptics, hasLength(before));
+    });
+
+    // Мутация «кольцо живёт и в подсветке» проходила мимо: касание и рез
+    // в тестах не встречались на одной волне.
+    testWidgets('в подсветке кольца вскользь нет: там своя вспышка', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await pass(tester, 45);
+      expect(find.byKey(NinjaKeys.graze), findsOneWidget);
+
+      await _slice(tester, _correctIndex(tester, 1));
+      await tester.pump(const Duration(milliseconds: 30));
+
+      expect(find.byKey(NinjaKeys.graze), findsNothing);
+      expect(find.byKey(NinjaKeys.flash), findsOneWidget);
     });
 
     testWidgets('при «убрать анимации» кольца нет, а отклик есть', (
