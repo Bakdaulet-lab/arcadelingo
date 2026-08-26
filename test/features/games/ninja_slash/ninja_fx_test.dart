@@ -180,9 +180,9 @@ void main() {
   });
 
   group('След: ширина', () {
-    test('свежая голова — 10 dp', () {
-      expect(trailWidthAt(freshness: 1, along: 1), closeTo(10, 1e-9));
-      expect(trailHeadWidth, 10);
+    test('свежая голова — 14 dp', () {
+      expect(trailWidthAt(freshness: 1, along: 1), closeTo(14, 1e-9));
+      expect(trailHeadWidth, 14);
     });
 
     test('хвост — остриё', () {
@@ -209,18 +209,18 @@ void main() {
     test('полусвежая точка шире половины: старение как корень', () {
       expect(
         trailWidthAt(freshness: 0.5, along: 1),
-        greaterThan(5),
+        greaterThan(7),
         reason: 'линейное старение давало нитку уже к середине жизни',
       );
-      expect(trailWidthAt(freshness: 0.25, along: 1), closeTo(5, 1e-9));
+      expect(trailWidthAt(freshness: 0.25, along: 1), closeTo(7, 1e-9));
     });
 
-    test('числа из SPEC: свечение ×2.4 с альфой 0.45 и размытием 6, ядро '
-        '×0.45', () {
+    test('числа из SPEC: свечение ×2.4 с альфой 0.6 и размытием 6, ядро '
+        '×0.5', () {
       expect(trailGlowWidth, 2.4);
-      expect(trailGlowAlpha, 0.45);
+      expect(trailGlowAlpha, 0.6);
       expect(trailGlowBlur, 6);
-      expect(trailCoreWidth, 0.45);
+      expect(trailCoreWidth, 0.5);
     });
   });
 

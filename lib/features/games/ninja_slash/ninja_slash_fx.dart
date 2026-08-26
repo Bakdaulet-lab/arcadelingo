@@ -102,9 +102,12 @@ List<TrailSample> smoothTrail(List<TrailSample> points) {
 /// головы. Обе оси нужны: быстрый свайп даёт всем точкам одну свежесть, и
 /// без [along] след был бы палкой одной толщины.
 double trailWidthAt({required double freshness, required double along}) =>
-    // Корень по свежести: линейное старение давало нитку уже к середине
-    // жизни точки, а след обязан оставаться клинком почти до конца.
-    trailHeadWidth * sqrt(freshness.clamp(0.0, 1.0)) * along.clamp(0.0, 1.0);
+    // Корень и по свежести, и по длине: линейное старение давало нитку уже
+    // к середине жизни точки, а линейный сход к хвосту — нитку на большей
+    // части следа. Клинок обязан быть клинком почти до самого острия.
+    trailHeadWidth *
+    sqrt(freshness.clamp(0.0, 1.0)) *
+    sqrt(along.clamp(0.0, 1.0));
 
 TrailSample _between(TrailSample a, TrailSample b, double u) => (
   at: Offset.lerp(a.at, b.at, u)!,
