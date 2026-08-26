@@ -322,12 +322,10 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
       to: to,
       point: centers[target],
     );
-    // Частицы на промахе — вне скоупа (`SPEC.md`): рез неверного объекта
-    // получает след и половинки, но не искры.
-    _sparks =
-        _run.verdict == Verdict.correct
-            ? sparkBurst(_decorRandom, cutAngle: _sliceAngle)
-            : const [];
+    // Искры считаются на любом резе, а показываются только на верном:
+    // страж один — в `sliced` ниже. Второй здесь дублировал бы его и был бы
+    // ненаблюдаем (частицы на промахе — вне скоупа `SPEC.md`).
+    _sparks = sparkBurst(_decorRandom, cutAngle: _sliceAngle);
     _feel();
     setState(() {});
     _startReveal();
@@ -369,22 +367,6 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     if (!juicy || !revealing || _run.verdict == Verdict.correct) return 0;
     final lived = (_run.revealTime.inMicroseconds * _reveal.value).round();
     return shakeAmplitude * shakeIntensity(lived / shakeTime.inMicroseconds);
-  }
-
-  /// Доля прожитого времени реза, 0…1.
-  ///
-  /// Считается от 300 мс, а не от длины подсветки. На промахе подсветка
-  /// длится 800 мс, и след, привязанный к ней, доживал до конца — жирная
-  /// линия ложилась поперёк пары «слово → перевод», то есть поперёк
-  /// единственного места, где человек учится. Нашлось картинкой на этапе
-  /// 4.3; числами это не ловилось, потому что след проверялся на верном
-  /// резе, где подсветка ровно 300 мс и разницы нет.
-  ///
-  /// Микросекундами, а не долей `_reveal.value`, по той же причине, что и
-  /// у тряски: доля даёт на границе 0.9999999999999999.
-  double get _slicePhase {
-    final lived = (_run.revealTime.inMicroseconds * _reveal.value).round();
-    return (lived / NinjaRun.correctReveal.inMicroseconds).clamp(0.0, 1.0);
   }
 
   /// Прожитое подсветки. Микросекундами, а не долей `_reveal.value`: доля
@@ -542,7 +524,10 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     required double shake,
   }) {
     final missed = revealing && _run.verdict != Verdict.correct;
-    final phase = _slicePhase;
+    // Доля жизни украшений реза. Половинки, искры и прирост есть только на
+    // верном резе, а там подсветка и есть 300 мс — своих часов им не нужно.
+    // Следу нужны: он живёт и на промахе, и считает время сам (`_trailNow`).
+    final phase = _reveal.value;
     final t = _flight.value;
     // Половинки — только верному резу и только 300 мс. Промах — стоп-кадр:
     // разрезанный неверный стоит целым и помеченным все 800 мс, чтобы «что
