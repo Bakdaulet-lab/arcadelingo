@@ -9,13 +9,14 @@
 /// `lib/domain/` и первая игра при этом не меняются ни на строку, и это
 /// доказывается пустым `git diff`, а не словами.
 ///
-/// Экрана выбора игры тут нет намеренно. Игра пока одна, и переключатель
-/// между одним элементом — мёртвый UI; выбор — Фаза 4, когда играть будет
-/// из чего.
+/// Экрана выбора игры тут нет: он появляется на Этапе 4.4 и живёт на
+/// домашнем экране, а не здесь. Реестр отвечает на «что можно запустить», а
+/// не на «что выбрал человек».
 library;
 
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
+import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
 import 'package:flutter/material.dart';
 
 /// Всё, что игре нужно от хоста, одним значением.
@@ -86,12 +87,34 @@ const GameEntry fallingWordsEntry = GameEntry(
   build: _buildFallingWords,
 );
 
+/// Ниндзя-слэш — вторая игра, Фаза 4.
+///
+/// Вся её регистрация — эти пять строк и одна строка в списке ниже. Ядро,
+/// падающие слова и одиннадцать эталонов при этом не тронуты, и это
+/// доказывается пустым `git diff`, а не словами: ровно то обещание, которое
+/// Фаза 2 давала фейком в `test/app/games_test.dart`.
+const GameEntry ninjaSlashEntry = GameEntry(
+  id: 'ninja_slash',
+  title: 'Ниндзя-слэш',
+  build: _buildNinjaSlash,
+);
+
 /// Все игры приложения.
 ///
-/// Порядок значим: пока экрана выбора нет, запускается первая.
-const List<GameEntry> wordarcadeGames = [fallingWordsEntry];
+/// Порядок значим: пока экрана выбора нет, запускается первая. Ниндзя-слэш
+/// стоит вторым намеренно — падающие слова остаются умолчанием, и поэтому
+/// домашний экран от появления второй игры не меняется вовсе.
+const List<GameEntry> wordarcadeGames = [fallingWordsEntry, ninjaSlashEntry];
 
 Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
+  session: launch.session,
+  summaryFooter: launch.summaryFooter,
+  onPlayAgain: launch.onPlayAgain,
+  onExit: launch.onExit,
+  onRoundOver: launch.onRoundOver,
+);
+
+Widget _buildNinjaSlash(GameLaunch launch) => NinjaSlashGame(
   session: launch.session,
   summaryFooter: launch.summaryFooter,
   onPlayAgain: launch.onPlayAgain,

@@ -103,3 +103,41 @@ Offset trajectory({
   required double apex,
   required double bottom,
 }) => Offset(lane + drift * t, bottom - apex * 4 * t * (1 - t));
+
+/// Где стоят объекты волны из [count] штук в долю полёта [t] на поле
+/// [width] × [height].
+///
+/// Одна функция на двоих: по ней поле рисует объекты, и по ней же игра
+/// проверяет, что задел рез. Рисовать одно, а резать другое здесь
+/// невозможно по построению — а разъехаться две копии этой арифметики
+/// успели бы к первому же изменению апексов.
+List<Offset> wavePositions({
+  required int count,
+  required double t,
+  required double width,
+  required double height,
+}) {
+  final bottom = flightBottom(height);
+  return [
+    for (final slot in laneSlotsFor(count))
+      _positionOnSlot(slot, t: t, width: width, height: height, bottom: bottom),
+  ];
+}
+
+/// Где объект дорожки [slot] в долю полёта [t].
+Offset _positionOnSlot(
+  int slot, {
+  required double t,
+  required double width,
+  required double height,
+  required double bottom,
+}) {
+  final flight = flightForSlot(slot, width: width, height: height);
+  return trajectory(
+    t: t,
+    lane: flight.lane,
+    drift: flight.drift,
+    apex: flight.apex,
+    bottom: bottom,
+  );
+}
