@@ -18,10 +18,12 @@
 library;
 
 import 'dart:math';
+import 'dart:ui' show PointMode;
 
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
+import 'ninja_slash_juice.dart';
 import 'ninja_trajectory.dart';
 
 /// До этой серии поле чистое: ранний тон был бы шумом, а не наградой.
@@ -332,6 +334,9 @@ class NinjaField extends StatelessWidget {
     required this.progress,
     super.key,
     this.faded = false,
+    this.sliced,
+    this.sliceAngle = 0,
+    this.sliceProgress = 0,
   });
 
   /// Английское слово наверху.
@@ -347,6 +352,16 @@ class NinjaField extends StatelessWidget {
   /// На нём же перестаёт рисоваться слово наверху: оно уже стоит в паре по
   /// центру, и два одинаковых слова на экране — это шум, а не подсказка.
   final bool faded;
+
+  /// Дорожка разрезанного объекта; null — резать было нечего либо джус
+  /// выключен, и тогда объект остаётся целым.
+  final int? sliced;
+
+  /// Направление реза в радианах.
+  final double sliceAngle;
+
+  /// Доля подсветки, по которой расходятся половинки.
+  final double sliceProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -389,11 +404,20 @@ class NinjaField extends StatelessWidget {
                       Positioned(
                         left: positions[i].dx - objectRadius,
                         top: positions[i].dy - objectRadius,
-                        child: FlyingObject(
-                          key: NinjaKeys.objectAt(i),
-                          label: objects[i].label,
-                          state: objects[i].state,
-                        ),
+                        child:
+                            i == sliced
+                                ? SlicedObject(
+                                  key: NinjaKeys.objectAt(i),
+                                  label: objects[i].label,
+                                  state: objects[i].state,
+                                  angle: sliceAngle,
+                                  progress: sliceProgress,
+                                )
+                                : FlyingObject(
+                                  key: NinjaKeys.objectAt(i),
+                                  label: objects[i].label,
+                                  state: objects[i].state,
+                                ),
                       ),
                   ],
                 ),
@@ -626,6 +650,10 @@ class NothingTodayView extends StatelessWidget {
 /// Толщина следа свайпа.
 const double trailWidth = 4;
 
+/// Сколько точек жеста держит след. Хвост длиннее читается как размазня, а
+/// список без предела рос бы всё время, пока палец на экране.
+const int trailPoints = 32;
+
 /// На сколько расходятся половинки разрезанного объекта.
 const double halfSpread = 24;
 
@@ -644,7 +672,13 @@ const double sparkMaxReach = 70;
 /// Круг делится на [sparkCount] секторов, и внутри сектора направление
 /// гуляет: ровные восемь лучей читаются как нарисованная звёздочка, а не
 /// как брызги. [random] сидирован — без этого голден не снять.
-List<Offset> sparkBurst(Random random) => throw UnimplementedError();
+List<Offset> sparkBurst(Random random) => [
+  for (var i = 0; i < sparkCount; i++)
+    Offset.fromDirection(
+      (i + random.nextDouble()) * 2 * pi / sparkCount,
+      sparkMinReach + random.nextDouble() * (sparkMaxReach - sparkMinReach),
+    ),
+];
 
 /// Прирост очков, улетающий к счётчику.
 ///
@@ -673,7 +707,63 @@ class ScorePop extends StatelessWidget {
   final bool nearMiss;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final flown = Curves.easeOutCubic.transform(progress.clamp(0.0, 1.0));
+    // Растворяется на последней трети пути: раньше — не успеть прочитать,
+    // позже — «+N» доживёт до следующей волны.
+    final fade = ((1 - progress) / 0.35).clamp(0.0, 1.0);
+    return IgnorePointer(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final finish = Offset(constraints.maxWidth - 24, 24);
+          final at = Offset.lerp(from, finish, flown)!;
+          return Stack(
+            children: [
+              Positioned(
+                left: at.dx,
+                top: at.dy,
+                child: FractionalTranslation(
+                  translation: const Offset(-0.5, -0.5),
+                  child: Opacity(
+                    opacity: fade,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '+$points',
+                          key: NinjaKeys.scorePop,
+                          style: withWeight(
+                            textTheme.headlineSmall!,
+                            FontWeight.bold,
+                          ).copyWith(color: scheme.primary),
+                        ),
+                        if (nearMiss) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            // Множитель берётся из тех же констант, что и
+                            // начисление: метка, разошедшаяся с арифметикой,
+                            // — обман в чистом виде.
+                            '×${nearMissBonusNumerator / nearMissBonusDenominator}',
+                            key: NinjaKeys.nearMissBadge,
+                            style: withWeight(
+                              textTheme.titleMedium!,
+                              FontWeight.bold,
+                            ).copyWith(color: scheme.tertiary),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
 
 /// След свайпа: ломаная по точкам жеста, гаснущая за подсветку.
@@ -687,7 +777,46 @@ class SliceTrail extends StatelessWidget {
   final double progress;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) => IgnorePointer(
+    child: CustomPaint(
+      size: Size.infinite,
+      painter: _TrailPainter(
+        points: points,
+        color: Theme.of(context).colorScheme.primary,
+        opacity: (1 - progress).clamp(0.0, 1.0),
+      ),
+    ),
+  );
+}
+
+class _TrailPainter extends CustomPainter {
+  const _TrailPainter({
+    required this.points,
+    required this.color,
+    required this.opacity,
+  });
+
+  final List<Offset> points;
+  final Color color;
+  final double opacity;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (points.length < 2 || opacity <= 0) return;
+    canvas.drawPoints(
+      PointMode.polygon,
+      points,
+      Paint()
+        ..color = color.withValues(alpha: opacity)
+        ..strokeWidth = trailWidth
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TrailPainter old) =>
+      old.opacity != opacity || old.points != points || old.color != color;
 }
 
 /// Разрезанный объект: две половинки, расходящиеся перпендикулярно линии
@@ -711,7 +840,59 @@ class SlicedObject extends StatelessWidget {
   final double progress;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) {
+    final gone = progress.clamp(0.0, 1.0);
+    // Перпендикуляр к линии реза: половинки расходятся поперёк разреза, а
+    // не вдоль — вдоль они просто разъехались бы по той же прямой и рез
+    // читался бы как «объект уехал».
+    final apart = Offset(-sin(angle), cos(angle)) * (halfSpread * gone);
+    return SizedBox(
+      width: objectRadius * 2,
+      height: objectRadius * 2,
+      child: Opacity(
+        opacity: 1 - gone,
+        child: Stack(
+          children: [
+            for (final side in [1.0, -1.0])
+              Transform.translate(
+                offset: apart * side,
+                child: ClipPath(
+                  clipper: _HalfClipper(angle: angle, side: side),
+                  child: FlyingObject(label: label, state: state),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Половина круга по одну сторону от линии реза.
+class _HalfClipper extends CustomClipper<Path> {
+  const _HalfClipper({required this.angle, required this.side});
+
+  final double angle;
+  final double side;
+
+  @override
+  Path getClip(Size size) {
+    final centre = Offset(size.width / 2, size.height / 2);
+    final along = Offset(cos(angle), sin(angle));
+    final across = Offset(-along.dy, along.dx) * side;
+    final far = size.longestSide * 2;
+    final head = centre + along * far;
+    final tail = centre - along * far;
+    return Path()
+      ..moveTo(head.dx, head.dy)
+      ..lineTo(tail.dx, tail.dy)
+      ..lineTo((tail + across * far).dx, (tail + across * far).dy)
+      ..lineTo((head + across * far).dx, (head + across * far).dy)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(_HalfClipper old) => old.angle != angle || old.side != side;
 }
 
 /// Искры из точки реза.
@@ -733,5 +914,45 @@ class SparkBurst extends StatelessWidget {
   final double progress;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) => IgnorePointer(
+    child: CustomPaint(
+      size: Size.infinite,
+      painter: _SparkPainter(
+        origin: origin,
+        sparks: sparks,
+        color: Theme.of(context).colorScheme.tertiary,
+        progress: progress.clamp(0.0, 1.0),
+      ),
+    ),
+  );
+}
+
+class _SparkPainter extends CustomPainter {
+  const _SparkPainter({
+    required this.origin,
+    required this.sparks,
+    required this.color,
+    required this.progress,
+  });
+
+  final Offset origin;
+  final List<Offset> sparks;
+  final Color color;
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress >= 1) return;
+    // Разлёт замедляется, а не идёт равномерно: искра, летящая с одной
+    // скоростью до самого конца, читается как пуля, а не как брызги.
+    final flown = Curves.easeOutCubic.transform(progress);
+    final paint = Paint()..color = color.withValues(alpha: 1 - progress);
+    for (final spark in sparks) {
+      canvas.drawCircle(origin + spark * flown, sparkRadius, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_SparkPainter old) =>
+      old.progress != progress || old.origin != origin;
 }

@@ -21,6 +21,9 @@ import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_run.dart';
+import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
+import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
+import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_views.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter/material.dart';
@@ -136,4 +139,73 @@ Future<void> pumpRitualGolden(
     ),
   );
   await tester.pump();
+}
+
+/// Ниндзя-слэш, готовый к съёмке.
+///
+/// Те же экран, плотность и масштаб текста, что и у кадров падающих слов:
+/// эталоны обязаны отличаться тем, что на них нарисовано, и ничем больше.
+/// Взвод **не** пропускается — его снимает отдельный кадр, а остальные
+/// пропускают его сами.
+Future<FakeReviewSession> pumpNinjaGolden(
+  WidgetTester tester, {
+  List<ReviewItem>? items,
+  int? total,
+}) async {
+  final session = FakeReviewSession(items ?? wordItems(12), total: total);
+  tester.view.physicalSize = goldenPhysicalSize;
+  tester.view.devicePixelRatio = goldenDevicePixelRatio;
+  tester.platformDispatcher.textScaleFactorTestValue = 1;
+  addTearDown(tester.view.reset);
+  addTearDown(tester.platformDispatcher.clearAllTestValues);
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: wordarcadeTheme(platform: TargetPlatform.android),
+      debugShowCheckedModeBanner: false,
+      home: NinjaSlashGame(
+        session: session,
+        seed: 1,
+        onPlayAgain: () {},
+        onExit: () {},
+      ),
+    ),
+  );
+  return session;
+}
+
+/// Дорожка объекта с переводом [label] в текущем кадре.
+int ninjaIndexOf(WidgetTester tester, String label) => tester
+    .widget<NinjaField>(find.byType(NinjaField))
+    .objects
+    .indexWhere((o) => o.label == label);
+
+/// Дорожка любого объекта, кроме верного для слова [word].
+///
+/// По индексу, а не по тексту обманки: волна показывает две обманки из
+/// трёх, и какие именно — решает сид. Спрашивать про конкретную значило бы
+/// поставить кадр в зависимость от перемешивания.
+int ninjaWrongIndex(WidgetTester tester, int word) => tester
+    .widget<NinjaField>(find.byType(NinjaField))
+    .objects
+    .indexWhere((o) => o.label != wordTranslation(word));
+
+/// Рез объекта на дорожке [index]: свайп на 120 dp сквозь его центр.
+///
+/// Пустой `pump()` в конце обязателен: контроллер подсветки запускается из
+/// обработчика жеста, то есть вне кадра, и встаёт на часы только следующим
+/// тиком. Без него все последующие `pump(Δ)` уехали бы на кадр, и кадр реза
+/// снялся бы не в тот момент.
+Future<void> sliceGolden(WidgetTester tester, int index) async {
+  final centre = tester.getCenter(find.byKey(NinjaKeys.objectAt(index)));
+  final gesture = await tester.startGesture(centre - const Offset(60, 0));
+  await gesture.moveTo(centre + const Offset(60, 0));
+  await gesture.up();
+  await tester.pump();
+}
+
+/// Верный рез по слову [i] через секунду и промотанная подсветка.
+Future<void> ninjaAnswerGolden(WidgetTester tester, int i) async {
+  await tester.pump(const Duration(seconds: 1));
+  await sliceGolden(tester, ninjaIndexOf(tester, wordTranslation(i)));
+  await tester.pump(NinjaRun.correctReveal);
 }

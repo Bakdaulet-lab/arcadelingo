@@ -537,6 +537,45 @@ void main() {
       );
     });
 
+    // Найдено картинкой, а не числами: подсветка промаха длится 800 мс, и
+    // след, привязанный к ней, доживал до конца — жирная линия ложилась
+    // поперёк пары «слово → перевод», то есть поперёк единственного места,
+    // где человек учится. SPEC говорит «гаснет за 300 мс подсветки», и это
+    // 300 мс, а не «вся подсветка».
+    testWidgets('на промахе рез гаснет за 300 мс, а не за все 800', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await _slice(tester, _wrongIndex(tester, 1));
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(find.byKey(NinjaKeys.trail), findsOneWidget, reason: 'ещё виден');
+
+      await tester.pump(const Duration(milliseconds: 150));
+
+      expect(find.byKey(NinjaKeys.trail), findsNothing);
+      expect(find.byType(SlicedObject), findsNothing);
+      expect(
+        find.byKey(NinjaKeys.revealAnswer),
+        findsOneWidget,
+        reason: 'а пара стоит ещё 500 мс, и стоит чистой',
+      );
+    });
+
+    testWidgets('на верном резе рез гаснет ровно к концу подсветки', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await _slice(tester, _correctIndex(tester, 1));
+      await tester.pump(const Duration(milliseconds: 150));
+
+      expect(find.byKey(NinjaKeys.trail), findsOneWidget);
+      expect(find.byKey(NinjaKeys.sparks), findsOneWidget);
+    });
+
     testWidgets('таймаут ни следа, ни половинок не даёт', (tester) async {
       await _pumpGame(tester);
 

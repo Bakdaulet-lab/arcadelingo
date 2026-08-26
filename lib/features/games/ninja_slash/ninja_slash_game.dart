@@ -21,13 +21,16 @@
 /// построению.
 library;
 
+import 'dart:async';
 import 'dart:math';
 
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'ninja_geometry.dart';
 import 'ninja_run.dart';
+import 'ninja_slash_juice.dart';
 import 'ninja_slash_views.dart';
 import 'ninja_trajectory.dart';
 
@@ -108,6 +111,28 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   /// Сколько пути прошёл палец с начала жеста.
   double _travelled = 0;
 
+  /// Точки текущего жеста в координатах поля.
+  final List<Offset> _gesture = [];
+
+  /// След реза: точки жеста, замороженные в момент реза.
+  List<Offset> _trail = const [];
+
+  /// Направление реза в радианах — по нему делится круг на половинки.
+  double _sliceAngle = 0;
+
+  /// Точка реза: откуда летят искры и прирост очков.
+  Offset _slicePoint = Offset.zero;
+
+  /// Искры этого реза; пусто — искр нет (промах, таймаут, джус выключен).
+  List<Offset> _sparks = const [];
+
+  /// Свой генератор искр.
+  ///
+  /// Не тот, что у `NinjaRun`: там он перемешивает волну, и деление одного
+  /// на двоих означало бы, что число нарисованных искр меняет состав
+  /// обманок. Сид тот же — без него голден не снять.
+  late final Random _sparkRandom = Random(widget.seed);
+
   /// Ответ хоста на «что дальше», взятый на входе в итоги.
   String? _footer;
 
@@ -170,6 +195,10 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   }
 
   void _startFlight() {
+    // Украшения прошлой волны со сцены: иначе след от реза первого слова
+    // дожил бы до таймаута второго.
+    _trail = const [];
+    _sparks = const [];
     _flight.duration = _run.timeLimit;
     _flight.forward(from: 0);
   }
@@ -190,6 +219,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     if (_run.phase != NinjaPhase.flying || _flight.value < 1) return;
     _flight.stop();
     if (_run.timeout()) {
+      _feel();
       setState(() {});
       _startReveal();
     }
@@ -211,6 +241,9 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   void _onPointerDown(PointerDownEvent event) {
     _last = event.localPosition;
     _travelled = 0;
+    _gesture
+      ..clear()
+      ..add(event.localPosition);
   }
 
   /// Движение пальца. Проверяется отрезок «предыдущая точка → текущая»
@@ -225,6 +258,8 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     final to = event.localPosition;
     _travelled += (to - from).distance;
     _last = to;
+    _gesture.add(to);
+    if (_gesture.length > trailPoints) _gesture.removeAt(0);
     // На паузе жест не принимается: окно бывает интерактивным и без фокуса
     // (split-screen, системный диалог, баннер звонка). Принятый здесь рез
     // перезапустил бы контроллеры и снял бы паузу де-факто.
@@ -233,22 +268,100 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     if (!swipeCounts(_travelled)) return;
     final size = _fieldSize;
     if (size == null) return;
+    final centers = wavePositions(
+      count: _run.options.length,
+      t: _flight.value,
+      width: size.width,
+      height: size.height,
+    );
     final target = sliceTarget(
       from: from,
       to: to,
-      centers: wavePositions(
-        count: _run.options.length,
-        t: _flight.value,
-        width: size.width,
-        height: size.height,
-      ),
+      centers: centers,
       radius: objectRadius,
     );
     if (target == null) return;
     if (!_run.slice(target, _elapsed)) return;
     _flight.stop();
+    _trail = List.of(_gesture);
+    _sliceAngle = (to - from).direction;
+    // Точка реза, а не центр объекта: касательный рез виден именно краем, и
+    // искры из центра при нём читались бы как посторонний взрыв. Считает её
+    // та же функция, по которой проверено попадание.
+    _slicePoint = closestPointOnSegment(
+      from: from,
+      to: to,
+      point: centers[target],
+    );
+    // Частицы на промахе — вне скоупа (`SPEC.md`): рез неверного объекта
+    // получает след и половинки, но не искры.
+    _sparks =
+        _run.verdict == Verdict.correct ? sparkBurst(_sparkRandom) : const [];
+    _feel();
     setState(() {});
     _startReveal();
+  }
+
+  /// Отдать руке итог реза.
+  ///
+  /// Зовётся только там, где ответ принят: страж фазы в `run` уже сказал
+  /// «да». Жест на паузе, вторая точка того же свайпа и уход из игры сюда
+  /// не доходят — и не должны, отзываться там не на что.
+  ///
+  /// Флаг «убрать анимации» здесь не смотрится намеренно: вибрация не
+  /// движение на экране, и для того, кому движение мешает, это
+  /// единственный оставшийся канал.
+  void _feel() {
+    switch (hapticFor(
+      correct: _run.verdict == Verdict.correct,
+      combo: _run.combo,
+      nearMiss: _run.nearMiss,
+    )) {
+      case Haptic.light:
+        unawaited(HapticFeedback.lightImpact());
+      case Haptic.medium:
+        unawaited(HapticFeedback.mediumImpact());
+      case Haptic.heavy:
+        unawaited(HapticFeedback.heavyImpact());
+    }
+  }
+
+  /// Насколько сдвинуты HUD и содержимое поля в этом кадре.
+  ///
+  /// Пары «слово → перевод» здесь нет и быть не должно: она соседний
+  /// ребёнок того же Stack и остаётся неподвижной все 800 мс подсветки.
+  ///
+  /// Время тряски пересчитывается из прожитых микросекунд подсветки, а не
+  /// из доли `_reveal.value`: доля даёт на границе 0.9999999999999999, и
+  /// «к 300 мс экран стоит ровно» перестало бы быть правдой буквально.
+  double _shake({required bool juicy, required bool revealing}) {
+    if (!juicy || !revealing || _run.verdict == Verdict.correct) return 0;
+    final lived = (_run.revealTime.inMicroseconds * _reveal.value).round();
+    return shakeAmplitude * shakeIntensity(lived / shakeTime.inMicroseconds);
+  }
+
+  /// Доля прожитого времени реза, 0…1.
+  ///
+  /// Считается от 300 мс, а не от длины подсветки. На промахе подсветка
+  /// длится 800 мс, и след, привязанный к ней, доживал до конца — жирная
+  /// линия ложилась поперёк пары «слово → перевод», то есть поперёк
+  /// единственного места, где человек учится. Нашлось картинкой на этапе
+  /// 4.3; числами это не ловилось, потому что след проверялся на верном
+  /// резе, где подсветка ровно 300 мс и разницы нет.
+  ///
+  /// Микросекундами, а не долей `_reveal.value`, по той же причине, что и
+  /// у тряски: доля даёт на границе 0.9999999999999999.
+  double get _slicePhase {
+    final lived = (_run.revealTime.inMicroseconds * _reveal.value).round();
+    return (lived / NinjaRun.correctReveal.inMicroseconds).clamp(0.0, 1.0);
+  }
+
+  /// Раздувание счёта в момент прилёта: ноль до половины полёта, пик к трём
+  /// четвертям, снова ноль к концу.
+  double _pulse({required bool juicy, required bool revealing}) {
+    if (!juicy || !revealing || _run.verdict != Verdict.correct) return 0;
+    if (_reveal.value < 0.5) return 0;
+    return 1 - ((_reveal.value - 0.75).abs() / 0.25).clamp(0.0, 1.0);
   }
 
   void _onPointerUp(PointerUpEvent event) {
@@ -340,21 +453,31 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
         animation: Listenable.merge([_flight, _reveal]),
         builder: (context, _) {
           final revealing = _run.phase == NinjaPhase.reveal;
+          final shake = _shake(juicy: juicy, revealing: revealing);
           return Column(
             children: [
-              GameHud(
-                lives: _run.lives,
-                maxLives: NinjaRun.startLives,
-                score: _run.score,
-                multiplier: _run.scoreMultiplier,
-                combo: _run.combo,
-                // В фазе подсветки ответ уже доложен, и answered его
-                // считает; в полёте текущее слово ещё впереди счётчика.
-                current: widget.session.answered + (revealing ? 0 : 1),
-                total: widget.session.total,
+              Transform.translate(
+                offset: Offset(shake, 0),
+                child: GameHud(
+                  lives: _run.lives,
+                  maxLives: NinjaRun.startLives,
+                  score: _run.score,
+                  multiplier: _run.scoreMultiplier,
+                  combo: _run.combo,
+                  scorePulse: _pulse(juicy: juicy, revealing: revealing),
+                  // В фазе подсветки ответ уже доложен, и answered его
+                  // считает; в полёте текущее слово ещё впереди счётчика.
+                  current: widget.session.answered + (revealing ? 0 : 1),
+                  total: widget.session.total,
+                ),
               ),
               Expanded(
-                child: _field(scheme, juicy: juicy, revealing: revealing),
+                child: _field(
+                  scheme,
+                  juicy: juicy,
+                  revealing: revealing,
+                  shake: shake,
+                ),
               ),
             ],
           );
@@ -368,8 +491,14 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     ColorScheme scheme, {
     required bool juicy,
     required bool revealing,
+    required double shake,
   }) {
     final missed = revealing && _run.verdict != Verdict.correct;
+    // Половинки, след и искры живут ровно 300 мс — столько, сколько длится
+    // рез. Дальше объект стоит целым и помеченным: на промахе он обязан
+    // остаться на кадре, а пара по центру — читаться без помех.
+    final phase = _slicePhase;
+    final sliced = juicy && revealing && phase < 1 ? _run.slicedIndex : null;
     return TweenAnimationBuilder<Color?>(
       tween: ColorTween(
         begin: scheme.surface,
@@ -395,20 +524,51 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  NinjaField(
-                    word: _run.item!.word.text,
-                    objects: [
-                      // Взвод: слово уже на экране, волны ещё нет.
-                      if (!_windingUp)
-                        for (var i = 0; i < _run.options.length; i++)
-                          (
-                            label: _run.options[i],
-                            state: _stateFor(i, revealing: revealing),
-                          ),
-                    ],
-                    progress: _flight.value,
-                    faded: missed,
+                  // Трясётся содержимое поля, а не поле: фон и его градиент
+                  // обязаны остаться на месте, иначе у поля появился бы
+                  // край, который ездит.
+                  Transform.translate(
+                    offset: Offset(shake, 0),
+                    child: NinjaField(
+                      word: _run.item!.word.text,
+                      objects: [
+                        // Взвод: слово уже на экране, волны ещё нет.
+                        if (!_windingUp)
+                          for (var i = 0; i < _run.options.length; i++)
+                            (
+                              label: _run.options[i],
+                              state: _stateFor(i, revealing: revealing),
+                            ),
+                      ],
+                      progress: _flight.value,
+                      faded: missed,
+                      sliced: sliced,
+                      sliceAngle: _sliceAngle,
+                      sliceProgress: phase,
+                    ),
                   ),
+                  if (sliced != null && _trail.length > 1)
+                    SliceTrail(
+                      key: NinjaKeys.trail,
+                      points: _trail,
+                      progress: phase,
+                    ),
+                  if (sliced != null && _sparks.isNotEmpty)
+                    SparkBurst(
+                      key: NinjaKeys.sparks,
+                      origin: _slicePoint,
+                      sparks: _sparks,
+                      progress: phase,
+                    ),
+                  // Прилёт очков — над полем, но под парой: пару он не
+                  // перекрывает, а на промахе его и нет вовсе.
+                  if (juicy && revealing && _run.lastPoints > 0)
+                    ScorePop(
+                      points: _run.lastPoints,
+                      from: _slicePoint,
+                      progress: phase,
+                      nearMiss: _run.nearMiss,
+                    ),
                   if (missed)
                     RevealPair(
                       word: _run.item!.word.text,

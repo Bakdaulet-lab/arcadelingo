@@ -39,7 +39,17 @@ Offset closestPointOnSegment({
   required Offset from,
   required Offset to,
   required Offset point,
-}) => throw UnimplementedError();
+}) {
+  final segment = to - from;
+  final lengthSquared = segment.distanceSquared;
+  // Вырожденный отрезок — это точка, и вести себя он обязан как точка.
+  if (lengthSquared == 0) return from;
+  final offset = point - from;
+  // Проекция на прямую, зажатая в отрезок.
+  final t = ((offset.dx * segment.dx + offset.dy * segment.dy) / lengthSquared)
+      .clamp(0.0, 1.0);
+  return from + segment * t;
+}
 
 /// Какой из [centers] разрезан отрезком [from] → [to]; null — ни один.
 ///
@@ -69,20 +79,13 @@ int? sliceTarget({
 }
 
 /// Расстояние от [point] до отрезка [from] → [to].
+///
+/// Через [closestPointOnSegment], а не своей копией проекции: искры летят
+/// из той же точки, по которой считается попадание, и две копии этой
+/// арифметики разъехались бы молча — искра била бы мимо реза.
 double _distanceToSegment({
   required Offset from,
   required Offset to,
   required Offset point,
-}) {
-  final segment = to - from;
-  final lengthSquared = segment.distanceSquared;
-  // Вырожденный отрезок — это точка, и вести себя он обязан как точка:
-  // палец, стоящий на месте, никуда не сдвинулся.
-  if (lengthSquared == 0) return (point - from).distance;
-  final offset = point - from;
-  // Проекция на прямую, зажатая в отрезок: режет отрезок, а не бесконечная
-  // прямая через него.
-  final t = ((offset.dx * segment.dx + offset.dy * segment.dy) / lengthSquared)
-      .clamp(0.0, 1.0);
-  return (point - (from + segment * t)).distance;
-}
+}) =>
+    (point - closestPointOnSegment(from: from, to: to, point: point)).distance;
