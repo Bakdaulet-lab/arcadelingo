@@ -608,4 +608,39 @@ void main() {
       expect(scorePopStartScale, 0.3);
     });
   });
+
+  group('Эскалация серии', () {
+    test('искр 14 до порога и 22 с порога', () {
+      expect(sparkCountFor(hot: false), 14);
+      expect(sparkCountFor(hot: true), 22);
+      expect(sparkCount, 14);
+      expect(sparkCountHot, 22);
+    });
+
+    test('горячий рез даёт ровно столько искр, сколько обещано', () {
+      expect(
+        sparkBurst(Random(1), cutAngle: 0, count: sparkCountFor(hot: true)),
+        hasLength(22),
+      );
+    });
+
+    test('вспышка на горячей серии шире', () {
+      expect(ringEndRadiusFor(hot: false), 64);
+      expect(ringEndRadiusFor(hot: true), 96);
+      expect(ringRadius(1, to: ringEndRadiusFor(hot: true)), closeTo(96, 1e-9));
+      expect(
+        ringRadius(0.5, to: ringEndRadiusFor(hot: true)),
+        greaterThan(ringRadius(0.5)),
+      );
+    });
+
+    test('начало у обеих одно: разгоняется, а не стартует шире', () {
+      expect(ringRadius(0, to: 96), closeTo(ringRadius(0), 1e-9));
+    });
+
+    test('числа из SPEC: свечение кромок 0.35 на 40 dp', () {
+      expect(rimGlowAlpha, 0.35);
+      expect(rimGlowInset, 40);
+    });
+  });
 }

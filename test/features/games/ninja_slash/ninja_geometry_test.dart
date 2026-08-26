@@ -283,4 +283,52 @@ void main() {
       );
     });
   });
+
+  group('Касание вскользь', () {
+    // Отрезок горизонтальный на y = 100 + d, объект в (100, 100), радиус 34.
+    bool at(double d) => grazed(
+      from: Offset(0, 100 + d),
+      to: Offset(200, 100 + d),
+      centre: const Offset(100, 100),
+      radius: _radius,
+    );
+
+    test('внутри радиуса — это не касание вскользь, а попадание', () {
+      expect(at(0), isFalse);
+      expect(at(34), isFalse, reason: 'ровно по краю — уже рез');
+    });
+
+    test('чуть дальше радиуса — касание вскользь', () {
+      expect(at(34.001), isTrue);
+      expect(at(50), isTrue);
+    });
+
+    test('ровно на границе окна — ещё касание, дальше — уже мимо', () {
+      expect(at(58), isTrue, reason: '34 + 24');
+      expect(at(58.001), isFalse);
+      expect(at(120), isFalse);
+    });
+
+    test('с обеих сторон одинаково', () {
+      expect(at(-45), isTrue);
+      expect(at(-120), isFalse);
+    });
+
+    test('меряется до отрезка, а не до его концов', () {
+      // Концы далеко, середина рядом: проверка «до концов» дала бы «мимо».
+      expect(
+        grazed(
+          from: const Offset(0, 145),
+          to: const Offset(600, 145),
+          centre: const Offset(300, 100),
+          radius: _radius,
+        ),
+        isTrue,
+      );
+    });
+
+    test('порог — 24 dp', () {
+      expect(grazeMargin, 24);
+    });
+  });
 }

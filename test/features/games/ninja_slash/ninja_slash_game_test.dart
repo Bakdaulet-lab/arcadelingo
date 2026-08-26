@@ -128,11 +128,14 @@ Future<void> _sliceThrough(WidgetTester tester, int a, int b) async {
   await tester.pump();
 }
 
-/// Верный рез по слову [word] через секунду и промотанная подсветка.
+/// Верный рез по слову [word] через секунду и промотанное празднование.
+///
+/// 700 мс, а не 300: подсветка верного реза стала празднованием («Темп
+/// партии»). Украшения внутри неё по-прежнему живут 300.
 Future<void> _answerCorrectly(WidgetTester tester, int word) async {
   await tester.pump(const Duration(seconds: 1));
   await _slice(tester, _correctIndex(tester, word));
-  await tester.pump(const Duration(milliseconds: 300));
+  await tester.pump(const Duration(milliseconds: 700));
 }
 
 /// Промах по слову [word] через секунду и промотанная подсветка.

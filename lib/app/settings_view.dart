@@ -29,6 +29,9 @@ abstract final class SettingsKeys {
 
   /// Сообщение об отказе в разрешении.
   static const Key denied = Key('settings.denied');
+
+  /// Звук в играх.
+  static const Key sound = Key('settings.sound');
 }
 
 /// Что хост делает с новым выбором.
@@ -117,6 +120,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : scheme.onSurfaceVariant,
               ),
             ),
+          ),
+          const Divider(height: 24),
+          SwitchListTile(
+            key: SettingsKeys.sound,
+            value: _settings.soundOn,
+            onChanged: (on) => _apply(_settings.copyWith(soundOn: on)),
+            title: const Text('Звук'),
+            subtitle: const Text('Свист клинка и удар в ниндзя-слэше'),
           ),
           if (_denied)
             Padding(

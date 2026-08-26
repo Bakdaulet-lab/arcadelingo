@@ -15,6 +15,7 @@
 
 import 'dart:math';
 
+import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
@@ -25,6 +26,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_review_session.dart';
+import '../../../support/fake_sounds.dart';
 import '../../../support/review_items.dart';
 
 /// Игра на телефонном экране, взвод пропущен.
@@ -32,6 +34,7 @@ Future<FakeReviewSession> _pumpGame(
   WidgetTester tester, {
   List<ReviewItem>? items,
   bool disableAnimations = false,
+  Sounds sounds = const NoopSounds(),
 }) async {
   if (disableAnimations) {
     tester.platformDispatcher.accessibilityFeaturesTestValue =
@@ -48,6 +51,7 @@ Future<FakeReviewSession> _pumpGame(
       home: NinjaSlashGame(
         session: session,
         seed: 1,
+        sounds: sounds,
         onPlayAgain: () {},
         onExit: () {},
       ),
@@ -132,11 +136,14 @@ Future<void> _sliceTangent(WidgetTester tester, int index) async {
   await tester.pump();
 }
 
-/// Верный рез по слову [word] через секунду и промотанная подсветка.
+/// Верный рез по слову [word] через секунду и промотанное празднование.
+///
+/// 700 мс, а не 300: подсветка верного реза стала празднованием («Темп
+/// партии»). Украшения внутри неё по-прежнему живут 300.
 Future<void> _answerCorrectly(WidgetTester tester, int word) async {
   await tester.pump(const Duration(seconds: 1));
   await _slice(tester, _correctIndex(tester, word));
-  await tester.pump(const Duration(milliseconds: 300));
+  await tester.pump(const Duration(milliseconds: 700));
 }
 
 /// Свайп вдоль верха поля, ниже слова и выше любого объекта: следа ради,
@@ -188,6 +195,10 @@ double _scoreWidth(WidgetTester tester) {
 
 String _hud(WidgetTester tester, Key key) =>
     tester.widget<Text>(find.byKey(key)).data!;
+
+/// Сколько жизней показывает HUD.
+int _lives(WidgetTester tester) =>
+    find.byIcon(Icons.favorite).evaluate().length;
 
 void main() {
   group('Хаптика', () {
@@ -418,7 +429,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       await _slice(tester, _correctIndex(tester, 1));
-      await tester.pump(const Duration(milliseconds: 299));
+      await tester.pump(const Duration(milliseconds: 699));
 
       expect(
         tester
@@ -490,9 +501,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 10));
       final plain = _scoreWidth(tester);
 
-      await tester.pump(const Duration(milliseconds: 215));
+      // Пик пульса — на трёх четвертях празднования, то есть на 525 мс.
+      await tester.pump(const Duration(milliseconds: 515));
       final pulsed = _scoreWidth(tester);
-      await tester.pump(const Duration(milliseconds: 75));
+      await tester.pump(const Duration(milliseconds: 175));
 
       expect(pulsed, greaterThan(plain));
       expect(_scoreWidth(tester), closeTo(plain, 0.5));
@@ -936,7 +948,7 @@ void main() {
       final cold = tester.widget<ScorePop>(find.byType(ScorePop));
       final coldSize =
           tester.widget<Text>(find.byKey(NinjaKeys.scorePop)).style!.fontSize!;
-      await tester.pump(const Duration(milliseconds: 270));
+      await tester.pump(const Duration(milliseconds: 670));
       await _answerCorrectly(tester, 2);
 
       await tester.pump(const Duration(seconds: 1));
@@ -1033,7 +1045,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 10));
       final plain = _scoreWidth(tester);
 
-      await tester.pump(const Duration(milliseconds: 215));
+      await tester.pump(const Duration(milliseconds: 515));
 
       expect(_scoreWidth(tester), plain);
     });
@@ -1070,6 +1082,260 @@ void main() {
         isNot(scheme.surface),
         reason: 'серия 4 — поле уже подкрашено, переход просто мгновенный',
       );
+    });
+  });
+
+  group('Отзывчивость входа', () {
+    // Первое, что убивает ощущение, — рез, посчитанный по завершению
+    // свайпа. Здесь `up()` не зовётся вовсе: доклад, вспышка и хаптика
+    // обязаны быть уже на движении пальца.
+    testWidgets('рез засчитывается на движении, а не на отпускании', (
+      tester,
+    ) async {
+      final haptics = _captureHaptics(tester);
+      final session = await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+      final centre = _objectCenter(tester, _correctIndex(tester, 1));
+
+      final gesture = await tester.startGesture(centre - const Offset(60, 0));
+      await gesture.moveTo(centre + const Offset(60, 0));
+      await tester.pump();
+
+      expect(session.reports, hasLength(1), reason: 'палец ещё на экране');
+      expect(haptics, hasLength(1));
+      expect(find.byKey(NinjaKeys.flash), findsOneWidget);
+      await gesture.up();
+    });
+
+    testWidgets('след пишется на движении, до отпускания', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+      final field = tester.getRect(find.byKey(NinjaKeys.playfield));
+      final y = field.top + 100;
+
+      final gesture = await tester.startGesture(Offset(field.left + 40, y));
+      for (final x in [120.0, 200.0, 280.0]) {
+        await gesture.moveTo(Offset(field.left + x, y));
+      }
+      await tester.pump();
+
+      expect(find.byKey(NinjaKeys.trail), findsOneWidget);
+      await gesture.up();
+    });
+  });
+
+  group('Касание вскользь', () {
+    /// Свайп на [offset] dp ниже центра верного объекта.
+    ///
+    /// ±40 dp по горизонтали, а не больше: дорожки стоят в 108 dp друг от
+    /// друга, и такой отрезок не приближается к соседям ближе 68 dp — то
+    /// есть задеть их не может ни при каком апексе. С ±80 задевал, и тест
+    /// падал не потому, что касание вскользь не работает.
+    Future<void> pass(WidgetTester tester, double offset) async {
+      final centre =
+          _objectCenter(tester, _correctIndex(tester, 1)) + Offset(0, offset);
+      final gesture = await tester.startGesture(centre - const Offset(40, 0));
+      await gesture.moveTo(centre + const Offset(40, 0));
+      await gesture.up();
+      await tester.pump();
+    }
+
+    testWidgets('мимо, но рядом — кольцо и лёгкий отклик, и ничего больше', (
+      tester,
+    ) async {
+      final haptics = _captureHaptics(tester);
+      final session = await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await pass(tester, 45);
+
+      expect(find.byKey(NinjaKeys.graze), findsOneWidget);
+      expect(haptics, ['HapticFeedbackType.lightImpact']);
+      expect(session.reports, isEmpty, reason: 'report() не зовётся');
+      expect(_lives(tester), 3, reason: 'жизнь цела');
+      expect(_hud(tester, NinjaKeys.combo), '×1', reason: 'серия цела');
+    });
+
+    testWidgets('далеко — ничего', (tester) async {
+      final haptics = _captureHaptics(tester);
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await pass(tester, 90);
+
+      expect(find.byKey(NinjaKeys.graze), findsNothing);
+      expect(haptics, isEmpty);
+    });
+
+    testWidgets('один раз на волну: второй проход отклика не даёт', (
+      tester,
+    ) async {
+      final haptics = _captureHaptics(tester);
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await pass(tester, 45);
+      await pass(tester, 45);
+
+      expect(
+        haptics,
+        hasLength(1),
+        reason: 'свайп вдоль объекта дал бы очередь откликов',
+      );
+    });
+
+    testWidgets('кольцо гаснет за 200 мс', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await pass(tester, 45);
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(find.byKey(NinjaKeys.graze), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 60));
+
+      expect(find.byKey(NinjaKeys.graze), findsNothing);
+    });
+
+    testWidgets('на паузе кольцо стоит: часы полёта', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await pass(tester, 45);
+
+      await _lifecycle(tester, AppLifecycleState.inactive);
+      await tester.pump(const Duration(seconds: 5));
+
+      expect(find.byKey(NinjaKeys.graze), findsOneWidget);
+    });
+
+    testWidgets('при «убрать анимации» кольца нет, а отклик есть', (
+      tester,
+    ) async {
+      final haptics = _captureHaptics(tester);
+      await _pumpGame(tester, disableAnimations: true);
+      await tester.pump(const Duration(seconds: 1));
+
+      await pass(tester, 45);
+
+      expect(find.byKey(NinjaKeys.graze), findsNothing);
+      expect(haptics, ['HapticFeedbackType.lightImpact']);
+    });
+  });
+
+  group('Эскалация серии на экране', () {
+    testWidgets('на горячей серии искр больше и вспышка шире', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await _slice(tester, _correctIndex(tester, 1));
+      await tester.pump(const Duration(milliseconds: 30));
+      final cold = tester.widget<SparkBurst>(find.byKey(NinjaKeys.sparks));
+      final coldRing = tester.widget<ImpactRing>(find.byKey(NinjaKeys.flash));
+      await tester.pump(const Duration(milliseconds: 670));
+      await _answerCorrectly(tester, 2);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _slice(tester, _correctIndex(tester, 3));
+      await tester.pump(const Duration(milliseconds: 30));
+
+      expect(cold.sparks, hasLength(14));
+      expect(coldRing.to, 64);
+      expect(
+        tester.widget<SparkBurst>(find.byKey(NinjaKeys.sparks)).sparks,
+        hasLength(22),
+        reason: 'третий верный — серия 3, тот же порог, что у тона поля',
+      );
+      expect(tester.widget<ImpactRing>(find.byKey(NinjaKeys.flash)).to, 96);
+    });
+  });
+
+  group('Звук', () {
+    testWidgets('верный рез, горячий рез и промах звучат по-разному', (
+      tester,
+    ) async {
+      final sounds = FakeSounds();
+      await _pumpGame(tester, sounds: sounds);
+
+      await _answerCorrectly(tester, 1);
+      expect(sounds.played, [GameSound.slice]);
+
+      await _answerCorrectly(tester, 2);
+      await _answerCorrectly(tester, 3);
+      expect(
+        sounds.played.last,
+        GameSound.sliceHot,
+        reason: 'серия 3 — тот же порог, что у искр и тона',
+      );
+
+      await tester.pump(const Duration(seconds: 1));
+      await _slice(tester, _wrongIndex(tester, 4));
+
+      expect(sounds.played.last, GameSound.miss);
+    });
+
+    testWidgets('таймаут звучит как промах', (tester) async {
+      final sounds = FakeSounds();
+      await _pumpGame(tester, sounds: sounds);
+
+      await tester.pump(const Duration(milliseconds: 3500));
+
+      expect(sounds.played, [GameSound.miss]);
+    });
+
+    testWidgets('ровно один звук на показ', (tester) async {
+      final sounds = FakeSounds();
+      await _pumpGame(tester, sounds: sounds);
+      await tester.pump(const Duration(seconds: 1));
+
+      await _slice(tester, _correctIndex(tester, 1));
+      await tester.pump(const Duration(milliseconds: 200));
+      await _slice(tester, _wrongIndex(tester, 1));
+
+      expect(sounds.played, hasLength(1));
+    });
+
+    testWidgets('касание вскользь не звучит: отклик там только рукой', (
+      tester,
+    ) async {
+      final sounds = FakeSounds();
+      await _pumpGame(tester, sounds: sounds);
+      await tester.pump(const Duration(seconds: 1));
+      final centre =
+          _objectCenter(tester, _correctIndex(tester, 1)) + const Offset(0, 45);
+
+      final gesture = await tester.startGesture(centre - const Offset(40, 0));
+      await gesture.moveTo(centre + const Offset(40, 0));
+      await gesture.up();
+      await tester.pump();
+
+      expect(find.byKey(NinjaKeys.graze), findsOneWidget);
+      expect(sounds.played, isEmpty);
+    });
+
+    testWidgets('«убрать анимации» звук не трогает', (tester) async {
+      final sounds = FakeSounds();
+      await _pumpGame(tester, sounds: sounds, disableAnimations: true);
+      await tester.pump(const Duration(seconds: 1));
+
+      await _slice(tester, _correctIndex(tester, 1));
+
+      expect(sounds.played, [GameSound.slice]);
+    });
+
+    testWidgets('выключённый звук — нулевой объект, и никто не зовёт', (
+      tester,
+    ) async {
+      final haptics = _captureHaptics(tester);
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await _slice(tester, _correctIndex(tester, 1));
+
+      expect(
+        haptics,
+        hasLength(1),
+        reason: 'без звука хаптика и украшения работают как обычно',
+      );
+      expect(find.byKey(NinjaKeys.sparks), findsOneWidget);
     });
   });
 }

@@ -1,9 +1,15 @@
 /// Кодек настроек напоминания: JSON-документ ↔ [AppSettings].
 ///
-/// Формат v1:
+/// Формат v2:
 /// ```json
-/// {"version":1,"enabled":true,"hour":20,"minute":0}
+/// {"version":2,"enabled":true,"hour":20,"minute":0,"soundOn":true}
 /// ```
+///
+/// Читаются обе версии: v1 — тот же документ без `soundOn`. Миграция ничего
+/// не выдумывает: у документа, записанного до звука, человек про звук не
+/// решал, и он получает то же самое умолчание, что и новый игрок. Это не
+/// подарок, как заморозки в миграции серии v1 → v2, а буквальное отсутствие
+/// выбора.
 ///
 /// Контракт ошибок тот же, что у кодеков Лейтнера и серии: битые данные —
 /// [Err], без исключений, без `as` на данных из JSON, единственный `catch` —
@@ -17,8 +23,11 @@ import 'dart:convert';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
 
-/// Версия формата документа. Другая — [Err]: читать её некому.
-const int _formatVersion = 1;
+/// Версия, которой пишем.
+const int _formatVersion = 2;
+
+/// Версии, которые умеем читать. Старше — [Err]: читать нечем.
+const Set<int> _readableVersions = {1, 2};
 
 /// Настройки → JSON-документ.
 String encodeSettings(AppSettings settings) => jsonEncode({
@@ -26,6 +35,7 @@ String encodeSettings(AppSettings settings) => jsonEncode({
   'enabled': settings.enabled,
   'hour': settings.at.hour,
   'minute': settings.at.minute,
+  'soundOn': settings.soundOn,
 });
 
 /// JSON-документ → настройки; битые данные — [Err].
@@ -39,7 +49,7 @@ Result<AppSettings> decodeSettings(String json) {
   if (root is! Map<String, Object?>) {
     return const Err(Failure('настройки: корень не объект'));
   }
-  if (root['version'] != _formatVersion) {
+  if (!_readableVersions.contains(root['version'])) {
     return Err(
       Failure('настройки: неизвестная версия формата ${root['version']}'),
     );
@@ -57,5 +67,18 @@ Result<AppSettings> decodeSettings(String json) {
   if (at == null) {
     return Err(Failure('настройки: такого времени не бывает: $hour:$minute'));
   }
-  return Ok(AppSettings(enabled: enabled, at: at));
+  // Ключа нет — это v1, и там про звук не решали. Ключ есть, но не булев —
+  // документ битый, и молча подставлять умолчание нельзя: отличие между
+  // «не выбирал» и «испорчено» и есть вся разница.
+  final sound = root['soundOn'];
+  if (sound != null && sound is! bool) {
+    return Err(Failure('настройки: soundOn не булево: $sound'));
+  }
+  return Ok(
+    AppSettings(
+      enabled: enabled,
+      at: at,
+      soundOn: sound as bool? ?? AppSettings.defaults.soundOn,
+    ),
+  );
 }

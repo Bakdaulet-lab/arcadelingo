@@ -104,6 +104,14 @@ double comboDepth(int combo) =>
 /// даже случайно.
 bool comboIsHot(int combo) => combo > comboTintStart;
 
+/// Светятся ли кромки поля при этой серии.
+///
+/// Пик серии — там же, где тон выходит на потолок: один порог, а не второй
+/// похожий. Отдельной функцией, а не выражением внутри художника, чтобы
+/// решение можно было проверить без пикселей; что художник спрашивает
+/// именно её, видно на кадре `ninja_flight` — он снят на серии 8.
+bool fieldRimGlows(int combo) => comboDepth(combo) >= 1;
+
 /// Тон поля по длине серии — вертикальным градиентом, а не заливкой.
 LinearGradient comboGradient(ColorScheme scheme, int combo) =>
     comboGradientFor(scheme, comboTint(scheme, combo));
@@ -164,6 +172,9 @@ abstract final class NinjaKeys {
 
   /// Кольцо-вспышка в точке удара.
   static const Key flash = Key('ninja_slash.flash');
+
+  /// Кольцо касания вскользь: жест прошёл рядом с верным объектом.
+  static const Key graze = Key('ninja_slash.graze');
 
   /// Подсветка, затемнение и виньетка поля.
   static const Key fieldLight = Key('ninja_slash.field_light');
@@ -1077,6 +1088,7 @@ class ImpactRing extends StatelessWidget {
     required this.origin,
     required this.progress,
     required this.color,
+    this.to = ringEndRadius,
     super.key,
   });
 
@@ -1086,8 +1098,12 @@ class ImpactRing extends StatelessWidget {
   /// Доля жизни кольца, 0…1.
   final double progress;
 
-  /// `primary` на верном резе, `error` на промахе.
+  /// `primary` на верном резе, `error` на промахе, `outline` на касании
+  /// вскользь.
   final Color color;
+
+  /// Куда доходит кольцо: на горячей серии дальше.
+  final double to;
 
   @override
   Widget build(BuildContext context) => IgnorePointer(
@@ -1097,6 +1113,7 @@ class ImpactRing extends StatelessWidget {
         origin: origin,
         phase: progress.clamp(0.0, 1.0),
         color: color,
+        to: to,
       ),
     ),
   );
@@ -1107,16 +1124,18 @@ class _RingPainter extends CustomPainter {
     required this.origin,
     required this.phase,
     required this.color,
+    required this.to,
   });
 
   final Offset origin;
   final double phase;
   final Color color;
+  final double to;
 
   @override
   void paint(Canvas canvas, Size size) {
     if (phase >= 1) return;
-    final radius = ringRadius(phase);
+    final radius = ringRadius(phase, to: to);
     final alpha = ringAlpha(phase);
     // Размытая копия под кольцом: удар без свечения читается как обводка,
     // а не как волна.
@@ -1141,7 +1160,10 @@ class _RingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RingPainter old) =>
-      old.phase != phase || old.origin != origin || old.color != color;
+      old.phase != phase ||
+      old.origin != origin ||
+      old.color != color ||
+      old.to != to;
 }
 
 /// Подсветка верха, затемнение низа и виньетка поля.
@@ -1160,16 +1182,26 @@ class FieldLighting extends StatelessWidget {
       painter: _LightingPainter(
         accent: Theme.of(context).colorScheme.primary,
         topAlpha: topLightAlpha(combo),
+        // Свечение кромок — только на пике серии, там же, где тон выходит
+        // на потолок. Один порог, а не второй похожий.
+        rim: fieldRimGlows(combo),
       ),
     ),
   );
 }
 
 class _LightingPainter extends CustomPainter {
-  const _LightingPainter({required this.accent, required this.topAlpha});
+  const _LightingPainter({
+    required this.accent,
+    required this.topAlpha,
+    required this.rim,
+  });
 
   final Color accent;
   final double topAlpha;
+
+  /// Пик серии: у поля светятся кромки.
+  final bool rim;
 
   static const Color _black = Color(0xFF000000);
   static const Color _clear = Color(0x00000000);
@@ -1212,6 +1244,23 @@ class _LightingPainter extends CustomPainter {
           colors: [_clear, _black.withValues(alpha: bottomDarkAlpha)],
         ).createShader(bottom),
     );
+    // Свечение кромок на пике серии — до виньетки, чтобы та его пригасила
+    // по углам, а не наоборот.
+    if (rim) {
+      final all = Offset.zero & size;
+      canvas.drawRect(
+        all,
+        Paint()
+          ..shader = RadialGradient(
+            radius: 1.0,
+            colors: [
+              accent.withValues(alpha: 0),
+              accent.withValues(alpha: rimGlowAlpha),
+            ],
+            stops: [1 - rimGlowInset / size.shortestSide, 1],
+          ).createShader(all),
+      );
+    }
     // Виньетка: центр остаётся чистым, углы уходят в черноту.
     final all = Offset.zero & size;
     canvas.drawRect(
@@ -1227,5 +1276,5 @@ class _LightingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_LightingPainter old) =>
-      old.topAlpha != topAlpha || old.accent != accent;
+      old.topAlpha != topAlpha || old.accent != accent || old.rim != rim;
 }

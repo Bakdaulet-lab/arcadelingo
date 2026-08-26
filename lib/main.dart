@@ -16,6 +16,7 @@ import 'package:arcadelingo/data/log/drift_event_log.dart';
 import 'package:arcadelingo/data/log/history_database.dart';
 import 'package:arcadelingo/data/notifications/plugin_reminders.dart';
 import 'package:arcadelingo/data/settings/settings_prefs_store.dart';
+import 'package:arcadelingo/data/sound/audio_sounds.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
 import 'package:arcadelingo/data/words/words_seed_loader.dart';
@@ -48,6 +49,7 @@ Future<void> main() async {
         events: DriftEventLog(history),
         reminders: reminders,
         settings: SettingsPrefsStore(prefs),
+        sounds: AudioSounds(),
         askReminderPermission: reminders.requestPermission,
       ),
       seed: seed,

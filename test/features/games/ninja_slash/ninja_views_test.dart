@@ -499,4 +499,29 @@ void main() {
       expect(flying, isNot(within(distance: 5, from: start)));
     });
   });
+
+  group('Свечение кромок на пике серии', () {
+    test('до пика кромки не светятся', () {
+      expect(fieldRimGlows(0), isFalse);
+      expect(fieldRimGlows(3), isFalse);
+      expect(fieldRimGlows(7), isFalse);
+    });
+
+    test('с восьмой — светятся, и дальше тоже', () {
+      expect(fieldRimGlows(8), isTrue);
+      expect(fieldRimGlows(20), isTrue);
+    });
+
+    // Что художник спрашивает именно эту функцию, а не своё выражение,
+    // видно на кадре `ninja_flight`: он снят на серии 8.
+    test('порог тот же, что у потолка тона', () {
+      for (var combo = 0; combo <= 12; combo++) {
+        expect(
+          fieldRimGlows(combo),
+          comboDepth(combo) >= 1,
+          reason: 'серия $combo: свечение и потолок тона разошлись',
+        );
+      }
+    });
+  });
 }

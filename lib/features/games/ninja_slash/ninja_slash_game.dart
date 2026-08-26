@@ -24,6 +24,7 @@ library;
 import 'dart:async';
 import 'dart:math';
 
+import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -48,10 +49,16 @@ class NinjaSlashGame extends StatefulWidget {
     this.seed,
     this.summaryFooter,
     this.onRoundOver,
+    this.sounds = const NoopSounds(),
   });
 
   final ReviewSession session;
   final int? seed;
+
+  /// Звук. Умолчание — нулевой объект: тест, которому звук безразличен, о
+  /// звуке не узнаёт, а выключенная настройка приходит сюда тем же нулевым
+  /// объектом от хоста.
+  final Sounds sounds;
 
   /// «Ещё раз»: новую сессию строит хост — игра не знает ни про хранилище,
   /// ни про размер сессии.
@@ -145,6 +152,13 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   /// обманок. Сид тот же — без него голден не снять.
   late final Random _decorRandom = Random(widget.seed);
 
+  /// Когда по часам полёта случилось касание вскользь; null — не было на
+  /// этой волне.
+  Duration? _grazeAt;
+
+  /// Где именно жест прошёл мимо верного объекта.
+  Offset _grazePoint = Offset.zero;
+
   /// Ответ хоста на «что дальше», взятый на входе в итоги.
   String? _footer;
 
@@ -212,6 +226,9 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     // «моложе нуля» и вернулась бы на экран. Это не дубль стража
     // `slicedIndex` (тот держит след реза), а свой инвариант живого следа.
     _gesture.clear();
+    // Касание вскользь — один раз на волну: иначе свайп вдоль объекта дал
+    // бы очередь откликов.
+    _grazeAt = null;
     _spins = [
       for (var i = 0; i < _run.options.length; i++) spinFor(_decorRandom),
     ];
@@ -236,6 +253,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     _flight.stop();
     if (_run.timeout()) {
       _feel();
+      _sound();
       setState(() {});
       _startReveal();
     }
@@ -298,7 +316,10 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
       centers: centers,
       radius: objectRadius,
     );
-    if (target == null) return;
+    if (target == null) {
+      _maybeGraze(from: from, to: to, centers: centers);
+      return;
+    }
     if (!_run.slice(target, _elapsed)) return;
     _flight.stop();
     _trail = List.of(_gesture);
@@ -325,8 +346,13 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     // Искры считаются на любом резе, а показываются только на верном:
     // страж один — в `sliced` ниже. Второй здесь дублировал бы его и был бы
     // ненаблюдаем (частицы на промахе — вне скоупа `SPEC.md`).
-    _sparks = sparkBurst(_decorRandom, cutAngle: _sliceAngle);
+    _sparks = sparkBurst(
+      _decorRandom,
+      cutAngle: _sliceAngle,
+      count: sparkCountFor(hot: comboIsHot(_run.combo)),
+    );
     _feel();
+    _sound();
     setState(() {});
     _startReveal();
   }
@@ -355,6 +381,57 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     }
   }
 
+  /// Озвучить итог показа.
+  ///
+  /// Зовётся там же, где [_feel], и по тем же правилам: только на принятом
+  /// ответе. Горячая серия получает свой звук — тот же свист с тоном
+  /// поверх, а не второе событие: ухо должно узнать рез, а не услышать
+  /// что-то новое.
+  ///
+  /// Флаг «убрать анимации» здесь не смотрится: звук не движение на экране.
+  /// Выключён он или нет, решает хост подменой порта, а не страж внутри.
+  void _sound() {
+    final sound = switch (_run.verdict) {
+      Verdict.correct =>
+        comboIsHot(_run.combo) ? GameSound.sliceHot : GameSound.slice,
+      Verdict.wrong || Verdict.timeout || null => GameSound.miss,
+    };
+    widget.sounds.play(sound);
+  }
+
+  /// Жест прошёл мимо всего, но рядом с верным объектом.
+  ///
+  /// Цены нет никакой: жизнь цела, серия цела, `report()` не зовётся и
+  /// `ReviewOutcome` не строится. Отклик лёгкий и один на волну.
+  void _maybeGraze({
+    required Offset from,
+    required Offset to,
+    required List<Offset> centers,
+  }) {
+    if (_grazeAt != null) return;
+    final centre = centers[_run.correctIndex];
+    if (!grazed(from: from, to: to, centre: centre, radius: objectRadius)) {
+      return;
+    }
+    _grazeAt = _elapsed;
+    _grazePoint = closestPointOnSegment(from: from, to: to, point: centre);
+    unawaited(HapticFeedback.lightImpact());
+    setState(() {});
+  }
+
+  /// Доля жизни кольца касания вскользь; null — показывать нечего.
+  ///
+  /// Часы — полёта: своего контроллера у отклика нет (правило 0.11), и на
+  /// паузе он стоит вместе с игрой.
+  double? get _grazePhase {
+    final at = _grazeAt;
+    if (at == null || _run.phase != NinjaPhase.flying) return null;
+    final lived = _elapsed - at;
+    if (lived.isNegative) return null;
+    final phase = lived.inMicroseconds / ringLife.inMicroseconds;
+    return phase >= 1 ? null : phase;
+  }
+
   /// Насколько сдвинуты HUD и содержимое поля в этом кадре.
   ///
   /// Пары «слово → перевод» здесь нет и быть не должно: она соседний
@@ -378,6 +455,16 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   /// Доля жизни вспышки: 200 мс от удара.
   double get _ringPhase =>
       (_revealLived.inMicroseconds / ringLife.inMicroseconds).clamp(0.0, 1.0);
+
+  /// Доля жизни украшений реза: следа, половинок, искр, прироста.
+  ///
+  /// От 300 мс, а не от длины подсветки, и это снова стало наблюдаемым:
+  /// подсветка верного реза теперь 700 мс («Темп партии»), и без своей доли
+  /// искры растянулись бы на все 700, превратившись из брызг в дождь. Круг
+  /// назад эта величина совпадала с `_reveal.value` и была убрана как
+  /// ненаблюдаемая — числа изменились, и она вернулась.
+  double get _slicePhase =>
+      (_revealLived.inMicroseconds / sliceLife.inMicroseconds).clamp(0.0, 1.0);
 
   /// Часы следа. В полёте — часы полёта; после реза — они же, замороженные
   /// в момент реза, плюс прожитое подсветки. Так замороженный след догасает
@@ -527,7 +614,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     // Доля жизни украшений реза. Половинки, искры и прирост есть только на
     // верном резе, а там подсветка и есть 300 мс — своих часов им не нужно.
     // Следу нужны: он живёт и на промахе, и считает время сам (`_trailNow`).
-    final phase = _reveal.value;
+    final phase = _slicePhase;
     final t = _flight.value;
     // Половинки — только верному резу и только 300 мс. Промах — стоп-кадр:
     // разрезанный неверный стоит целым и помеченным все 800 мс, чтобы «что
@@ -547,6 +634,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     // Вспышка — факт удара, не награда: есть и на промахе, цветом вердикта.
     final flashShown =
         juicy && revealing && _run.slicedIndex != null && _ringPhase < 1;
+    final grazePhase = _grazePhase;
     return TweenAnimationBuilder<Color?>(
       tween: ColorTween(
         begin: scheme.surface,
@@ -574,7 +662,15 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
                 children: [
                   // Подсветка не трясётся: это фон поля, и у поля не должно
                   // быть края, который ездит.
-                  FieldLighting(key: NinjaKeys.fieldLight, combo: _run.combo),
+                  // Подсветка не трясётся и не перерисовывается: она меняется
+                  // только со сменой серии, а RepaintBoundary не даёт ей
+                  // переписываться вместе с летящими объектами.
+                  RepaintBoundary(
+                    child: FieldLighting(
+                      key: NinjaKeys.fieldLight,
+                      combo: _run.combo,
+                    ),
+                  ),
                   // Трясётся содержимое поля, а не поле: фон и его градиент
                   // обязаны остаться на месте.
                   Transform.translate(
@@ -617,10 +713,20 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
                       key: NinjaKeys.flash,
                       origin: _slicePoint,
                       progress: _ringPhase,
+                      to: ringEndRadiusFor(hot: comboIsHot(_run.combo)),
                       color:
                           _run.verdict == Verdict.correct
                               ? scheme.primary
                               : scheme.error,
+                    ),
+                  // Касание вскользь: то же кольцо, но тише и цветом, который
+                  // ничего не обещает, — жизнь цела, серия цела.
+                  if (juicy && grazePhase != null)
+                    ImpactRing(
+                      key: NinjaKeys.graze,
+                      origin: _grazePoint,
+                      progress: grazePhase,
+                      color: scheme.outline,
                     ),
                   if (sliced != null && _sparks.isNotEmpty)
                     SparkBurst(

@@ -40,6 +40,7 @@ dependencies:
   flutter_local_notifications: ^19.5.0
   timezone: ^0.10.1
   flutter_timezone: ^5.1.0
+  audioplayers: ^6.6.0
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +69,11 @@ flutter:
 
   assets:
     - assets/words_seed.json
+    # Три звука ниндзя-слэша. Нарисованы кодом (tool/sound/), а не взяты из
+    # пака: прецедент иконки лаунчера 0.15 плюс то, что автор этого кода
+    # звук не слышит. Сторожится test/assets/sound_test.dart — он
+    # пересобирает WAV в памяти и сверяет байты.
+    - assets/sound/
     # Лицензионное условие CEFR-J: цитата обязана быть в продукте, а не только
     # в репозитории. Сторожится test/assets/attribution_test.dart.
     - assets/ATTRIBUTION.md

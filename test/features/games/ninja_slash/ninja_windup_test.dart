@@ -178,9 +178,9 @@ void main() {
       await tester.pump(_windUp);
       await tester.pump(const Duration(seconds: 1));
       await _sliceCorrect(tester, 1);
-      // Подсветка верного реза — 300 мс, и после неё вторая волна обязана
-      // взлететь сразу: между волнами взвода нет.
-      await tester.pump(const Duration(milliseconds: 300));
+      // Празднование верного реза — 700 мс, и после него вторая волна
+      // обязана взлететь сразу: между волнами взвода нет.
+      await tester.pump(const Duration(milliseconds: 700));
       await tester.pump(const Duration(milliseconds: 500));
       final start = _objectY(tester);
 

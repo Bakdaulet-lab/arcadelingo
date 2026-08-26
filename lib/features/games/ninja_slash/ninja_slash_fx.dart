@@ -160,14 +160,23 @@ double emergeScale(double t) {
 /// Кольцо-ударная волна: радиус, толщина, жизнь.
 const double ringStartRadius = 8;
 const double ringEndRadius = 64;
+
+/// Куда доходит кольцо на горячей серии. Тот же порог, что у искр.
+const double ringEndRadiusHot = 96;
+
+/// Предел кольца при серии [hot].
+double ringEndRadiusFor({required bool hot}) =>
+    hot ? ringEndRadiusHot : ringEndRadius;
 const double ringStartStroke = 4;
 const double ringEndStroke = 1;
 const Duration ringLife = Duration(milliseconds: 200);
 
 /// Радиус кольца в долю жизни [phase]: разбегается с замедлением, как волна.
-double ringRadius(double phase) =>
+///
+/// [to] — куда доходит: на горячей серии дальше ([ringEndRadiusFor]).
+double ringRadius(double phase, {double to = ringEndRadius}) =>
     ringStartRadius +
-    (ringEndRadius - ringStartRadius) *
+    (to - ringStartRadius) *
         Curves.easeOutCubic.transform(phase.clamp(0.0, 1.0));
 
 /// Толщина кольца в долю жизни [phase].
@@ -234,8 +243,15 @@ HalfMotion halfMotion({
 
 // ----------------------------------------------------------------- искры ----
 
-/// Сколько искр даёт верный рез.
+/// Сколько искр даёт верный рез до порога серии и с него.
+///
+/// Эскалация: первая серия и серия из десяти обязаны ощущаться по-разному,
+/// иначе множитель — просто число в углу.
 const int sparkCount = 14;
+const int sparkCountHot = 22;
+
+/// Искр на рез при серии [hot].
+int sparkCountFor({required bool hot}) => hot ? sparkCountHot : sparkCount;
 
 /// Разброс направления искры вокруг нормали к резу, в градусах.
 const double sparkSpreadDegrees = 60;
@@ -276,11 +292,15 @@ class Spark {
 /// Искры реза под углом [cutAngle]: половина по одну сторону от нормали,
 /// половина по другую, каждая со своим разбросом, дальностью, размером и
 /// яркостью из [random]. Ровная розетка — то самое «неуклюже».
-List<Spark> sparkBurst(Random random, {required double cutAngle}) {
+List<Spark> sparkBurst(
+  Random random, {
+  required double cutAngle,
+  int count = sparkCount,
+}) {
   final normal = cutAngle + pi / 2;
   const spread = sparkSpreadDegrees * pi / 180;
   return [
-    for (var i = 0; i < sparkCount; i++)
+    for (var i = 0; i < count; i++)
       Spark(
         // Чётные — по одну сторону реза, нечётные — по другую; внутри
         // стороны направление гуляет, поэтому лучи не ложатся ровно.
@@ -325,6 +345,18 @@ double sparkAlpha(double phase) {
 /// Размер искры в долю [phase]: уменьшается к концу, но не в ноль.
 double sparkSizeAt(Spark spark, double phase) =>
     spark.size * (1 - 0.5 * phase.clamp(0.0, 1.0));
+
+// ------------------------------------------------------- свечение кромок ----
+
+/// Альфа свечения кромок поля и глубина, на которую оно уходит внутрь.
+///
+/// Приходит только на пике серии — там же, где тон выходит на потолок. Это
+/// единственное украшение, которое видно всё время полёта, а не в момент
+/// события, и поэтому оно последнее: постоянное свечение с первой серии
+/// обесценило бы и себя, и всё, что до него. Та же логика, что у ореола
+/// `inferno` в стрик-карточке.
+const double rimGlowAlpha = 0.35;
+const double rimGlowInset = 40;
 
 // ---------------------------------------------------------- прилёт очков ----
 

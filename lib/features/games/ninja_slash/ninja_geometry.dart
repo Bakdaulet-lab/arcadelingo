@@ -89,3 +89,28 @@ double _distanceToSegment({
   required Offset point,
 }) =>
     (point - closestPointOnSegment(from: from, to: to, point: point)).distance;
+
+/// Насколько дальше радиуса объекта жест ещё считается касанием вскользь.
+///
+/// Две трети радиуса. Больше — отклик начнёт приходить на свайпы, которые
+/// игрок не считал попыткой; меньше — сольётся с самим попаданием, где уже
+/// есть свой, куда более громкий отклик.
+const double grazeMargin = 24;
+
+/// Прошёл ли отрезок [from] → [to] **вскользь** мимо круга [centre]:
+/// самого объекта не задел, но ближе, чем радиус плюс [grazeMargin].
+///
+/// Почти-успех, который ничем не отзывается, читается как «игра меня не
+/// увидела», и человек винит не свою руку, а хит-зону. Зеркало правила
+/// 0.11 из падающих слов, где так же не отзывался успех.
+bool grazed({
+  required Offset from,
+  required Offset to,
+  required Offset centre,
+  required double radius,
+}) {
+  final distance =
+      (centre - closestPointOnSegment(from: from, to: to, point: centre))
+          .distance;
+  return distance > radius && distance <= radius + grazeMargin;
+}

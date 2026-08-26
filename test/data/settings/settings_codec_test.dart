@@ -28,8 +28,8 @@ void main() {
       );
     });
 
-    test('пишется версия 1', () {
-      expect(encodeSettings(AppSettings.defaults), contains('"version":1'));
+    test('пишется версия 2', () {
+      expect(encodeSettings(AppSettings.defaults), contains('"version":2'));
     });
   });
 
@@ -45,7 +45,7 @@ void main() {
     test('неизвестная версия', () {
       expect(
         err(
-          decodeSettings('{"version":2,"enabled":true,"hour":20,"minute":0}'),
+          decodeSettings('{"version":3,"enabled":true,"hour":20,"minute":0}'),
         ).message,
         contains('версия'),
       );
@@ -83,6 +83,45 @@ void main() {
 
     test('поля отсутствуют', () {
       expect(err(decodeSettings('{"version":1}')).message, contains('enabled'));
+    });
+  });
+
+  group('Звук в документе настроек', () {
+    test('пишется и читается обратно', () {
+      const off = AppSettings(
+        enabled: false,
+        at: ReminderTime(9, 30),
+        soundOn: false,
+      );
+
+      expect(encodeSettings(off), contains('"soundOn":false'));
+      expect(ok(decodeSettings(encodeSettings(off))), off);
+    });
+
+    // Миграция ничего не выдумывает: у документа, записанного до звука,
+    // человек про звук не решал, и получает то же умолчание, что новый
+    // игрок. Это не подарок, как заморозки в миграции серии, а буквальное
+    // отсутствие выбора.
+    test('версия 1 читается: звука там не было, берётся умолчание', () {
+      final settings = ok(
+        decodeSettings('{"version":1,"enabled":true,"hour":7,"minute":5}'),
+      );
+
+      expect(settings.soundOn, isTrue);
+      expect(settings.enabled, isTrue);
+      expect(settings.at, const ReminderTime(7, 5));
+    });
+
+    test('soundOn не булево — Err, а не молчаливое умолчание', () {
+      err(
+        decodeSettings(
+          '{"version":2,"enabled":true,"hour":7,"minute":5,"soundOn":"да"}',
+        ),
+      );
+    });
+
+    test('умолчание — звук включён', () {
+      expect(AppSettings.defaults.soundOn, isTrue);
     });
   });
 }
