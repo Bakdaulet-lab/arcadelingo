@@ -53,6 +53,10 @@ const double topLightMax = 0.24;
 /// `primary` перевалило бы за 0.45, где `onSurface` теряет 4.5:1.
 const double topLightSpan = comboGradientEdge;
 
+/// На какой доле высоты подсветка верха ярче всего. У самой кромки её нет:
+/// стык с HUD не должен быть виден линией.
+const double topLightPeak = 0.06;
+
 /// С какой доли высоты низ поля темнеет и до какой альфы у кромки.
 const double bottomDarkFrom = 0.55;
 const double bottomDarkAlpha = 0.5;
@@ -1173,7 +1177,9 @@ class _LightingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     // Верх — чуть подсвечен акцентом: поле перестаёт быть серым, а слово
-    // наверху остаётся на тёмном. Сходит к нулю ровно там, где начинается
+    // наверху остаётся на тёмном. У самой кромки — ноль, иначе стык с HUD
+    // виден линией (то же правило, что у полосы тона: «стык с HUD не
+    // виден»); пик — на 6% высоты; сходит к нулю ровно там, где начинается
     // полоса тона серии, чтобы смешение к primary не складывалось.
     final top = Rect.fromLTWH(0, 0, size.width, size.height * topLightSpan);
     canvas.drawRect(
@@ -1183,9 +1189,11 @@ class _LightingPainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
+            accent.withValues(alpha: 0),
             accent.withValues(alpha: topAlpha),
             accent.withValues(alpha: 0),
           ],
+          stops: const [0, topLightPeak / topLightSpan, 1],
         ).createShader(top),
     );
     // Низ — глубже: объекты вылетают из темноты.

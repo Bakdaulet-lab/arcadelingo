@@ -102,7 +102,9 @@ List<TrailSample> smoothTrail(List<TrailSample> points) {
 /// головы. Обе оси нужны: быстрый свайп даёт всем точкам одну свежесть, и
 /// без [along] след был бы палкой одной толщины.
 double trailWidthAt({required double freshness, required double along}) =>
-    trailHeadWidth * freshness.clamp(0.0, 1.0) * along.clamp(0.0, 1.0);
+    // Корень по свежести: линейное старение давало нитку уже к середине
+    // жизни точки, а след обязан оставаться клинком почти до конца.
+    trailHeadWidth * sqrt(freshness.clamp(0.0, 1.0)) * along.clamp(0.0, 1.0);
 
 TrailSample _between(TrailSample a, TrailSample b, double u) => (
   at: Offset.lerp(a.at, b.at, u)!,
@@ -240,8 +242,8 @@ const double sparkMinReach = 40;
 const double sparkMaxReach = 90;
 
 /// Размер искры, dp.
-const double sparkMinSize = 2;
-const double sparkMaxSize = 4;
+const double sparkMinSize = 3;
+const double sparkMaxSize = 6;
 
 /// Насколько искра может быть подмешана к белому.
 const double sparkMaxBrightness = 0.4;
@@ -310,11 +312,16 @@ Offset sparkPosition(
 }
 
 /// Альфа искры: тает к концу.
-double sparkAlpha(double phase) => 1 - phase.clamp(0.0, 1.0);
+double sparkAlpha(double phase) {
+  // 1 − t², а не 1 − t: искра держится яркой дольше половины жизни и гаснет
+  // быстро в конце — так читаются брызги, а не медленно тускнеющая пыль.
+  final p = phase.clamp(0.0, 1.0);
+  return 1 - p * p;
+}
 
 /// Размер искры в долю [phase]: уменьшается к концу, но не в ноль.
 double sparkSizeAt(Spark spark, double phase) =>
-    spark.size * (1 - 0.7 * phase.clamp(0.0, 1.0));
+    spark.size * (1 - 0.5 * phase.clamp(0.0, 1.0));
 
 // ---------------------------------------------------------- прилёт очков ----
 
