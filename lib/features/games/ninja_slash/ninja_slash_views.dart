@@ -17,6 +17,8 @@
 /// мужчин).
 library;
 
+import 'dart:math';
+
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -104,6 +106,18 @@ abstract final class NinjaKeys {
   static const Key exit = Key('ninja_slash.exit');
 
   static const Key nothingToday = Key('ninja_slash.nothing_today');
+
+  /// Летящий к счёту прирост очков.
+  static const Key scorePop = Key('ninja_slash.score_pop');
+
+  /// Метка «×1.5» рядом с приростом.
+  static const Key nearMissBadge = Key('ninja_slash.near_miss_badge');
+
+  /// След свайпа.
+  static const Key trail = Key('ninja_slash.trail');
+
+  /// Искры из точки реза.
+  static const Key sparks = Key('ninja_slash.sparks');
 
   /// Объект волны номер [index] — по нему тест читает его позицию.
   static Key objectAt(int index) => ValueKey('ninja_slash.object.$index');
@@ -607,4 +621,117 @@ class NothingTodayView extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Толщина следа свайпа.
+const double trailWidth = 4;
+
+/// На сколько расходятся половинки разрезанного объекта.
+const double halfSpread = 24;
+
+/// Сколько искр даёт рез.
+const int sparkCount = 8;
+
+/// Радиус искры.
+const double sparkRadius = 3;
+
+/// Ближняя и дальняя граница разлёта искр.
+const double sparkMinReach = 40;
+const double sparkMaxReach = 70;
+
+/// Восемь искр из точки реза: направление и дальность.
+///
+/// Круг делится на [sparkCount] секторов, и внутри сектора направление
+/// гуляет: ровные восемь лучей читаются как нарисованная звёздочка, а не
+/// как брызги. [random] сидирован — без этого голден не снять.
+List<Offset> sparkBurst(Random random) => throw UnimplementedError();
+
+/// Прирост очков, улетающий к счётчику.
+///
+/// Летит внутри поля, а не поверх всего экрана: стартовая точка — в
+/// точности место реза, и её не приходится пересчитывать между двумя
+/// системами координат.
+class ScorePop extends StatelessWidget {
+  const ScorePop({
+    required this.points,
+    required this.from,
+    required this.progress,
+    required this.nearMiss,
+    super.key,
+  });
+
+  /// Сколько очков принёс рез. Прирост, а не весь счёт.
+  final int points;
+
+  /// Откуда летит — точка реза в координатах поля.
+  final Offset from;
+
+  /// Доля полёта, 0…1.
+  final double progress;
+
+  /// Показать ли метку множителя рядом с приростом.
+  final bool nearMiss;
+
+  @override
+  Widget build(BuildContext context) => throw UnimplementedError();
+}
+
+/// След свайпа: ломаная по точкам жеста, гаснущая за подсветку.
+class SliceTrail extends StatelessWidget {
+  const SliceTrail({required this.points, required this.progress, super.key});
+
+  /// Точки жеста в координатах поля.
+  final List<Offset> points;
+
+  /// Доля подсветки, 0…1: на единице следа уже нет.
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) => throw UnimplementedError();
+}
+
+/// Разрезанный объект: две половинки, расходящиеся перпендикулярно линии
+/// реза.
+class SlicedObject extends StatelessWidget {
+  const SlicedObject({
+    required this.label,
+    required this.state,
+    required this.angle,
+    required this.progress,
+    super.key,
+  });
+
+  final String label;
+  final ObjectState state;
+
+  /// Направление реза в радианах: по нему делится круг.
+  final double angle;
+
+  /// Доля подсветки, 0…1.
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) => throw UnimplementedError();
+}
+
+/// Искры из точки реза.
+class SparkBurst extends StatelessWidget {
+  const SparkBurst({
+    required this.origin,
+    required this.sparks,
+    required this.progress,
+    super.key,
+  });
+
+  /// Точка реза в координатах поля.
+  final Offset origin;
+
+  /// Смещение каждой искры на полном разлёте.
+  final List<Offset> sparks;
+
+  /// Доля подсветки, 0…1.
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) => throw UnimplementedError();
 }

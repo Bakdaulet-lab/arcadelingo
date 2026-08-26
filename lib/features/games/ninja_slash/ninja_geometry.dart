@@ -30,6 +30,17 @@ bool sliceHit({
   required double radius,
 }) => _distanceToSegment(from: from, to: to, point: center) <= radius;
 
+/// Ближайшая к [point] точка отрезка [from] → [to].
+///
+/// Она же — точка реза: место, где жест прошёл через объект. Из неё летят
+/// искры, и брать вместо неё центр объекта было бы враньём на глаз —
+/// касательный рез виден именно краем.
+Offset closestPointOnSegment({
+  required Offset from,
+  required Offset to,
+  required Offset point,
+}) => throw UnimplementedError();
+
 /// Какой из [centers] разрезан отрезком [from] → [to]; null — ни один.
 ///
 /// Задеты двое — режется тот, чей центр ближе к [from]: рука прошла через

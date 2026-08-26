@@ -214,4 +214,45 @@ void main() {
       expect(comboTintFade, const Duration(milliseconds: 400));
     });
   });
+
+  group('Искры', () {
+    test('ровно восемь', () {
+      expect(sparkBurst(Random(1)), hasLength(8));
+      expect(sparkCount, 8);
+    });
+
+    test('одинаковый seed — одинаковые искры: без этого кадр не снять', () {
+      expect(sparkBurst(Random(7)), sparkBurst(Random(7)));
+    });
+
+    test('разлёт в обещанных границах', () {
+      for (final spark in sparkBurst(Random(3))) {
+        expect(spark.distance, greaterThanOrEqualTo(40));
+        expect(spark.distance, lessThanOrEqualTo(70));
+      }
+      expect(sparkMinReach, 40);
+      expect(sparkMaxReach, 70);
+    });
+
+    test('разлетаются во все стороны, а не веером в одну', () {
+      final sparks = sparkBurst(Random(5));
+
+      expect(sparks.any((s) => s.dx > 0), isTrue);
+      expect(sparks.any((s) => s.dx < 0), isTrue);
+      expect(sparks.any((s) => s.dy > 0), isTrue);
+      expect(sparks.any((s) => s.dy < 0), isTrue);
+    });
+
+    test('направления различны: это брызги, а не одна искра восемь раз', () {
+      final angles = sparkBurst(Random(11)).map((s) => s.direction).toSet();
+
+      expect(angles, hasLength(8));
+    });
+
+    test('числа из SPEC: радиус искры и толщина следа', () {
+      expect(sparkRadius, 3);
+      expect(trailWidth, 4);
+      expect(halfSpread, 24);
+    });
+  });
 }
