@@ -30,6 +30,7 @@ import 'package:flutter/services.dart';
 
 import 'ninja_geometry.dart';
 import 'ninja_run.dart';
+import 'ninja_slash_fx.dart';
 import 'ninja_slash_juice.dart';
 import 'ninja_slash_views.dart';
 import 'ninja_trajectory.dart';
@@ -111,11 +112,11 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   /// Сколько пути прошёл палец с начала жеста.
   double _travelled = 0;
 
-  /// Точки текущего жеста в координатах поля.
-  final List<Offset> _gesture = [];
+  /// Точки текущего жеста в координатах поля, с отметками по часам полёта.
+  final List<TrailPoint> _gesture = [];
 
   /// След реза: точки жеста, замороженные в момент реза.
-  List<Offset> _trail = const [];
+  List<TrailPoint> _trail = const [];
 
   /// Направление реза в радианах — по нему делится круг на половинки.
   double _sliceAngle = 0;
@@ -124,14 +125,14 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   Offset _slicePoint = Offset.zero;
 
   /// Искры этого реза; пусто — искр нет (промах, таймаут, джус выключен).
-  List<Offset> _sparks = const [];
+  List<Spark> _sparks = const [];
 
-  /// Свой генератор искр.
+  /// Свой генератор украшений: искр и наклона объектов.
   ///
   /// Не тот, что у `NinjaRun`: там он перемешивает волну, и деление одного
   /// на двоих означало бы, что число нарисованных искр меняет состав
   /// обманок. Сид тот же — без него голден не снять.
-  late final Random _sparkRandom = Random(widget.seed);
+  late final Random _decorRandom = Random(widget.seed);
 
   /// Ответ хоста на «что дальше», взятый на входе в итоги.
   String? _footer;
@@ -244,7 +245,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     _travelled = 0;
     _gesture
       ..clear()
-      ..add(event.localPosition);
+      ..add((at: event.localPosition, stamp: _elapsed));
   }
 
   /// Движение пальца. Проверяется отрезок «предыдущая точка → текущая»
@@ -259,7 +260,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     final to = event.localPosition;
     _travelled += (to - from).distance;
     _last = to;
-    _gesture.add(to);
+    _gesture.add((at: to, stamp: _elapsed));
     if (_gesture.length > trailPoints) _gesture.removeAt(0);
     // На паузе жест не принимается: окно бывает интерактивным и без фокуса
     // (split-screen, системный диалог, баннер звонка). Принятый здесь рез
@@ -297,7 +298,9 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     // Частицы на промахе — вне скоупа (`SPEC.md`): рез неверного объекта
     // получает след и половинки, но не искры.
     _sparks =
-        _run.verdict == Verdict.correct ? sparkBurst(_sparkRandom) : const [];
+        _run.verdict == Verdict.correct
+            ? sparkBurst(_decorRandom, cutAngle: _sliceAngle)
+            : const [];
     _feel();
     setState(() {});
     _startReveal();
@@ -549,10 +552,10 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
                     ),
                   ),
                   if (sliced != null && _trail.length > 1)
-                    SliceTrail(
+                    BladeTrail(
                       key: NinjaKeys.trail,
                       points: _trail,
-                      progress: phase,
+                      now: Duration.zero,
                     ),
                   if (sliced != null && _sparks.isNotEmpty)
                     SparkBurst(
@@ -569,6 +572,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
                       from: _slicePoint,
                       progress: phase,
                       nearMiss: _run.nearMiss,
+                      hot: comboIsHot(_run.combo),
                     ),
                   if (missed)
                     RevealPair(

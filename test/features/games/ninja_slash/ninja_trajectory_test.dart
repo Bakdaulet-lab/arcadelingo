@@ -246,4 +246,47 @@ void main() {
       );
     });
   });
+
+  group('Скорость полёта', () {
+    const Duration flight = Duration(milliseconds: 3500);
+
+    Offset velocity(int index, double t) => waveVelocity(
+      count: 3,
+      index: index,
+      t: t,
+      width: _width,
+      height: _height,
+      duration: flight,
+    );
+
+    Offset position(int index, double t) =>
+        wavePositions(count: 3, t: t, width: _width, height: _height)[index];
+
+    // Производная сверяется с самой траекторией численно: две формулы
+    // парабол разошлись бы молча, одна — нет.
+    test('это производная траектории по времени', () {
+      const dt = 1e-6;
+      for (final t in [0.1, 0.3, 0.5, 0.8]) {
+        for (var index = 0; index < 3; index++) {
+          final numeric =
+              (position(index, t + dt) - position(index, t - dt)) /
+              (2 * dt * 3.5);
+          final analytic = velocity(index, t);
+          expect(analytic.dx, closeTo(numeric.dx, 1e-3), reason: 't = $t');
+          expect(analytic.dy, closeTo(numeric.dy, 1e-3), reason: 't = $t');
+        }
+      }
+    });
+
+    test('в апексе вертикальная скорость ноль, до него — вверх', () {
+      expect(velocity(0, 0.5).dy, closeTo(0, 1e-9));
+      expect(velocity(0, 0.2).dy, lessThan(0));
+      expect(velocity(0, 0.8).dy, greaterThan(0));
+    });
+
+    test('по x — дрейф за секунду, знак по дорожке', () {
+      expect(velocity(0, 0.3).dx, closeTo(18 / 3.5, 1e-9));
+      expect(velocity(1, 0.3).dx, closeTo(-18 / 3.5, 1e-9));
+    });
+  });
 }

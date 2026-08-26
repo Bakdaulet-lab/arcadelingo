@@ -8,8 +8,11 @@
 /// **Это копия `falling_words_views.dart`, а не общий код** — правило 5
 /// «Архитектурного закона». Дословно скопированы `GameHud`, `RevealPair`,
 /// `SummaryView`, `EndButton`, `NothingTodayView` и весь блок тона поля;
-/// своё здесь — `NinjaField` и `FlyingObject`. Список копируемого лежит в
-/// плане Фазы 4: это кандидаты в общее, которые выделит третья игра.
+/// своё здесь — `NinjaField`, `FlyingObject` и весь блок украшений реза.
+/// Список копируемого лежит в плане Фазы 4: это кандидаты в общее, которые
+/// выделит третья игра.
+///
+/// Физика украшений — в `ninja_slash_fx.dart`; здесь только краска.
 ///
 /// Читаемость под давлением — требование, а не вкусовщина: размеры берутся
 /// из `textTheme` и переживают системное увеличение шрифта, а верный и
@@ -17,13 +20,10 @@
 /// мужчин).
 library;
 
-import 'dart:math';
-import 'dart:ui' show PointMode;
-
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
-import 'ninja_slash_juice.dart';
+import 'ninja_slash_fx.dart';
 import 'ninja_trajectory.dart';
 
 /// До этой серии поле чистое: ранний тон был бы шумом, а не наградой.
@@ -41,6 +41,27 @@ const Duration comboTintFade = Duration(milliseconds: 400);
 /// Доля высоты поля, на которой тон сходит к фону у каждого края.
 const double comboGradientEdge = 0.22;
 
+/// Альфа подсветки верха поля на чистой серии и на потолке.
+const double topLightMin = 0.10;
+const double topLightMax = 0.24;
+
+/// До какой доли высоты подсветка верха сходит к нулю. Ровно там, где
+/// начинается полоса тона: сложись они, на потолке серии смешение к
+/// `primary` перевалило бы за 0.45, где `onSurface` теряет 4.5:1.
+const double topLightSpan = comboGradientEdge;
+
+/// С какой доли высоты низ поля темнеет и до какой альфы у кромки.
+const double bottomDarkFrom = 0.55;
+const double bottomDarkAlpha = 0.5;
+
+/// Виньетка: альфа по углам и радиус, до которого её нет.
+const double vignetteAlpha = 0.45;
+const double vignetteInner = 0.65;
+
+/// Альфа подсветки верха по длине серии: от [topLightMin] до [topLightMax]
+/// по той же шкале, что и тон поля.
+double topLightAlpha(int combo) => throw UnimplementedError();
+
 /// Тон поля по длине серии.
 ///
 /// Единственная функция джуса, которой нужна палитра, — поэтому она здесь,
@@ -51,10 +72,18 @@ Color comboTint(ColorScheme scheme, int combo) {
   // цветом, что и surface, иначе «поле не тронуто» пришлось бы проверять с
   // допуском, и настоящий блёклый тон прошёл бы под такой допуск.
   if (!comboIsHot(combo)) return scheme.surface;
-  final depth = ((combo - comboTintStart) / (comboTintEnd - comboTintStart))
-      .clamp(0.0, 1.0);
-  return Color.lerp(scheme.surface, scheme.primary, comboTintMax * depth)!;
+  return Color.lerp(
+    scheme.surface,
+    scheme.primary,
+    comboTintMax * comboDepth(combo),
+  )!;
 }
+
+/// Насколько разогрета серия, 0…1: ноль до порога, единица на потолке.
+///
+/// Одна шкала на тон поля и на подсветку верха: две шкалы разошлись бы в
+/// день, когда кто-то подвинет один порог.
+double comboDepth(int combo) => throw UnimplementedError();
 
 /// Загорелась ли серия — то есть видно ли уже тон на поле.
 ///
@@ -120,6 +149,12 @@ abstract final class NinjaKeys {
 
   /// Искры из точки реза.
   static const Key sparks = Key('ninja_slash.sparks');
+
+  /// Кольцо-вспышка в точке удара.
+  static const Key flash = Key('ninja_slash.flash');
+
+  /// Подсветка, затемнение и виньетка поля.
+  static const Key fieldLight = Key('ninja_slash.field_light');
 
   /// Объект волны номер [index] — по нему тест читает его позицию.
   static Key objectAt(int index) => ValueKey('ninja_slash.object.$index');
@@ -337,6 +372,9 @@ class NinjaField extends StatelessWidget {
     this.sliced,
     this.sliceAngle = 0,
     this.sliceProgress = 0,
+    this.sliceVelocity = Offset.zero,
+    this.tilts = const [],
+    this.scale = 1,
   });
 
   /// Английское слово наверху.
@@ -362,6 +400,17 @@ class NinjaField extends StatelessWidget {
 
   /// Доля подсветки, по которой расходятся половинки.
   final double sliceProgress;
+
+  /// Скорость полёта разрезанного объекта в момент реза — её наследуют
+  /// половинки.
+  final Offset sliceVelocity;
+
+  /// Наклон каждого объекта в этом кадре, радианы; короче списка объектов
+  /// — остальные стоят прямо.
+  final List<double> tilts;
+
+  /// Масштаб объектов в этом кадре: scale-pop при вылете.
+  final double scale;
 
   @override
   Widget build(BuildContext context) {
@@ -647,39 +696,6 @@ class NothingTodayView extends StatelessWidget {
   }
 }
 
-/// Толщина следа свайпа.
-const double trailWidth = 4;
-
-/// Сколько точек жеста держит след. Хвост длиннее читается как размазня, а
-/// список без предела рос бы всё время, пока палец на экране.
-const int trailPoints = 32;
-
-/// На сколько расходятся половинки разрезанного объекта.
-const double halfSpread = 24;
-
-/// Сколько искр даёт рез.
-const int sparkCount = 8;
-
-/// Радиус искры.
-const double sparkRadius = 3;
-
-/// Ближняя и дальняя граница разлёта искр.
-const double sparkMinReach = 40;
-const double sparkMaxReach = 70;
-
-/// Восемь искр из точки реза: направление и дальность.
-///
-/// Круг делится на [sparkCount] секторов, и внутри сектора направление
-/// гуляет: ровные восемь лучей читаются как нарисованная звёздочка, а не
-/// как брызги. [random] сидирован — без этого голден не снять.
-List<Offset> sparkBurst(Random random) => [
-  for (var i = 0; i < sparkCount; i++)
-    Offset.fromDirection(
-      (i + random.nextDouble()) * 2 * pi / sparkCount,
-      sparkMinReach + random.nextDouble() * (sparkMaxReach - sparkMinReach),
-    ),
-];
-
 /// Прирост очков, улетающий к счётчику.
 ///
 /// Летит внутри поля, а не поверх всего экрана: стартовая точка — в
@@ -691,6 +707,7 @@ class ScorePop extends StatelessWidget {
     required this.from,
     required this.progress,
     required this.nearMiss,
+    required this.hot,
     super.key,
   });
 
@@ -706,117 +723,29 @@ class ScorePop extends StatelessWidget {
   /// Показать ли метку множителя рядом с приростом.
   final bool nearMiss;
 
+  /// Серия горячая: «+N» крупнее и со свечением.
+  final bool hot;
+
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final flown = Curves.easeOutCubic.transform(progress.clamp(0.0, 1.0));
-    // Растворяется на последней трети пути: раньше — не успеть прочитать,
-    // позже — «+N» доживёт до следующей волны.
-    final fade = ((1 - progress) / 0.35).clamp(0.0, 1.0);
-    return IgnorePointer(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final finish = Offset(constraints.maxWidth - 24, 24);
-          final at = Offset.lerp(from, finish, flown)!;
-          return Stack(
-            children: [
-              Positioned(
-                left: at.dx,
-                top: at.dy,
-                child: FractionalTranslation(
-                  translation: const Offset(-0.5, -0.5),
-                  child: Opacity(
-                    opacity: fade,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '+$points',
-                          key: NinjaKeys.scorePop,
-                          style: withWeight(
-                            textTheme.headlineSmall!,
-                            FontWeight.bold,
-                          ).copyWith(color: scheme.primary),
-                        ),
-                        if (nearMiss) ...[
-                          const SizedBox(width: 6),
-                          Text(
-                            // Множитель берётся из тех же констант, что и
-                            // начисление: метка, разошедшаяся с арифметикой,
-                            // — обман в чистом виде.
-                            '×${nearMissBonusNumerator / nearMissBonusDenominator}',
-                            key: NinjaKeys.nearMissBadge,
-                            style: withWeight(
-                              textTheme.titleMedium!,
-                              FontWeight.bold,
-                            ).copyWith(color: scheme.tertiary),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
+  Widget build(BuildContext context) => throw UnimplementedError();
 }
 
-/// След свайпа: ломаная по точкам жеста, гаснущая за подсветку.
-class SliceTrail extends StatelessWidget {
-  const SliceTrail({required this.points, required this.progress, super.key});
+/// След клинка: сглаженная кривая по точкам жеста, тающая с хвоста.
+///
+/// Точки приходят с отметками времени по часам полёта, [now] — те же часы
+/// сейчас: что старше [trailLife], в след не попадает. Во время полёта
+/// это живой жест, после реза — замороженный, и гаснут они одинаково.
+class BladeTrail extends StatelessWidget {
+  const BladeTrail({required this.points, required this.now, super.key});
 
   /// Точки жеста в координатах поля.
-  final List<Offset> points;
+  final List<TrailPoint> points;
 
-  /// Доля подсветки, 0…1: на единице следа уже нет.
-  final double progress;
-
-  @override
-  Widget build(BuildContext context) => IgnorePointer(
-    child: CustomPaint(
-      size: Size.infinite,
-      painter: _TrailPainter(
-        points: points,
-        color: Theme.of(context).colorScheme.primary,
-        opacity: (1 - progress).clamp(0.0, 1.0),
-      ),
-    ),
-  );
-}
-
-class _TrailPainter extends CustomPainter {
-  const _TrailPainter({
-    required this.points,
-    required this.color,
-    required this.opacity,
-  });
-
-  final List<Offset> points;
-  final Color color;
-  final double opacity;
+  /// Момент по часам полёта.
+  final Duration now;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    if (points.length < 2 || opacity <= 0) return;
-    canvas.drawPoints(
-      PointMode.polygon,
-      points,
-      Paint()
-        ..color = color.withValues(alpha: opacity)
-        ..strokeWidth = trailWidth
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_TrailPainter old) =>
-      old.opacity != opacity || old.points != points || old.color != color;
+  Widget build(BuildContext context) => throw UnimplementedError();
 }
 
 /// Разрезанный объект: две половинки, расходящиеся перпендикулярно линии
@@ -827,6 +756,7 @@ class SlicedObject extends StatelessWidget {
     required this.state,
     required this.angle,
     required this.progress,
+    this.velocity = Offset.zero,
     super.key,
   });
 
@@ -839,60 +769,11 @@ class SlicedObject extends StatelessWidget {
   /// Доля подсветки, 0…1.
   final double progress;
 
-  @override
-  Widget build(BuildContext context) {
-    final gone = progress.clamp(0.0, 1.0);
-    // Перпендикуляр к линии реза: половинки расходятся поперёк разреза, а
-    // не вдоль — вдоль они просто разъехались бы по той же прямой и рез
-    // читался бы как «объект уехал».
-    final apart = Offset(-sin(angle), cos(angle)) * (halfSpread * gone);
-    return SizedBox(
-      width: objectRadius * 2,
-      height: objectRadius * 2,
-      child: Opacity(
-        opacity: 1 - gone,
-        child: Stack(
-          children: [
-            for (final side in [1.0, -1.0])
-              Transform.translate(
-                offset: apart * side,
-                child: ClipPath(
-                  clipper: _HalfClipper(angle: angle, side: side),
-                  child: FlyingObject(label: label, state: state),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Половина круга по одну сторону от линии реза.
-class _HalfClipper extends CustomClipper<Path> {
-  const _HalfClipper({required this.angle, required this.side});
-
-  final double angle;
-  final double side;
+  /// Скорость полёта в момент реза, dp/с: половинки её наследуют.
+  final Offset velocity;
 
   @override
-  Path getClip(Size size) {
-    final centre = Offset(size.width / 2, size.height / 2);
-    final along = Offset(cos(angle), sin(angle));
-    final across = Offset(-along.dy, along.dx) * side;
-    final far = size.longestSide * 2;
-    final head = centre + along * far;
-    final tail = centre - along * far;
-    return Path()
-      ..moveTo(head.dx, head.dy)
-      ..lineTo(tail.dx, tail.dy)
-      ..lineTo((tail + across * far).dx, (tail + across * far).dy)
-      ..lineTo((head + across * far).dx, (head + across * far).dy)
-      ..close();
-  }
-
-  @override
-  bool shouldReclip(_HalfClipper old) => old.angle != angle || old.side != side;
+  Widget build(BuildContext context) => throw UnimplementedError();
 }
 
 /// Искры из точки реза.
@@ -907,52 +788,47 @@ class SparkBurst extends StatelessWidget {
   /// Точка реза в координатах поля.
   final Offset origin;
 
-  /// Смещение каждой искры на полном разлёте.
-  final List<Offset> sparks;
+  /// Искры этого реза.
+  final List<Spark> sparks;
 
-  /// Доля подсветки, 0…1.
+  /// Доля жизни, 0…1.
   final double progress;
 
   @override
-  Widget build(BuildContext context) => IgnorePointer(
-    child: CustomPaint(
-      size: Size.infinite,
-      painter: _SparkPainter(
-        origin: origin,
-        sparks: sparks,
-        color: Theme.of(context).colorScheme.tertiary,
-        progress: progress.clamp(0.0, 1.0),
-      ),
-    ),
-  );
+  Widget build(BuildContext context) => throw UnimplementedError();
 }
 
-class _SparkPainter extends CustomPainter {
-  const _SparkPainter({
+/// Кольцо-ударная волна в точке удара.
+class ImpactRing extends StatelessWidget {
+  const ImpactRing({
     required this.origin,
-    required this.sparks,
-    required this.color,
     required this.progress,
+    required this.color,
+    super.key,
   });
 
+  /// Точка удара в координатах поля.
   final Offset origin;
-  final List<Offset> sparks;
-  final Color color;
+
+  /// Доля жизни кольца, 0…1.
   final double progress;
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (progress >= 1) return;
-    // Разлёт замедляется, а не идёт равномерно: искра, летящая с одной
-    // скоростью до самого конца, читается как пуля, а не как брызги.
-    final flown = Curves.easeOutCubic.transform(progress);
-    final paint = Paint()..color = color.withValues(alpha: 1 - progress);
-    for (final spark in sparks) {
-      canvas.drawCircle(origin + spark * flown, sparkRadius, paint);
-    }
-  }
+  /// `primary` на верном резе, `error` на промахе.
+  final Color color;
 
   @override
-  bool shouldRepaint(_SparkPainter old) =>
-      old.progress != progress || old.origin != origin;
+  Widget build(BuildContext context) => throw UnimplementedError();
+}
+
+/// Подсветка верха, затемнение низа и виньетка поля.
+///
+/// Это состояние, а не движение: под системным «убрать анимации» остаётся.
+class FieldLighting extends StatelessWidget {
+  const FieldLighting({required this.combo, super.key});
+
+  /// Длина серии — от неё зависит альфа подсветки верха.
+  final int combo;
+
+  @override
+  Widget build(BuildContext context) => throw UnimplementedError();
 }

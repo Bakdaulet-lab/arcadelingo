@@ -189,7 +189,14 @@ int ninjaWrongIndex(WidgetTester tester, int word) => tester
     .objects
     .indexWhere((o) => o.label != wordTranslation(word));
 
-/// Рез объекта на дорожке [index]: свайп на 120 dp сквозь его центр.
+/// Рез объекта на дорожке [index]: дуга снизу-слева вверх-направо через
+/// него, семью точками.
+///
+/// Дугой, а не отрезком, потому что кадр реза показывает след клинка, а
+/// след — кривая по пути пальца; прямой свайп из двух точек дал бы на
+/// эталоне ту самую «прямую палку». Дуга начинается в 130 dp от центра и
+/// подходит к нему сбоку: соседние дорожки стоят в 108 dp, и путь к ним не
+/// приближается ближе радиуса.
 ///
 /// Пустой `pump()` в конце обязателен: контроллер подсветки запускается из
 /// обработчика жеста, то есть вне кадра, и встаёт на часы только следующим
@@ -197,8 +204,19 @@ int ninjaWrongIndex(WidgetTester tester, int word) => tester
 /// снялся бы не в тот момент.
 Future<void> sliceGolden(WidgetTester tester, int index) async {
   final centre = tester.getCenter(find.byKey(NinjaKeys.objectAt(index)));
-  final gesture = await tester.startGesture(centre - const Offset(60, 0));
-  await gesture.moveTo(centre + const Offset(60, 0));
+  const arc = [
+    Offset(-60, 120),
+    Offset(-52, 92),
+    Offset(-42, 64),
+    Offset(-30, 36),
+    Offset(-16, 10),
+    Offset(0, -14),
+    Offset(18, -36),
+  ];
+  final gesture = await tester.startGesture(centre + arc.first);
+  for (final point in arc.skip(1)) {
+    await gesture.moveTo(centre + point);
+  }
   await gesture.up();
   await tester.pump();
 }

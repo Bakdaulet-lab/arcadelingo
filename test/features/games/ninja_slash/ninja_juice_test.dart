@@ -13,6 +13,8 @@
 // виджетом `MediaQuery`, там где речь о контроллерах, и `MediaQuery` — там,
 // где о `disableAnimationsOf` в `build`. Оба пути настоящие, и оба нужны.
 
+import 'dart:math';
+
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
@@ -136,6 +138,38 @@ Future<void> _answerCorrectly(WidgetTester tester, int word) async {
   await _slice(tester, _correctIndex(tester, word));
   await tester.pump(const Duration(milliseconds: 300));
 }
+
+/// Свайп вдоль верха поля, ниже слова и выше любого объекта: следа ради,
+/// а не реза ради. Три движения — чтобы след был не отрезком.
+Future<void> _swipeAbove(WidgetTester tester) async {
+  final field = tester.getRect(find.byKey(NinjaKeys.playfield));
+  final y = field.top + 100;
+  final gesture = await tester.startGesture(Offset(field.left + 40, y));
+  for (final x in [120.0, 200.0, 280.0]) {
+    await gesture.moveTo(Offset(field.left + x, y));
+  }
+  await gesture.up();
+  await tester.pump();
+}
+
+/// Наклон объекта [index] на экране: направление его верхней кромки.
+///
+/// Через `getTopLeft`/`getTopRight`, а не через виджет `Transform`: углы
+/// едут через матрицу, и только так видно, что поворот действительно
+/// применён к тому, что нарисовано.
+double _tilt(WidgetTester tester, int index) {
+  final key = find.byKey(NinjaKeys.objectAt(index));
+  return (tester.getTopRight(key) - tester.getTopLeft(key)).direction;
+}
+
+/// Ширина объекта [index] на экране — с учётом масштаба, а не раскладки.
+double _objectWidth(WidgetTester tester, int index) {
+  final key = find.byKey(NinjaKeys.objectAt(index));
+  return (tester.getTopRight(key) - tester.getTopLeft(key)).distance;
+}
+
+ColorScheme _scheme(WidgetTester tester) =>
+    Theme.of(tester.element(find.byType(NinjaSlashGame))).colorScheme;
 
 /// Горизонтальный центр счёта в HUD — по нему меряется тряска.
 double _hudX(WidgetTester tester) =>
@@ -489,15 +523,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 30));
 
       expect(find.byKey(NinjaKeys.trail), findsOneWidget);
-      final trail = tester.widget<SliceTrail>(find.byKey(NinjaKeys.trail));
-      expect(
-        trail.points.length,
-        greaterThanOrEqualTo(2),
-        reason: 'ломаная по точкам жеста, а не отрезок между концами',
-      );
+      final trail = tester.widget<BladeTrail>(find.byKey(NinjaKeys.trail));
+      expect(trail.points.length, greaterThanOrEqualTo(2));
     });
 
-    testWidgets('след — ломаная по всем точкам, а не отрезок между концами', (
+    testWidgets('след — все точки жеста, а не отрезок между концами', (
       tester,
     ) async {
       await _pumpGame(tester);
@@ -506,7 +536,7 @@ void main() {
       await _sliceTangent(tester, _correctIndex(tester, 1));
       await tester.pump(const Duration(milliseconds: 30));
 
-      final trail = tester.widget<SliceTrail>(find.byKey(NinjaKeys.trail));
+      final trail = tester.widget<BladeTrail>(find.byKey(NinjaKeys.trail));
       expect(
         trail.points,
         hasLength(4),
@@ -514,12 +544,11 @@ void main() {
       );
     });
 
-    testWidgets('разрезанный объект стал половинками', (tester) async {
+    testWidgets('разрезанный верный стал половинками', (tester) async {
       await _pumpGame(tester);
       await tester.pump(const Duration(seconds: 1));
-      final correct = _correctIndex(tester, 1);
 
-      await _slice(tester, correct);
+      await _slice(tester, _correctIndex(tester, 1));
       await tester.pump(const Duration(milliseconds: 30));
 
       expect(find.byType(SlicedObject), findsOneWidget);
@@ -544,7 +573,23 @@ void main() {
       expect(late, greaterThan(early));
     });
 
-    testWidgets('искр ровно восемь, и летят они из точки реза', (tester) async {
+    // Первую половину полёта объект идёт вверх и сносится по x — и куски
+    // обязаны идти туда же, иначе они выглядят приклеенными.
+    testWidgets('половинки наследуют скорость полёта', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await _slice(tester, _correctIndex(tester, 1));
+      await tester.pump(const Duration(milliseconds: 30));
+
+      final sliced = tester.widget<SlicedObject>(find.byType(SlicedObject));
+      expect(sliced.velocity.dy, lessThan(0), reason: 'вверх');
+      expect(sliced.velocity.dx, isNot(0), reason: 'и дрейф по x тоже');
+    });
+
+    testWidgets('искр ровно четырнадцать, и летят они из точки реза', (
+      tester,
+    ) async {
       await _pumpGame(tester);
       await tester.pump(const Duration(seconds: 1));
       final correct = _correctIndex(tester, 1);
@@ -554,7 +599,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 30));
 
       final burst = tester.widget<SparkBurst>(find.byKey(NinjaKeys.sparks));
-      expect(burst.sparks, hasLength(8));
+      expect(burst.sparks, hasLength(14));
       final field = tester.getRect(find.byKey(NinjaKeys.playfield));
       expect(
         (burst.origin + field.topLeft - center).distance,
@@ -563,9 +608,9 @@ void main() {
       );
     });
 
-    // Рез мимо центра: жест идёт на 20 dp ниже, и точка реза обязана быть
-    // на жесте, а не в центре объекта. С центральным свайпом эти два места
-    // совпадают, и подмена неотличима.
+    // Рез мимо центра: точка реза обязана быть на жесте, а не в центре
+    // объекта. С центральным свайпом эти два места совпадают, и подмена
+    // неотличима.
     testWidgets('искры летят из точки реза, а не из центра объекта', (
       tester,
     ) async {
@@ -585,29 +630,56 @@ void main() {
       expect(origin.dy - centre.dy, closeTo(_tangentCut.dy, 0.5));
     });
 
-    testWidgets('на промахе искр нет: частицы промаха вне скоупа', (
-      tester,
-    ) async {
+    // Горизонтальный свайп: искры обязаны разлетаться вверх и вниз, а не
+    // веером во все стороны — это и есть «смещённые перпендикулярно резу».
+    testWidgets('искры разлетаются поперёк реза', (tester) async {
       await _pumpGame(tester);
       await tester.pump(const Duration(seconds: 1));
 
-      await _slice(tester, _wrongIndex(tester, 1));
+      await _slice(tester, _correctIndex(tester, 1));
       await tester.pump(const Duration(milliseconds: 30));
 
-      expect(find.byKey(NinjaKeys.sparks), findsNothing);
-      expect(
-        find.byType(SlicedObject),
-        findsOneWidget,
-        reason: 'а разрезан объект всё равно был',
-      );
+      final burst = tester.widget<SparkBurst>(find.byKey(NinjaKeys.sparks));
+      for (final spark in burst.sparks) {
+        final fromVertical = min(
+          (spark.angle - pi / 2).abs() % (2 * pi),
+          (spark.angle + pi / 2).abs() % (2 * pi),
+        );
+        expect(
+          min(fromVertical, 2 * pi - fromVertical),
+          lessThanOrEqualTo(60 * pi / 180 + 1e-9),
+        );
+      }
     });
+
+    testWidgets(
+      'на промахе ни искр, ни половинок: стоп-кадр целого помеченного объекта',
+      (tester) async {
+        await _pumpGame(tester);
+        await tester.pump(const Duration(seconds: 1));
+        final wrong = _wrongIndex(tester, 1);
+
+        await _slice(tester, wrong);
+        await tester.pump(const Duration(milliseconds: 30));
+
+        expect(find.byKey(NinjaKeys.sparks), findsNothing);
+        expect(
+          find.byType(SlicedObject),
+          findsNothing,
+          reason:
+              'половинки, улетающие под гравитацией, а потом целый '
+              'объект на прежнем месте — скачок ровно в момент чтения пары',
+        );
+        expect(find.byKey(NinjaKeys.objectAt(wrong)), findsOneWidget);
+        expect(_field(tester).objects[wrong].state, ObjectState.wrong);
+      },
+    );
 
     // Найдено картинкой, а не числами: подсветка промаха длится 800 мс, и
     // след, привязанный к ней, доживал до конца — жирная линия ложилась
-    // поперёк пары «слово → перевод», то есть поперёк единственного места,
-    // где человек учится. SPEC говорит «гаснет за 300 мс подсветки», и это
-    // 300 мс, а не «вся подсветка».
-    testWidgets('на промахе рез гаснет за 300 мс, а не за все 800', (
+    // поперёк пары «слово → перевод». SPEC говорит «гаснет за 300 мс», и
+    // это 300 мс, а не «вся подсветка».
+    testWidgets('на промахе след гаснет за 300 мс, а не за все 800', (
       tester,
     ) async {
       await _pumpGame(tester);
@@ -620,7 +692,6 @@ void main() {
       await tester.pump(const Duration(milliseconds: 150));
 
       expect(find.byKey(NinjaKeys.trail), findsNothing);
-      expect(find.byType(SlicedObject), findsNothing);
       expect(
         find.byKey(NinjaKeys.revealAnswer),
         findsOneWidget,
@@ -628,7 +699,7 @@ void main() {
       );
     });
 
-    testWidgets('на верном резе рез гаснет ровно к концу подсветки', (
+    testWidgets('на верном резе след и искры живут до конца подсветки', (
       tester,
     ) async {
       await _pumpGame(tester);
@@ -651,22 +722,189 @@ void main() {
       expect(find.byType(SlicedObject), findsNothing);
     });
 
-    // Первая волна ничего не оставляла после себя просто потому, что до неё
-    // ничего не было. Проверяется вторая: след первого реза не должен
-    // дожить до таймаута следующего слова.
+    // Часы следа — часы полёта, и у каждой волны они свои. Точка, оставленная
+    // в конце первой волны, на старте второй оказалась бы «моложе нуля» и
+    // вернулась бы на экран, если её не убрать.
     testWidgets('след прошлой волны не доживает до следующей', (tester) async {
       await _pumpGame(tester);
 
-      await _answerCorrectly(tester, 1);
       await tester.pump(const Duration(milliseconds: 3300));
+      await _swipeAbove(tester);
+      await tester.pump(const Duration(milliseconds: 30));
+      expect(find.byKey(NinjaKeys.trail), findsOneWidget, reason: 'живой');
+
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump(const Duration(milliseconds: 800));
       await tester.pump(const Duration(milliseconds: 30));
 
+      expect(find.byKey(NinjaKeys.revealAnswer), findsNothing);
+      expect(find.byKey(NinjaKeys.objectAt(0)), findsOneWidget);
       expect(find.byKey(NinjaKeys.trail), findsNothing);
-      expect(find.byKey(NinjaKeys.sparks), findsNothing);
+    });
+  });
+
+  group('Живой след клинка', () {
+    testWidgets('свайп мимо объектов оставляет след', (tester) async {
+      final session = await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await _swipeAbove(tester);
+      await tester.pump(const Duration(milliseconds: 30));
+
+      expect(session.reports, isEmpty, reason: 'ничего не разрезано');
+      final trail = tester.widget<BladeTrail>(find.byKey(NinjaKeys.trail));
+      expect(trail.points.length, greaterThanOrEqualTo(4));
+    });
+
+    testWidgets('тает с хвоста: через 300 мс полёта без движения его нет', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await _swipeAbove(tester);
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(find.byKey(NinjaKeys.trail), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 160));
+
+      expect(find.byKey(NinjaKeys.trail), findsNothing);
+    });
+
+    testWidgets('на паузе след не тает: часы полёта стоят', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await _swipeAbove(tester);
+      await _lifecycle(tester, AppLifecycleState.inactive);
+      await tester.pump(const Duration(seconds: 5));
+
+      expect(find.byKey(NinjaKeys.trail), findsOneWidget);
+    });
+  });
+
+  group('Вращение и вылет', () {
+    testWidgets('в полёте объекты наклонены, и по-разному', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      final tilts = [for (var i = 0; i < 3; i++) _tilt(tester, i)];
+
+      for (final tilt in tilts) {
+        expect(tilt.abs(), greaterThan(0.02), reason: 'стоит прямо');
+      }
+      expect(tilts.toSet(), hasLength(3), reason: 'у каждого своя скорость');
+    });
+
+    testWidgets('наклон не больше 25° даже у посадки', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(milliseconds: 3400));
+
+      for (var i = 0; i < 3; i++) {
+        expect(
+          _tilt(tester, i).abs(),
+          lessThanOrEqualTo(25 * pi / 180 + 1e-6),
+          reason: 'слово на объекте обязано читаться',
+        );
+      }
+    });
+
+    testWidgets('на вылете объект меньше, к десятой полёта — полный', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(milliseconds: 35));
+
+      expect(_objectWidth(tester, 0), lessThan(60), reason: 'ещё растёт');
+
+      await tester.pump(const Duration(milliseconds: 965));
+
+      expect(_objectWidth(tester, 0), closeTo(68, 0.5));
+    });
+  });
+
+  group('Вспышка удара', () {
+    testWidgets('на верном резе: есть на 100 мс, нет на 250', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await _slice(tester, _correctIndex(tester, 1));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.byKey(NinjaKeys.flash), findsOneWidget);
       expect(
-        find.byKey(NinjaKeys.revealAnswer),
-        findsOneWidget,
-        reason: 'а таймаут второго слова наступил — иначе кейс пустой',
+        tester.widget<ImpactRing>(find.byKey(NinjaKeys.flash)).color,
+        _scheme(tester).primary,
+      );
+
+      await tester.pump(const Duration(milliseconds: 150));
+
+      expect(find.byKey(NinjaKeys.flash), findsNothing);
+    });
+
+    testWidgets('на промахе тоже, цветом error', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await _slice(tester, _wrongIndex(tester, 1));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(
+        tester.widget<ImpactRing>(find.byKey(NinjaKeys.flash)).color,
+        _scheme(tester).error,
+        reason: 'это факт удара, а не награда',
+      );
+    });
+
+    testWidgets('таймаут вспышки не даёт: удара не было', (tester) async {
+      await _pumpGame(tester);
+
+      await tester.pump(const Duration(milliseconds: 3500));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byKey(NinjaKeys.flash), findsNothing);
+    });
+  });
+
+  group('Поле и прирост', () {
+    testWidgets('поле подсвечено, и подсветка знает серию', (tester) async {
+      await _pumpGame(tester);
+
+      expect(
+        tester.widget<FieldLighting>(find.byKey(NinjaKeys.fieldLight)).combo,
+        0,
+      );
+
+      for (var i = 1; i <= 3; i++) {
+        await _answerCorrectly(tester, i);
+      }
+
+      expect(
+        tester.widget<FieldLighting>(find.byKey(NinjaKeys.fieldLight)).combo,
+        3,
+      );
+    });
+
+    testWidgets('на горячей серии прирост крупнее', (tester) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await _slice(tester, _correctIndex(tester, 1));
+      await tester.pump(const Duration(milliseconds: 30));
+      final cold = tester.widget<ScorePop>(find.byType(ScorePop));
+      final coldSize =
+          tester.widget<Text>(find.byKey(NinjaKeys.scorePop)).style!.fontSize!;
+      await tester.pump(const Duration(milliseconds: 270));
+      await _answerCorrectly(tester, 2);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _slice(tester, _correctIndex(tester, 3));
+      await tester.pump(const Duration(milliseconds: 30));
+
+      final hot = tester.widget<ScorePop>(find.byType(ScorePop));
+      expect(cold.hot, isFalse);
+      expect(hot.hot, isTrue, reason: 'третий верный — серия 3, порог тона');
+      expect(
+        tester.widget<Text>(find.byKey(NinjaKeys.scorePop)).style!.fontSize!,
+        greaterThan(coldSize),
       );
     });
   });
@@ -695,7 +933,7 @@ void main() {
       expect(_hud(tester, NinjaKeys.score), '10');
     });
 
-    testWidgets('следа, половинок и искр нет', (tester) async {
+    testWidgets('следа, половинок, искр и вспышки нет', (tester) async {
       await _pumpGame(tester, disableAnimations: true);
       await tester.pump(const Duration(seconds: 1));
 
@@ -705,6 +943,43 @@ void main() {
       expect(find.byKey(NinjaKeys.trail), findsNothing);
       expect(find.byType(SlicedObject), findsNothing);
       expect(find.byKey(NinjaKeys.sparks), findsNothing);
+      expect(find.byKey(NinjaKeys.flash), findsNothing);
+    });
+
+    testWidgets('живого следа нет', (tester) async {
+      await _pumpGame(tester, disableAnimations: true);
+      await tester.pump(const Duration(seconds: 1));
+
+      await _swipeAbove(tester);
+      await tester.pump(const Duration(milliseconds: 30));
+
+      expect(find.byKey(NinjaKeys.trail), findsNothing);
+    });
+
+    testWidgets('объекты стоят прямо и в полный размер с первого кадра', (
+      tester,
+    ) async {
+      await _pumpGame(tester, disableAnimations: true);
+      await tester.pump(const Duration(milliseconds: 35));
+
+      for (var i = 0; i < 3; i++) {
+        expect(_tilt(tester, i), closeTo(0, 1e-9));
+      }
+      expect(_objectWidth(tester, 0), closeTo(68, 0.5));
+
+      await tester.pump(const Duration(seconds: 1));
+
+      for (var i = 0; i < 3; i++) {
+        expect(_tilt(tester, i), closeTo(0, 1e-9));
+      }
+    });
+
+    testWidgets('подсветка поля остаётся: это состояние, а не движение', (
+      tester,
+    ) async {
+      await _pumpGame(tester, disableAnimations: true);
+
+      expect(find.byKey(NinjaKeys.fieldLight), findsOneWidget);
     });
 
     testWidgets('пульса счёта нет', (tester) async {
