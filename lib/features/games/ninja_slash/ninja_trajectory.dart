@@ -157,4 +157,9 @@ Offset waveVelocity({
   required double width,
   required double height,
   required Duration duration,
-}) => throw UnimplementedError();
+}) {
+  final slot = laneSlotsFor(count)[index];
+  final flight = flightForSlot(slot, width: width, height: height);
+  final seconds = duration.inMicroseconds / Duration.microsecondsPerSecond;
+  return Offset(flight.drift, -flight.apex * 4 * (1 - 2 * t)) / seconds;
+}

@@ -15,7 +15,6 @@
 library;
 
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:flutter/animation.dart';
 
@@ -55,8 +54,16 @@ typedef TrailSample = ({Offset at, double freshness});
 /// Что от следа осталось к моменту [now]: точки моложе [trailLife], каждая
 /// со свежестью. Так след тает **с хвоста**: старые точки выбывают первыми,
 /// а не весь след разом.
-List<TrailSample> trailAlive(List<TrailPoint> points, Duration now) =>
-    throw UnimplementedError();
+List<TrailSample> trailAlive(List<TrailPoint> points, Duration now) => [
+  for (final point in points)
+    if (now - point.stamp < trailLife)
+      (
+        at: point.at,
+        freshness: (1 -
+                (now - point.stamp).inMicroseconds / trailLife.inMicroseconds)
+            .clamp(0.0, 1.0),
+      ),
+];
 
 /// Сглаженная кривая по точкам следа: квадратичные Безье через середины
 /// соседних отрезков, по [trailSamplesPerSegment] проб на отрезок. Первая
@@ -64,14 +71,48 @@ List<TrailSample> trailAlive(List<TrailPoint> points, Duration now) =>
 /// позицией.
 ///
 /// Кривая, а не ломаная, — главная причина вердикта «резьба очень прямая».
-List<TrailSample> smoothTrail(List<TrailSample> points) =>
-    throw UnimplementedError();
+List<TrailSample> smoothTrail(List<TrailSample> points) {
+  if (points.length < 2) return List.of(points);
+  final out = <TrailSample>[points.first];
+  var current = points.first;
+  // Каждая внутренняя точка — контрольная: кривая идёт от середины одного
+  // отрезка к середине следующего, огибая угол, а не проходя через него.
+  for (var i = 1; i < points.length - 1; i++) {
+    final control = points[i];
+    final end = _between(points[i], points[i + 1], 0.5);
+    for (var k = 1; k <= trailSamplesPerSegment; k++) {
+      final u = k / trailSamplesPerSegment;
+      final sample = (
+        at: _quadratic(current.at, control.at, end.at, u),
+        freshness: _lerp(current.freshness, end.freshness, u),
+      );
+      out.add(sample);
+    }
+    current = end;
+  }
+  // Последний отрезок — прямой до головы: она обязана остаться на месте,
+  // иначе след отставал бы от пальца.
+  for (var k = 1; k <= trailSamplesPerSegment; k++) {
+    out.add(_between(current, points.last, k / trailSamplesPerSegment));
+  }
+  return out;
+}
 
 /// Ширина следа в пробе: [freshness] 0…1 и [along] — 0 у хвоста, 1 у
 /// головы. Обе оси нужны: быстрый свайп даёт всем точкам одну свежесть, и
 /// без [along] след был бы палкой одной толщины.
 double trailWidthAt({required double freshness, required double along}) =>
-    throw UnimplementedError();
+    trailHeadWidth * freshness.clamp(0.0, 1.0) * along.clamp(0.0, 1.0);
+
+TrailSample _between(TrailSample a, TrailSample b, double u) => (
+  at: Offset.lerp(a.at, b.at, u)!,
+  freshness: _lerp(a.freshness, b.freshness, u),
+);
+
+Offset _quadratic(Offset a, Offset control, Offset b, double u) =>
+    a * ((1 - u) * (1 - u)) + control * (2 * u * (1 - u)) + b * (u * u);
+
+double _lerp(double a, double b, double u) => a + (b - a) * u;
 
 // ------------------------------------------------------ вращение и вылет ----
 
@@ -84,11 +125,16 @@ const double minSpinDegrees = 12;
 const double maxSpinDegrees = 25;
 
 /// Угловая скорость объекта — наклон к посадке в радианах, знак случаен.
-double spinFor(Random random) => throw UnimplementedError();
+double spinFor(Random random) {
+  final degrees =
+      minSpinDegrees + random.nextDouble() * (maxSpinDegrees - minSpinDegrees);
+  return (random.nextBool() ? 1 : -1) * degrees * pi / 180;
+}
 
-/// Наклон объекта в долю полёта [t].
+/// Наклон объекта в долю полёта [t]: линейно от нуля на старте, поэтому
+/// предел достигается только у посадки, где объект уже уходит за кромку.
 double objectTilt({required double spin, required double t}) =>
-    throw UnimplementedError();
+    spin * t.clamp(0.0, 1.0);
 
 /// Какую долю полёта занимает scale-pop при вылете из-за кромки.
 const double popFraction = 0.10;
@@ -98,7 +144,11 @@ const double popStartScale = 0.5;
 
 /// Масштаб объекта в долю полёта [t]: от [popStartScale] до 1 с перехлёстом
 /// за первые [popFraction], дальше ровно 1.
-double emergeScale(double t) => throw UnimplementedError();
+double emergeScale(double t) {
+  if (t >= popFraction) return 1;
+  final u = (t / popFraction).clamp(0.0, 1.0);
+  return popStartScale + (1 - popStartScale) * Curves.easeOutBack.transform(u);
+}
 
 // -------------------------------------------------------------- вспышка ----
 
@@ -109,14 +159,18 @@ const double ringStartStroke = 4;
 const double ringEndStroke = 1;
 const Duration ringLife = Duration(milliseconds: 200);
 
-/// Радиус кольца в долю жизни [phase].
-double ringRadius(double phase) => throw UnimplementedError();
+/// Радиус кольца в долю жизни [phase]: разбегается с замедлением, как волна.
+double ringRadius(double phase) =>
+    ringStartRadius +
+    (ringEndRadius - ringStartRadius) *
+        Curves.easeOutCubic.transform(phase.clamp(0.0, 1.0));
 
 /// Толщина кольца в долю жизни [phase].
-double ringStroke(double phase) => throw UnimplementedError();
+double ringStroke(double phase) =>
+    _lerp(ringStartStroke, ringEndStroke, phase.clamp(0.0, 1.0));
 
 /// Альфа кольца: 0.9 в момент удара, 0 к концу.
-double ringAlpha(double phase) => throw UnimplementedError();
+double ringAlpha(double phase) => 0.9 * (1 - phase.clamp(0.0, 1.0));
 
 // ------------------------------------------------------------ гравитация ----
 
@@ -127,8 +181,15 @@ const double fxGravity = 900;
 /// Сколько живут половинки, искры и след реза — ровно рез.
 const Duration sliceLife = Duration(milliseconds: 300);
 
+/// Сколько секунд прожито к доле [phase] от [sliceLife].
+double _seconds(double phase) =>
+    phase.clamp(0.0, 1.0) * sliceLife.inMicroseconds / 1e6;
+
 /// На сколько dp упало тело за долю [phase] от [sliceLife].
-double fallBy(double phase) => throw UnimplementedError();
+double fallBy(double phase) {
+  final seconds = _seconds(phase);
+  return 0.5 * fxGravity * seconds * seconds;
+}
 
 // ------------------------------------------------------------- половинки ----
 
@@ -152,7 +213,19 @@ HalfMotion halfMotion({
   required double angle,
   required Offset velocity,
   required double phase,
-}) => throw UnimplementedError();
+}) {
+  final p = phase.clamp(0.0, 1.0);
+  final seconds = _seconds(p);
+  final normal = Offset(-sin(angle), cos(angle));
+  return (
+    offset:
+        normal * (side * halfSpreadSpeed * seconds) +
+        velocity * seconds +
+        Offset(0, fallBy(p)),
+    rotation: side * halfSpinDegrees * pi / 180 * p,
+    alpha: 1 - p,
+  );
+}
 
 // ----------------------------------------------------------------- искры ----
 
@@ -198,21 +271,50 @@ class Spark {
 /// Искры реза под углом [cutAngle]: половина по одну сторону от нормали,
 /// половина по другую, каждая со своим разбросом, дальностью, размером и
 /// яркостью из [random]. Ровная розетка — то самое «неуклюже».
-List<Spark> sparkBurst(Random random, {required double cutAngle}) =>
-    throw UnimplementedError();
+List<Spark> sparkBurst(Random random, {required double cutAngle}) {
+  final normal = cutAngle + pi / 2;
+  const spread = sparkSpreadDegrees * pi / 180;
+  return [
+    for (var i = 0; i < sparkCount; i++)
+      Spark(
+        // Чётные — по одну сторону реза, нечётные — по другую; внутри
+        // стороны направление гуляет, поэтому лучи не ложатся ровно.
+        angle:
+            normal +
+            (i.isEven ? 0 : pi) +
+            (random.nextDouble() * 2 - 1) * spread,
+        reach:
+            sparkMinReach +
+            random.nextDouble() * (sparkMaxReach - sparkMinReach),
+        size:
+            sparkMinSize + random.nextDouble() * (sparkMaxSize - sparkMinSize),
+        brightness: random.nextDouble() * sparkMaxBrightness,
+      ),
+  ];
+}
 
 /// Где искра в долю [phase] жизни: разлёт с замедлением плюс падение.
+///
+/// Замедление, а не ровный ход: искра, летящая с одной скоростью до самого
+/// конца, читается как пуля, а не как брызги.
 Offset sparkPosition(
   Spark spark, {
   required Offset origin,
   required double phase,
-}) => throw UnimplementedError();
+}) {
+  final p = phase.clamp(0.0, 1.0);
+  final flown = Curves.easeOutCubic.transform(p);
+  return origin +
+      Offset.fromDirection(spark.angle, spark.reach * flown) +
+      Offset(0, fallBy(p));
+}
 
 /// Альфа искры: тает к концу.
-double sparkAlpha(double phase) => throw UnimplementedError();
+double sparkAlpha(double phase) => 1 - phase.clamp(0.0, 1.0);
 
 /// Размер искры в долю [phase]: уменьшается к концу, но не в ноль.
-double sparkSizeAt(Spark spark, double phase) => throw UnimplementedError();
+double sparkSizeAt(Spark spark, double phase) =>
+    spark.size * (1 - 0.7 * phase.clamp(0.0, 1.0));
 
 // ---------------------------------------------------------- прилёт очков ----
 
@@ -224,7 +326,16 @@ const double scorePopStartScale = 0.3;
 
 /// Масштаб «+N» в долю подсветки: перехлёст (`elasticOut`) за
 /// [scorePopHold], дальше ровно 1.
-double scorePopScale(double phase) => throw UnimplementedError();
+double scorePopScale(double phase) {
+  if (phase >= scorePopHold) return 1;
+  final u = (phase / scorePopHold).clamp(0.0, 1.0);
+  return scorePopStartScale +
+      (1 - scorePopStartScale) * Curves.elasticOut.transform(u);
+}
 
 /// Доля пути к счётчику: 0 всё время [scorePopHold], затем разгон к 1.
-double scorePopFlight(double phase) => throw UnimplementedError();
+double scorePopFlight(double phase) {
+  if (phase <= scorePopHold) return 0;
+  final u = ((phase - scorePopHold) / (1 - scorePopHold)).clamp(0.0, 1.0);
+  return Curves.easeInCubic.transform(u);
+}

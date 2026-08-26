@@ -639,14 +639,18 @@ void main() {
       await _slice(tester, _correctIndex(tester, 1));
       await tester.pump(const Duration(milliseconds: 30));
 
+      // Угловое расстояние с учётом оборота: 210° от −90° — это 60°, а не
+      // 300°. Первая редакция этого ассерта сворачивала оборот после
+      // минимума, а не до, и краснела на верном коде.
+      double apart(double a, double b) {
+        final d = (a - b) % (2 * pi);
+        return min(d, 2 * pi - d);
+      }
+
       final burst = tester.widget<SparkBurst>(find.byKey(NinjaKeys.sparks));
       for (final spark in burst.sparks) {
-        final fromVertical = min(
-          (spark.angle - pi / 2).abs() % (2 * pi),
-          (spark.angle + pi / 2).abs() % (2 * pi),
-        );
         expect(
-          min(fromVertical, 2 * pi - fromVertical),
+          min(apart(spark.angle, pi / 2), apart(spark.angle, -pi / 2)),
           lessThanOrEqualTo(60 * pi / 180 + 1e-9),
         );
       }

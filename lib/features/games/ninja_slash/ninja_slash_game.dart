@@ -127,6 +127,17 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   /// Искры этого реза; пусто — искр нет (промах, таймаут, джус выключен).
   List<Spark> _sparks = const [];
 
+  /// Наклон каждого объекта волны к посадке — своя угловая скорость из
+  /// [_decorRandom], заново на каждой волне.
+  List<double> _spins = const [];
+
+  /// Часы полёта в момент реза: от них дожигает замороженный след.
+  Duration _sliceElapsed = Duration.zero;
+
+  /// Скорость полёта разрезанного объекта в момент реза — её наследуют
+  /// половинки.
+  Offset _sliceVelocity = Offset.zero;
+
   /// Свой генератор украшений: искр и наклона объектов.
   ///
   /// Не тот, что у `NinjaRun`: там он перемешивает волну, и деление одного
@@ -196,11 +207,14 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   }
 
   void _startFlight() {
-    // Украшения прошлой волны здесь не сбрасываются, и это проверено, а не
-    // забыто: след и искры рисуются только при `slicedIndex != null`, а он
-    // обнуляется в самой партии — и на новой волне, и на таймауте. Явный
-    // сброс дублировал бы этот страж, мутацией не краснел и был убран, как
-    // явное срезание CRLF в задаче 0.14.
+    // Часы следа — часы полёта, и у каждой волны они свои: точка,
+    // оставленная в конце прошлой волны, на старте новой оказалась бы
+    // «моложе нуля» и вернулась бы на экран. Это не дубль стража
+    // `slicedIndex` (тот держит след реза), а свой инвариант живого следа.
+    _gesture.clear();
+    _spins = [
+      for (var i = 0; i < _run.options.length; i++) spinFor(_decorRandom),
+    ];
     _flight.duration = _run.timeLimit;
     _flight.forward(from: 0);
   }
@@ -260,13 +274,15 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     final to = event.localPosition;
     _travelled += (to - from).distance;
     _last = to;
-    _gesture.add((at: to, stamp: _elapsed));
-    if (_gesture.length > trailPoints) _gesture.removeAt(0);
     // На паузе жест не принимается: окно бывает интерактивным и без фокуса
     // (split-screen, системный диалог, баннер звонка). Принятый здесь рез
     // перезапустил бы контроллеры и снял бы паузу де-факто.
     if (_paused || _windingUp) return;
     if (_run.phase != NinjaPhase.flying) return;
+    // Живой след: точка с отметкой по часам полёта. До реза он просто
+    // рисуется за пальцем, в момент реза замораживается.
+    _gesture.add((at: to, stamp: _elapsed));
+    if (_gesture.length > trailPoints) _gesture.removeAt(0);
     if (!swipeCounts(_travelled)) return;
     final size = _fieldSize;
     if (size == null) return;
@@ -286,7 +302,18 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     if (!_run.slice(target, _elapsed)) return;
     _flight.stop();
     _trail = List.of(_gesture);
+    _sliceElapsed = _elapsed;
     _sliceAngle = (to - from).direction;
+    // Скорость в момент реза — производная той же траектории, по которой
+    // объект летел: половинки продолжают его движение, а не начинают своё.
+    _sliceVelocity = waveVelocity(
+      count: _run.options.length,
+      index: target,
+      t: _flight.value,
+      width: size.width,
+      height: size.height,
+      duration: _run.timeLimit,
+    );
     // Точка реза, а не центр объекта: касательный рез виден именно краем, и
     // искры из центра при нём читались бы как посторонний взрыв. Считает её
     // та же функция, по которой проверено попадание.
@@ -359,6 +386,23 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     final lived = (_run.revealTime.inMicroseconds * _reveal.value).round();
     return (lived / NinjaRun.correctReveal.inMicroseconds).clamp(0.0, 1.0);
   }
+
+  /// Прожитое подсветки. Микросекундами, а не долей `_reveal.value`: доля
+  /// даёт на границе 0.9999999999999999.
+  Duration get _revealLived => Duration(
+    microseconds: (_run.revealTime.inMicroseconds * _reveal.value).round(),
+  );
+
+  /// Доля жизни вспышки: 200 мс от удара.
+  double get _ringPhase =>
+      (_revealLived.inMicroseconds / ringLife.inMicroseconds).clamp(0.0, 1.0);
+
+  /// Часы следа. В полёте — часы полёта; после реза — они же, замороженные
+  /// в момент реза, плюс прожитое подсветки. Так замороженный след догасает
+  /// по тем же часам, что и живой, и точка, оставленная за 250 мс до реза,
+  /// исчезает через 50 мс после него, а не через 300.
+  Duration get _trailNow =>
+      _run.phase == NinjaPhase.reveal ? _sliceElapsed + _revealLived : _elapsed;
 
   /// Раздувание счёта в момент прилёта: ноль до половины полёта, пик к трём
   /// четвертям, снова ноль к концу.
@@ -498,11 +542,26 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     required double shake,
   }) {
     final missed = revealing && _run.verdict != Verdict.correct;
-    // Половинки, след и искры живут ровно 300 мс — столько, сколько длится
-    // рез. Дальше объект стоит целым и помеченным: на промахе он обязан
-    // остаться на кадре, а пара по центру — читаться без помех.
     final phase = _slicePhase;
-    final sliced = juicy && revealing && phase < 1 ? _run.slicedIndex : null;
+    final t = _flight.value;
+    // Половинки — только верному резу и только 300 мс. Промах — стоп-кадр:
+    // разрезанный неверный стоит целым и помеченным все 800 мс, чтобы «что
+    // я разрезал» читалось, а не улетало из-под взгляда.
+    final sliced =
+        juicy && revealing && phase < 1 && _run.verdict == Verdict.correct
+            ? _run.slicedIndex
+            : null;
+    // След: в полёте — живой жест, после реза — замороженный; после
+    // таймаута резать было нечего, и следа нет. Что от него осталось, решают
+    // часы, а не фаза.
+    final trailSource = revealing ? _trail : _gesture;
+    final trailShown =
+        juicy &&
+        (!revealing || _run.slicedIndex != null) &&
+        trailAlive(trailSource, _trailNow).length > 1;
+    // Вспышка — факт удара, не награда: есть и на промахе, цветом вердикта.
+    final flashShown =
+        juicy && revealing && _run.slicedIndex != null && _ringPhase < 1;
     return TweenAnimationBuilder<Color?>(
       tween: ColorTween(
         begin: scheme.surface,
@@ -528,9 +587,11 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
               child: Stack(
                 fit: StackFit.expand,
                 children: [
+                  // Подсветка не трясётся: это фон поля, и у поля не должно
+                  // быть края, который ездит.
+                  FieldLighting(key: NinjaKeys.fieldLight, combo: _run.combo),
                   // Трясётся содержимое поля, а не поле: фон и его градиент
-                  // обязаны остаться на месте, иначе у поля появился бы
-                  // край, который ездит.
+                  // обязаны остаться на месте.
                   Transform.translate(
                     offset: Offset(shake, 0),
                     child: NinjaField(
@@ -544,18 +605,37 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
                               state: _stateFor(i, revealing: revealing),
                             ),
                       ],
-                      progress: _flight.value,
+                      progress: t,
                       faded: missed,
                       sliced: sliced,
                       sliceAngle: _sliceAngle,
                       sliceProgress: phase,
+                      sliceVelocity: _sliceVelocity,
+                      // Наклон и вылет — украшения: под «убрать анимации»
+                      // объекты стоят прямо и в полный размер.
+                      tilts: [
+                        if (juicy)
+                          for (final spin in _spins)
+                            objectTilt(spin: spin, t: t),
+                      ],
+                      scale: juicy ? emergeScale(t) : 1,
                     ),
                   ),
-                  if (sliced != null && _trail.length > 1)
+                  if (trailShown)
                     BladeTrail(
                       key: NinjaKeys.trail,
-                      points: _trail,
-                      now: Duration.zero,
+                      points: trailSource,
+                      now: _trailNow,
+                    ),
+                  if (flashShown)
+                    ImpactRing(
+                      key: NinjaKeys.flash,
+                      origin: _slicePoint,
+                      progress: _ringPhase,
+                      color:
+                          _run.verdict == Verdict.correct
+                              ? scheme.primary
+                              : scheme.error,
                     ),
                   if (sliced != null && _sparks.isNotEmpty)
                     SparkBurst(

@@ -20,10 +20,13 @@
 /// мужчин).
 library;
 
+import 'dart:math';
+
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
 import 'ninja_slash_fx.dart';
+import 'ninja_slash_juice.dart';
 import 'ninja_trajectory.dart';
 
 /// До этой серии поле чистое: ранний тон был бы шумом, а не наградой.
@@ -60,7 +63,8 @@ const double vignetteInner = 0.65;
 
 /// Альфа подсветки верха по длине серии: от [topLightMin] до [topLightMax]
 /// по той же шкале, что и тон поля.
-double topLightAlpha(int combo) => throw UnimplementedError();
+double topLightAlpha(int combo) =>
+    topLightMin + (topLightMax - topLightMin) * comboDepth(combo);
 
 /// Тон поля по длине серии.
 ///
@@ -83,7 +87,11 @@ Color comboTint(ColorScheme scheme, int combo) {
 ///
 /// Одна шкала на тон поля и на подсветку верха: две шкалы разошлись бы в
 /// день, когда кто-то подвинет один порог.
-double comboDepth(int combo) => throw UnimplementedError();
+double comboDepth(int combo) =>
+    ((combo - comboTintStart) / (comboTintEnd - comboTintStart)).clamp(
+      0.0,
+      1.0,
+    );
 
 /// Загорелась ли серия — то есть видно ли уже тон на поле.
 ///
@@ -289,24 +297,31 @@ class FlyingObject extends StatelessWidget {
     // Пары те же, что у кнопок падающих слов: контраст у них уже замерен, и
     // заводить вторую палитру ради круглой формы было бы не решением, а
     // риском.
+    // Обод — второй акцент: без него объект в полёте был серым кругом на
+    // тёмном поле, и вердикт «серо, нет красок» был именно про это. На
+    // разрезанном обод и свечение берут цвет вердикта.
     final (
       Color background,
       Color foreground,
+      Color rim,
       IconData? icon,
     ) = switch (state) {
       ObjectState.idle || ObjectState.dimmed => (
         scheme.surfaceContainerHighest,
         scheme.onSurface,
+        scheme.tertiary.withValues(alpha: 0.75),
         null,
       ),
       ObjectState.correct => (
         scheme.primaryContainer,
         scheme.onPrimaryContainer,
+        scheme.primary,
         Icons.check,
       ),
       ObjectState.wrong => (
         scheme.errorContainer,
         scheme.onErrorContainer,
+        scheme.error,
         Icons.close,
       ),
     };
@@ -319,10 +334,13 @@ class FlyingObject extends StatelessWidget {
         decoration: BoxDecoration(
           color: background,
           shape: BoxShape.circle,
-          border: Border.all(
-            color: icon == null ? Colors.transparent : foreground,
-            width: icon == null ? 0 : 3,
-          ),
+          border: Border.all(color: rim, width: icon == null ? 2 : 3),
+          boxShadow: [
+            BoxShadow(
+              color: rim.withValues(alpha: icon == null ? 0.3 : 0.6),
+              blurRadius: icon == null ? 10 : 16,
+            ),
+          ],
         ),
         // Содержимое обязано помещаться в круг: размер объекта — часть
         // геометрии реза, и растягиваться под перевод он не может. При
@@ -453,20 +471,30 @@ class NinjaField extends StatelessWidget {
                       Positioned(
                         left: positions[i].dx - objectRadius,
                         top: positions[i].dy - objectRadius,
-                        child:
-                            i == sliced
-                                ? SlicedObject(
-                                  key: NinjaKeys.objectAt(i),
-                                  label: objects[i].label,
-                                  state: objects[i].state,
-                                  angle: sliceAngle,
-                                  progress: sliceProgress,
-                                )
-                                : FlyingObject(
-                                  key: NinjaKeys.objectAt(i),
-                                  label: objects[i].label,
-                                  state: objects[i].state,
-                                ),
+                        // Поворот и масштаб — вокруг центра объекта, поэтому
+                        // центр, по которому считается рез, не двигается:
+                        // украшение не трогает геометрию.
+                        child: Transform.rotate(
+                          angle: i < tilts.length ? tilts[i] : 0,
+                          child: Transform.scale(
+                            scale: scale,
+                            child:
+                                i == sliced
+                                    ? SlicedObject(
+                                      key: NinjaKeys.objectAt(i),
+                                      label: objects[i].label,
+                                      state: objects[i].state,
+                                      angle: sliceAngle,
+                                      velocity: sliceVelocity,
+                                      progress: sliceProgress,
+                                    )
+                                    : FlyingObject(
+                                      key: NinjaKeys.objectAt(i),
+                                      label: objects[i].label,
+                                      state: objects[i].state,
+                                    ),
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -727,7 +755,78 @@ class ScorePop extends StatelessWidget {
   final bool hot;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final phase = progress.clamp(0.0, 1.0);
+    // Растворяется на последней трети пути: раньше — не успеть прочитать,
+    // позже — «+N» доживёт до следующей волны.
+    final fade = ((1 - phase) / 0.35).clamp(0.0, 1.0);
+    // На горячей серии — крупнее и со свечением: награда растёт вместе с
+    // серией, а не только число в ней.
+    final base = hot ? textTheme.headlineMedium! : textTheme.headlineSmall!;
+    final style = withWeight(base, FontWeight.bold).copyWith(
+      color: scheme.primary,
+      shadows:
+          hot
+              ? [
+                Shadow(
+                  color: scheme.primary.withValues(alpha: 0.8),
+                  blurRadius: 12,
+                ),
+              ]
+              : null,
+    );
+    return IgnorePointer(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final finish = Offset(constraints.maxWidth - 24, 24);
+          final at = Offset.lerp(from, finish, scorePopFlight(phase))!;
+          return Stack(
+            children: [
+              Positioned(
+                left: at.dx,
+                top: at.dy,
+                child: FractionalTranslation(
+                  translation: const Offset(-0.5, -0.5),
+                  child: Transform.scale(
+                    scale: scorePopScale(phase),
+                    child: Opacity(
+                      opacity: fade,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '+$points',
+                            key: NinjaKeys.scorePop,
+                            style: style,
+                          ),
+                          if (nearMiss) ...[
+                            const SizedBox(width: 6),
+                            Text(
+                              // Множитель берётся из тех же констант, что и
+                              // начисление: метка, разошедшаяся с
+                              // арифметикой, — обман в чистом виде.
+                              '×${nearMissBonusNumerator / nearMissBonusDenominator}',
+                              key: NinjaKeys.nearMissBadge,
+                              style: withWeight(
+                                textTheme.titleMedium!,
+                                FontWeight.bold,
+                              ).copyWith(color: scheme.tertiary),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
 
 /// След клинка: сглаженная кривая по точкам жеста, тающая с хвоста.
@@ -745,7 +844,75 @@ class BladeTrail extends StatelessWidget {
   final Duration now;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) {
+    final samples = smoothTrail(trailAlive(points, now));
+    if (samples.length < 2) return const SizedBox.shrink();
+    return IgnorePointer(
+      child: CustomPaint(
+        size: Size.infinite,
+        painter: _BladePainter(
+          samples: samples,
+          glow: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+    );
+  }
+}
+
+class _BladePainter extends CustomPainter {
+  const _BladePainter({required this.samples, required this.glow});
+
+  final List<TrailSample> samples;
+  final Color glow;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Два слоя, потому что один даёт либо палку, либо туман: свечение —
+    // широкое, полупрозрачное, размытое; ядро — узкое и раскалённо-белое.
+    canvas.drawPath(
+      _ribbon(trailGlowWidth),
+      Paint()
+        ..color = glow.withValues(alpha: trailGlowAlpha)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, trailGlowBlur),
+    );
+    canvas.drawPath(
+      _ribbon(trailCoreWidth),
+      Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.95),
+    );
+  }
+
+  /// Лента переменной ширины вдоль кривой: у каждой пробы по точке слева и
+  /// справа на половине её ширины, контур замыкается через хвост.
+  Path _ribbon(double widthScale) {
+    final last = samples.length - 1;
+    final left = <Offset>[];
+    final right = <Offset>[];
+    var normal = const Offset(0, 1);
+    for (var k = 0; k <= last; k++) {
+      final tangent = samples[min(k + 1, last)].at - samples[max(k - 1, 0)].at;
+      if (tangent.distance > 0) {
+        normal = Offset(-tangent.dy, tangent.dx) / tangent.distance;
+      }
+      final half =
+          widthScale *
+          trailWidthAt(freshness: samples[k].freshness, along: k / last) /
+          2;
+      left.add(samples[k].at + normal * half);
+      right.add(samples[k].at - normal * half);
+    }
+    final path = Path()..moveTo(left.first.dx, left.first.dy);
+    for (final point in left.skip(1)) {
+      path.lineTo(point.dx, point.dy);
+    }
+    for (final point in right.reversed) {
+      path.lineTo(point.dx, point.dy);
+    }
+    return path..close();
+  }
+
+  @override
+  bool shouldRepaint(_BladePainter old) =>
+      old.samples != samples || old.glow != glow;
 }
 
 /// Разрезанный объект: две половинки, расходящиеся перпендикулярно линии
@@ -773,7 +940,64 @@ class SlicedObject extends StatelessWidget {
   final Offset velocity;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) => SizedBox(
+    width: objectRadius * 2,
+    height: objectRadius * 2,
+    // Без обрезки: половинки разлетаются за пределы круга, в котором жил
+    // объект, — в том и смысл.
+    child: Stack(clipBehavior: Clip.none, children: [_half(1), _half(-1)]),
+  );
+
+  /// Половинка [side]: смещение по нормали, унаследованная скорость,
+  /// гравитация, поворот и прозрачность — всё из одной функции физики.
+  Widget _half(double side) {
+    final motion = halfMotion(
+      side: side,
+      angle: angle,
+      velocity: velocity,
+      phase: progress.clamp(0.0, 1.0),
+    );
+    return Transform.translate(
+      offset: motion.offset,
+      child: Transform.rotate(
+        angle: motion.rotation,
+        child: Opacity(
+          opacity: motion.alpha,
+          child: ClipPath(
+            clipper: _HalfClipper(angle: angle, side: side),
+            child: FlyingObject(label: label, state: state),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Половина круга по одну сторону от линии реза.
+class _HalfClipper extends CustomClipper<Path> {
+  const _HalfClipper({required this.angle, required this.side});
+
+  final double angle;
+  final double side;
+
+  @override
+  Path getClip(Size size) {
+    final centre = Offset(size.width / 2, size.height / 2);
+    final along = Offset(cos(angle), sin(angle));
+    final across = Offset(-along.dy, along.dx) * side;
+    final far = size.longestSide * 2;
+    final head = centre + along * far;
+    final tail = centre - along * far;
+    return Path()
+      ..moveTo(head.dx, head.dy)
+      ..lineTo(tail.dx, tail.dy)
+      ..lineTo((tail + across * far).dx, (tail + across * far).dy)
+      ..lineTo((head + across * far).dx, (head + across * far).dy)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(_HalfClipper old) => old.angle != angle || old.side != side;
 }
 
 /// Искры из точки реза.
@@ -795,7 +1019,52 @@ class SparkBurst extends StatelessWidget {
   final double progress;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) => IgnorePointer(
+    child: CustomPaint(
+      size: Size.infinite,
+      painter: _SparkPainter(
+        origin: origin,
+        sparks: sparks,
+        accent: Theme.of(context).colorScheme.primary,
+        phase: progress.clamp(0.0, 1.0),
+      ),
+    ),
+  );
+}
+
+class _SparkPainter extends CustomPainter {
+  const _SparkPainter({
+    required this.origin,
+    required this.sparks,
+    required this.accent,
+    required this.phase,
+  });
+
+  final Offset origin;
+  final List<Spark> sparks;
+  final Color accent;
+  final double phase;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (phase >= 1) return;
+    final alpha = sparkAlpha(phase);
+    for (final spark in sparks) {
+      // Каждая искра своего оттенка: акцент, подмешанный к белому на её долю
+      // яркости. Один цвет на всех читался бы как один кружок, повторённый.
+      final color =
+          Color.lerp(accent, const Color(0xFFFFFFFF), spark.brightness)!;
+      canvas.drawCircle(
+        sparkPosition(spark, origin: origin, phase: phase),
+        sparkSizeAt(spark, phase),
+        Paint()..color = color.withValues(alpha: alpha),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_SparkPainter old) =>
+      old.phase != phase || old.origin != origin || old.sparks != sparks;
 }
 
 /// Кольцо-ударная волна в точке удара.
@@ -817,7 +1086,58 @@ class ImpactRing extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) => IgnorePointer(
+    child: CustomPaint(
+      size: Size.infinite,
+      painter: _RingPainter(
+        origin: origin,
+        phase: progress.clamp(0.0, 1.0),
+        color: color,
+      ),
+    ),
+  );
+}
+
+class _RingPainter extends CustomPainter {
+  const _RingPainter({
+    required this.origin,
+    required this.phase,
+    required this.color,
+  });
+
+  final Offset origin;
+  final double phase;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (phase >= 1) return;
+    final radius = ringRadius(phase);
+    final alpha = ringAlpha(phase);
+    // Размытая копия под кольцом: удар без свечения читается как обводка,
+    // а не как волна.
+    canvas.drawCircle(
+      origin,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = ringStroke(phase) * 3
+        ..color = color.withValues(alpha: alpha * 0.5)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+    canvas.drawCircle(
+      origin,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = ringStroke(phase)
+        ..color = color.withValues(alpha: alpha),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) =>
+      old.phase != phase || old.origin != origin || old.color != color;
 }
 
 /// Подсветка верха, затемнение низа и виньетка поля.
@@ -830,5 +1150,74 @@ class FieldLighting extends StatelessWidget {
   final int combo;
 
   @override
-  Widget build(BuildContext context) => throw UnimplementedError();
+  Widget build(BuildContext context) => IgnorePointer(
+    child: CustomPaint(
+      size: Size.infinite,
+      painter: _LightingPainter(
+        accent: Theme.of(context).colorScheme.primary,
+        topAlpha: topLightAlpha(combo),
+      ),
+    ),
+  );
+}
+
+class _LightingPainter extends CustomPainter {
+  const _LightingPainter({required this.accent, required this.topAlpha});
+
+  final Color accent;
+  final double topAlpha;
+
+  static const Color _black = Color(0xFF000000);
+  static const Color _clear = Color(0x00000000);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Верх — чуть подсвечен акцентом: поле перестаёт быть серым, а слово
+    // наверху остаётся на тёмном. Сходит к нулю ровно там, где начинается
+    // полоса тона серии, чтобы смешение к primary не складывалось.
+    final top = Rect.fromLTWH(0, 0, size.width, size.height * topLightSpan);
+    canvas.drawRect(
+      top,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            accent.withValues(alpha: topAlpha),
+            accent.withValues(alpha: 0),
+          ],
+        ).createShader(top),
+    );
+    // Низ — глубже: объекты вылетают из темноты.
+    final bottom = Rect.fromLTWH(
+      0,
+      size.height * bottomDarkFrom,
+      size.width,
+      size.height * (1 - bottomDarkFrom),
+    );
+    canvas.drawRect(
+      bottom,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [_clear, _black.withValues(alpha: bottomDarkAlpha)],
+        ).createShader(bottom),
+    );
+    // Виньетка: центр остаётся чистым, углы уходят в черноту.
+    final all = Offset.zero & size;
+    canvas.drawRect(
+      all,
+      Paint()
+        ..shader = RadialGradient(
+          radius: 1.1,
+          colors: [_clear, _black.withValues(alpha: vignetteAlpha)],
+          stops: const [vignetteInner, 1],
+        ).createShader(all),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_LightingPainter old) =>
+      old.topAlpha != topAlpha || old.accent != accent;
 }
