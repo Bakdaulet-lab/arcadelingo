@@ -433,6 +433,39 @@ void main() {
       expect(cold.style!.shadows ?? const [], isEmpty);
     });
 
+    testWidgets('выскакивает: на старте меньше, к 35% — полный', (
+      tester,
+    ) async {
+      Future<double> widthAt(double progress) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: wordarcadeTheme(),
+            home: Scaffold(
+              body: SizedBox(
+                width: 300,
+                height: 300,
+                child: ScorePop(
+                  points: 10,
+                  from: const Offset(150, 150),
+                  progress: progress,
+                  nearMiss: false,
+                  hot: false,
+                ),
+              ),
+            ),
+          ),
+        );
+        final pop = find.byKey(NinjaKeys.scorePop);
+        // Через углы, а не getSize: масштаб живёт в матрице Transform.
+        return (tester.getTopRight(pop) - tester.getTopLeft(pop)).distance;
+      }
+
+      final small = await widthAt(0.01);
+      final full = await widthAt(0.5);
+
+      expect(small, lessThan(full * 0.6), reason: 'масштаб 0.3 на старте');
+    });
+
     testWidgets('первую треть стоит на месте, потом летит к счёту', (
       tester,
     ) async {

@@ -656,6 +656,32 @@ void main() {
       }
     });
 
+    // Последний отрезок касательного реза вертикальный: искры обязаны идти
+    // вбок, а не вверх-вниз. Горизонтальный свайп этого не отличил бы —
+    // там нормаль и без направления реза смотрит вверх.
+    testWidgets('искры знают направление реза: у вертикального — вбок', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await _sliceTangent(tester, _correctIndex(tester, 1));
+      await tester.pump(const Duration(milliseconds: 30));
+
+      double apart(double a, double b) {
+        final d = (a - b) % (2 * pi);
+        return min(d, 2 * pi - d);
+      }
+
+      final burst = tester.widget<SparkBurst>(find.byKey(NinjaKeys.sparks));
+      for (final spark in burst.sparks) {
+        expect(
+          min(apart(spark.angle, 0), apart(spark.angle, pi)),
+          lessThanOrEqualTo(60 * pi / 180 + 1e-9),
+        );
+      }
+    });
+
     testWidgets(
       'на промахе ни искр, ни половинок: стоп-кадр целого помеченного объекта',
       (tester) async {
@@ -748,6 +774,20 @@ void main() {
   });
 
   group('Живой след клинка', () {
+    // Второй таймаут после первого реза: замороженный след первой волны не
+    // должен вернуться на экран, хотя его часы (момент реза) уже позади.
+    testWidgets('след первого реза не возвращается после таймаута следующей '
+        'волны', (tester) async {
+      await _pumpGame(tester);
+
+      await _answerCorrectly(tester, 1);
+      await tester.pump(const Duration(milliseconds: 3300));
+      await tester.pump(const Duration(milliseconds: 30));
+
+      expect(find.byKey(NinjaKeys.revealAnswer), findsOneWidget);
+      expect(find.byKey(NinjaKeys.trail), findsNothing);
+    });
+
     testWidgets('свайп мимо объектов оставляет след', (tester) async {
       final session = await _pumpGame(tester);
       await tester.pump(const Duration(seconds: 1));
