@@ -596,7 +596,7 @@
   {
     "name": "свечение кромок под виньеткой, а не поверх",
     "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
-    "old": "    canvas.drawRect(\n      all,\n      Paint()\n        ..shader = RadialGradient(",
-    "new": "    if (rim) _rim(canvas, size);\n    canvas.drawRect(\n      all,\n      Paint()\n        ..shader = RadialGradient("
+    "old": "    final all = Offset.zero & size;\n    canvas.drawRect(\n      all,\n      Paint()\n        ..shader = RadialGradient(\n          radius: 1.1,\n          colors: [_clear, _black.withValues(alpha: vignetteAlpha)],\n          stops: const [vignetteInner, 1],\n        ).createShader(all),\n    );\n    if (rim) _rim(canvas, size);",
+    "new": "    final all = Offset.zero & size;\n    if (rim) _rim(canvas, size);\n    canvas.drawRect(\n      all,\n      Paint()\n        ..shader = RadialGradient(\n          radius: 1.1,\n          colors: [_clear, _black.withValues(alpha: vignetteAlpha)],\n          stops: const [vignetteInner, 1],\n        ).createShader(all),\n    );"
   }
 ]
