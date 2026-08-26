@@ -206,6 +206,15 @@ void main() {
       expect(trailWidthAt(freshness: 0, along: 1), closeTo(0, 1e-9));
     });
 
+    test('полусвежая точка шире половины: старение как корень', () {
+      expect(
+        trailWidthAt(freshness: 0.5, along: 1),
+        greaterThan(5),
+        reason: 'линейное старение давало нитку уже к середине жизни',
+      );
+      expect(trailWidthAt(freshness: 0.25, along: 1), closeTo(5, 1e-9));
+    });
+
     test('числа из SPEC: свечение ×2.4 с альфой 0.45 и размытием 6, ядро '
         '×0.45', () {
       expect(trailGlowWidth, 2.4);
@@ -480,10 +489,10 @@ void main() {
       expect(sparks.map((s) => s.reach).toSet(), hasLength(14));
     });
 
-    test('размер у каждой свой, в 2…4', () {
+    test('размер у каждой свой, в 3…6', () {
       for (final spark in sparks) {
-        expect(spark.size, greaterThanOrEqualTo(2));
-        expect(spark.size, lessThanOrEqualTo(4));
+        expect(spark.size, greaterThanOrEqualTo(3));
+        expect(spark.size, lessThanOrEqualTo(6));
       }
       expect(sparks.map((s) => s.size).toSet(), hasLength(14));
     });
@@ -534,22 +543,26 @@ void main() {
       expect(end.dy, greaterThan(40));
     });
 
-    test('тают и уменьшаются, но не в ноль', () {
-      const spark = Spark(angle: 0, reach: 60, size: 3, brightness: 0);
+    test('тают и уменьшаются вдвое, но не в точку', () {
+      const spark = Spark(angle: 0, reach: 60, size: 4, brightness: 0);
 
       expect(sparkAlpha(0), closeTo(1, 1e-9));
       expect(sparkAlpha(1), closeTo(0, 1e-9));
-      expect(sparkSizeAt(spark, 0), closeTo(3, 1e-9));
-      expect(sparkSizeAt(spark, 1), lessThan(3));
-      expect(sparkSizeAt(spark, 1), greaterThan(0));
+      expect(
+        sparkAlpha(0.5),
+        greaterThan(0.5),
+        reason: 'ярко дольше половины жизни: 1 − t², а не 1 − t',
+      );
+      expect(sparkSizeAt(spark, 0), closeTo(4, 1e-9));
+      expect(sparkSizeAt(spark, 1), closeTo(2, 1e-9));
     });
 
     test('числа из SPEC', () {
       expect(sparkSpreadDegrees, 60);
       expect(sparkMinReach, 40);
       expect(sparkMaxReach, 90);
-      expect(sparkMinSize, 2);
-      expect(sparkMaxSize, 4);
+      expect(sparkMinSize, 3);
+      expect(sparkMaxSize, 6);
       expect(sparkMaxBrightness, 0.4);
     });
   });
