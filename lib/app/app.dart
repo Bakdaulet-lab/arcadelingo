@@ -25,9 +25,9 @@ import 'package:arcadelingo/app/settings_view.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
 import 'package:arcadelingo/domain/reminders/reminder_policy.dart';
-import 'package:arcadelingo/domain/reminders/reminder_settings.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/session/observed_session.dart';
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
@@ -203,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// обязан это показать, а не притвориться, что переключатель включился.
   /// Разрешение спрашивается ровно здесь — в момент, когда человек попросил
   /// напоминания, и нигде больше.
-  Future<bool> _applySettings(ReminderSettings next) async {
+  Future<bool> _applySettings(AppSettings next) async {
     final store = widget.ports.settings;
     if (store == null) return false;
     if (next.enabled && !await widget.ports.askReminderPermission()) {
@@ -219,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Зовётся на открытии приложения и после каждой партии: повод считается
   /// на день срабатывания, и чем свежее расписание, тем меньше шансов, что
   /// уведомление скажет про серию, которой уже нет.
-  Future<void> _rescheduleReminder(ReminderSettings settings) async {
+  Future<void> _rescheduleReminder(AppSettings settings) async {
     final streak = switch (widget.ports.streaks.load()) {
       Ok(:final value) => value,
       Err() => null,
@@ -252,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     final settings = switch (store.load()) {
       Ok(:final value) => value,
-      Err() => ReminderSettings.defaults,
+      Err() => AppSettings.defaults,
     };
     unawaited(_rescheduleReminder(settings));
   }

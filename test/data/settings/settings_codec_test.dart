@@ -1,7 +1,7 @@
 // Кодек настроек: тот же контракт ошибок, что у двух соседних документов.
 
 import 'package:arcadelingo/data/settings/settings_codec.dart';
-import 'package:arcadelingo/domain/reminders/reminder_settings.dart';
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/result.dart';
@@ -16,23 +16,20 @@ String _doc({
 void main() {
   group('Круговой прогон', () {
     test('настройки переживают запись и чтение', () {
-      const settings = ReminderSettings(enabled: true, at: ReminderTime(7, 5));
+      const settings = AppSettings(enabled: true, at: ReminderTime(7, 5));
 
       expect(ok(decodeSettings(encodeSettings(settings))), settings);
     });
 
     test('выключенные тоже', () {
       expect(
-        ok(decodeSettings(encodeSettings(ReminderSettings.defaults))),
-        ReminderSettings.defaults,
+        ok(decodeSettings(encodeSettings(AppSettings.defaults))),
+        AppSettings.defaults,
       );
     });
 
     test('пишется версия 1', () {
-      expect(
-        encodeSettings(ReminderSettings.defaults),
-        contains('"version":1'),
-      );
+      expect(encodeSettings(AppSettings.defaults), contains('"version":1'));
     });
   });
 

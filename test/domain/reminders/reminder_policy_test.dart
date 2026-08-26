@@ -10,7 +10,7 @@
 // про сегодняшнее состояние.
 
 import 'package:arcadelingo/domain/reminders/reminder_policy.dart';
-import 'package:arcadelingo/domain/reminders/reminder_settings.dart';
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -19,10 +19,7 @@ final DateTime _wed = DateTime(2026, 8, 26);
 
 DateTime _at(int hour, [int minute = 0]) => DateTime(2026, 8, 26, hour, minute);
 
-const ReminderSettings _on = ReminderSettings(
-  enabled: true,
-  at: ReminderTime(20, 0),
-);
+const AppSettings _on = AppSettings(enabled: true, at: ReminderTime(20, 0));
 
 /// Серия из [days] дней, последний засчитанный — [lastOffset] суток назад.
 StreakState _streak({
@@ -49,7 +46,7 @@ void main() {
     test('напоминания выключены — не ставим ничего', () {
       expect(
         planReminder(
-          settings: ReminderSettings.defaults,
+          settings: AppSettings.defaults,
           streak: _streak(days: 3, lastOffset: 1),
           now: _at(10),
         ),
@@ -118,10 +115,7 @@ void main() {
 
     test('час берётся из настроек, а не из головы', () {
       final plan = planReminder(
-        settings: const ReminderSettings(
-          enabled: true,
-          at: ReminderTime(7, 45),
-        ),
+        settings: const AppSettings(enabled: true, at: ReminderTime(7, 45)),
         streak: _streak(days: 1, lastOffset: 1),
         now: _at(6),
       );

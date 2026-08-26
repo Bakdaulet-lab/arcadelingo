@@ -12,7 +12,7 @@ library;
 import 'package:arcadelingo/data/settings/settings_codec.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/ports/settings_store.dart';
-import 'package:arcadelingo/domain/reminders/reminder_settings.dart';
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPrefsStore implements SettingsStore {
@@ -25,14 +25,14 @@ class SettingsPrefsStore implements SettingsStore {
   static const String key = 'reminder_settings';
 
   @override
-  Result<ReminderSettings> load() {
+  Result<AppSettings> load() {
     final raw = _prefs.getString(key);
-    if (raw == null) return const Ok(ReminderSettings.defaults);
+    if (raw == null) return const Ok(AppSettings.defaults);
     return decodeSettings(raw);
   }
 
   @override
-  Future<bool> save(ReminderSettings settings) =>
+  Future<bool> save(AppSettings settings) =>
       _prefs.setString(key, encodeSettings(settings));
 
   @override

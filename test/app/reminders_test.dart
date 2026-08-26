@@ -16,8 +16,8 @@ import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/data/streak/streak_codec.dart';
 import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
-import 'package:arcadelingo/domain/reminders/reminder_settings.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -68,9 +68,8 @@ const GameEntry _entry = GameEntry(
 );
 
 /// Документ настроек: включено, время [hour]:00.
-String _settingsDoc({bool enabled = true, int hour = 20}) => encodeSettings(
-  ReminderSettings(enabled: enabled, at: ReminderTime(hour, 0)),
-);
+String _settingsDoc({bool enabled = true, int hour = 20}) =>
+    encodeSettings(AppSettings(enabled: enabled, at: ReminderTime(hour, 0)));
 
 /// Документ серии: [days] дней, последний засчитанный — [lastDay].
 String _streakDoc({required int days, required StreakDay lastDay}) =>

@@ -1,6 +1,6 @@
 // Настройки напоминания: время суток и умолчание.
 
-import 'package:arcadelingo/domain/reminders/reminder_settings.dart';
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -37,26 +37,26 @@ void main() {
     // Приложение, спрашивающее разрешение на уведомления до того, как человек
     // о них попросил, — приложение, которому отказывают.
     test('напоминания выключены', () {
-      expect(ReminderSettings.defaults.enabled, isFalse);
+      expect(AppSettings.defaults.enabled, isFalse);
     });
 
     test('час выставлен, чтобы его было куда двигать', () {
-      expect(ReminderSettings.defaults.at, const ReminderTime(20, 0));
+      expect(AppSettings.defaults.at, const ReminderTime(20, 0));
     });
   });
 
   group('Правка', () {
     test('copyWith меняет одно поле и не трогает второе', () {
-      final on = ReminderSettings.defaults.copyWith(enabled: true);
+      final on = AppSettings.defaults.copyWith(enabled: true);
 
       expect(on.enabled, isTrue);
-      expect(on.at, ReminderSettings.defaults.at);
+      expect(on.at, AppSettings.defaults.at);
     });
 
     test('равенство по полям', () {
       expect(
-        ReminderSettings.defaults.copyWith(enabled: true),
-        const ReminderSettings(enabled: true, at: ReminderTime(20, 0)),
+        AppSettings.defaults.copyWith(enabled: true),
+        const AppSettings(enabled: true, at: ReminderTime(20, 0)),
       );
     });
   });

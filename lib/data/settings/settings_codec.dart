@@ -1,4 +1,4 @@
-/// Кодек настроек напоминания: JSON-документ ↔ [ReminderSettings].
+/// Кодек настроек напоминания: JSON-документ ↔ [AppSettings].
 ///
 /// Формат v1:
 /// ```json
@@ -15,13 +15,13 @@ library;
 import 'dart:convert';
 
 import 'package:arcadelingo/domain/core/result.dart';
-import 'package:arcadelingo/domain/reminders/reminder_settings.dart';
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 
 /// Версия формата документа. Другая — [Err]: читать её некому.
 const int _formatVersion = 1;
 
 /// Настройки → JSON-документ.
-String encodeSettings(ReminderSettings settings) => jsonEncode({
+String encodeSettings(AppSettings settings) => jsonEncode({
   'version': _formatVersion,
   'enabled': settings.enabled,
   'hour': settings.at.hour,
@@ -29,7 +29,7 @@ String encodeSettings(ReminderSettings settings) => jsonEncode({
 });
 
 /// JSON-документ → настройки; битые данные — [Err].
-Result<ReminderSettings> decodeSettings(String json) {
+Result<AppSettings> decodeSettings(String json) {
   final Object? root;
   try {
     root = jsonDecode(json);
@@ -57,5 +57,5 @@ Result<ReminderSettings> decodeSettings(String json) {
   if (at == null) {
     return Err(Failure('настройки: такого времени не бывает: $hour:$minute'));
   }
-  return Ok(ReminderSettings(enabled: enabled, at: at));
+  return Ok(AppSettings(enabled: enabled, at: at));
 }
