@@ -10,10 +10,12 @@
 // закон о контрасте сторожил бы палитру, которой никто не видит.
 
 import 'dart:math';
+import 'dart:ui' show ImageByteFormat;
 
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_views.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Насколько цвет [b] ушёл от цвета [a]. Грубая мера, и её хватает: нужна
@@ -497,6 +499,59 @@ void main() {
 
       expect(held, within(distance: 0.5, from: start));
       expect(flying, isNot(within(distance: 5, from: start)));
+    });
+  });
+
+  group('Свечение кромок: пиксели', () {
+    // Единственное место в наборе, где проверяется не решение, а краска.
+    // Иначе «рисуется ли свечение вообще» и «поверх ли виньетки» сторожил бы
+    // только голден, а он локально не гоняется. Мутации «не рисовать» и
+    // «рисовать под виньеткой» обе краснеют здесь.
+    Future<int> greenAtEdge(WidgetTester tester, int combo) async {
+      final key = GlobalKey();
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: wordarcadeTheme(),
+          home: Center(
+            child: RepaintBoundary(
+              key: key,
+              child: SizedBox(
+                width: 200,
+                height: 400,
+                child: ColoredBox(
+                  color: scheme.surface,
+                  child: FieldLighting(combo: combo),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final boundary =
+          key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      return (await tester.runAsync(() async {
+        final image = await boundary.toImage();
+        final bytes = await image.toByteData(format: ImageByteFormat.rawRgba);
+        // Размер берётся у самой картинки: `toImage` снимает логическими
+        // пикселями, а не физическими, и умножение на плотность экрана
+        // уводило индекс за буфер.
+        const x = 5;
+        final y = image.height ~/ 2;
+        return bytes!.getUint8((y * image.width + x) * 4 + 1);
+      }))!;
+    }
+
+    testWidgets('на пике кромка мятная, до пика — нет', (tester) async {
+      final cold = await greenAtEdge(tester, 0);
+      final hot = await greenAtEdge(tester, 8);
+
+      expect(
+        hot,
+        greaterThan(cold + 20),
+        reason:
+            'свечение либо не нарисовано вовсе, либо съедено виньеткой — '
+            'ровно то, что показал кадр ninja_flight',
+      );
     });
   });
 

@@ -588,9 +588,15 @@
     "new": "    if (!swipeCounts(_travelled)) return;\n    if (event.down) return;"
   },
   {
-    "name": "свечение кромок рисуется под виньеткой, а не поверх",
+    "name": "свечение кромок не рисуется вовсе",
     "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
     "old": "    if (rim) _rim(canvas, size);\n  }",
     "new": "  }"
+  },
+  {
+    "name": "свечение кромок под виньеткой, а не поверх",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "    canvas.drawRect(\n      all,\n      Paint()\n        ..shader = RadialGradient(",
+    "new": "    if (rim) _rim(canvas, size);\n    canvas.drawRect(\n      all,\n      Paint()\n        ..shader = RadialGradient("
   }
 ]
