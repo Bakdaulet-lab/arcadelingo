@@ -249,10 +249,95 @@ void main() {
       expect(angles, hasLength(8));
     });
 
+    // Восемь ровных лучей — тоже восемь разных направлений, и предыдущий
+    // тест их пропускает. Ровные не зависели бы от сида вовсе.
+    test('направления зависят от сида, а не стоят ровными лучами', () {
+      expect(
+        sparkBurst(Random(1)).map((s) => s.direction),
+        isNot(sparkBurst(Random(2)).map((s) => s.direction)),
+      );
+    });
+
+    test('дальность у искр разная, а не у всех одна', () {
+      final reaches = sparkBurst(Random(9)).map((s) => s.distance).toSet();
+
+      expect(
+        reaches,
+        hasLength(8),
+        reason: 'одинаковый разлёт читается как ровное кольцо, а не брызги',
+      );
+    });
+
     test('числа из SPEC: радиус искры и толщина следа', () {
       expect(sparkRadius, 3);
       expect(trailWidth, 4);
       expect(halfSpread, 24);
+    });
+  });
+
+  group('Половинки разрезанного объекта', () {
+    /// Две половинки на экране: центры считаются через getRect, потому что
+    /// расхождение живёт в матрице Transform, а не в раскладке.
+    Future<List<Rect>> halves(WidgetTester tester, double progress) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: wordarcadeTheme(),
+          home: Scaffold(
+            body: Center(
+              child: SlicedObject(
+                label: 'перевод',
+                state: ObjectState.correct,
+                angle: 0,
+                progress: progress,
+              ),
+            ),
+          ),
+        ),
+      );
+      return find
+          .byType(FlyingObject)
+          .evaluate()
+          .map((e) => tester.getRect(find.byWidget(e.widget)))
+          .toList();
+    }
+
+    testWidgets('расходятся поперёк линии реза, а не вдоль', (tester) async {
+      final parts = await halves(tester, 1);
+
+      expect(parts, hasLength(2));
+      expect(
+        (parts[0].center.dy - parts[1].center.dy).abs(),
+        closeTo(2 * halfSpread, 0.5),
+        reason: 'рез горизонтальный — половинки расходятся по вертикали',
+      );
+      expect(
+        parts[0].center.dx,
+        closeTo(parts[1].center.dx, 0.5),
+        reason: 'вдоль реза они просто разъехались бы по той же прямой',
+      );
+    });
+
+    testWidgets('на старте подсветки ещё вместе', (tester) async {
+      final parts = await halves(tester, 0);
+
+      expect(parts[0].center.dy, closeTo(parts[1].center.dy, 0.5));
+    });
+
+    testWidgets('тают: к концу подсветки их не видно', (tester) async {
+      await halves(tester, 0.2);
+      final early = tester
+          .widgetList<Opacity>(find.byType(Opacity))
+          .map((o) => o.opacity)
+          .reduce(min);
+
+      await halves(tester, 0.8);
+      final late = tester
+          .widgetList<Opacity>(find.byType(Opacity))
+          .map((o) => o.opacity)
+          .reduce(min);
+
+      expect(late, lessThan(early));
+      expect(late, lessThan(0.3));
     });
   });
 }

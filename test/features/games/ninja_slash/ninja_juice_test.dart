@@ -104,6 +104,32 @@ Future<void> _slice(WidgetTester tester, int index) async {
   await tester.pump();
 }
 
+/// Смещение точки реза от центра объекта в [_sliceTangent].
+const Offset _tangentCut = Offset(20, 20);
+
+/// Рез объекта [index] в четыре точки, и режет только последняя.
+///
+/// Двумя вещами отличается от [_slice], и обе нужны. Точек больше двух —
+/// иначе ломаная неотличима от отрезка между концами жеста, и притом режет
+/// последнее движение, иначе в след попали бы не все точки. Линия проходит
+/// мимо центра — иначе точка реза совпадает с центром объекта, и «искры
+/// летят из реза» неотличимо от «искры летят из центра».
+Future<void> _sliceTangent(WidgetTester tester, int index) async {
+  final centre = _objectCenter(tester, index);
+  final path = [
+    centre + const Offset(-60, 70),
+    centre + const Offset(-20, 70),
+    centre + const Offset(20, 70),
+    centre + _tangentCut,
+  ];
+  final gesture = await tester.startGesture(path.first);
+  for (final point in path.skip(1)) {
+    await gesture.moveTo(point);
+  }
+  await gesture.up();
+  await tester.pump();
+}
+
 /// Верный рез по слову [word] через секунду и промотанная подсветка.
 Future<void> _answerCorrectly(WidgetTester tester, int word) async {
   await tester.pump(const Duration(seconds: 1));
@@ -471,6 +497,23 @@ void main() {
       );
     });
 
+    testWidgets('след — ломаная по всем точкам, а не отрезок между концами', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await _sliceTangent(tester, _correctIndex(tester, 1));
+      await tester.pump(const Duration(milliseconds: 30));
+
+      final trail = tester.widget<SliceTrail>(find.byKey(NinjaKeys.trail));
+      expect(
+        trail.points,
+        hasLength(4),
+        reason: 'касание плюс три движения — четыре точки, а не две',
+      );
+    });
+
     testWidgets('разрезанный объект стал половинками', (tester) async {
       await _pumpGame(tester);
       await tester.pump(const Duration(seconds: 1));
@@ -518,6 +561,28 @@ void main() {
         lessThanOrEqualTo(34),
         reason: 'точка реза лежит в объекте, а не где-то ещё на экране',
       );
+    });
+
+    // Рез мимо центра: жест идёт на 20 dp ниже, и точка реза обязана быть
+    // на жесте, а не в центре объекта. С центральным свайпом эти два места
+    // совпадают, и подмена неотличима.
+    testWidgets('искры летят из точки реза, а не из центра объекта', (
+      tester,
+    ) async {
+      await _pumpGame(tester);
+      await tester.pump(const Duration(seconds: 1));
+      final correct = _correctIndex(tester, 1);
+      final centre = _objectCenter(tester, correct);
+
+      await _sliceTangent(tester, correct);
+      await tester.pump(const Duration(milliseconds: 30));
+
+      final field = tester.getRect(find.byKey(NinjaKeys.playfield));
+      final origin =
+          tester.widget<SparkBurst>(find.byKey(NinjaKeys.sparks)).origin +
+          field.topLeft;
+      expect(origin.dx - centre.dx, closeTo(_tangentCut.dx, 0.5));
+      expect(origin.dy - centre.dy, closeTo(_tangentCut.dy, 0.5));
     });
 
     testWidgets('на промахе искр нет: частицы промаха вне скоупа', (
@@ -584,6 +649,25 @@ void main() {
 
       expect(find.byKey(NinjaKeys.trail), findsNothing);
       expect(find.byType(SlicedObject), findsNothing);
+    });
+
+    // Первая волна ничего не оставляла после себя просто потому, что до неё
+    // ничего не было. Проверяется вторая: след первого реза не должен
+    // дожить до таймаута следующего слова.
+    testWidgets('след прошлой волны не доживает до следующей', (tester) async {
+      await _pumpGame(tester);
+
+      await _answerCorrectly(tester, 1);
+      await tester.pump(const Duration(milliseconds: 3300));
+      await tester.pump(const Duration(milliseconds: 30));
+
+      expect(find.byKey(NinjaKeys.trail), findsNothing);
+      expect(find.byKey(NinjaKeys.sparks), findsNothing);
+      expect(
+        find.byKey(NinjaKeys.revealAnswer),
+        findsOneWidget,
+        reason: 'а таймаут второго слова наступил — иначе кейс пустой',
+      );
     });
   });
 

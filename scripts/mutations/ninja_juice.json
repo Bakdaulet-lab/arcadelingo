@@ -1,0 +1,176 @@
+[
+  {
+    "name": "хаптики нет вовсе на резе",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _feel();\n    setState(() {});\n    _startReveal();",
+    "new": "    setState(() {});\n    _startReveal();"
+  },
+  {
+    "name": "таймаут руке не отзывается",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (_run.timeout()) {\n      _feel();",
+    "new": "    if (_run.timeout()) {"
+  },
+  {
+    "name": "хаптика смотрит на «убрать анимации»",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "  void _feel() {\n    switch (hapticFor(",
+    "new": "  void _feel() {\n    if (MediaQuery.disableAnimationsOf(context)) return;\n    switch (hapticFor("
+  },
+  {
+    "name": "хаптика не различает промах и удачу",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      correct: _run.verdict == Verdict.correct,\n      combo: _run.combo,\n      nearMiss: _run.nearMiss,",
+    "new": "      correct: true,\n      combo: _run.combo,\n      nearMiss: _run.nearMiss,"
+  },
+  {
+    "name": "серия для среднего отклика не учитывается",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      correct: _run.verdict == Verdict.correct,\n      combo: _run.combo,",
+    "new": "      correct: _run.verdict == Verdict.correct,\n      combo: 0,"
+  },
+  {
+    "name": "тряски нет: HUD и поле стоят",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    return shakeAmplitude * shakeIntensity(lived / shakeTime.inMicroseconds);",
+    "new": "    return 0;"
+  },
+  {
+    "name": "тряска считает время от всей подсветки, а не от своих 300 мс",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    return shakeAmplitude * shakeIntensity(lived / shakeTime.inMicroseconds);",
+    "new": "    return shakeAmplitude * shakeIntensity(_reveal.value);"
+  },
+  {
+    "name": "верный рез тоже трясёт",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (!juicy || !revealing || _run.verdict == Verdict.correct) return 0;\n    final lived",
+    "new": "    if (!juicy || !revealing) return 0;\n    final lived"
+  },
+  {
+    "name": "тряска не подчиняется «убрать анимации»",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (!juicy || !revealing || _run.verdict == Verdict.correct) return 0;\n    final lived",
+    "new": "    if (!revealing || _run.verdict == Verdict.correct) return 0;\n    final lived"
+  },
+  {
+    "name": "поле не трясётся вместе с HUD",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                  Transform.translate(\n                    offset: Offset(shake, 0),\n                    child: NinjaField(",
+    "new": "                  Transform.translate(\n                    offset: Offset.zero,\n                    child: NinjaField("
+  },
+  {
+    "name": "трясётся всё поле вместе с парой",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                  if (missed)\n                    RevealPair(",
+    "new": "                  if (missed)\n                    Transform.translate(\n                      offset: Offset(shake, 0),\n                      child: RevealPair("
+  },
+  {
+    "name": "пульса счёта нет",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                  scorePulse: _pulse(juicy: juicy, revealing: revealing),",
+    "new": "                  scorePulse: 0,"
+  },
+  {
+    "name": "пульс не подчиняется «убрать анимации»",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (!juicy || !revealing || _run.verdict != Verdict.correct) return 0;\n    if (_reveal.value < 0.5) return 0;",
+    "new": "    if (!revealing || _run.verdict != Verdict.correct) return 0;\n    if (_reveal.value < 0.5) return 0;"
+  },
+  {
+    "name": "рез живёт всю подсветку, а не 300 мс",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    return (lived / NinjaRun.correctReveal.inMicroseconds).clamp(0.0, 1.0);",
+    "new": "    return _reveal.value;"
+  },
+  {
+    "name": "половинки, след и искры рисуются и после своих 300 мс",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    final sliced = juicy && revealing && phase < 1 ? _run.slicedIndex : null;",
+    "new": "    final sliced = juicy && revealing ? _run.slicedIndex : null;"
+  },
+  {
+    "name": "джус реза не подчиняется «убрать анимации»",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    final sliced = juicy && revealing && phase < 1 ? _run.slicedIndex : null;",
+    "new": "    final sliced = revealing && phase < 1 ? _run.slicedIndex : null;"
+  },
+  {
+    "name": "искры достаются и промаху",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "        _run.verdict == Verdict.correct ? sparkBurst(_sparkRandom) : const [];",
+    "new": "        sparkBurst(_sparkRandom);"
+  },
+  {
+    "name": "искры летят из центра объекта, а не из точки реза",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _slicePoint = closestPointOnSegment(\n      from: from,\n      to: to,\n      point: centers[target],\n    );",
+    "new": "    _slicePoint = centers[target];"
+  },
+  {
+    "name": "след — отрезок между концами жеста, а не ломаная",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _trail = List.of(_gesture);",
+    "new": "    _trail = [from, to];"
+  },
+  {
+    "name": "прилёт очков не подчиняется «убрать анимации»",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                  if (juicy && revealing && _run.lastPoints > 0)",
+    "new": "                  if (revealing && _run.lastPoints > 0)"
+  },
+  {
+    "name": "искр не восемь",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "const int sparkCount = 8;",
+    "new": "const int sparkCount = 5;"
+  },
+  {
+    "name": "искры летят по восьми ровным лучам",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "      (i + random.nextDouble()) * 2 * pi / sparkCount,",
+    "new": "      i * 2 * pi / sparkCount,"
+  },
+  {
+    "name": "разлёт искр фиксированный, а не в диапазоне",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "      sparkMinReach + random.nextDouble() * (sparkMaxReach - sparkMinReach),",
+    "new": "      sparkMaxReach,"
+  },
+  {
+    "name": "половинки расходятся вдоль реза, а не поперёк",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "    final apart = Offset(-sin(angle), cos(angle)) * (halfSpread * gone);",
+    "new": "    final apart = Offset(cos(angle), sin(angle)) * (halfSpread * gone);"
+  },
+  {
+    "name": "половинки не тают",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "        opacity: 1 - gone,",
+    "new": "        opacity: 1,"
+  },
+  {
+    "name": "метка ×1.5 разошлась с начислением",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "'×${nearMissBonusNumerator / nearMissBonusDenominator}',",
+    "new": "'×2.0',"
+  },
+  {
+    "name": "прирост показывает весь счёт вместо прироста",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                      points: _run.lastPoints,",
+    "new": "                      points: _run.score,"
+  },
+  {
+    "name": "точка реза — начало жеста, а не проекция на отрезок",
+    "file": "lib/features/games/ninja_slash/ninja_geometry.dart",
+    "old": "  final t = ((offset.dx * segment.dx + offset.dy * segment.dy) / lengthSquared)\n      .clamp(0.0, 1.0);\n  return from + segment * t;",
+    "new": "  return from;"
+  },
+  {
+    "name": "порог серии для среднего отклика сдвинут (джус)",
+    "file": "lib/features/games/ninja_slash/ninja_slash_juice.dart",
+    "old": "const int comboHapticFrom = 5;",
+    "new": "const int comboHapticFrom = 6;"
+  }
+]
