@@ -141,3 +141,25 @@ Offset _positionOnSlot(
     bottom: bottom,
   );
 }
+
+/// Скорость объекта [index] волны из [count] в долю полёта [t], в
+/// пикселях поля в секунду, при полёте длиной [duration].
+///
+/// Производная [trajectory] по времени: `dx/dt = drift`,
+/// `dy/dt = −apex · 4(1 − 2t)`, обе делённые на длину полёта. Нужна
+/// половинкам разрезанного объекта — они наследуют её в момент реза. Здесь,
+/// а не в украшениях, потому что это производная той же параболы, и две
+/// копии формулы разошлись бы молча.
+Offset waveVelocity({
+  required int count,
+  required int index,
+  required double t,
+  required double width,
+  required double height,
+  required Duration duration,
+}) {
+  final slot = laneSlotsFor(count)[index];
+  final flight = flightForSlot(slot, width: width, height: height);
+  final seconds = duration.inMicroseconds / Duration.microsecondsPerSecond;
+  return Offset(flight.drift, -flight.apex * 4 * (1 - 2 * t)) / seconds;
+}

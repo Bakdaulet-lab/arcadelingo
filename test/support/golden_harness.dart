@@ -21,6 +21,9 @@ import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_run.dart';
+import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
+import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
+import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_views.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter/material.dart';
@@ -136,4 +139,94 @@ Future<void> pumpRitualGolden(
     ),
   );
   await tester.pump();
+}
+
+/// Ниндзя-слэш, готовый к съёмке.
+///
+/// Те же экран, плотность и масштаб текста, что и у кадров падающих слов:
+/// эталоны обязаны отличаться тем, что на них нарисовано, и ничем больше.
+/// Взвод **не** пропускается — его снимает отдельный кадр, а остальные
+/// пропускают его сами.
+Future<FakeReviewSession> pumpNinjaGolden(
+  WidgetTester tester, {
+  List<ReviewItem>? items,
+  int? total,
+}) async {
+  final session = FakeReviewSession(items ?? wordItems(12), total: total);
+  tester.view.physicalSize = goldenPhysicalSize;
+  tester.view.devicePixelRatio = goldenDevicePixelRatio;
+  tester.platformDispatcher.textScaleFactorTestValue = 1;
+  addTearDown(tester.view.reset);
+  addTearDown(tester.platformDispatcher.clearAllTestValues);
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: wordarcadeTheme(platform: TargetPlatform.android),
+      debugShowCheckedModeBanner: false,
+      home: NinjaSlashGame(
+        session: session,
+        seed: 1,
+        onPlayAgain: () {},
+        onExit: () {},
+      ),
+    ),
+  );
+  return session;
+}
+
+/// Дорожка объекта с переводом [label] в текущем кадре.
+int ninjaIndexOf(WidgetTester tester, String label) => tester
+    .widget<NinjaField>(find.byType(NinjaField))
+    .objects
+    .indexWhere((o) => o.label == label);
+
+/// Дорожка любого объекта, кроме верного для слова [word].
+///
+/// По индексу, а не по тексту обманки: волна показывает две обманки из
+/// трёх, и какие именно — решает сид. Спрашивать про конкретную значило бы
+/// поставить кадр в зависимость от перемешивания.
+int ninjaWrongIndex(WidgetTester tester, int word) => tester
+    .widget<NinjaField>(find.byType(NinjaField))
+    .objects
+    .indexWhere((o) => o.label != wordTranslation(word));
+
+/// Рез объекта на дорожке [index]: дуга сверху-слева вниз-направо через
+/// него, семью точками.
+///
+/// Дугой, а не отрезком, потому что кадр реза показывает след клинка, а
+/// след — кривая по пути пальца; прямой свайп из двух точек дал бы на
+/// эталоне ту самую «прямую палку». Сверху, а не снизу: кадр реза снимается
+/// на 91% полёта, когда объект уже у нижней кромки, и дуга снизу начиналась
+/// бы за полем — касание мимо слушателя, и реза нет вовсе (так и вышло на
+/// первом прогоне). Над объектом свободно в любой фазе: слово кончается на
+/// 55 dp. Соседние дорожки стоят в 108 dp, и путь к ним не приближается
+/// ближе радиуса.
+///
+/// Пустой `pump()` в конце обязателен: контроллер подсветки запускается из
+/// обработчика жеста, то есть вне кадра, и встаёт на часы только следующим
+/// тиком. Без него все последующие `pump(Δ)` уехали бы на кадр, и кадр реза
+/// снялся бы не в тот момент.
+Future<void> sliceGolden(WidgetTester tester, int index) async {
+  final centre = tester.getCenter(find.byKey(NinjaKeys.objectAt(index)));
+  const arc = [
+    Offset(-60, -120),
+    Offset(-52, -92),
+    Offset(-42, -64),
+    Offset(-30, -36),
+    Offset(-16, -10),
+    Offset(0, 14),
+    Offset(18, 36),
+  ];
+  final gesture = await tester.startGesture(centre + arc.first);
+  for (final point in arc.skip(1)) {
+    await gesture.moveTo(centre + point);
+  }
+  await gesture.up();
+  await tester.pump();
+}
+
+/// Верный рез по слову [i] через секунду и промотанная подсветка.
+Future<void> ninjaAnswerGolden(WidgetTester tester, int i) async {
+  await tester.pump(const Duration(seconds: 1));
+  await sliceGolden(tester, ninjaIndexOf(tester, wordTranslation(i)));
+  await tester.pump(NinjaRun.correctReveal);
 }

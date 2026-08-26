@@ -216,4 +216,71 @@ void main() {
       );
     });
   });
+
+  group('Точка реза', () {
+    test('проекция внутри отрезка', () {
+      expect(
+        closestPointOnSegment(
+          from: const Offset(0, 100),
+          to: const Offset(200, 100),
+          point: const Offset(70, 130),
+        ),
+        const Offset(70, 100),
+      );
+    });
+
+    test('за концом отрезка — сам конец, а не точка на прямой', () {
+      expect(
+        closestPointOnSegment(
+          from: const Offset(0, 100),
+          to: const Offset(50, 100),
+          point: const Offset(500, 100),
+        ),
+        const Offset(50, 100),
+        reason: 'режет отрезок, а не бесконечная прямая через него',
+      );
+      expect(
+        closestPointOnSegment(
+          from: const Offset(0, 100),
+          to: const Offset(50, 100),
+          point: const Offset(-500, 100),
+        ),
+        const Offset(0, 100),
+      );
+    });
+
+    test('вырожденный отрезок — своё же начало', () {
+      expect(
+        closestPointOnSegment(
+          from: const Offset(30, 40),
+          to: const Offset(30, 40),
+          point: const Offset(900, 900),
+        ),
+        const Offset(30, 40),
+      );
+    });
+
+    test('точка реза лежит внутри объекта, который разрезали', () {
+      const center = Offset(100, 100);
+      final cut = closestPointOnSegment(
+        from: const Offset(0, 120),
+        to: const Offset(200, 120),
+        point: center,
+      );
+
+      expect((cut - center).distance, lessThanOrEqualTo(_radius));
+    });
+
+    test('расстояние до отрезка — это расстояние до точки реза', () {
+      const from = Offset(0, 300);
+      const to = Offset(600, 300);
+      const center = Offset(300, 320);
+      final cut = closestPointOnSegment(from: from, to: to, point: center);
+
+      expect(
+        sliceHit(from: from, to: to, center: center, radius: _radius),
+        (cut - center).distance <= _radius,
+      );
+    });
+  });
 }

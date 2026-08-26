@@ -214,4 +214,289 @@ void main() {
       expect(comboTintFade, const Duration(milliseconds: 400));
     });
   });
+
+  group('Подсветка верха поля', () {
+    test('на чистой серии 0.10, на потолке 0.24', () {
+      expect(topLightAlpha(0), closeTo(0.10, 1e-9));
+      expect(topLightAlpha(2), closeTo(0.10, 1e-9));
+      expect(topLightAlpha(8), closeTo(0.24, 1e-9));
+      expect(topLightAlpha(40), closeTo(0.24, 1e-9));
+    });
+
+    test('растёт монотонно между порогами', () {
+      var previous = 0.0;
+      for (var combo = 2; combo <= 8; combo++) {
+        final alpha = topLightAlpha(combo);
+        expect(alpha, greaterThanOrEqualTo(previous));
+        previous = alpha;
+      }
+      expect(topLightAlpha(5), greaterThan(topLightAlpha(3)));
+    });
+
+    test('по той же шкале, что и тон поля', () {
+      expect(comboDepth(2), 0);
+      expect(comboDepth(8), 1);
+      expect(comboDepth(5), closeTo(0.5, 1e-9));
+      expect(comboDepth(40), 1);
+    });
+
+    test('кончается ровно там, где начинается полоса тона', () {
+      expect(
+        topLightSpan,
+        comboGradientEdge,
+        reason:
+            'сложись подсветка с полосой, на потолке смешение перевалило бы '
+            'за 0.45, где onSurface теряет 4.5:1',
+      );
+    });
+
+    test('на потолке слово наверху всё ещё читается', () {
+      final lit = Color.lerp(scheme.surface, scheme.primary, topLightAlpha(8))!;
+
+      expect(_contrast(scheme.onSurface, lit), greaterThanOrEqualTo(4.5));
+    });
+
+    test('числа из SPEC: низ темнеет с 55% до 0.5, виньетка 0.45 от 0.65', () {
+      expect(bottomDarkFrom, 0.55);
+      expect(bottomDarkAlpha, 0.5);
+      expect(vignetteAlpha, 0.45);
+      expect(vignetteInner, 0.65);
+    });
+  });
+
+  group('Обод объекта', () {
+    Future<BoxDecoration> decorationOf(
+      WidgetTester tester,
+      ObjectState state,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: wordarcadeTheme(),
+          home: Scaffold(
+            body: Center(child: FlyingObject(label: 'перевод', state: state)),
+          ),
+        ),
+      );
+      return tester.widget<Container>(find.byType(Container)).decoration!
+          as BoxDecoration;
+    }
+
+    testWidgets('в полёте — вторым акцентом и со свечением', (tester) async {
+      final box = await decorationOf(tester, ObjectState.idle);
+
+      final border = box.border! as Border;
+      expect(border.top.color, scheme.tertiary.withValues(alpha: 0.75));
+      expect(border.top.width, 2);
+      expect(box.boxShadow, isNotEmpty, reason: 'без свечения — серый круг');
+    });
+
+    testWidgets('разрезанный — цветом вердикта', (tester) async {
+      final correct = await decorationOf(tester, ObjectState.correct);
+      final wrong = await decorationOf(tester, ObjectState.wrong);
+
+      expect(
+        correct.boxShadow!.first.color.withValues(alpha: 1),
+        scheme.primary.withValues(alpha: 1),
+      );
+      expect(
+        wrong.boxShadow!.first.color.withValues(alpha: 1),
+        scheme.error.withValues(alpha: 1),
+      );
+    });
+  });
+
+  group('Половинки разрезанного объекта', () {
+    /// Две половинки на экране: прямоугольники через getRect, потому что
+    /// расхождение и поворот живут в матрице Transform, а не в раскладке.
+    Future<List<Finder>> halves(
+      WidgetTester tester,
+      double progress, {
+      double angle = 0,
+      Offset velocity = Offset.zero,
+    }) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: wordarcadeTheme(),
+          home: Scaffold(
+            body: Center(
+              child: SlicedObject(
+                label: 'перевод',
+                state: ObjectState.correct,
+                angle: angle,
+                velocity: velocity,
+                progress: progress,
+              ),
+            ),
+          ),
+        ),
+      );
+      return find
+          .byType(FlyingObject)
+          .evaluate()
+          .map((e) => find.byWidget(e.widget))
+          .toList();
+    }
+
+    testWidgets('расходятся поперёк линии реза, а не вдоль', (tester) async {
+      final parts = await halves(tester, 1);
+
+      expect(parts, hasLength(2));
+      final a = tester.getCenter(parts[0]);
+      final b = tester.getCenter(parts[1]);
+      expect(
+        (a.dy - b.dy).abs(),
+        closeTo(120, 0.5),
+        reason: 'рез горизонтальный — по 60 dp в каждую сторону за 0.3 с',
+      );
+      expect(a.dx, closeTo(b.dx, 0.5));
+    });
+
+    testWidgets('на старте подсветки ещё вместе', (tester) async {
+      final parts = await halves(tester, 0);
+
+      expect(
+        tester.getCenter(parts[0]),
+        within(distance: 0.5, from: tester.getCenter(parts[1])),
+      );
+    });
+
+    testWidgets('вращаются в разные стороны', (tester) async {
+      final parts = await halves(tester, 1);
+
+      double tilt(Finder part) =>
+          (tester.getTopRight(part) - tester.getTopLeft(part)).direction;
+      final a = tilt(parts[0]);
+      final b = tilt(parts[1]);
+      expect(a.abs(), closeTo(40 * pi / 180, 1e-6));
+      expect(b.abs(), closeTo(40 * pi / 180, 1e-6));
+      expect(a.sign, isNot(b.sign));
+    });
+
+    testWidgets('падают и наследуют скорость', (tester) async {
+      final still = await halves(tester, 1);
+      final restY =
+          (tester.getCenter(still[0]).dy + tester.getCenter(still[1]).dy) / 2;
+      final moving = await halves(tester, 1, velocity: const Offset(0, -200));
+      final movingY =
+          (tester.getCenter(moving[0]).dy + tester.getCenter(moving[1]).dy) / 2;
+
+      expect(movingY, closeTo(restY - 60, 0.5));
+    });
+
+    testWidgets('тают: к концу подсветки их не видно', (tester) async {
+      await halves(tester, 0.2);
+      final early = tester
+          .widgetList<Opacity>(find.byType(Opacity))
+          .map((o) => o.opacity)
+          .reduce(min);
+
+      await halves(tester, 0.9);
+      final late = tester
+          .widgetList<Opacity>(find.byType(Opacity))
+          .map((o) => o.opacity)
+          .reduce(min);
+
+      expect(late, lessThan(early));
+      expect(late, lessThan(0.2));
+    });
+  });
+
+  group('Прирост очков', () {
+    Future<Text> popText(WidgetTester tester, {required bool hot}) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: wordarcadeTheme(),
+          home: Scaffold(
+            body: SizedBox(
+              width: 300,
+              height: 300,
+              child: ScorePop(
+                points: 10,
+                from: const Offset(150, 150),
+                progress: 0.1,
+                nearMiss: false,
+                hot: hot,
+              ),
+            ),
+          ),
+        ),
+      );
+      return tester.widget<Text>(find.byKey(NinjaKeys.scorePop));
+    }
+
+    testWidgets('на горячей серии крупнее и со свечением', (tester) async {
+      final cold = await popText(tester, hot: false);
+      final hot = await popText(tester, hot: true);
+
+      expect(hot.style!.fontSize!, greaterThan(cold.style!.fontSize!));
+      expect(hot.style!.shadows, isNotEmpty);
+      expect(cold.style!.shadows ?? const [], isEmpty);
+    });
+
+    testWidgets('выскакивает: на старте меньше, к 35% — полный', (
+      tester,
+    ) async {
+      Future<double> widthAt(double progress) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: wordarcadeTheme(),
+            home: Scaffold(
+              body: SizedBox(
+                width: 300,
+                height: 300,
+                child: ScorePop(
+                  points: 10,
+                  from: const Offset(150, 150),
+                  progress: progress,
+                  nearMiss: false,
+                  hot: false,
+                ),
+              ),
+            ),
+          ),
+        );
+        final pop = find.byKey(NinjaKeys.scorePop);
+        // Через углы, а не getSize: масштаб живёт в матрице Transform.
+        return (tester.getTopRight(pop) - tester.getTopLeft(pop)).distance;
+      }
+
+      final small = await widthAt(0.01);
+      final full = await widthAt(0.5);
+
+      expect(small, lessThan(full * 0.6), reason: 'масштаб 0.3 на старте');
+    });
+
+    testWidgets('первую треть стоит на месте, потом летит к счёту', (
+      tester,
+    ) async {
+      Future<Offset> at(double progress) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: wordarcadeTheme(),
+            home: Scaffold(
+              body: SizedBox(
+                width: 300,
+                height: 300,
+                child: ScorePop(
+                  points: 10,
+                  from: const Offset(150, 150),
+                  progress: progress,
+                  nearMiss: false,
+                  hot: false,
+                ),
+              ),
+            ),
+          ),
+        );
+        return tester.getCenter(find.byKey(NinjaKeys.scorePop));
+      }
+
+      final start = await at(0.05);
+      final held = await at(0.3);
+      final flying = await at(0.7);
+
+      expect(held, within(distance: 0.5, from: start));
+      expect(flying, isNot(within(distance: 5, from: start)));
+    });
+  });
 }

@@ -1,0 +1,380 @@
+[
+  {
+    "name": "хаптики нет вовсе на резе",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _feel();\n    setState(() {});\n    _startReveal();",
+    "new": "    setState(() {});\n    _startReveal();"
+  },
+  {
+    "name": "таймаут руке не отзывается",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (_run.timeout()) {\n      _feel();",
+    "new": "    if (_run.timeout()) {"
+  },
+  {
+    "name": "хаптика смотрит на «убрать анимации»",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "  void _feel() {\n    switch (hapticFor(",
+    "new": "  void _feel() {\n    if (MediaQuery.disableAnimationsOf(context)) return;\n    switch (hapticFor("
+  },
+  {
+    "name": "хаптика не различает промах и удачу",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      correct: _run.verdict == Verdict.correct,\n      combo: _run.combo,\n      nearMiss: _run.nearMiss,",
+    "new": "      correct: true,\n      combo: _run.combo,\n      nearMiss: _run.nearMiss,"
+  },
+  {
+    "name": "тряски нет: HUD и поле стоят",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    return shakeAmplitude * shakeIntensity(lived / shakeTime.inMicroseconds);",
+    "new": "    return 0;"
+  },
+  {
+    "name": "верный рез тоже трясёт",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (!juicy || !revealing || _run.verdict == Verdict.correct) return 0;\n    final lived",
+    "new": "    if (!juicy || !revealing) return 0;\n    final lived"
+  },
+  {
+    "name": "тряска не подчиняется «убрать анимации»",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (!juicy || !revealing || _run.verdict == Verdict.correct) return 0;\n    final lived",
+    "new": "    if (!revealing || _run.verdict == Verdict.correct) return 0;\n    final lived"
+  },
+  {
+    "name": "трясётся всё поле вместе с парой",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                  if (missed)\n                    RevealPair(",
+    "new": "                  if (missed)\n                    Transform.translate(\n                      offset: Offset(shake, 0),\n                      child: RevealPair("
+  },
+  {
+    "name": "пульса счёта нет",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                  scorePulse: _pulse(juicy: juicy, revealing: revealing),",
+    "new": "                  scorePulse: 0,"
+  },
+  {
+    "name": "половинки достаются и промаху",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "        juicy && revealing && phase < 1 && _run.verdict == Verdict.correct",
+    "new": "        juicy && revealing && phase < 1"
+  },
+  {
+    "name": "джус реза не подчиняется «убрать анимации»",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "        juicy && revealing && phase < 1 && _run.verdict == Verdict.correct",
+    "new": "        revealing && phase < 1 && _run.verdict == Verdict.correct"
+  },
+  {
+    "name": "искры не знают направления реза",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _sparks = sparkBurst(_decorRandom, cutAngle: _sliceAngle);",
+    "new": "    _sparks = sparkBurst(_decorRandom, cutAngle: 0);"
+  },
+  {
+    "name": "искры летят из центра объекта, а не из точки реза",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _slicePoint = closestPointOnSegment(\n      from: from,\n      to: to,\n      point: centers[target],\n    );",
+    "new": "    _slicePoint = centers[target];"
+  },
+  {
+    "name": "половинки не наследуют скорость полёта",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _sliceVelocity = waveVelocity(\n      count: _run.options.length,\n      index: target,\n      t: _flight.value,\n      width: size.width,\n      height: size.height,\n      duration: _run.timeLimit,\n    );",
+    "new": "    _sliceVelocity = Offset.zero;"
+  },
+  {
+    "name": "след — отрезок между концами жеста, а не все точки",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _trail = List.of(_gesture);",
+    "new": "    _trail = [_gesture.first, _gesture.last];"
+  },
+  {
+    "name": "часы следа не замораживаются в момент реза",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _sliceElapsed = _elapsed;\n",
+    "new": ""
+  },
+  {
+    "name": "замороженный след не догасает: часы после реза стоят",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      _run.phase == NinjaPhase.reveal ? _sliceElapsed + _revealLived : _elapsed;",
+    "new": "      _elapsed;"
+  },
+  {
+    "name": "живой след не пишется: точки без часов",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _gesture.add((at: to, stamp: _elapsed));",
+    "new": "    _gesture.add((at: to, stamp: Duration.zero));"
+  },
+  {
+    "name": "след прошлой волны не сбрасывается",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _gesture.clear();\n    _spins = [",
+    "new": "    _spins = ["
+  },
+  {
+    "name": "след первого реза возвращается после таймаута следующей волны",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "        (!revealing || _run.slicedIndex != null) &&",
+    "new": ""
+  },
+  {
+    "name": "вспышка не гаснет",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "        juicy && revealing && _run.slicedIndex != null && _ringPhase < 1;",
+    "new": "        juicy && revealing && _run.slicedIndex != null;"
+  },
+  {
+    "name": "вспышка на промахе того же цвета, что и на удаче",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                          _run.verdict == Verdict.correct\n                              ? scheme.primary\n                              : scheme.error,",
+    "new": "                          scheme.primary,"
+  },
+  {
+    "name": "объекты не наклоняются",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _spins = [\n      for (var i = 0; i < _run.options.length; i++) spinFor(_decorRandom),\n    ];",
+    "new": "    _spins = const [];"
+  },
+  {
+    "name": "наклон не подчиняется «убрать анимации»",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                      tilts: [\n                        if (juicy)\n                          for (final spin in _spins)",
+    "new": "                      tilts: [\n                        for (final spin in _spins)"
+  },
+  {
+    "name": "вылет не подчиняется «убрать анимации»",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                      scale: juicy ? emergeScale(t) : 1,",
+    "new": "                      scale: emergeScale(t),"
+  },
+  {
+    "name": "прирост не знает про горячую серию",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                      hot: comboIsHot(_run.combo),",
+    "new": "                      hot: false,"
+  },
+  {
+    "name": "подсветка поля не знает серию",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                  FieldLighting(key: NinjaKeys.fieldLight, combo: _run.combo),",
+    "new": "                  FieldLighting(key: NinjaKeys.fieldLight, combo: 0),"
+  },
+  {
+    "name": "объект не наклонён на экране: угол не доходит до Transform",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "                          angle: i < tilts.length ? tilts[i] : 0,",
+    "new": "                          angle: 0,"
+  },
+  {
+    "name": "масштаб вылета не доходит до Transform",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "                            scale: scale,",
+    "new": "                            scale: 1,"
+  },
+  {
+    "name": "скорость полёта не доходит до половинок",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "                                      velocity: sliceVelocity,",
+    "new": "                                      velocity: Offset.zero,"
+  },
+  {
+    "name": "обе половинки летят в одну сторону",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "    final motion = halfMotion(\n      side: side,",
+    "new": "    final motion = halfMotion(\n      side: 1,"
+  },
+  {
+    "name": "обод в полёте прозрачный: серый круг вернулся",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "        scheme.tertiary.withValues(alpha: 0.75),\n        null,",
+    "new": "        Colors.transparent,\n        null,"
+  },
+  {
+    "name": "свечение объекта не цвета вердикта",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "              color: rim.withValues(alpha: icon == null ? 0.3 : 0.6),",
+    "new": "              color: scheme.surface.withValues(alpha: 0.6),"
+  },
+  {
+    "name": "прирост на горячей серии не крупнее",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "    final base = hot ? textTheme.headlineMedium! : textTheme.headlineSmall!;",
+    "new": "    final base = textTheme.headlineSmall!;"
+  },
+  {
+    "name": "прирост летит сразу, без выскакивания на месте",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "          final at = Offset.lerp(from, finish, scorePopFlight(phase))!;",
+    "new": "          final at = Offset.lerp(from, finish, phase)!;"
+  },
+  {
+    "name": "прирост не масштабируется: перехлёст не доходит до экрана",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "                    scale: scorePopScale(phase),",
+    "new": "                    scale: 1,"
+  },
+  {
+    "name": "подсветка верха не растёт с серией",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "const double topLightMax = 0.24;",
+    "new": "const double topLightMax = 0.10;"
+  },
+  {
+    "name": "подсветка верха залезает на полосу тона",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "const double topLightSpan = comboGradientEdge;",
+    "new": "const double topLightSpan = 0.5;"
+  },
+  {
+    "name": "клинок вдвое тоньше",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "const double trailHeadWidth = 14;",
+    "new": "const double trailHeadWidth = 7;"
+  },
+  {
+    "name": "след не тает: точка живёт и на границе",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "    if (now - point.stamp < trailLife)",
+    "new": "    if (now - point.stamp <= trailLife)"
+  },
+  {
+    "name": "сглаживания нет — ломаная по точкам",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "  if (points.length < 2) return List.of(points);",
+    "new": "  return List.of(points);"
+  },
+  {
+    "name": "след стареет линейно: нитка к середине жизни",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "    sqrt(freshness.clamp(0.0, 1.0)) *",
+    "new": "    freshness.clamp(0.0, 1.0) *"
+  },
+  {
+    "name": "наклон всегда в одну сторону",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "  return (random.nextBool() ? 1 : -1) * degrees * pi / 180;",
+    "new": "  return degrees * pi / 180;"
+  },
+  {
+    "name": "наклон без предела: слово перестаёт читаться",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "      minSpinDegrees + random.nextDouble() * (maxSpinDegrees - minSpinDegrees);",
+    "new": "      random.nextDouble() * 2 * maxSpinDegrees;"
+  },
+  {
+    "name": "объект качается, а не вращается",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "    spin * t.clamp(0.0, 1.0);",
+    "new": "    spin * sin(pi * t.clamp(0.0, 1.0));"
+  },
+  {
+    "name": "вылет без перехлёста",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "  return popStartScale + (1 - popStartScale) * Curves.easeOutBack.transform(u);",
+    "new": "  return popStartScale + (1 - popStartScale) * Curves.easeOut.transform(u);"
+  },
+  {
+    "name": "кольцо не гаснет",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "double ringAlpha(double phase) => 0.9 * (1 - phase.clamp(0.0, 1.0));",
+    "new": "double ringAlpha(double phase) => 0.9;"
+  },
+  {
+    "name": "гравитация вдвое сильнее обещанной",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "  return 0.5 * fxGravity * seconds * seconds;",
+    "new": "  return fxGravity * seconds * seconds;"
+  },
+  {
+    "name": "половинки расходятся вдоль реза, а не поперёк",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "  final normal = Offset(-sin(angle), cos(angle));\n  return (",
+    "new": "  final normal = Offset(cos(angle), sin(angle));\n  return ("
+  },
+  {
+    "name": "половинки не наследуют скорость",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "        velocity * seconds +\n        Offset(0, fallBy(p)),",
+    "new": "        Offset(0, fallBy(p)),"
+  },
+  {
+    "name": "половинки не падают",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "        velocity * seconds +\n        Offset(0, fallBy(p)),",
+    "new": "        velocity * seconds,"
+  },
+  {
+    "name": "половинки вращаются в одну сторону",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "    rotation: side * halfSpinDegrees * pi / 180 * p,",
+    "new": "    rotation: halfSpinDegrees * pi / 180 * p,"
+  },
+  {
+    "name": "искры — ровная розетка",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "        angle:\n            normal +\n            (i.isEven ? 0 : pi) +\n            (random.nextDouble() * 2 - 1) * spread,",
+    "new": "        angle: i * 2 * pi / sparkCount,"
+  },
+  {
+    "name": "искры только по одну сторону реза",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "            (i.isEven ? 0 : pi) +",
+    "new": ""
+  },
+  {
+    "name": "искры без разброса: два ровных луча",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "            (random.nextDouble() * 2 - 1) * spread,",
+    "new": "            0,"
+  },
+  {
+    "name": "дальность у всех искр одна",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "        reach:\n            sparkMinReach +\n            random.nextDouble() * (sparkMaxReach - sparkMinReach),",
+    "new": "        reach: sparkMaxReach,"
+  },
+  {
+    "name": "размер у всех искр один",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "        size:\n            sparkMinSize + random.nextDouble() * (sparkMaxSize - sparkMinSize),",
+    "new": "        size: sparkMinSize,"
+  },
+  {
+    "name": "искры не падают",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "      Offset.fromDirection(spark.angle, spark.reach * flown) +\n      Offset(0, fallBy(p));",
+    "new": "      Offset.fromDirection(spark.angle, spark.reach * flown);"
+  },
+  {
+    "name": "искры тускнеют линейно",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "  return 1 - p * p;",
+    "new": "  return 1 - p;"
+  },
+  {
+    "name": "искры сгорают в точку",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "    spark.size * (1 - 0.5 * phase.clamp(0.0, 1.0));",
+    "new": "    spark.size * (1 - phase.clamp(0.0, 1.0));"
+  },
+  {
+    "name": "прирост выскакивает без перехлёста",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "      (1 - scorePopStartScale) * Curves.elasticOut.transform(u);",
+    "new": "      (1 - scorePopStartScale) * Curves.easeOut.transform(u);"
+  },
+  {
+    "name": "прирост летит с первого кадра",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "  final u = ((phase - scorePopHold) / (1 - scorePopHold)).clamp(0.0, 1.0);",
+    "new": "  final u = phase.clamp(0.0, 1.0);"
+  },
+  {
+    "name": "скорость полёта — не производная траектории",
+    "file": "lib/features/games/ninja_slash/ninja_trajectory.dart",
+    "old": "  return Offset(flight.drift, -flight.apex * 4 * (1 - 2 * t)) / seconds;",
+    "new": "  return Offset(flight.drift, -flight.apex * (1 - 2 * t)) / seconds;"
+  }
+]

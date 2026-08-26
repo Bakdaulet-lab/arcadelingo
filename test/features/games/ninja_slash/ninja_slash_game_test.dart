@@ -577,7 +577,7 @@ void main() {
       await _pumpGame(tester);
       await tester.pump(const Duration(seconds: 1));
       await _slice(tester, _wrongIndex(tester, 1));
-      final frozen = _objectCenter(tester, 0);
+      final frozen = _field(tester).progress;
 
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -585,8 +585,10 @@ void main() {
         tester.widget<Text>(find.byKey(NinjaKeys.revealAnswer)).data,
         wordTranslation(1),
       );
+      // Доля полёта, а не координата на экране: с 4.3 объекты на промахе
+      // ещё и трясёт, и координата перестала быть мерой «время стоит».
       expect(
-        _objectCenter(tester, 0),
+        _field(tester).progress,
         frozen,
         reason: 'стоп-кадр: подсветка не время лететь дальше',
       );
