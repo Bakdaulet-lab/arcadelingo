@@ -2,8 +2,8 @@
   {
     "name": "хаптики нет вовсе на резе",
     "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
-    "old": "    _feel();\n    setState(() {});\n    _startReveal();",
-    "new": "    setState(() {});\n    _startReveal();"
+    "old": "    _feel();\n    _sound();\n    setState(() {});",
+    "new": "    _sound();\n    setState(() {});"
   },
   {
     "name": "таймаут руке не отзывается",
@@ -68,8 +68,8 @@
   {
     "name": "искры не знают направления реза",
     "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
-    "old": "    _sparks = sparkBurst(_decorRandom, cutAngle: _sliceAngle);",
-    "new": "    _sparks = sparkBurst(_decorRandom, cutAngle: 0);"
+    "old": "      cutAngle: _sliceAngle,\n      count: sparkCountFor",
+    "new": "      cutAngle: 0,\n      count: sparkCountFor"
   },
   {
     "name": "искры летят из центра объекта, а не из точки реза",
@@ -110,8 +110,8 @@
   {
     "name": "след прошлой волны не сбрасывается",
     "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
-    "old": "    _gesture.clear();\n    _spins = [",
-    "new": "    _spins = ["
+    "old": "    _gesture.clear();\n    // Касание вскользь",
+    "new": "    // Касание вскользь"
   },
   {
     "name": "след первого реза возвращается после таймаута следующей волны",
@@ -158,8 +158,8 @@
   {
     "name": "подсветка поля не знает серию",
     "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
-    "old": "                  FieldLighting(key: NinjaKeys.fieldLight, combo: _run.combo),",
-    "new": "                  FieldLighting(key: NinjaKeys.fieldLight, combo: 0),"
+    "old": "                      combo: _run.combo,\n                    ),\n                  ),",
+    "new": "                      combo: 0,\n                    ),\n                  ),"
   },
   {
     "name": "объект не наклонён на экране: угол не доходит до Transform",
@@ -376,5 +376,215 @@
     "file": "lib/features/games/ninja_slash/ninja_trajectory.dart",
     "old": "  return Offset(flight.drift, -flight.apex * 4 * (1 - 2 * t)) / seconds;",
     "new": "  return Offset(flight.drift, -flight.apex * (1 - 2 * t)) / seconds;"
+  },
+  {
+    "name": "звука нет вовсе на резе",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _feel();\n    _sound();\n    setState(() {});",
+    "new": "    _feel();\n    setState(() {});"
+  },
+  {
+    "name": "таймаут не звучит",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      _feel();\n      _sound();",
+    "new": "      _feel();"
+  },
+  {
+    "name": "горячая серия звучит как обычный рез",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "        comboIsHot(_run.combo) ? GameSound.sliceHot : GameSound.slice,",
+    "new": "        GameSound.slice,"
+  },
+  {
+    "name": "звук не различает рез и промах",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      Verdict.wrong || Verdict.timeout || null => GameSound.miss,",
+    "new": "      Verdict.wrong || Verdict.timeout || null => GameSound.slice,"
+  },
+  {
+    "name": "звук подчиняется «убрать анимации»",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "  void _sound() {\n    final sound",
+    "new": "  void _sound() {\n    if (MediaQuery.disableAnimationsOf(context)) return;\n    final sound"
+  },
+  {
+    "name": "выключенный звук всё равно зовёт настоящий порт",
+    "file": "lib/app/app.dart",
+    "old": "    return settings.soundOn ? widget.ports.sounds : const NoopSounds();",
+    "new": "    return widget.ports.sounds;"
+  },
+  {
+    "name": "битый документ настроек глушит звук",
+    "file": "lib/app/app.dart",
+    "old": "      Err() || null => AppSettings.defaults,\n    };\n    return settings.soundOn",
+    "new": "      Err() || null => AppSettings.defaults.copyWith(soundOn: false),\n    };\n    return settings.soundOn"
+  },
+  {
+    "name": "звук не доезжает до игры",
+    "file": "lib/app/games.dart",
+    "old": "  sounds: launch.sounds,",
+    "new": "  sounds: const NoopSounds(),"
+  },
+  {
+    "name": "умолчание звука — выключен",
+    "file": "lib/domain/settings/app_settings.dart",
+    "old": "    this.soundOn = true,",
+    "new": "    this.soundOn = false,"
+  },
+  {
+    "name": "звук не пишется в документ",
+    "file": "lib/data/settings/settings_codec.dart",
+    "old": "  'soundOn': settings.soundOn,\n",
+    "new": ""
+  },
+  {
+    "name": "версия документа не поднята",
+    "file": "lib/data/settings/settings_codec.dart",
+    "old": "const int _formatVersion = 2;",
+    "new": "const int _formatVersion = 1;"
+  },
+  {
+    "name": "документ v1 больше не читается",
+    "file": "lib/data/settings/settings_codec.dart",
+    "old": "const Set<int> _readableVersions = {1, 2};",
+    "new": "const Set<int> _readableVersions = {2};"
+  },
+  {
+    "name": "битый soundOn молча подменяется умолчанием",
+    "file": "lib/data/settings/settings_codec.dart",
+    "old": "  if (sound != null && sound is! bool) {\n    return Err(Failure('настройки: soundOn не булево: $sound'));\n  }\n",
+    "new": ""
+  },
+  {
+    "name": "переключатель звука мёртвый",
+    "file": "lib/app/settings_view.dart",
+    "old": "            onChanged: (on) => _apply(_settings.copyWith(soundOn: on)),",
+    "new": "            onChanged: null,"
+  },
+  {
+    "name": "празднование верного реза снова 300 мс",
+    "file": "lib/features/games/ninja_slash/ninja_run.dart",
+    "old": "  static const Duration correctReveal = Duration(milliseconds: 700);",
+    "new": "  static const Duration correctReveal = Duration(milliseconds: 300);"
+  },
+  {
+    "name": "украшения реза растянуты на всё празднование",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      (_revealLived.inMicroseconds / sliceLife.inMicroseconds).clamp(0.0, 1.0);",
+    "new": "      _reveal.value;"
+  },
+  {
+    "name": "украшения реза живут по длине подсветки",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    final phase = _slicePhase;",
+    "new": "    final phase = _reveal.value;"
+  },
+  {
+    "name": "искр всегда четырнадцать",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      count: sparkCountFor(hot: comboIsHot(_run.combo)),",
+    "new": "      count: sparkCount,"
+  },
+  {
+    "name": "вспышка всегда одного размера",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                      to: ringEndRadiusFor(hot: comboIsHot(_run.combo)),",
+    "new": "                      to: ringEndRadius,"
+  },
+  {
+    "name": "эскалация искр идёт мимо порога",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "int sparkCountFor({required bool hot}) => hot ? sparkCountHot : sparkCount;",
+    "new": "int sparkCountFor({required bool hot}) => sparkCount;"
+  },
+  {
+    "name": "вспышка на горячей серии не шире",
+    "file": "lib/features/games/ninja_slash/ninja_slash_fx.dart",
+    "old": "double ringEndRadiusFor({required bool hot}) =>\n    hot ? ringEndRadiusHot : ringEndRadius;",
+    "new": "double ringEndRadiusFor({required bool hot}) => ringEndRadius;"
+  },
+  {
+    "name": "кромки светятся с первой серии",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "bool fieldRimGlows(int combo) => comboDepth(combo) >= 1;",
+    "new": "bool fieldRimGlows(int combo) => true;"
+  },
+  {
+    "name": "кромки не светятся никогда",
+    "file": "lib/features/games/ninja_slash/ninja_slash_views.dart",
+    "old": "bool fieldRimGlows(int combo) => comboDepth(combo) >= 1;",
+    "new": "bool fieldRimGlows(int combo) => false;"
+  },
+  {
+    "name": "касания вскользь нет вовсе",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      _maybeGraze(from: from, to: to, centers: centers);\n",
+    "new": ""
+  },
+  {
+    "name": "касание вскользь повторяется на том же жесте",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (_grazeAt != null) return;\n    final centre",
+    "new": "    final centre"
+  },
+  {
+    "name": "касание вскользь не сбрасывается на новой волне",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _grazeAt = null;\n    _spins = [",
+    "new": "    _spins = ["
+  },
+  {
+    "name": "касание вскользь меряется до чужого объекта",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    final centre = centers[_run.correctIndex];",
+    "new": "    final centre = centers.first;"
+  },
+  {
+    "name": "касание вскользь молчит рукой",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    unawaited(HapticFeedback.lightImpact());\n    setState(() {});",
+    "new": "    setState(() {});"
+  },
+  {
+    "name": "кольцо вскользь не гаснет",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    return phase >= 1 ? null : phase;",
+    "new": "    return phase;"
+  },
+  {
+    "name": "кольцо вскользь не подчиняется «убрать анимации»",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "                  if (juicy && grazePhase != null)",
+    "new": "                  if (grazePhase != null)"
+  },
+  {
+    "name": "кольцо вскользь живёт и в подсветке",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (at == null || _run.phase != NinjaPhase.flying) return null;",
+    "new": "    if (at == null) return null;"
+  },
+  {
+    "name": "окно касания вскользь вдвое шире",
+    "file": "lib/features/games/ninja_slash/ninja_geometry.dart",
+    "old": "const double grazeMargin = 24;",
+    "new": "const double grazeMargin = 48;"
+  },
+  {
+    "name": "касанием вскользь считается и попадание",
+    "file": "lib/features/games/ninja_slash/ninja_geometry.dart",
+    "old": "  return distance > radius && distance <= radius + grazeMargin;",
+    "new": "  return distance <= radius + grazeMargin;"
+  },
+  {
+    "name": "касание вскользь без верхней границы",
+    "file": "lib/features/games/ninja_slash/ninja_geometry.dart",
+    "old": "  return distance > radius && distance <= radius + grazeMargin;",
+    "new": "  return distance > radius;"
+  },
+  {
+    "name": "рез считается по отпусканию, а не на движении",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    if (!swipeCounts(_travelled)) return;",
+    "new": "    if (!swipeCounts(_travelled)) return;\n    if (event.down) return;"
   }
 ]
