@@ -115,6 +115,15 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String? _selectedGameId;
+
+  GameEntry get _selectedGame => widget.games.firstWhere(
+    (game) => game.id == _selectedGameId,
+    orElse: () => widget.games.first,
+  );
+
+  void _selectGame(String id) => setState(() => _selectedGameId = id);
+
   /// Серия глазами сегодняшнего дня; null — документ не читается.
   ///
   /// Не `state.current`, а пересчёт на сегодня: состояние знает последний
@@ -149,6 +158,9 @@ class _HomeScreenState extends State<HomeScreen> {
           onSources: _openSources,
           ritual: _ritual,
           week: _week,
+          games: widget.games,
+          selectedGameId: widget.games.isEmpty ? null : _selectedGame.id,
+          onGameSelected: _selectGame,
         )
         : StateErrorView(message: failure.message, onReset: _reset);
   }
@@ -368,12 +380,12 @@ class _HomeScreenState extends State<HomeScreen> {
     // Последнее состояние, приехавшее из сессии: по нему считается строка
     // итогов. До первого ответа это то, что прочитано из хранилища.
     var latest = <String, LeitnerCard>{};
-    // Первая из реестра: экрана выбора пока нет, а порядок в списке значим.
+    // Выбор принадлежит домашнему экрану, сессия создаётся только сейчас.
     // Пустой реестр — дефект сборки, и молчать о нём хуже, чем упасть.
     if (widget.games.isEmpty) {
       throw StateError('реестр игр пуст: запускать нечего');
     }
-    final game = widget.games.first;
+    final game = _selectedGame;
     final started = StartSession(
       cards: widget.ports.cards,
       streaks: widget.ports.streaks,

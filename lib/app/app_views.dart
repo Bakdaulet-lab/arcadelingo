@@ -10,6 +10,7 @@
 /// сбрасывать нечего, и кнопки здесь не будет.
 library;
 
+import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/ui/ritual_labels.dart';
 import 'package:arcadelingo/ui/streak_card.dart';
@@ -22,6 +23,8 @@ import 'package:flutter/material.dart';
 abstract final class AppKeys {
   /// Кнопка «Играть». Она же признак того, что показан домашний экран.
   static const Key play = Key('app.play');
+
+  static const Key gameSelector = Key('app.game_selector');
 
   static const Key stateError = Key('app.state_error');
 
@@ -80,6 +83,9 @@ class PlayView extends StatelessWidget {
     super.key,
     this.ritual,
     this.week,
+    this.games = const [],
+    this.selectedGameId,
+    this.onGameSelected,
   });
 
   /// Серия на сегодня; null — состояние не читается.
@@ -100,6 +106,10 @@ class PlayView extends StatelessWidget {
   /// полосу занято заранее — карточка не прыгает, когда данные приедут.
   final List<WeekDay>? week;
 
+  final List<GameEntry> games;
+  final String? selectedGameId;
+  final ValueChanged<String>? onGameSelected;
+
   final VoidCallback onPlay;
 
   /// Вход на «Источники».
@@ -119,109 +129,196 @@ class PlayView extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Arcadelingo',
-                textAlign: TextAlign.center,
-                // `withWeight`, а не `copyWith(fontWeight:)`. Оси `wght`
-                // обычный fontWeight не двигает (шапка lib/ui/theme.dart), и
-                // заголовок всё это время рисовался обычным начертанием, а не
-                // жирным. Заметно ровно здесь: это единственная строка в
-                // приложении, набранная кеглем displaySmall.
-                style: withWeight(textTheme.displaySmall!, FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Английские слова через аркаду',
-                textAlign: TextAlign.center,
-                style: textTheme.bodyLarge,
-              ),
-              if (ritual case final view?) ...[
-                const SizedBox(height: 24),
-                StreakCard(ritual: view, week: week),
-                const SizedBox(height: 12),
-                Text(
-                  ritualTodayLabel(view),
-                  key: AppKeys.today,
-                  textAlign: TextAlign.center,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color:
-                        view.playedToday
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
+      body: LayoutBuilder(
+        builder:
+            (context, constraints) => SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Arcadelingo',
+                          textAlign: TextAlign.center,
+                          // `withWeight`, а не `copyWith(fontWeight:)`. Оси `wght`
+                          // обычный fontWeight не двигает (шапка lib/ui/theme.dart), и
+                          // заголовок всё это время рисовался обычным начертанием, а не
+                          // жирным. Заметно ровно здесь: это единственная строка в
+                          // приложении, набранная кеглем displaySmall.
+                          style: withWeight(
+                            textTheme.displaySmall!,
+                            FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Английские слова через аркаду',
+                          textAlign: TextAlign.center,
+                          style: textTheme.bodyLarge,
+                        ),
+                        if (ritual case final view?) ...[
+                          const SizedBox(height: 24),
+                          StreakCard(ritual: view, week: week),
+                          const SizedBox(height: 12),
+                          Text(
+                            ritualTodayLabel(view),
+                            key: AppKeys.today,
+                            textAlign: TextAlign.center,
+                            style: textTheme.bodyMedium?.copyWith(
+                              color:
+                                  view.playedToday
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          if (ritualFreezeLabel(view) case final freeze?) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              freeze,
+                              key: AppKeys.freeze,
+                              textAlign: TextAlign.center,
+                              style: textTheme.bodySmall?.copyWith(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ],
+                        if (games.length > 1) ...[
+                          const SizedBox(height: 24),
+                          GameSelector(
+                            games: games,
+                            selectedId: selectedGameId ?? games.first.id,
+                            onSelected: onGameSelected ?? (_) {},
+                          ),
+                        ],
+                        const SizedBox(height: 40),
+                        FilledButton(
+                          key: AppKeys.play,
+                          onPressed: onPlay,
+                          style: ButtonStyle(
+                            minimumSize: WidgetStateProperty.all(
+                              const Size(220, 56),
+                            ),
+                            textStyle: WidgetStateProperty.all(
+                              textTheme.titleMedium,
+                            ),
+                          ),
+                          child: Text(
+                            ritual == null
+                                ? 'Играть'
+                                : ritualCallToAction(ritual!),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // `Wrap`, а не `Row`: три ссылки в строку не помещаются на
+                        // экране 360 dp — тест поймал переполнение на 127 px, — а при
+                        // системном шрифте 2× не поместились бы и две. Перенос на
+                        // вторую строку честнее, чем обрезанная третья кнопка.
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          children: [
+                            TextButton(
+                              key: AppKeys.progress,
+                              onPressed: onProgress,
+                              style: ButtonStyle(
+                                foregroundColor: WidgetStateProperty.all(
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              child: const Text('Прогресс'),
+                            ),
+                            TextButton(
+                              key: AppKeys.settings,
+                              onPressed: onSettings,
+                              style: ButtonStyle(
+                                foregroundColor: WidgetStateProperty.all(
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              child: const Text('Настройки'),
+                            ),
+                            TextButton(
+                              key: AppKeys.sources,
+                              onPressed: onSources,
+                              style: ButtonStyle(
+                                foregroundColor: WidgetStateProperty.all(
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              child: const Text('Источники'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                if (ritualFreezeLabel(view) case final freeze?) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    freeze,
-                    key: AppKeys.freeze,
-                    textAlign: TextAlign.center,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ],
-              const SizedBox(height: 40),
-              FilledButton(
-                key: AppKeys.play,
-                onPressed: onPlay,
-                style: ButtonStyle(
-                  minimumSize: WidgetStateProperty.all(const Size(220, 56)),
-                  textStyle: WidgetStateProperty.all(textTheme.titleMedium),
-                ),
-                child: Text(
-                  ritual == null ? 'Играть' : ritualCallToAction(ritual!),
-                ),
               ),
-              const SizedBox(height: 8),
-              // `Wrap`, а не `Row`: три ссылки в строку не помещаются на
-              // экране 360 dp — тест поймал переполнение на 127 px, — а при
-              // системном шрифте 2× не поместились бы и две. Перенос на
-              // вторую строку честнее, чем обрезанная третья кнопка.
-              Wrap(
-                alignment: WrapAlignment.center,
-                children: [
-                  TextButton(
-                    key: AppKeys.progress,
-                    onPressed: onProgress,
-                    style: ButtonStyle(
-                      foregroundColor: WidgetStateProperty.all(
-                        Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    child: const Text('Прогресс'),
-                  ),
-                  TextButton(
-                    key: AppKeys.settings,
-                    onPressed: onSettings,
-                    style: ButtonStyle(
-                      foregroundColor: WidgetStateProperty.all(
-                        Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    child: const Text('Настройки'),
-                  ),
-                  TextButton(
-                    key: AppKeys.sources,
-                    onPressed: onSources,
-                    style: ButtonStyle(
-                      foregroundColor: WidgetStateProperty.all(
-                        Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    child: const Text('Источники'),
-                  ),
-                ],
-              ),
-            ],
+            ),
+      ),
+    );
+  }
+}
+
+/// Представление реестра; выбранный id и изменение приходят от хоста.
+class GameSelector extends StatelessWidget {
+  const GameSelector({
+    required this.games,
+    required this.selectedId,
+    required this.onSelected,
+    super.key,
+  });
+
+  final List<GameEntry> games;
+  final String selectedId;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return SegmentedButton<String>(
+      key: AppKeys.gameSelector,
+      segments: [
+        for (final game in games)
+          ButtonSegment<String>(
+            value: game.id,
+            label: Text(game.title, textAlign: TextAlign.center),
           ),
+      ],
+      selected: {selectedId},
+      onSelectionChanged: (ids) => onSelected(ids.single),
+      showSelectedIcon: false,
+      expandedInsets: EdgeInsets.zero,
+      style: ButtonStyle(
+        minimumSize: WidgetStateProperty.all(const Size(48, 48)),
+        padding: WidgetStateProperty.all(const EdgeInsets.all(12)),
+        textStyle: WidgetStateProperty.all(theme.textTheme.labelLarge),
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected)
+                  ? colors.primary
+                  : colors.surfaceContainerHighest,
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected)
+                  ? colors.onPrimary
+                  : colors.onSurface,
         ),
       ),
     );

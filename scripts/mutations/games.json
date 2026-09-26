@@ -8,7 +8,7 @@
   {
     "name": "запускается всегда первая игра из умолчания, а не из реестра",
     "file": "lib/app/app.dart",
-    "old": "    final game = widget.games.first;",
+    "old": "    final game = _selectedGame;",
     "new": "    final game = wordarcadeGames.first;"
   },
   {
@@ -26,7 +26,7 @@
   {
     "name": "реестр объявлен пустым",
     "file": "lib/app/games.dart",
-    "old": "const List<GameEntry> wordarcadeGames = [fallingWordsEntry];",
+    "old": "const List<GameEntry> wordarcadeGames = [fallingWordsEntry, ninjaSlashEntry];",
     "new": "const List<GameEntry> wordarcadeGames = [];"
   }
 ]
