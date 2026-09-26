@@ -17,6 +17,7 @@
 // становится.
 
 import 'package:arcadelingo/app/app_views.dart';
+import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
@@ -135,6 +136,9 @@ Future<void> pumpRitualGolden(
         onSources: () {},
         ritual: ritual,
         week: week,
+        games: wordarcadeGames,
+        selectedGameId: wordarcadeGames.first.id,
+        onGameSelected: (_) {},
       ),
     ),
   );
