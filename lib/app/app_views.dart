@@ -11,6 +11,7 @@
 library;
 
 import 'package:arcadelingo/domain/streak/streak_view.dart';
+import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/ui/ritual_labels.dart';
 import 'package:arcadelingo/ui/streak_card.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -22,6 +23,8 @@ import 'package:flutter/material.dart';
 abstract final class AppKeys {
   /// Кнопка «Играть». Она же признак того, что показан домашний экран.
   static const Key play = Key('app.play');
+
+  static const Key gameSelector = Key('app.game_selector');
 
   static const Key stateError = Key('app.state_error');
 
@@ -80,6 +83,9 @@ class PlayView extends StatelessWidget {
     super.key,
     this.ritual,
     this.week,
+    this.games = const [],
+    this.selectedGameId,
+    this.onGameSelected,
   });
 
   /// Серия на сегодня; null — состояние не читается.
@@ -99,6 +105,10 @@ class PlayView extends StatelessWidget {
   /// сыгранные дни знает журнал событий, а не состояние серии. Место под
   /// полосу занято заранее — карточка не прыгает, когда данные приедут.
   final List<WeekDay>? week;
+
+  final List<GameEntry> games;
+  final String? selectedGameId;
+  final ValueChanged<String>? onGameSelected;
 
   final VoidCallback onPlay;
 
@@ -169,6 +179,12 @@ class PlayView extends StatelessWidget {
                 ],
               ],
               const SizedBox(height: 40),
+              if (games.length > 1)
+                GameSelector(
+                  games: games,
+                  selectedId: selectedGameId ?? games.first.id,
+                  onSelected: onGameSelected ?? (_) {},
+                ),
               FilledButton(
                 key: AppKeys.play,
                 onPressed: onPlay,
@@ -226,6 +242,23 @@ class PlayView extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Прогресс не читается: показать причину и дать сбросить.
+class GameSelector extends StatelessWidget {
+  const GameSelector({
+    required this.games,
+    required this.selectedId,
+    required this.onSelected,
+    super.key,
+  });
+
+  final List<GameEntry> games;
+  final String selectedId;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) => throw UnimplementedError();
 }
 
 /// Прогресс не читается: показать причину и дать сбросить.

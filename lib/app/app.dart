@@ -149,6 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onSources: _openSources,
           ritual: _ritual,
           week: _week,
+          games: widget.games,
         )
         : StateErrorView(message: failure.message, onReset: _reset);
   }
