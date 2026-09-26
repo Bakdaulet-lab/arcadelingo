@@ -3,7 +3,7 @@
 import 'package:arcadelingo/data/settings/settings_codec.dart';
 import 'package:arcadelingo/data/settings/settings_prefs_store.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
-import 'package:arcadelingo/domain/reminders/reminder_settings.dart';
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,12 +20,12 @@ void main() {
   test('ключа нет — умолчание, а не ошибка', () async {
     final store = await _store();
 
-    expect(ok(store.load()), ReminderSettings.defaults);
+    expect(ok(store.load()), AppSettings.defaults);
   });
 
   test('записанное читается обратно', () async {
     final store = await _store();
-    const settings = ReminderSettings(enabled: true, at: ReminderTime(7, 30));
+    const settings = AppSettings(enabled: true, at: ReminderTime(7, 30));
 
     await store.save(settings);
 
@@ -45,18 +45,18 @@ void main() {
 
   test('reset удаляет документ: следующее чтение — умолчание', () async {
     final store = await _store();
-    await store.save(ReminderSettings.defaults.copyWith(enabled: true));
+    await store.save(AppSettings.defaults.copyWith(enabled: true));
 
     await store.reset();
 
-    expect(ok(store.load()), ReminderSettings.defaults);
+    expect(ok(store.load()), AppSettings.defaults);
   });
 
   // Литералом: переименование ключа — потеря настроек у пользователей.
   test('пишет под своим ключом и не трогает чужие', () async {
     final store = await _store({LeitnerPrefsStore.key: 'карточки'});
 
-    await store.save(ReminderSettings.defaults.copyWith(enabled: true));
+    await store.save(AppSettings.defaults.copyWith(enabled: true));
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('reminder_settings'), isNotNull);
@@ -65,15 +65,13 @@ void main() {
 
   test('запись заменяет документ целиком', () async {
     final store = await _store();
-    await store.save(
-      const ReminderSettings(enabled: true, at: ReminderTime(7, 0)),
-    );
+    await store.save(const AppSettings(enabled: true, at: ReminderTime(7, 0)));
 
-    await store.save(ReminderSettings.defaults);
+    await store.save(AppSettings.defaults);
 
     expect(
       (await SharedPreferences.getInstance()).getString(SettingsPrefsStore.key),
-      encodeSettings(ReminderSettings.defaults),
+      encodeSettings(AppSettings.defaults),
     );
   });
 }

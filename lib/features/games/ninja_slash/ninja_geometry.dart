@@ -30,6 +30,27 @@ bool sliceHit({
   required double radius,
 }) => _distanceToSegment(from: from, to: to, point: center) <= radius;
 
+/// Ближайшая к [point] точка отрезка [from] → [to].
+///
+/// Она же — точка реза: место, где жест прошёл через объект. Из неё летят
+/// искры, и брать вместо неё центр объекта было бы враньём на глаз —
+/// касательный рез виден именно краем.
+Offset closestPointOnSegment({
+  required Offset from,
+  required Offset to,
+  required Offset point,
+}) {
+  final segment = to - from;
+  final lengthSquared = segment.distanceSquared;
+  // Вырожденный отрезок — это точка, и вести себя он обязан как точка.
+  if (lengthSquared == 0) return from;
+  final offset = point - from;
+  // Проекция на прямую, зажатая в отрезок.
+  final t = ((offset.dx * segment.dx + offset.dy * segment.dy) / lengthSquared)
+      .clamp(0.0, 1.0);
+  return from + segment * t;
+}
+
 /// Какой из [centers] разрезан отрезком [from] → [to]; null — ни один.
 ///
 /// Задеты двое — режется тот, чей центр ближе к [from]: рука прошла через
@@ -58,20 +79,38 @@ int? sliceTarget({
 }
 
 /// Расстояние от [point] до отрезка [from] → [to].
+///
+/// Через [closestPointOnSegment], а не своей копией проекции: искры летят
+/// из той же точки, по которой считается попадание, и две копии этой
+/// арифметики разъехались бы молча — искра била бы мимо реза.
 double _distanceToSegment({
   required Offset from,
   required Offset to,
   required Offset point,
+}) =>
+    (point - closestPointOnSegment(from: from, to: to, point: point)).distance;
+
+/// Насколько дальше радиуса объекта жест ещё считается касанием вскользь.
+///
+/// Две трети радиуса. Больше — отклик начнёт приходить на свайпы, которые
+/// игрок не считал попыткой; меньше — сольётся с самим попаданием, где уже
+/// есть свой, куда более громкий отклик.
+const double grazeMargin = 24;
+
+/// Прошёл ли отрезок [from] → [to] **вскользь** мимо круга [centre]:
+/// самого объекта не задел, но ближе, чем радиус плюс [grazeMargin].
+///
+/// Почти-успех, который ничем не отзывается, читается как «игра меня не
+/// увидела», и человек винит не свою руку, а хит-зону. Зеркало правила
+/// 0.11 из падающих слов, где так же не отзывался успех.
+bool grazed({
+  required Offset from,
+  required Offset to,
+  required Offset centre,
+  required double radius,
 }) {
-  final segment = to - from;
-  final lengthSquared = segment.distanceSquared;
-  // Вырожденный отрезок — это точка, и вести себя он обязан как точка:
-  // палец, стоящий на месте, никуда не сдвинулся.
-  if (lengthSquared == 0) return (point - from).distance;
-  final offset = point - from;
-  // Проекция на прямую, зажатая в отрезок: режет отрезок, а не бесконечная
-  // прямая через него.
-  final t = ((offset.dx * segment.dx + offset.dy * segment.dy) / lengthSquared)
-      .clamp(0.0, 1.0);
-  return (point - (from + segment * t)).distance;
+  final distance =
+      (centre - closestPointOnSegment(from: from, to: to, point: centre))
+          .distance;
+  return distance > radius && distance <= radius + grazeMargin;
 }

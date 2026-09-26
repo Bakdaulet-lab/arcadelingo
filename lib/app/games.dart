@@ -14,6 +14,7 @@
 /// не на «что выбрал человек».
 library;
 
+import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
@@ -31,6 +32,7 @@ class GameLaunch {
     required this.onPlayAgain,
     required this.onExit,
     required this.onRoundOver,
+    this.sounds = const NoopSounds(),
   });
 
   /// Сессия, уже собранная usecase'ом и обёрнутая наблюдателями.
@@ -60,6 +62,10 @@ class GameLaunch {
   /// Уход с середины — не конец: там игра докладывает неответ и молчит,
   /// а «бросил» считает хост по тому, что этого вызова не было.
   final VoidCallback onRoundOver;
+
+  /// Звук для игры, уже с учётом настройки: выключенный звук приходит сюда
+  /// нулевым объектом. Игра про настройку не знает и знать не должна.
+  final Sounds sounds;
 }
 
 /// Одна игра в реестре.
@@ -116,6 +122,7 @@ Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
 
 Widget _buildNinjaSlash(GameLaunch launch) => NinjaSlashGame(
   session: launch.session,
+  sounds: launch.sounds,
   summaryFooter: launch.summaryFooter,
   onPlayAgain: launch.onPlayAgain,
   onExit: launch.onExit,

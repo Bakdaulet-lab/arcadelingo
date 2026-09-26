@@ -44,9 +44,18 @@ class ReminderTime {
       '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
 }
 
-/// Что человек выбрал про напоминания.
-class ReminderSettings {
-  const ReminderSettings({required this.enabled, required this.at});
+/// Что человек выбрал: про напоминания и про звук.
+///
+/// Один документ на две настройки, а не два: заводить второй документ prefs
+/// ради одного булева — цена вперёд пользы, ровно как с выбором игры между
+/// запусками. Имя класса перестало быть `ReminderSettings` в тот момент,
+/// когда жильцов стало двое.
+class AppSettings {
+  const AppSettings({
+    required this.enabled,
+    required this.at,
+    this.soundOn = true,
+  });
 
   /// Умолчание: **выключено**.
   ///
@@ -56,25 +65,42 @@ class ReminderSettings {
   ///
   /// Восемь вечера — просто час, с которого начинают: он ничем не обоснован,
   /// кроме того, что его удобно двигать. Замер Фазы 3 покажет, туда ли.
-  static const ReminderSettings defaults = ReminderSettings(
+  static const AppSettings defaults = AppSettings(
     enabled: false,
     at: ReminderTime(20, 0),
+    soundOn: true,
   );
 
   final bool enabled;
   final ReminderTime at;
 
-  ReminderSettings copyWith({bool? enabled, ReminderTime? at}) =>
-      ReminderSettings(enabled: enabled ?? this.enabled, at: at ?? this.at);
+  /// Звук в играх. Умолчание — **включён**, в отличие от напоминаний.
+  ///
+  /// Разница не в настроении, а в цене: напоминание стучится в человека
+  /// само и требует разрешения системы, звук звучит только пока человек
+  /// держит игру открытой, и беззвучный режим телефона его глушит без
+  /// всяких настроек.
+  final bool soundOn;
+
+  AppSettings copyWith({bool? enabled, ReminderTime? at, bool? soundOn}) =>
+      AppSettings(
+        enabled: enabled ?? this.enabled,
+        at: at ?? this.at,
+        soundOn: soundOn ?? this.soundOn,
+      );
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ReminderSettings && enabled == other.enabled && at == other.at;
+      other is AppSettings &&
+          enabled == other.enabled &&
+          at == other.at &&
+          soundOn == other.soundOn;
 
   @override
-  int get hashCode => Object.hash(enabled, at);
+  int get hashCode => Object.hash(enabled, at, soundOn);
 
   @override
-  String toString() => 'ReminderSettings(enabled: $enabled, at: $at)';
+  String toString() =>
+      'AppSettings(enabled: $enabled, at: $at, soundOn: $soundOn)';
 }

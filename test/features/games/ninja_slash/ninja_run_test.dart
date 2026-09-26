@@ -92,12 +92,12 @@ void main() {
       expect(run.revealTime, const Duration(milliseconds: 800));
     });
 
-    test('верный рез разлетается 300 мс', () {
+    test('верный рез празднуется 700 мс', () {
       final run = _started(FakeReviewSession(wordItems(3)));
 
       run.slice(run.correctIndex, const Duration(seconds: 2));
 
-      expect(run.revealTime, const Duration(milliseconds: 300));
+      expect(run.revealTime, const Duration(milliseconds: 700));
     });
 
     test('advance() → следующее слово, фаза полёта', () {
@@ -642,7 +642,7 @@ void main() {
       expect(NinjaRun.startLives, 3);
       expect(NinjaRun.pointsPerCombo, 10);
       expect(NinjaRun.wrongReveal, const Duration(milliseconds: 800));
-      expect(NinjaRun.correctReveal, const Duration(milliseconds: 300));
+      expect(NinjaRun.correctReveal, const Duration(milliseconds: 700));
     });
 
     test('объектов в волне — три', () {

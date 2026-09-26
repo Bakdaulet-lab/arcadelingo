@@ -24,10 +24,11 @@ import 'package:arcadelingo/app/progress_view.dart';
 import 'package:arcadelingo/app/settings_view.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
+import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/reminders/reminder_policy.dart';
-import 'package:arcadelingo/domain/reminders/reminder_settings.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/session/observed_session.dart';
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
@@ -203,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// обязан это показать, а не притвориться, что переключатель включился.
   /// Разрешение спрашивается ровно здесь — в момент, когда человек попросил
   /// напоминания, и нигде больше.
-  Future<bool> _applySettings(ReminderSettings next) async {
+  Future<bool> _applySettings(AppSettings next) async {
     final store = widget.ports.settings;
     if (store == null) return false;
     if (next.enabled && !await widget.ports.askReminderPermission()) {
@@ -219,7 +220,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Зовётся на открытии приложения и после каждой партии: повод считается
   /// на день срабатывания, и чем свежее расписание, тем меньше шансов, что
   /// уведомление скажет про серию, которой уже нет.
-  Future<void> _rescheduleReminder(ReminderSettings settings) async {
+  Future<void> _rescheduleReminder(AppSettings settings) async {
     final streak = switch (widget.ports.streaks.load()) {
       Ok(:final value) => value,
       Err() => null,
@@ -252,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     final settings = switch (store.load()) {
       Ok(:final value) => value,
-      Err() => ReminderSettings.defaults,
+      Err() => AppSettings.defaults,
     };
     unawaited(_rescheduleReminder(settings));
   }
@@ -448,6 +449,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         finished = true;
                         _finishRound(sessionId);
                       },
+                      // Выключённый звук приходит в игру нулевым объектом,
+                      // а не флагом: «выключено» тогда значит «никто не
+                      // зовёт», а не «зовут и молчат». Настройка читается в
+                      // момент запуска партии — ровно как очередь слов.
+                      sounds: _sounds(),
                     ),
                   ),
             ),
@@ -461,6 +467,19 @@ class _HomeScreenState extends State<HomeScreen> {
             _refreshRitual();
           }),
     );
+  }
+
+  /// Звук для новой партии — с учётом настройки.
+  ///
+  /// Битый документ настроек звук не отключает: `Err` здесь означает «не
+  /// знаем, что человек выбирал», а умолчание у звука — включён. Отключить
+  /// его из-за испорченного файла значило бы наказать за чужую поломку.
+  Sounds _sounds() {
+    final settings = switch (widget.ports.settings?.load()) {
+      Ok(value: final it) => it,
+      Err() || null => AppSettings.defaults,
+    };
+    return settings.soundOn ? widget.ports.sounds : const NoopSounds();
   }
 
   /// Что писать под статистикой итогов.

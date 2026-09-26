@@ -13,7 +13,7 @@ library;
 
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/ports/settings_store.dart';
-import 'package:arcadelingo/domain/reminders/reminder_settings.dart';
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -29,6 +29,9 @@ abstract final class SettingsKeys {
 
   /// Сообщение об отказе в разрешении.
   static const Key denied = Key('settings.denied');
+
+  /// Звук в играх.
+  static const Key sound = Key('settings.sound');
 }
 
 /// Что хост делает с новым выбором.
@@ -36,7 +39,7 @@ abstract final class SettingsKeys {
 /// Возвращает `true`, если настройку удалось применить. `false` значит
 /// «система не дала разрешения»: экран обязан это показать, а не
 /// притвориться, что переключатель включился.
-typedef ApplySettings = Future<bool> Function(ReminderSettings settings);
+typedef ApplySettings = Future<bool> Function(AppSettings settings);
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({required this.store, required this.onApply, super.key});
@@ -49,18 +52,18 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late ReminderSettings _settings = switch (widget.store.load()) {
+  late AppSettings _settings = switch (widget.store.load()) {
     Ok(:final value) => value,
     // Битые настройки — не битый прогресс: экран ошибки здесь был бы
     // несоразмерен потере. Показываем умолчание; первое же сохранение
     // перезапишет документ целиком.
-    Err() => ReminderSettings.defaults,
+    Err() => AppSettings.defaults,
   };
 
   /// Система отказала в разрешении на прошлое включение.
   bool _denied = false;
 
-  Future<void> _apply(ReminderSettings next) async {
+  Future<void> _apply(AppSettings next) async {
     final ok = await widget.onApply(next);
     if (!mounted) return;
     setState(() {
@@ -117,6 +120,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : scheme.onSurfaceVariant,
               ),
             ),
+          ),
+          const Divider(height: 24),
+          SwitchListTile(
+            key: SettingsKeys.sound,
+            value: _settings.soundOn,
+            onChanged: (on) => _apply(_settings.copyWith(soundOn: on)),
+            title: const Text('Звук'),
+            subtitle: const Text('Свист клинка и удар в ниндзя-слэше'),
           ),
           if (_denied)
             Padding(

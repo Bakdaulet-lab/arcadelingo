@@ -126,6 +126,12 @@ cd '$WORK'
 # Кавычки вокруг значения обязательны: WSL подмешивает в PATH windows-овые
 # каталоги, среди них «Program Files (x86)», и без кавычек скобка роняет разбор.
 export PATH="$FLUTTER_DIR/bin:\$PATH"
+# Кандидаты прошлого прогона — долой до старта. rsync их не трогает
+# (exclude выше), а копирование обратно берёт все *.new.png подряд: тест,
+# упавший раньше компаратора, кандидата не пишет, и на его место приезжал
+# бы старый — с датой этой минуты и содержимым прошлого прогона. Так и
+# случилось на переделке 4.3 (docs/dev/context.md).
+rm -f test/golden/images/*.new.png
 '$FLUTTER_DIR/bin/flutter' pub get > /tmp/wordarcade_pubget.log 2>&1 \
   || { tail -20 /tmp/wordarcade_pubget.log; exit 1; }
 ./scripts/goldens.sh

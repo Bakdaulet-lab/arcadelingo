@@ -18,9 +18,9 @@
 /// (`docs/dev/context.md`).
 library;
 
+import '../settings/app_settings.dart';
 import '../streak/streak.dart';
 import '../streak/streak_view.dart';
-import 'reminder_settings.dart';
 
 /// Зачем напоминаем. От этого зависят слова, и только они.
 enum ReminderReason {
@@ -76,7 +76,7 @@ class ReminderPlan {
 /// назначенный момент напоминание уходит на завтра: уведомление о
 /// приложении, которое человек держит открытым, — не напоминание.
 ReminderPlan? planReminder({
-  required ReminderSettings settings,
+  required AppSettings settings,
   required StreakState streak,
   required DateTime now,
 }) {

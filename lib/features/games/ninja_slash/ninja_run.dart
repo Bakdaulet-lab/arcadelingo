@@ -78,8 +78,13 @@ class NinjaRun {
   /// Сколько держится пара «слово → перевод» после промаха (SPEC).
   static const Duration wrongReveal = Duration(milliseconds: 800);
 
-  /// Сколько разлетаются половинки верно разрезанного объекта.
-  static const Duration correctReveal = Duration(milliseconds: 300);
+  /// Сколько длится празднование верного реза.
+  ///
+  /// **700 мс, а не 300** (`SPEC.md`, «Темп партии»). При равных 300 рез,
+  /// празднование и старт следующей волны сливались в один кадр: искры ещё
+  /// летели, а снизу уже шла новая волна. Сами украшения при этом остались
+  /// 300-миллисекундными — у них своя доля времени внутри подсветки.
+  static const Duration correctReveal = Duration(milliseconds: 700);
 
   /// Очки за верный рез при множителе 1.
   static const int pointsPerCombo = 10;

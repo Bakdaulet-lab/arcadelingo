@@ -128,11 +128,14 @@ Future<void> _sliceThrough(WidgetTester tester, int a, int b) async {
   await tester.pump();
 }
 
-/// Верный рез по слову [word] через секунду и промотанная подсветка.
+/// Верный рез по слову [word] через секунду и промотанное празднование.
+///
+/// 700 мс, а не 300: подсветка верного реза стала празднованием («Темп
+/// партии»). Украшения внутри неё по-прежнему живут 300.
 Future<void> _answerCorrectly(WidgetTester tester, int word) async {
   await tester.pump(const Duration(seconds: 1));
   await _slice(tester, _correctIndex(tester, word));
-  await tester.pump(const Duration(milliseconds: 300));
+  await tester.pump(const Duration(milliseconds: 700));
 }
 
 /// Промах по слову [word] через секунду и промотанная подсветка.
@@ -577,7 +580,7 @@ void main() {
       await _pumpGame(tester);
       await tester.pump(const Duration(seconds: 1));
       await _slice(tester, _wrongIndex(tester, 1));
-      final frozen = _objectCenter(tester, 0);
+      final frozen = _field(tester).progress;
 
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -585,8 +588,10 @@ void main() {
         tester.widget<Text>(find.byKey(NinjaKeys.revealAnswer)).data,
         wordTranslation(1),
       );
+      // Доля полёта, а не координата на экране: с 4.3 объекты на промахе
+      // ещё и трясёт, и координата перестала быть мерой «время стоит».
       expect(
-        _objectCenter(tester, 0),
+        _field(tester).progress,
         frozen,
         reason: 'стоп-кадр: подсветка не время лететь дальше',
       );

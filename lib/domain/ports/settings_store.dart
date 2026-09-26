@@ -8,14 +8,14 @@
 library;
 
 import '../core/result.dart';
-import '../reminders/reminder_settings.dart';
+import '../settings/app_settings.dart';
 
 abstract class SettingsStore {
-  /// Сохранённые настройки. Ключа нет — [ReminderSettings.defaults], не
+  /// Сохранённые настройки. Ключа нет — [AppSettings.defaults], не
   /// ошибка. Битый документ — [Err]; реализация ничего не сбрасывает сама.
-  Result<ReminderSettings> load();
+  Result<AppSettings> load();
 
-  Future<bool> save(ReminderSettings settings);
+  Future<bool> save(AppSettings settings);
 
   Future<bool> reset();
 }
