@@ -252,6 +252,26 @@ void main() {
           ),
         );
         expect(_selector(tester).selected, {selected});
+        // Пиксельный guideline не видит исчезнувшие буквы, если текст
+        // совпал с фоном. Читаем стиль самого рисуемого SegmentedButton,
+        // а не исходную тему: оба состояния обязаны давать WCAG 4.5:1.
+        final style = _selector(tester).style!;
+        for (final states in [
+          <WidgetState>{},
+          {WidgetState.selected},
+        ]) {
+          final foreground = style.foregroundColor!.resolve(states)!;
+          final background = style.backgroundColor!.resolve(states)!;
+          final a = foreground.computeLuminance();
+          final b = background.computeLuminance();
+          final contrast =
+              (a > b ? (a + 0.05) / (b + 0.05) : (b + 0.05) / (a + 0.05));
+          expect(
+            contrast,
+            greaterThanOrEqualTo(4.5),
+            reason: 'состояния $states',
+          );
+        }
         expect(
           tester.getRect(find.byKey(AppKeys.gameSelector)).height,
           greaterThanOrEqualTo(48),
