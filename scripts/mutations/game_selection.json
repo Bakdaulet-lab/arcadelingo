@@ -1,0 +1,92 @@
+[
+  {
+    "name": "выбранная игра игнорируется при запуске",
+    "file": "lib/app/app.dart",
+    "old": "    final game = _selectedGame;",
+    "new": "    final game = widget.games.first;"
+  },
+  {
+    "name": "изменение выбора не сохраняется в HomeScreen",
+    "file": "lib/app/app.dart",
+    "old": "  void _selectGame(String id) => setState(() => _selectedGameId = id);",
+    "new": "  void _selectGame(String id) => setState(() {});"
+  },
+  {
+    "name": "после исчезновения id умолчание выбирается с конца",
+    "file": "lib/app/app.dart",
+    "old": "    orElse: () => widget.games.first,",
+    "new": "    orElse: () => widget.games.last,"
+  },
+  {
+    "name": "выбранный id не передан представлению",
+    "file": "lib/app/app.dart",
+    "old": "          selectedGameId: widget.games.isEmpty ? null : _selectedGame.id,",
+    "new": "          selectedGameId: widget.games.isEmpty ? null : widget.games.first.id,"
+  },
+  {
+    "name": "журнал приписывает выбранный ответ первой игре",
+    "file": "lib/app/app.dart",
+    "old": "      gameId: game.id,",
+    "new": "      gameId: widget.games.first.id,"
+  },
+  {
+    "name": "сессия выбрана правильно, но запускается другая игра",
+    "file": "lib/app/app.dart",
+    "old": "        _play(game, value, () => _footer(latest));",
+    "new": "        _play(widget.games.first, value, () => _footer(latest));"
+  },
+  {
+    "name": "Ещё раз сбрасывает выбор",
+    "file": "lib/app/app.dart",
+    "old": "                      onPlayAgain: () {\n                        navigator.pop();\n                        _start();",
+    "new": "                      onPlayAgain: () {\n                        navigator.pop();\n                        _selectedGameId = null;\n                        _start();"
+  },
+  {
+    "name": "переключатель появляется только с третьей игрой",
+    "file": "lib/app/app_views.dart",
+    "old": "if (games.length > 1) ...[",
+    "new": "if (games.length > 2) ...["
+  },
+  {
+    "name": "переключатель появляется даже для единственной игры",
+    "file": "lib/app/app_views.dart",
+    "old": "if (games.length > 1) ...[",
+    "new": "if (games.isNotEmpty) ...["
+  },
+  {
+    "name": "сегменты показывают id вместо названий реестра",
+    "file": "lib/app/app_views.dart",
+    "old": "label: Text(game.title, textAlign: TextAlign.center),",
+    "new": "label: Text(game.id, textAlign: TextAlign.center),"
+  },
+  {
+    "name": "тап сегмента не доходит до хоста",
+    "file": "lib/app/app_views.dart",
+    "old": "      onSelectionChanged: (ids) => onSelected(ids.single),",
+    "new": "      onSelectionChanged: (ids) {},"
+  },
+  {
+    "name": "текст выбранного сегмента теряет контраст",
+    "file": "lib/app/app_views.dart",
+    "old": "? colors.onPrimary",
+    "new": "? colors.primary"
+  },
+  {
+    "name": "цели сегментов сжаты ниже 48 dp",
+    "file": "lib/app/app_views.dart",
+    "old": "        minimumSize: WidgetStateProperty.all(const Size(48, 48)),\n        padding: WidgetStateProperty.all(const EdgeInsets.all(12)),",
+    "new": "        minimumSize: WidgetStateProperty.all(const Size(24, 24)),\n        padding: WidgetStateProperty.all(EdgeInsets.zero),\n        tapTargetSize: MaterialTapTargetSize.shrinkWrap,"
+  },
+  {
+    "name": "домашний экран не прокручивается при шрифте 2×",
+    "file": "lib/app/app_views.dart",
+    "old": "        builder:\n            (context, constraints) => SingleChildScrollView(",
+    "new": "        builder:\n            (context, constraints) => SizedBox("
+  },
+  {
+    "name": "длинные подписи обрезаны вместо переноса",
+    "file": "lib/app/app_views.dart",
+    "old": "label: Text(game.title, textAlign: TextAlign.center),",
+    "new": "label: Text(game.title, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),"
+  }
+]
