@@ -243,23 +243,26 @@ void main() {
   for (final selected in ['falling_words', 'ninja_slash']) {
     testWidgets('контраст и цели сегментов: $selected', (tester) async {
       final semantics = tester.ensureSemantics();
-      addTearDown(semantics.dispose);
-      final f = _Fixture();
-      await _pump(tester, f.app(wordarcadeGames));
-      await _tap(
-        tester,
-        find.text(
-          selected == 'falling_words' ? 'Падающие слова' : 'Ниндзя-слэш',
-        ),
-      );
-      expect(_selector(tester).selected, {selected});
-      expect(
-        tester.getRect(find.byKey(AppKeys.gameSelector)).height,
-        greaterThanOrEqualTo(48),
-      );
-      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
-      await expectLater(tester, meetsGuideline(textContrastGuideline));
+      try {
+        final f = _Fixture();
+        await _pump(tester, f.app(wordarcadeGames));
+        await _tap(
+          tester,
+          find.text(
+            selected == 'falling_words' ? 'Падающие слова' : 'Ниндзя-слэш',
+          ),
+        );
+        expect(_selector(tester).selected, {selected});
+        expect(
+          tester.getRect(find.byKey(AppKeys.gameSelector)).height,
+          greaterThanOrEqualTo(48),
+        );
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(textContrastGuideline));
+      } finally {
+        semantics.dispose();
+      }
     });
   }
 
