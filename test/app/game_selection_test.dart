@@ -7,7 +7,6 @@ import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/session/observed_session.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
-import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
