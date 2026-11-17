@@ -69,10 +69,8 @@ flutter:
 
   assets:
     - assets/words_seed.json
-    # Три звука ниндзя-слэша. Нарисованы кодом (tool/sound/), а не взяты из
-    # пака: прецедент иконки лаунчера 0.15 плюс то, что автор этого кода
-    # звук не слышит. Сторожится test/assets/sound_test.dart — он
-    # пересобирает WAV в памяти и сверяет байты.
+    # Четыре эффекта Kenney (CC0), перечислены в assets/ATTRIBUTION.md.
+    # Включение и формат проверяются в test/assets/sound_test.dart.
     - assets/sound/
     # Лицензионное условие CEFR-J: цитата обязана быть в продукте, а не только
     # в репозитории. Сторожится test/assets/attribution_test.dart.

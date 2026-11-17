@@ -17,6 +17,7 @@ const Map<GameSound, String> soundAssets = {
   GameSound.slice: 'sound/slice.wav',
   GameSound.sliceHot: 'sound/slice_hot.wav',
   GameSound.miss: 'sound/miss.wav',
+  GameSound.roundEnd: 'sound/round_end.wav',
 };
 
 /// Роль звука в системе: «ambient».
@@ -33,11 +34,11 @@ final AudioContext _ambient = AudioContext(
   ),
 );
 
-/// Три коротких звука, каждый на своём проигрывателе.
+/// Короткие звуки, каждый на своём проигрывателе.
 ///
 /// Своём, потому что рез и промах не накладываются друг на друга, а вот два
 /// реза подряд на серии — запросто: один проигрыватель обрывал бы сам себя
-/// на полуслове. Три — это ровно столько, сколько разных звуков в игре.
+/// на полуслове.
 class AudioSounds implements Sounds {
   AudioSounds() {
     for (final entry in soundAssets.entries) {
