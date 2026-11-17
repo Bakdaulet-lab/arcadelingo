@@ -11,16 +11,24 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/result.dart';
 
 final class _WordBundles extends CachingAssetBundle {
-  _WordBundles({required this.c1Id, required this.c1Level});
+  _WordBundles({
+    this.c1Id = 'clause',
+    this.c1Level = 'c1',
+    this.c2Id = 'adage',
+    this.c2Level = 'c2',
+  });
 
   final String c1Id;
   final String c1Level;
+  final String c2Id;
+  final String c2Level;
 
   @override
   Future<ByteData> load(String key) async {
     final (id, level) = switch (key) {
       wordsSeedAssetPath => ('apple', 'a1'),
       wordsC1AssetPath => (c1Id, c1Level),
+      wordsC2AssetPath => (c2Id, c2Level),
       _ => throw ArgumentError.value(key, 'key'),
     };
     final json = jsonEncode({
@@ -47,10 +55,10 @@ void main() {
 
   // Второй счётчик размера сида. Первый — «ровно N слов» в
   // test/assets/words_seed_test.dart; правятся оба и в одном коммите порции.
-  test('loadWordsSeed: 6666 карточек в бандле, C1 после B2', () async {
+  test('loadWordsSeed: 7495 карточек в бандле, от A1 до C2', () async {
     final items = ok(await loadWordsSeed());
 
-    expect(items, hasLength(6666));
+    expect(items, hasLength(7495));
     expect(items.first.word.id, 'apple');
     expect(items.first.word.level, CefrLevel.a1);
     expect(items.first.distractors, hasLength(3));
@@ -72,8 +80,12 @@ void main() {
     expect(items[5800].word.level, CefrLevel.b2);
     expect(items[5801].word.id, 'commercially');
     expect(items[5801].word.level, CefrLevel.c1);
-    expect(items.last.word.id, 'insubordinately');
-    expect(items.last.word.level, CefrLevel.c1);
+    expect(items[6665].word.id, 'insubordinately');
+    expect(items[6665].word.level, CefrLevel.c1);
+    expect(items[6666].word.id, 'calorific');
+    expect(items[6666].word.level, CefrLevel.c2);
+    expect(items.last.word.id, 'habitation');
+    expect(items.last.word.level, CefrLevel.c2);
   });
 
   test('loadWordsSeed отклоняет другой уровень в ассете C1', () async {
@@ -91,4 +103,19 @@ void main() {
     expect(result, isA<Err<List<ReviewItem>>>());
     expect(result.toString(), contains('повторяется id слова «apple»'));
   });
+
+  test('loadWordsSeed отклоняет другой уровень в ассете C2', () async {
+    final result = await loadWordsSeed(bundle: _WordBundles(c2Level: 'c1'));
+    expect(result, isA<Err<List<ReviewItem>>>());
+    expect(result.toString(), contains('уровень слова «adage» не C2'));
+  });
+
+  test(
+    'loadWordsSeed отклоняет id карточки C2, уже занятый карточкой C1',
+    () async {
+      final result = await loadWordsSeed(bundle: _WordBundles(c2Id: 'clause'));
+      expect(result, isA<Err<List<ReviewItem>>>());
+      expect(result.toString(), contains('повторяется id слова «clause»'));
+    },
+  );
 }

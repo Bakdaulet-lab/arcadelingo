@@ -26,15 +26,15 @@
 Отказ от ответственности за неточности выше касается уровней. Ошибку в переводе
 или в вариантах ответа не списывай на источник — она наша.
 
-## Уровень C1 — Octanove Labs
+## Уровни C1 и C2 — Octanove Labs
 
 Английские слова, уровни и части речи взяты из **Octanove Vocabulary Profile
 C1/C2 Version 1.0**, Octanove Labs. Исходный набор:
 <https://github.com/openlanguageprofiles/olp-en-cefrj/blob/d4e45b75b38f27b30dfc5c44d8c571aec7e7092f/octanove-vocabulary-profile-c1c2-1.0.csv>.
 
-Мы отобрали однословные карточки C1, устранили повторы и добавили русские
-переводы и варианты ответов. Словарь `assets/words_c1.json` распространяется
-по **Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)**:
+Мы отобрали однословные карточки C1 и C2, устранили повторы и добавили русские
+переводы и варианты ответов. Словари `assets/words_c1.json` и `assets/words_c2.json`
+распространяются по **Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)**:
 <https://creativecommons.org/licenses/by-sa/4.0/>.
 
 ## Шрифт Rubik

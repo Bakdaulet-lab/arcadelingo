@@ -37,9 +37,10 @@ void main() {
     expect(text, contains('research and commercial purposes with no charge'));
   });
 
-  test('автор, изменения и лицензия словаря C1 указаны в бандле', () async {
-    final notice = await rootBundle.loadString('assets/words_c1.LICENSE.md');
-    for (final attribution in [text, notice]) {
+  test('автор, изменения и лицензии C1 и C2 указаны в бандле', () async {
+    final c1 = await rootBundle.loadString('assets/words_c1.LICENSE.md');
+    final c2 = await rootBundle.loadString('assets/words_c2.LICENSE.md');
+    for (final attribution in [text, c1, c2]) {
       expect(attribution, contains('Octanove Vocabulary Profile'));
       expect(attribution, contains('Octanove Labs'));
       expect(attribution, anyOf(contains('добавили'), contains('добавлены')));
@@ -49,5 +50,7 @@ void main() {
         contains('https://creativecommons.org/licenses/by-sa/4.0/'),
       );
     }
+    expect(c1, contains('words_c1.json'));
+    expect(c2, contains('words_c2.json'));
   });
 }

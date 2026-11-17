@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | `assets/words_seed.json`, поля `text` и `level` | CEFR-J Wordlist 1.5, копия <https://github.com/openlanguageprofiles/olp-en-cefrj> | «can be used for research and commercial purposes with no charge, provided that you cite the dataset properly». Копирайт — Tono Laboratory at TUFS | 2026-11-17 | Да / да, при дословном цитировании |
 | `assets/words_seed.json`, поля `translation` и `distractors` | Составлены для игры. Для порций 19–127 черновики подготовлены с помощью агента и отредактированы перед сведением. Без выгрузки из внешнего словаря | Не требуется — внешнего источника нет | 2026-11-17 | Да / да |
-| `assets/words_c1.json` | [Octanove Vocabulary Profile C1/C2 Version 1.0](https://github.com/openlanguageprofiles/olp-en-cefrj/blob/d4e45b75b38f27b30dfc5c44d8c571aec7e7092f/octanove-vocabulary-profile-c1c2-1.0.csv), Octanove Labs. Русские переводы и варианты порций 128–145 составлены для игры и вычитаны | [Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/legalcode.en) | 2026-11-17 | Да / да, с атрибуцией, указанием изменений и сохранением лицензии адаптации |
+| `assets/words_c1.json`, `assets/words_c2.json` | [Octanove Vocabulary Profile C1/C2 Version 1.0](https://github.com/openlanguageprofiles/olp-en-cefrj/blob/d4e45b75b38f27b30dfc5c44d8c571aec7e7092f/octanove-vocabulary-profile-c1c2-1.0.csv), Octanove Labs. Русские переводы и варианты порций 128–162 составлены для игры и вычитаны | [Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/legalcode.en) | 2026-11-17 | Да / да, с атрибуцией, указанием изменений и сохранением лицензии адаптации |
 | `assets/ATTRIBUTION.md` | Дословные цитата и условия CEFR-J, сведения об Octanove и других источниках | — | 2026-11-17 | Да / да |
 
 Цитата обязана быть **в продукте**, а не только в репозитории: «cite properly» адресован
@@ -20,13 +20,13 @@
 перепубликации, и мегабайт чужих данных в истории ничего нам не даёт. Импортёр
 `tool/import_cefrj.dart` берёт путь к файлу аргументом — качать по ссылке из таблицы.
 
-## Данные C1
+## Данные C1 и C2
 
-C1 поставляется отдельным `assets/words_c1.json` с уведомлением
-`assets/words_c1.LICENSE.md`. Приложение читает оба словаря в общий список только
-в памяти. Редакционные записи C1 хранятся в `tool/c1/`. В выборку вошли
-однословные существительные, глаголы, прилагательные и наречия уровня C1 после
-исключения принятых и отклонённых слов A1–B2. Метки C2 в словарь не импортированы.
+C1 и C2 поставляются отдельными `assets/words_c1.json` и `assets/words_c2.json`
+с соответствующими уведомлениями `.LICENSE.md`. Приложение объединяет карточки
+в памяти. Редакционные записи хранятся в `tool/c1/` и `tool/c2/`. В выборки
+вошли однословные существительные, глаголы, прилагательные и наречия после
+исключения принятых и отклонённых слов с предыдущих уровней.
 
 ## Ожидает решения
 
