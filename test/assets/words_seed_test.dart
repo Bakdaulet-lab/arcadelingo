@@ -8,37 +8,58 @@
 // говорит тому, кто вычитывал порцию вечером.
 //
 // Качество обманок (не синоним, не однокоренное) тест не ловит — это ручная
-// вычитка. Соответствие `level` источнику (CEFR-J) — тоже. Зелёный прогон
+// вычитка. Соответствие `level` источнику (CEFR-J или Octanove) — тоже. Зелёный прогон
 // означает «форма и инварианты в порядке», а не «контент выверен».
 
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:arcadelingo/data/words/words_seed_loader.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../tool/confusables.dart';
 import '../../tool/seed_rules.dart';
 
-const _assetPath = 'assets/words_seed.json';
+List<Object?> _wordsOf(Object? document) => switch (document) {
+  {'words': final List<Object?> words} => words,
+  _ => const [],
+};
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late Object? root;
+  late Object? combined;
   late List<SeedProblem> problems;
   late List<Object?> words;
+  late List<Object?> c1Words;
+  late String registeredPairs;
 
   // rootBundle, а не dart:io: заодно проверяет регистрацию ассета в pubspec.yaml.
   setUpAll(() async {
-    root = jsonDecode(await rootBundle.loadString(_assetPath));
-    problems = validateSeed(root);
-    // Защитно: со сломанным корнем счётчик слов обязан упасть сам, а не
-    // уронить в setUpAll все тесты сразу ошибкой приведения типа.
-    words = switch (root) {
-      {'words': final List<Object?> list} => list,
-      _ => const [],
+    final base = jsonDecode(await rootBundle.loadString(wordsSeedAssetPath));
+    final c1 = jsonDecode(await rootBundle.loadString(wordsC1AssetPath));
+    words = _wordsOf(base);
+    c1Words = _wordsOf(c1);
+    combined = {
+      'version': 1,
+      'source_lang': 'en',
+      'target_lang': 'ru',
+      'words': [...words, ...c1Words],
     };
+    problems = [
+      ...validateSeed(base),
+      ...validateSeed(c1),
+      ...validateSeed(combined),
+    ];
+    final basePairs = File(confusablesPath).readAsStringSync().trimRight();
+    final c1Pairs = File('tool/c1/confusables.csv').readAsLinesSync().skip(1);
+    registeredPairs = [basePairs, ...c1Pairs].join('\n');
+  });
+
+  test('865 карточек в отдельном ассете, все уровня C1', () {
+    expect(c1Words, hasLength(865));
+    expect(c1Words, everyElement(containsPair('level', 'c1')));
   });
 
   void ruleTest(String name, SeedRule rule) {
@@ -89,26 +110,20 @@ void main() {
   test('каждое слово из файла ловушек есть в сиде', () {
     // Ловит опечатку в id и запись «на будущее»: пара вносится тем же
     // коммитом, что и второе слово пары, — шаг из чеклиста порции.
-    expect(
-      checkConfusablesExist(root, File(confusablesPath).readAsStringSync()),
-      isEmpty,
-    );
+    expect(checkConfusablesExist(combined, registeredPairs), isEmpty);
   });
 
   test('каждая зеркальная пара внесена в файл ловушек', () {
     // Сама пара нарушением не является. Нарушение — что о ней некому будет
     // узнать: правило сессии Б1 читает файл, а не отчёт прогона.
     // dart:io, а не rootBundle: файл ловушек не ассет, в приложение не едет.
-    expect(
-      checkMirrorPairsListed(root, File(confusablesPath).readAsStringSync()),
-      isEmpty,
-    );
+    expect(checkMirrorPairsListed(combined, registeredPairs), isEmpty);
   });
 
   test('зеркальные пары известны и не запрещены', () {
     // `open` ↔ `close` в сиде сделаны намеренно. Лечит их правило сессии
     // «не показывать оба слова пары в один день» (Б1), а не запрет в контенте.
-    final pairs = findMirrorPairs(root);
+    final pairs = findMirrorPairs(combined);
 
     expect(pairs.map((pair) => pair.toString()), contains('open ↔ close'));
     expect(

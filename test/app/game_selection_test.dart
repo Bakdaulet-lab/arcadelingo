@@ -411,7 +411,11 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    for (final (level, skip) in [(CefrLevel.b1, 38), (CefrLevel.b2, 0)]) {
+    for (final (level, skip) in [
+      (CefrLevel.b1, 38),
+      (CefrLevel.b2, 0),
+      (CefrLevel.c1, 0),
+    ]) {
       final label = level.name.toUpperCase();
       testWidgets(
         '${game.title}: весь раунд только со словами $label из бандла',
@@ -439,6 +443,7 @@ void main() {
               CefrLevel.a2,
               CefrLevel.b1,
               CefrLevel.b2,
+              CefrLevel.c1,
             ])
               if (other != level)
                 items

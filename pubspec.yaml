@@ -69,6 +69,8 @@ flutter:
 
   assets:
     - assets/words_seed.json
+    - assets/words_c1.json
+    - assets/words_c1.LICENSE.md
     # Четыре эффекта Kenney (CC0), перечислены в assets/ATTRIBUTION.md.
     # Включение и формат проверяются в test/assets/sound_test.dart.
     - assets/sound/
