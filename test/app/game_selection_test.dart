@@ -411,68 +411,86 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('${game.title}: весь раунд только со словами B1 из бандла', (
-      tester,
-    ) async {
-      final seed = (await tester.runAsync(loadWordsSeed))!;
-      final items = ok(seed);
-      final b1 =
-          items.where((item) => item.word.level == CefrLevel.b1).toList();
-      // Порция 41 уже была в игре. Берём по карточке из начала, середины
-      // и конца добавленных порций, чтобы проверить их в обеих играх.
-      final added = b1.skip(38).toList();
-      final ready = [added.first, added[added.length ~/ 2], added.last];
-      final expected = [...ready, ...b1.take(sessionTarget - ready.length)];
+    for (final (level, skip) in [(CefrLevel.b1, 38), (CefrLevel.b2, 0)]) {
+      final label = level.name.toUpperCase();
+      testWidgets(
+        '${game.title}: весь раунд только со словами $label из бандла',
+        (tester) async {
+          final seed = (await tester.runAsync(loadWordsSeed))!;
+          final items = ok(seed);
+          final selected =
+              items.where((item) => item.word.level == level).toList();
+          // Берём по карточке из начала, середины и конца пополнения. У B1
+          // пропускаем первые 38 слов из отдельной стартовой порции.
+          final added = selected.skip(skip).toList();
+          final ready = [added.first, added[added.length ~/ 2], added.last];
+          final fresh = selected.where((item) => !ready.contains(item));
+          final expected = [
+            ...ready,
+            ...fresh.take(sessionTarget - ready.length),
+          ];
+          expect(expected, hasLength(sessionTarget));
 
-      // Готовые к повтору A1/A2 шли бы раньше новых B1 без фильтра уровня.
-      final cards = InMemoryCardStore({
-        for (final level in [CefrLevel.a1, CefrLevel.a2])
-          items
-              .firstWhere((item) => item.word.level == level)
-              .word
-              .id: LeitnerCard(
-            box: 2,
-            due: _today.subtract(const Duration(days: 1)),
-          ),
-        for (final item in ready)
-          item.word.id: LeitnerCard(box: 2, due: _today),
-      });
-      final answers = InMemoryAnswerLog();
-      await _startBundledGame(
-        tester,
-        game,
-        CefrLevel.b1,
-        seed,
-        cards: cards,
-        answers: answers,
-      );
+          // Готовые к повтору слова других уровней стоят раньше выбранного
+          // уровня по сроку, чтобы тест поймал попадание любого из них в раунд.
+          final cards = InMemoryCardStore({
+            for (final other in [
+              CefrLevel.a1,
+              CefrLevel.a2,
+              CefrLevel.b1,
+              CefrLevel.b2,
+            ])
+              if (other != level)
+                items
+                    .firstWhere((item) => item.word.level == other)
+                    .word
+                    .id: LeitnerCard(
+                  box: 2,
+                  due: _today.subtract(const Duration(days: 1)),
+                ),
+            for (final item in ready)
+              item.word.id: LeitnerCard(box: 2, due: _today),
+          });
+          final answers = InMemoryAnswerLog();
+          await _startBundledGame(
+            tester,
+            game,
+            level,
+            seed,
+            cards: cards,
+            answers: answers,
+          );
 
-      final ninja = game.id == ninjaSlashEntry.id;
-      final prompt = find.byKey(ninja ? NinjaKeys.word : FallingWordsKeys.word);
-      for (final (index, item) in expected.indexed) {
-        await tester.pump(const Duration(seconds: 1));
-        expect(tester.widget<Text>(prompt).data, item.word.text);
-        await _answerBundledWord(
-          tester,
-          ninja: ninja,
-          translation: item.word.translation,
-        );
-        expect(answers.records, hasLength(index + 1));
-        final record = answers.records.last;
-        expect(record.wordId, item.word.id);
-        expect(record.gameId, game.id);
-        expect(record.correct, isTrue);
-        await tester.pump(
-          ninja ? NinjaRun.correctReveal : FallingWordsRun.correctReveal,
-        );
-      }
-      expect(
-        find.byKey(ninja ? NinjaKeys.summary : FallingWordsKeys.summary),
-        findsOneWidget,
+          final ninja = game.id == ninjaSlashEntry.id;
+          final prompt = find.byKey(
+            ninja ? NinjaKeys.word : FallingWordsKeys.word,
+          );
+          for (final (index, item) in expected.indexed) {
+            await tester.pump(const Duration(seconds: 1));
+            expect(tester.widget<Text>(prompt).data, item.word.text);
+            await _answerBundledWord(
+              tester,
+              ninja: ninja,
+              translation: item.word.translation,
+            );
+            expect(answers.records, hasLength(index + 1));
+            final record = answers.records.last;
+            expect(record.wordId, item.word.id);
+            expect(record.gameId, game.id);
+            expect(record.correct, isTrue);
+            await tester.pump(
+              ninja ? NinjaRun.correctReveal : FallingWordsRun.correctReveal,
+            );
+          }
+          expect(
+            find.byKey(ninja ? NinjaKeys.summary : FallingWordsKeys.summary),
+            findsOneWidget,
+          );
+          expect(answers.records, hasLength(sessionTarget));
+          await tester.pumpWidget(const SizedBox());
+        },
       );
-      expect(answers.records, hasLength(sessionTarget));
-      await tester.pumpWidget(const SizedBox());
-    });
+    }
   }
 
   for (final selected in ['falling_words', 'ninja_slash']) {
