@@ -165,7 +165,7 @@ Future<void> pumpRitualGolden(
       ),
     ]);
   });
-  await tester.pump();
+  await tester.pumpAndSettle();
 }
 
 /// Ниндзя-слэш, готовый к съёмке.
