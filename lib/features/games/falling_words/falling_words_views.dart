@@ -11,6 +11,10 @@
 /// мужчин).
 library;
 
+import 'package:arcadelingo/ui/arcade_hud.dart';
+import 'package:arcadelingo/ui/arcade_reveal_pair.dart';
+import 'package:arcadelingo/ui/arcade_round_summary.dart';
+import 'package:arcadelingo/ui/arcade_status_layout.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -180,62 +184,19 @@ class GameHud extends StatelessWidget {
   final double scorePulse;
 
   @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Wrap(
-        alignment: WrapAlignment.spaceBetween,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 16,
-        runSpacing: 8,
-        children: [
-          Semantics(
-            label: 'Жизни: $lives из $maxLives',
-            excludeSemantics: true,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (var i = 0; i < maxLives; i++)
-                  Icon(
-                    i < lives ? Icons.favorite : Icons.favorite_border,
-                    color: i < lives ? scheme.error : scheme.outline,
-                    size: 24,
-                    applyTextScaling: true,
-                  ),
-              ],
-            ),
-          ),
-          Text(
-            '$current/$total',
-            key: FallingWordsKeys.progress,
-            style: textTheme.titleMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-          Text(
-            '×$multiplier',
-            key: FallingWordsKeys.combo,
-            style: textTheme.titleMedium?.copyWith(
-              color:
-                  comboIsHot(combo) ? scheme.primary : scheme.onSurfaceVariant,
-            ),
-          ),
-          // Transform, а не изменение кегля: раздувание размером сдвинуло бы
-          // соседние счётчики, и HUD дёргался бы на каждом верном ответе.
-          Transform.scale(
-            scale: 1 + 0.25 * scorePulse.clamp(0.0, 1.0),
-            child: Text(
-              '$score',
-              key: FallingWordsKeys.score,
-              style: withWeight(textTheme.titleLarge!, FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ArcadeHud(
+    lives: lives,
+    maxLives: maxLives,
+    score: score,
+    multiplier: multiplier,
+    current: current,
+    total: total,
+    hot: comboIsHot(combo),
+    progressKey: FallingWordsKeys.progress,
+    comboKey: FallingWordsKeys.combo,
+    scoreKey: FallingWordsKeys.score,
+    scorePulse: scorePulse,
+  );
 }
 
 /// Поле, по которому падает слово.
@@ -301,57 +262,12 @@ class RevealPair extends StatelessWidget {
   final String answer;
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final style = withWeight(
-      Theme.of(context).textTheme.displaySmall!,
-      FontWeight.bold,
-    );
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.close,
-                  color: scheme.error,
-                  size: 32,
-                  applyTextScaling: true,
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    word,
-                    key: FallingWordsKeys.word,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    style: style.copyWith(color: scheme.error),
-                  ),
-                ),
-              ],
-            ),
-            Icon(
-              Icons.arrow_downward,
-              color: scheme.outline,
-              size: 28,
-              applyTextScaling: true,
-            ),
-            Text(
-              answer,
-              key: FallingWordsKeys.revealAnswer,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              style: style.copyWith(color: scheme.primary),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ArcadeRevealPair(
+    word: word,
+    answer: answer,
+    wordKey: FallingWordsKeys.word,
+    answerKey: FallingWordsKeys.revealAnswer,
+  );
 }
 
 /// Кнопка с вариантом перевода.
@@ -371,7 +287,8 @@ class AnswerButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final (
       Color background,
       Color foreground,
@@ -393,9 +310,9 @@ class AnswerButton extends StatelessWidget {
         Icons.close,
       ),
     };
-    final radius = BorderRadius.circular(16);
+    final radius = BorderRadius.circular(20);
     return Opacity(
-      opacity: state == AnswerState.dimmed ? 0.5 : 1,
+      opacity: state == AnswerState.dimmed ? .5 : 1,
       child: Material(
         color: background,
         borderRadius: radius,
@@ -403,38 +320,46 @@ class AnswerButton extends StatelessWidget {
           onTap: onTap,
           borderRadius: radius,
           child: Container(
-            constraints: const BoxConstraints(minHeight: 56),
+            constraints: const BoxConstraints(minHeight: 56, maxHeight: 88),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               borderRadius: radius,
               border: Border.all(
-                color: icon == null ? Colors.transparent : foreground,
-                width: icon == null ? 0 : 3,
+                color: icon == null ? scheme.outline : foreground,
+                width: icon == null ? 1 : 3,
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (icon != null) ...[
-                  Icon(
-                    icon,
-                    color: foreground,
-                    size: 24,
-                    applyTextScaling: true,
+            child: LayoutBuilder(
+              builder:
+                  (context, constraints) => FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: SizedBox(
+                      width: constraints.maxWidth,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (icon != null) ...[
+                            Icon(icon, color: foreground, size: 24),
+                            const SizedBox(width: 8),
+                          ],
+                          Flexible(
+                            child: Text(
+                              label,
+                              textAlign: TextAlign.center,
+                              style: withWeight(
+                                theme.textTheme.titleMedium!,
+                                FontWeight.w600,
+                              ).copyWith(
+                                fontSize: 18,
+                                color: foreground,
+                                height: 1.25,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                ],
-                Flexible(
-                  child: Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleLarge?.copyWith(color: foreground),
-                  ),
-                ),
-              ],
             ),
           ),
         ),
@@ -557,64 +482,33 @@ class SummaryView extends StatelessWidget {
   final VoidCallback onExit;
 
   @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-    final note = footer;
-    // Прокрутка, а не фиксированная колонка: при системном шрифте 2×
-    // заголовок, три строки статистики, строка хоста и две кнопки занимают
-    // 779 dp — на 360×780 впритык, на 360×640 переполнение. Пока содержимое
-    // помещается, Center держит его по центру, как и раньше.
-    return Center(
-      key: FallingWordsKeys.summary,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              outOfLives ? 'Жизни кончились' : 'Раунд окончен',
-              textAlign: TextAlign.center,
-              style: textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 24),
-            Text('Счёт: $score', style: textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text('Лучшая серия: $bestCombo', style: textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(
-              'Верных ответов: $correctCount из $answeredCount',
-              style: textTheme.titleLarge,
-            ),
-            if (note != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                note,
-                key: FallingWordsKeys.summaryFooter,
-                textAlign: TextAlign.center,
-                style: textTheme.bodyLarge?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-            const SizedBox(height: 32),
-            EndButton(
-              key: FallingWordsKeys.playAgain,
-              label: 'Ещё раз',
-              onPressed: onPlayAgain,
-            ),
-            const SizedBox(height: 8),
-            EndButton(
-              key: FallingWordsKeys.exit,
-              label: 'Выйти',
-              primary: false,
-              onPressed: onExit,
-            ),
-          ],
+  Widget build(BuildContext context) => ArcadeRoundSummary(
+    key: FallingWordsKeys.summary,
+    score: score,
+    bestCombo: bestCombo,
+    correctCount: correctCount,
+    answeredCount: answeredCount,
+    outOfLives: outOfLives,
+    footer: footer,
+    footerKey: FallingWordsKeys.summaryFooter,
+    actions: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        EndButton(
+          key: FallingWordsKeys.playAgain,
+          label: 'Ещё раз',
+          onPressed: onPlayAgain,
         ),
-      ),
-    );
-  }
+        const SizedBox(height: 10),
+        EndButton(
+          key: FallingWordsKeys.exit,
+          label: 'Выйти',
+          primary: false,
+          onPressed: onExit,
+        ),
+      ],
+    ),
+  );
 }
 
 /// Кнопка на экране конца партии.
@@ -641,8 +535,14 @@ class EndButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = ButtonStyle(
       minimumSize: WidgetStateProperty.all(const Size(220, 56)),
+      padding: WidgetStateProperty.all(
+        const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      ),
+      shape: WidgetStateProperty.all(
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
       textStyle: WidgetStateProperty.all(
-        Theme.of(context).textTheme.titleMedium,
+        withWeight(Theme.of(context).textTheme.titleMedium!, FontWeight.w600),
       ),
     );
     final text = Text(label, textAlign: TextAlign.center);
@@ -664,34 +564,22 @@ class NothingTodayView extends StatelessWidget {
   final VoidCallback onExit;
 
   @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-    return Center(
-      key: FallingWordsKeys.nothingToday,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.task_alt, size: 64, color: scheme.primary),
-            const SizedBox(height: 16),
-            Text('На сегодня всё', style: textTheme.headlineMedium),
-            const SizedBox(height: 8),
-            Text(
-              'Слова к повторению кончились. Возвращайся завтра.',
-              textAlign: TextAlign.center,
-              style: textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 32),
-            EndButton(
-              key: FallingWordsKeys.exit,
-              label: 'Выйти',
-              onPressed: onExit,
-            ),
-          ],
-        ),
+  Widget build(BuildContext context) => ArcadeStatusLayout(
+    key: FallingWordsKeys.nothingToday,
+    icon: Icons.task_alt,
+    title: 'На сегодня всё',
+    body: Text(
+      'Слова к повторению кончились. Возвращайся завтра.',
+      textAlign: TextAlign.center,
+      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        height: 1.5,
       ),
-    );
-  }
+    ),
+    actions: EndButton(
+      key: FallingWordsKeys.exit,
+      label: 'Выйти',
+      onPressed: onExit,
+    ),
+  );
 }

@@ -13,6 +13,8 @@ library;
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution.dart';
 import 'package:arcadelingo/data/attribution_loader.dart';
+import 'package:arcadelingo/ui/arcade_page.dart';
+import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -62,11 +64,28 @@ class _AttributionScreenState extends State<AttributionScreen> {
           // Отсутствующий ассет — дефект сборки, как и битый сид. Молчать о
           // нём нельзя: пустой экран «Источники» выглядит как отсутствие
           // источников, то есть как нарушение условия лицензии.
-          return _Frame(child: Text('Источники не читаются: $error'));
+          return _Frame(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: ArcadePanel(
+                accent: Theme.of(context).colorScheme.error,
+                child: Text(
+                  'Источники не читаются: $error',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+            ),
+          );
         }
         final source = snapshot.data;
         return source == null
-            ? const _Frame(child: SizedBox.shrink())
+            ? const _Frame(
+              child: Center(
+                child: CircularProgressIndicator(
+                  semanticsLabel: 'Загрузка источников',
+                ),
+              ),
+            )
             : AttributionView(source: source);
       },
     );
@@ -86,6 +105,13 @@ class AttributionView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final blocks = parseAttribution(source);
+    final sections = <List<AttributionBlock>>[];
+    for (final block in blocks) {
+      if (sections.isEmpty || block.kind == AttributionBlockKind.heading2) {
+        sections.add([]);
+      }
+      sections.last.add(block);
+    }
     return _Frame(
       // SelectionArea, чтобы цитату и адрес источника можно было выделить и
       // скопировать. Тапабельных ссылок нет намеренно: url_launcher — новая
@@ -98,19 +124,42 @@ class AttributionView extends StatelessWidget {
       // на нём нечего.
       child: SelectionArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (final block in blocks) _AttributionBlockView(block: block),
-              const SizedBox(height: 32),
-              FilledButton.tonal(
+              for (final (index, section) in sections.indexed) ...[
+                if (index > 0) const SizedBox(height: 16),
+                ArcadePanel(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final block in section)
+                        _AttributionBlockView(block: block),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              FilledButton.icon(
                 key: AppKeys.licenses,
                 onPressed: () => showLicensePage(context: context),
-                style: ButtonStyle(
-                  minimumSize: WidgetStateProperty.all(const Size(220, 56)),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
-                child: const Text('Полные тексты лицензий'),
+                icon: const Icon(Icons.description_outlined),
+                label: const Text(
+                  'Полные тексты лицензий',
+                  textAlign: TextAlign.center,
+                ),
               ),
             ],
           ),
@@ -131,11 +180,8 @@ class _Frame extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    key: AppKeys.sourcesView,
-    appBar: AppBar(title: const Text('Источники')),
-    body: child,
-  );
+  Widget build(BuildContext context) =>
+      ArcadePage(key: AppKeys.sourcesView, title: 'Источники', child: child);
 }
 
 /// Один блок разметки.
@@ -152,11 +198,11 @@ class _AttributionBlockView extends StatelessWidget {
 
     return switch (block.kind) {
       AttributionBlockKind.heading1 => Padding(
-        padding: const EdgeInsets.only(top: 8, bottom: 16),
+        padding: const EdgeInsets.only(bottom: 8),
         child: text,
       ),
       AttributionBlockKind.heading2 => Padding(
-        padding: const EdgeInsets.only(top: 24, bottom: 8),
+        padding: const EdgeInsets.only(bottom: 14),
         child: text,
       ),
       // Цитата — полосой слева, а не курсивом: курсивного начертания Rubik в
@@ -164,7 +210,7 @@ class _AttributionBlockView extends StatelessWidget {
       AttributionBlockKind.quote => Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Container(
-          padding: const EdgeInsets.only(left: 16),
+          padding: const EdgeInsets.fromLTRB(14, 4, 0, 4),
           decoration: BoxDecoration(
             border: Border(left: BorderSide(color: scheme.primary, width: 3)),
           ),
@@ -176,7 +222,12 @@ class _AttributionBlockView extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('•  ', style: theme.textTheme.bodyLarge),
+            Text(
+              '•  ',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.primary,
+              ),
+            ),
             Expanded(child: text),
           ],
         ),
@@ -194,17 +245,18 @@ class _AttributionBlockView extends StatelessWidget {
     final scheme = theme.colorScheme;
     final base = switch (block.kind) {
       AttributionBlockKind.heading1 => withWeight(
-        theme.textTheme.headlineMedium!,
+        theme.textTheme.headlineSmall!,
         FontWeight.bold,
       ),
       AttributionBlockKind.heading2 => withWeight(
         theme.textTheme.titleLarge!,
         FontWeight.bold,
-      ),
-      AttributionBlockKind.quote => theme.textTheme.bodyLarge!.copyWith(
+      ).copyWith(color: scheme.primary),
+      AttributionBlockKind.quote => theme.textTheme.bodyMedium!.copyWith(
         color: scheme.onSurfaceVariant,
+        height: 1.6,
       ),
-      _ => theme.textTheme.bodyLarge!,
+      _ => theme.textTheme.bodyMedium!.copyWith(height: 1.6),
     };
 
     return Text.rich(

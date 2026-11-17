@@ -14,6 +14,8 @@ library;
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/ports/settings_store.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
+import 'package:arcadelingo/ui/arcade_page.dart';
+import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -79,6 +81,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
         hour: _settings.at.hour,
         minute: _settings.at.minute,
       ),
+      helpText: 'Время напоминания',
+      cancelText: 'Отмена',
+      confirmText: 'Сохранить',
+      hourLabelText: 'Часы',
+      minuteLabelText: 'Минуты',
+      builder: (context, child) {
+        final theme = Theme.of(context);
+        return Theme(
+          data: theme.copyWith(
+            timePickerTheme: theme.timePickerTheme.copyWith(
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked == null) return;
     await _apply(
@@ -90,57 +111,169 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Настройки')),
-      body: ListView(
+    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.4;
+    final titleStyle = withWeight(textTheme.titleMedium!, FontWeight.w600);
+    final tilePadding = EdgeInsets.symmetric(
+      horizontal: largeText ? 4 : 12,
+      vertical: 8,
+    );
+    final subtitleStyle = textTheme.bodyMedium?.copyWith(
+      color: scheme.onSurfaceVariant,
+      height: 1.4,
+    );
+    return ArcadePage(
+      title: 'Настройки',
+      child: SingleChildScrollView(
         key: SettingsKeys.view,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        children: [
-          SwitchListTile(
-            key: SettingsKeys.toggle,
-            value: _settings.enabled,
-            onChanged: (on) => _apply(_settings.copyWith(enabled: on)),
-            title: const Text('Напоминание'),
-            subtitle: const Text('Одно уведомление в день'),
-          ),
-          ListTile(
-            key: SettingsKeys.time,
-            enabled: _settings.enabled,
-            onTap: _settings.enabled ? _pickTime : null,
-            title: const Text('Время'),
-            trailing: Text(
-              _settings.at.toString(),
-              style: withWeight(
-                textTheme.titleMedium!,
-                FontWeight.bold,
-              ).copyWith(
-                color:
-                    _settings.enabled
-                        ? scheme.primary
-                        : scheme.onSurfaceVariant,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ArcadePanel(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (largeText)
+                    ExcludeSemantics(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        child: Text('Напоминание', style: titleStyle),
+                      ),
+                    ),
+                  Semantics(
+                    label: largeText ? 'Напоминание' : null,
+                    child: SwitchListTile(
+                      key: SettingsKeys.toggle,
+                      value: _settings.enabled,
+                      onChanged:
+                          (on) => _apply(_settings.copyWith(enabled: on)),
+                      contentPadding: tilePadding,
+                      secondary:
+                          largeText
+                              ? null
+                              : _SettingSymbol(
+                                icon: Icons.notifications_active_rounded,
+                                color: scheme.primary,
+                              ),
+                      title:
+                          largeText
+                              ? null
+                              : Text('Напоминание', style: titleStyle),
+                      subtitle: Text(
+                        'Одно уведомление в день',
+                        style: subtitleStyle,
+                      ),
+                    ),
+                  ),
+                  Divider(
+                    height: 20,
+                    indent: largeText ? 12 : 64,
+                    endIndent: 12,
+                    color: scheme.outline.withValues(alpha: .45),
+                  ),
+                  ListTile(
+                    key: SettingsKeys.time,
+                    enabled: _settings.enabled,
+                    onTap: _settings.enabled ? _pickTime : null,
+                    contentPadding: tilePadding,
+                    leading:
+                        largeText
+                            ? null
+                            : _SettingSymbol(
+                              icon: Icons.schedule_rounded,
+                              color:
+                                  _settings.enabled
+                                      ? scheme.primary
+                                      : scheme.onSurfaceVariant,
+                            ),
+                    title: Text('Время', style: titleStyle),
+                    subtitle: Text(
+                      _settings.at.toString(),
+                      style: withWeight(
+                        textTheme.headlineSmall!,
+                        FontWeight.bold,
+                      ).copyWith(
+                        color:
+                            _settings.enabled
+                                ? scheme.primary
+                                : scheme.onSurfaceVariant,
+                      ),
+                    ),
+                    trailing: Icon(
+                      Icons.chevron_right_rounded,
+                      color:
+                          _settings.enabled
+                              ? scheme.primary
+                              : scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          const Divider(height: 24),
-          SwitchListTile(
-            key: SettingsKeys.sound,
-            value: _settings.soundOn,
-            onChanged: (on) => _apply(_settings.copyWith(soundOn: on)),
-            title: const Text('Звук'),
-            subtitle: const Text('Свист клинка и удар в ниндзя-слэше'),
-          ),
-          if (_denied)
-            Padding(
-              key: SettingsKeys.denied,
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Text(
-                'Система не разрешила уведомления. Включить их можно в '
-                'настройках телефона.',
-                style: textTheme.bodySmall?.copyWith(color: scheme.error),
+            const SizedBox(height: 16),
+            ArcadePanel(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: SwitchListTile(
+                key: SettingsKeys.sound,
+                value: _settings.soundOn,
+                onChanged: (on) => _apply(_settings.copyWith(soundOn: on)),
+                contentPadding: tilePadding,
+                secondary:
+                    largeText
+                        ? null
+                        : _SettingSymbol(
+                          icon: Icons.volume_up_rounded,
+                          color: scheme.tertiary,
+                        ),
+                title: Text('Звук', style: titleStyle),
+                subtitle: Text(
+                  'Свист клинка и удар в ниндзя-слэше',
+                  style: subtitleStyle,
+                ),
               ),
             ),
-        ],
+            if (_denied) ...[
+              const SizedBox(height: 16),
+              Semantics(
+                liveRegion: true,
+                child: ArcadePanel(
+                  key: SettingsKeys.denied,
+                  accent: scheme.error,
+                  child: Text(
+                    'Система не разрешила уведомления. Включить их можно в '
+                    'настройках телефона.',
+                    style: textTheme.bodyMedium?.copyWith(color: scheme.error),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
+}
+
+class _SettingSymbol extends StatelessWidget {
+  const _SettingSymbol({required this.icon, required this.color});
+
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(icon, color: color, size: 21),
+    ),
+  );
 }

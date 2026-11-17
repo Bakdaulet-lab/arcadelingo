@@ -14,6 +14,8 @@ import 'package:arcadelingo/app/game_selector.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
+import 'package:arcadelingo/ui/arcade_panel.dart';
+import 'package:arcadelingo/ui/arcade_status_layout.dart';
 import 'package:arcadelingo/ui/home_ritual_card.dart';
 import 'package:arcadelingo/ui/ritual_labels.dart';
 import 'package:arcadelingo/ui/streak_card.dart';
@@ -520,9 +522,7 @@ class StateErrorView extends StatelessWidget {
       icon: Icons.warning_amber_rounded,
       title: 'Прогресс не читается',
       message: message,
-      hint:
-          'Сброс удалит коробки повторения: слова начнутся заново, '
-          'как при первом запуске.',
+      hint: 'После сброса слова начнутся заново, как при первом запуске.',
       action: FilledButton(
         key: AppKeys.reset,
         onPressed: onReset,
@@ -575,42 +575,34 @@ class _ErrorLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-    final button = action;
+    final theme = Theme.of(context);
     return Scaffold(
-      body: Center(
+      body: ArcadeStatusLayout(
         key: viewKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+        icon: icon,
+        accent: theme.colorScheme.error,
+        title: title,
+        body: ArcadePanel(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 56, color: scheme.error),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 12),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  height: 1.5,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               Text(
                 hint,
                 textAlign: TextAlign.center,
-                style: textTheme.bodyLarge,
+                style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
               ),
-              if (button != null) ...[const SizedBox(height: 32), button],
             ],
           ),
         ),
+        actions: action,
       ),
     );
   }
