@@ -60,6 +60,8 @@ class ReviewOutcome {
     required this.responseTime,
     required this.timeLimit,
     this.hintsUsed = 0,
+    this.selectedAnswer,
+    this.timedOut = false,
   });
 
   /// Ответил ли пользователь верно. Истёкшее время — это false.
@@ -75,6 +77,12 @@ class ReviewOutcome {
 
   /// Сколько подсказок использовано. Понижает оценку.
   final int hintsUsed;
+
+  /// Точный вариант, выбранный игроком. У неответа варианта нет.
+  final String? selectedAnswer;
+
+  /// Время истекло. Выход посреди партии — отдельный вид неответа.
+  final bool timedOut;
 }
 
 /// Единственная точка сопряжения игры и ядра обучения.

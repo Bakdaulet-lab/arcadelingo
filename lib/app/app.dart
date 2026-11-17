@@ -19,6 +19,7 @@ import 'dart:async';
 import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution_view.dart';
+import 'package:arcadelingo/app/dictionary_view.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/app/learning_views.dart';
 import 'package:arcadelingo/app/progress_view.dart';
@@ -190,8 +191,10 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Маршрутом, как и «Источники»: стрелка «назад» в `AppBar` достаётся
   /// даром, и уйти с экрана можно всегда.
   void _openProgress() {
+    final navigator = Navigator.of(context);
+    final favorites = widget.ports.favorites;
     unawaited(
-      Navigator.of(context).push(
+      navigator.push(
         MaterialPageRoute<void>(
           builder:
               (context) => ProgressScreen(
@@ -199,6 +202,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 cards: widget.ports.cards,
                 streaks: widget.ports.streaks,
                 now: widget.now,
+                onDictionary:
+                    favorites == null
+                        ? null
+                        : () {
+                          unawaited(
+                            navigator.push(
+                              MaterialPageRoute<void>(
+                                builder:
+                                    (context) => DictionaryScreen(
+                                      items: widget.items,
+                                      level: _selectedLevel,
+                                      answers: widget.ports.answers,
+                                      favorites: favorites,
+                                      speech: widget.ports.speech,
+                                      gameTitles: {
+                                        for (final game in widget.games)
+                                          game.id: game.title,
+                                      },
+                                    ),
+                              ),
+                            ),
+                          );
+                        },
               ),
         ),
       ),
@@ -558,6 +584,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               builder:
                                   (context) => MistakesReviewScreen(
                                     words: mistakes.mistakes,
+                                    outcomes: mistakes.outcomes,
                                     level: level,
                                     speech: widget.ports.speech,
                                   ),

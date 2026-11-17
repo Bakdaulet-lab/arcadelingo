@@ -171,6 +171,7 @@ void main() {
           await _beginGame(tester, isNinja, LearningKeys.start);
           expect(find.byKey(LearningKeys.introduction), findsNothing);
           // Реальные тапы/свайпы по неверным ответам завершают обе игры тремя потерями.
+          final choices = <String>[];
           for (var index = 0; index < 3; index++) {
             expect(
               tester.widget<Text>(find.byKey(wordKey)).data,
@@ -191,6 +192,7 @@ void main() {
             final wrong = wrongLabels.firstWhere(
               (label) => label != selected[index].word.translation,
             );
+            choices.add(wrong);
             await _answer(tester, isNinja, wrong);
             expect(fixture.answers.records.last.correct, isFalse);
             await tester.pump(const Duration(milliseconds: 800));
@@ -220,6 +222,9 @@ void main() {
           expect(review.words.every((word) => word.level == level), isTrue);
           for (var index = 0; index < review.words.length; index++) {
             expect(find.text(review.words[index].translation), findsOneWidget);
+            expect(find.text('Правильный перевод'), findsOneWidget);
+            expect(find.text('Твой ответ'), findsOneWidget);
+            expect(find.text(choices[index]), findsOneWidget);
             await _tap(tester, find.byKey(LearningKeys.speak));
             expect(fixture.speech.spoken.last, review.words[index].text);
             if (index + 1 < review.words.length) {
@@ -300,6 +305,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 800));
       expect(find.byKey(summaryKey), findsOneWidget);
       await _tap(tester, find.byKey(_review));
+      expect(find.text('Время вышло'), findsOneWidget);
       expect(
         tester
             .widget<MistakesReviewScreen>(find.byType(MistakesReviewScreen))
