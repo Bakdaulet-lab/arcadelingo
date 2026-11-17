@@ -152,6 +152,36 @@ void main() {
     expect(starts, 0);
   });
 
+  for (final (partOfSpeech, label) in const [
+    ('adj', 'Прилагательное'),
+    ('adv', 'Наречие'),
+    ('noun', 'Существительное'),
+    ('verb', 'Глагол'),
+  ]) {
+    testWidgets('часть речи из словаря $partOfSpeech показана по-русски', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        MistakesReviewScreen(
+          words: [
+            Word(
+              id: 'part-of-speech-$partOfSpeech',
+              text: 'example',
+              translation: 'пример',
+              partOfSpeech: partOfSpeech,
+              level: CefrLevel.c2,
+            ),
+          ],
+          level: CefrLevel.c2,
+          speech: _Speech(),
+        ),
+      );
+      expect(find.text(label), findsOneWidget);
+      expect(find.text(partOfSpeech), findsNothing);
+    });
+  }
+
   testWidgets('озвучивается английское слово текущей карточки', (tester) async {
     final speech = _Speech();
     final semantics = tester.ensureSemantics();
