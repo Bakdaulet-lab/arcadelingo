@@ -222,8 +222,9 @@ void main() {
             expect(find.text(review.words[index].translation), findsOneWidget);
             await _tap(tester, find.byKey(LearningKeys.speak));
             expect(fixture.speech.spoken.last, review.words[index].text);
-            if (index + 1 < review.words.length)
+            if (index + 1 < review.words.length) {
               await _tap(tester, find.byKey(LearningKeys.next));
+            }
           }
           await _tap(tester, find.byKey(LearningKeys.done));
           expect(find.byKey(summaryKey), findsOneWidget);

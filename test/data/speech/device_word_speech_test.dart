@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:arcadelingo/data/speech/device_word_speech.dart';
 import 'package:arcadelingo/domain/ports/word_speech.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -35,8 +34,12 @@ void main() {
         {'name': 'American', 'locale': 'en-US'},
       ];
       var completed = false;
-      final result = speech.speak('  opportunity  ')
-        ..then((_) => completed = true);
+      final result = speech.speak('  opportunity  ');
+      unawaited(
+        result.then<void>((_) {
+          completed = true;
+        }),
+      );
       await _drain();
 
       expect(engine.spoken, ['opportunity']);
@@ -202,7 +205,11 @@ void main() {
       final lastSpeak = methods.lastIndexOf('speak');
       expect(methods.sublist(firstSpeak + 1, lastSpeak), contains('stop'));
       var latestCompleted = false;
-      latest.then((_) => latestCompleted = true);
+      unawaited(
+        latest.then<void>((_) {
+          latestCompleted = true;
+        }),
+      );
       engine.finish(0);
       await _drain();
       expect(latestCompleted, isFalse);

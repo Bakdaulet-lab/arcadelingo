@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:arcadelingo/data/speech/device_word_speech.dart';
 import 'package:arcadelingo/domain/ports/word_speech.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -48,7 +47,11 @@ void main() {
     (tester) async {
       initialize();
       SpeechResult? outcome;
-      speech.speak('library').then((value) => outcome = value);
+      unawaited(
+        speech.speak('library').then<void>((value) {
+          outcome = value;
+        }),
+      );
       await _settle(tester);
       expect(calls, contains('speak'));
       await _event(tester, 'speak.onError', 'Engine unavailable');
@@ -61,7 +64,11 @@ void main() {
     (tester) async {
       initialize();
       SpeechResult? outcome;
-      speech.speak('library').then((value) => outcome = value);
+      unawaited(
+        speech.speak('library').then<void>((value) {
+          outcome = value;
+        }),
+      );
       await _settle(tester);
       await _event(tester, 'speak.onCancel', null);
       utterance.complete(1);
@@ -76,7 +83,11 @@ void main() {
     initialize();
     voices = Completer<Object?>();
     SpeechResult? outcome;
-    speech.speak('library').then((value) => outcome = value);
+    unawaited(
+      speech.speak('library').then<void>((value) {
+        outcome = value;
+      }),
+    );
     await _settle(tester);
     await tester.pump(const Duration(seconds: 4));
     expect(outcome, SpeechResult.failed);
@@ -92,7 +103,11 @@ void main() {
   ) async {
     initialize();
     SpeechResult? outcome;
-    speech.speak('library').then((value) => outcome = value);
+    unawaited(
+      speech.speak('library').then<void>((value) {
+        outcome = value;
+      }),
+    );
     await _settle(tester);
     expect(calls.last, 'speak');
     await tester.pump(const Duration(seconds: 26));
