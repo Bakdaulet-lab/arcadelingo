@@ -221,6 +221,31 @@ void main() {
     expect(speech.stops, greaterThanOrEqualTo(1));
   });
 
+  testWidgets('возврат назад отменяет запуск, ожидающий остановки речи', (
+    tester,
+  ) async {
+    final speech = _Speech()..stopCompletion = Completer<void>();
+    var starts = 0;
+    await _pump(
+      tester,
+      WordIntroductionScreen(
+        words: const [_first],
+        level: CefrLevel.b1,
+        speech: speech,
+        onStart: () => starts++,
+      ),
+    );
+    await _tap(tester, LearningKeys.start);
+    expect(starts, 0);
+    await tester.pageBack();
+    speech.stopCompletion!.complete();
+    await tester.pump();
+    expect(starts, 0);
+    await tester.pumpAndSettle();
+    expect(find.text('Открыть'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('при сворачивании и возврате назад речь останавливается', (
     tester,
   ) async {
