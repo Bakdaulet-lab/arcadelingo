@@ -74,6 +74,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('320 dp: уровни сохраняют доступные цели касания', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
+    await _pumpHome(tester, size: const Size(320, 568));
+
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+  });
+
   for (final scale in [1.0, 2.0]) {
     testWidgets('320×568, шрифт $scale×: выбор и все действия доступны', (
       tester,
