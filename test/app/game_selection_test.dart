@@ -416,12 +416,13 @@ void main() {
     ) async {
       final seed = (await tester.runAsync(loadWordsSeed))!;
       final items = ok(seed);
-      final expected =
-          items
-              .where((item) => item.word.level == CefrLevel.b1)
-              .take(sessionTarget)
-              .toList();
-      expect(expected, hasLength(sessionTarget));
+      final b1 =
+          items.where((item) => item.word.level == CefrLevel.b1).toList();
+      // Порция 41 уже была в игре. Берём по карточке из начала, середины
+      // и конца добавленных порций, чтобы проверить их в обеих играх.
+      final added = b1.skip(38).toList();
+      final ready = [added.first, added[added.length ~/ 2], added.last];
+      final expected = [...ready, ...b1.take(sessionTarget - ready.length)];
 
       // Готовые к повтору A1/A2 шли бы раньше новых B1 без фильтра уровня.
       final cards = InMemoryCardStore({
@@ -429,7 +430,12 @@ void main() {
           items
               .firstWhere((item) => item.word.level == level)
               .word
-              .id: LeitnerCard(box: 2, due: _today),
+              .id: LeitnerCard(
+            box: 2,
+            due: _today.subtract(const Duration(days: 1)),
+          ),
+        for (final item in ready)
+          item.word.id: LeitnerCard(box: 2, due: _today),
       });
       final answers = InMemoryAnswerLog();
       await _startBundledGame(
