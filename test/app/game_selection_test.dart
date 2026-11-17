@@ -9,13 +9,18 @@ import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/session/observed_session.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
+import 'package:arcadelingo/features/games/falling_words/falling_words_run.dart';
+import 'package:arcadelingo/features/games/falling_words/falling_words_views.dart';
+import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
+import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_views.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/in_memory_answer_log.dart';
 import '../support/in_memory_stores.dart';
+import '../support/result.dart';
 import '../support/review_items.dart';
 import '../support/ritual_views.dart';
 
@@ -111,6 +116,57 @@ Future<void> _tap(WidgetTester tester, Finder target) async {
   await tester.ensureVisible(target);
   await tester.tap(target);
   await tester.pumpAndSettle();
+}
+
+Future<void> _startBundledGame(
+  WidgetTester tester,
+  GameEntry game,
+  CefrLevel level,
+  Result<List<ReviewItem>> seed, {
+  required InMemoryCardStore cards,
+  required InMemoryAnswerLog answers,
+}) async {
+  await _pump(
+    tester,
+    WordarcadeApp(
+      ports: AppPorts(
+        cards: cards,
+        streaks: InMemoryStreakStore(),
+        answers: answers,
+      ),
+      seed: seed,
+      now: () => _today,
+    ),
+  );
+  await _tap(tester, find.text(level.name.toUpperCase()));
+  await _tap(tester, find.text(game.title));
+  await tester.tap(find.byKey(AppKeys.play));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 350));
+  final ninja = game.id == ninjaSlashEntry.id;
+  expect(
+    find.byType(ninja ? NinjaSlashGame : FallingWordsGame),
+    findsOneWidget,
+  );
+  await tester.pump(ninja ? NinjaRun.windUpTime : FallingWordsRun.windUpTime);
+}
+
+Future<void> _answerBundledWord(
+  WidgetTester tester, {
+  required bool ninja,
+  required String translation,
+}) async {
+  final answer = find.text(translation);
+  expect(answer, findsOneWidget);
+  if (ninja) {
+    final center = tester.getCenter(answer);
+    final slash = await tester.startGesture(center - const Offset(20, 0));
+    await slash.moveTo(center + const Offset(20, 0));
+    await slash.up();
+  } else {
+    await tester.tap(answer);
+  }
+  await tester.pump();
 }
 
 void main() {
@@ -331,45 +387,84 @@ void main() {
       final cards = InMemoryCardStore({
         'bookcase': LeitnerCard(box: 2, due: _today),
       });
-      await _pump(
+      await _startBundledGame(
         tester,
-        WordarcadeApp(
-          ports: AppPorts(
-            cards: cards,
-            streaks: InMemoryStreakStore(),
-            answers: answers,
-          ),
-          seed: seed,
-          now: () => _today,
-        ),
+        game,
+        CefrLevel.a2,
+        seed,
+        cards: cards,
+        answers: answers,
       );
-      await _tap(tester, find.text('A2'));
-      await _tap(tester, find.text(game.title));
-      await tester.tap(find.byKey(AppKeys.play));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pump(const Duration(milliseconds: 700));
       await tester.pump(const Duration(seconds: 1));
 
       expect(find.text('bookcase'), findsOneWidget);
-      final answer = find.text('книжный шкаф');
-      expect(answer, findsOneWidget);
-      if (game.id == ninjaSlashEntry.id) {
-        expect(find.byType(NinjaSlashGame), findsOneWidget);
-        final center = tester.getCenter(answer);
-        final slash = await tester.startGesture(center - const Offset(20, 0));
-        await slash.moveTo(center + const Offset(20, 0));
-        await slash.up();
-      } else {
-        expect(find.byType(FallingWordsGame), findsOneWidget);
-        await tester.tap(answer);
-      }
-      await tester.pump();
+      await _answerBundledWord(
+        tester,
+        ninja: game.id == ninjaSlashEntry.id,
+        translation: 'книжный шкаф',
+      );
 
       final record = answers.records.single;
       expect(record.wordId, 'bookcase');
       expect(record.gameId, game.id);
       expect(record.correct, isTrue);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('${game.title}: весь раунд только со словами B1 из бандла', (
+      tester,
+    ) async {
+      final seed = (await tester.runAsync(loadWordsSeed))!;
+      final items = ok(seed);
+      final expected =
+          items
+              .where((item) => item.word.level == CefrLevel.b1)
+              .take(sessionTarget)
+              .toList();
+      expect(expected, hasLength(sessionTarget));
+
+      // Готовые к повтору A1/A2 шли бы раньше новых B1 без фильтра уровня.
+      final cards = InMemoryCardStore({
+        for (final level in [CefrLevel.a1, CefrLevel.a2])
+          items
+              .firstWhere((item) => item.word.level == level)
+              .word
+              .id: LeitnerCard(box: 2, due: _today),
+      });
+      final answers = InMemoryAnswerLog();
+      await _startBundledGame(
+        tester,
+        game,
+        CefrLevel.b1,
+        seed,
+        cards: cards,
+        answers: answers,
+      );
+
+      final ninja = game.id == ninjaSlashEntry.id;
+      final prompt = find.byKey(ninja ? NinjaKeys.word : FallingWordsKeys.word);
+      for (final (index, item) in expected.indexed) {
+        await tester.pump(const Duration(seconds: 1));
+        expect(tester.widget<Text>(prompt).data, item.word.text);
+        await _answerBundledWord(
+          tester,
+          ninja: ninja,
+          translation: item.word.translation,
+        );
+        expect(answers.records, hasLength(index + 1));
+        final record = answers.records.last;
+        expect(record.wordId, item.word.id);
+        expect(record.gameId, game.id);
+        expect(record.correct, isTrue);
+        await tester.pump(
+          ninja ? NinjaRun.correctReveal : FallingWordsRun.correctReveal,
+        );
+      }
+      expect(
+        find.byKey(ninja ? NinjaKeys.summary : FallingWordsKeys.summary),
+        findsOneWidget,
+      );
+      expect(answers.records, hasLength(sessionTarget));
       await tester.pumpWidget(const SizedBox());
     });
   }

@@ -12,19 +12,20 @@ void main() {
 
   // Второй счётчик размера сида. Первый — «ровно N слов» в
   // test/assets/words_seed_test.dart; правятся оба и в одном коммите порции.
-  test(
-    'loadWordsSeed: 1702 единицы показа, новые A2 дописаны в конец',
-    () async {
-      final items = ok(await loadWordsSeed());
+  test('loadWordsSeed: 1740 единиц показа, B1 дописан после A2', () async {
+    final items = ok(await loadWordsSeed());
 
-      expect(items, hasLength(1702));
-      expect(items.first.word.id, 'apple');
-      expect(items.first.word.level, CefrLevel.a1);
-      expect(items.first.distractors, hasLength(3));
-      expect(items[719].word.id, 'skiing');
-      expect(items[719].word.level, CefrLevel.a2);
-      expect(items.last.word.id, 'bookcase');
-      expect(items.last.word.level, CefrLevel.a2);
-    },
-  );
+    expect(items, hasLength(1740));
+    expect(items.first.word.id, 'apple');
+    expect(items.first.word.level, CefrLevel.a1);
+    expect(items.first.distractors, hasLength(3));
+    expect(items[719].word.id, 'skiing');
+    expect(items[719].word.level, CefrLevel.a2);
+    expect(items[1701].word.id, 'bookcase');
+    expect(items[1701].word.level, CefrLevel.a2);
+    expect(items[1702].word.id, 'climate');
+    expect(items[1702].word.level, CefrLevel.b1);
+    expect(items.last.word.id, 'exhausted');
+    expect(items.last.word.level, CefrLevel.b1);
+  });
 }
