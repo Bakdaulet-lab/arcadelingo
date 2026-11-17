@@ -130,6 +130,7 @@ Future<void> pumpRitualGolden(
       theme: wordarcadeTheme(platform: TargetPlatform.android),
       debugShowCheckedModeBanner: false,
       home: PlayView(
+        onLearn: () {},
         onPlay: () {},
         onProgress: () {},
         onSettings: () {},

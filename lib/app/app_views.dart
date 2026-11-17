@@ -31,6 +31,8 @@ abstract final class AppKeys {
   /// Кнопка «Играть». Она же признак того, что показан домашний экран.
   static const Key play = Key('app.play');
 
+  static const Key learn = Key('app.learn');
+
   static const Key gameSelector = Key('app.game_selector');
 
   static const Key levelSelector = Key('app.level_selector');
@@ -90,6 +92,7 @@ class PlayView extends StatelessWidget {
     required this.onSettings,
     required this.onSources,
     super.key,
+    this.onLearn,
     this.ritual,
     this.week,
     this.games = const [],
@@ -125,6 +128,8 @@ class PlayView extends StatelessWidget {
 
   final VoidCallback? onPlay;
 
+  final VoidCallback? onLearn;
+
   /// Вход на «Источники».
   ///
   /// Здесь, а не на итогах: там кнопка конкурировала бы с «Ещё раз» и
@@ -152,6 +157,7 @@ class PlayView extends StatelessWidget {
       level: selectedLevel,
       ritual: ritual,
       onPlay: onPlay,
+      onLearn: onLearn,
       onProgress: onProgress,
       onSettings: onSettings,
     );
@@ -270,6 +276,7 @@ class _HomeActions extends StatelessWidget {
     required this.level,
     required this.ritual,
     required this.onPlay,
+    required this.onLearn,
     required this.onProgress,
     required this.onSettings,
   });
@@ -278,6 +285,7 @@ class _HomeActions extends StatelessWidget {
   final CefrLevel? level;
   final StreakView? ritual;
   final VoidCallback? onPlay;
+  final VoidCallback? onLearn;
   final VoidCallback onProgress;
   final VoidCallback onSettings;
 
@@ -297,6 +305,26 @@ class _HomeActions extends StatelessWidget {
               theme.textTheme.labelLarge!,
               FontWeight.w500,
             ).copyWith(color: colors.onSurfaceVariant),
+          ),
+          const SizedBox(height: 10),
+        ],
+        if (onLearn != null) ...[
+          OutlinedButton.icon(
+            key: AppKeys.learn,
+            onPressed: onLearn,
+            icon: const Icon(Icons.school_outlined),
+            label: const Text('Знакомство и игра', textAlign: TextAlign.center),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(52),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              textStyle: withWeight(
+                theme.textTheme.titleMedium!,
+                FontWeight.w600,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
           ),
           const SizedBox(height: 10),
         ],

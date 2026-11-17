@@ -51,6 +51,8 @@ class FallingWordsGame extends StatefulWidget {
     this.seed,
     this.summaryFooter,
     this.onRoundOver,
+    this.mistakeCount,
+    this.onReviewMistakes,
   });
 
   final ReviewSession session;
@@ -62,6 +64,10 @@ class FallingWordsGame extends StatefulWidget {
 
   /// «Выйти» с итогов и с «на сегодня всё».
   final VoidCallback onExit;
+
+  /// Разбор и число разных слов с ошибками предоставляет хост.
+  final int Function()? mistakeCount;
+  final VoidCallback? onReviewMistakes;
 
   /// Строка «что дальше» под статистикой итогов; null — строки нет.
   /// Спрашивается один раз, в момент перехода к итогам: остались ли слова к
@@ -326,6 +332,8 @@ class _FallingWordsGameState extends State<FallingWordsGame>
             footer: _footer,
             onPlayAgain: widget.onPlayAgain,
             onExit: widget.onExit,
+            mistakeCount: widget.mistakeCount?.call() ?? 0,
+            onReviewMistakes: widget.onReviewMistakes,
           ),
           FallingPhase.falling || FallingPhase.reveal => _playfield(context),
         },

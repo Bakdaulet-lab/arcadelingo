@@ -33,6 +33,8 @@ class GameLaunch {
     required this.onExit,
     required this.onRoundOver,
     this.sounds = const NoopSounds(),
+    this.mistakeCount,
+    this.onReviewMistakes,
   });
 
   /// Сессия, уже собранная usecase'ом и обёрнутая наблюдателями.
@@ -46,6 +48,12 @@ class GameLaunch {
 
   /// «Выйти» с экранов конца партии.
   final VoidCallback onExit;
+
+  /// Число разных слов с ошибками; хост читает его после ответов партии.
+  final int Function()? mistakeCount;
+
+  /// Открыть разбор, не создавая новую игровую сессию.
+  final VoidCallback? onReviewMistakes;
 
   /// Партия дошла до конца: игра показала экран итогов или «жизни кончились».
   ///
@@ -117,6 +125,8 @@ Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
   onPlayAgain: launch.onPlayAgain,
   onExit: launch.onExit,
   onRoundOver: launch.onRoundOver,
+  mistakeCount: launch.mistakeCount,
+  onReviewMistakes: launch.onReviewMistakes,
 );
 
 Widget _buildNinjaSlash(GameLaunch launch) => NinjaSlashGame(
@@ -126,4 +136,6 @@ Widget _buildNinjaSlash(GameLaunch launch) => NinjaSlashGame(
   onPlayAgain: launch.onPlayAgain,
   onExit: launch.onExit,
   onRoundOver: launch.onRoundOver,
+  mistakeCount: launch.mistakeCount,
+  onReviewMistakes: launch.onReviewMistakes,
 );
