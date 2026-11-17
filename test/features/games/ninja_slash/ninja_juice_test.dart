@@ -1370,6 +1370,64 @@ void main() {
       expect(sounds.played, [GameSound.miss]);
     });
 
+    testWidgets('последний верный рез и показ итогов звучат по одному разу', (
+      tester,
+    ) async {
+      final sounds = FakeSounds();
+      await _pumpGame(tester, items: wordItems(1), sounds: sounds);
+
+      await tester.pump(const Duration(seconds: 1));
+      await _slice(tester, _correctIndex(tester, 1));
+      await tester.pump(const Duration(milliseconds: 699));
+      expect(find.byKey(NinjaKeys.summary), findsNothing);
+      expect(sounds.played, [GameSound.slice]);
+
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(find.byKey(NinjaKeys.summary), findsOneWidget);
+      expect(sounds.played, [GameSound.slice, GameSound.roundEnd]);
+
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpWidget(const SizedBox());
+      expect(sounds.played, [GameSound.slice, GameSound.roundEnd]);
+    });
+
+    testWidgets('после третьего промаха звучит конец партии', (tester) async {
+      final sounds = FakeSounds();
+      await _pumpGame(tester, sounds: sounds);
+
+      for (var word = 1; word <= 3; word++) {
+        await tester.pump(const Duration(seconds: 1));
+        await _slice(tester, _wrongIndex(tester, word));
+        expect(sounds.played, List.filled(word, GameSound.miss));
+        await tester.pump(const Duration(milliseconds: 800));
+      }
+
+      expect(find.byKey(NinjaKeys.summary), findsOneWidget);
+      expect(sounds.played, [
+        GameSound.miss,
+        GameSound.miss,
+        GameSound.miss,
+        GameSound.roundEnd,
+      ]);
+    });
+
+    testWidgets('пустая сессия не звучит', (tester) async {
+      final sounds = FakeSounds();
+      await _pumpGame(tester, items: const [], sounds: sounds);
+
+      expect(find.byKey(NinjaKeys.nothingToday), findsOneWidget);
+      expect(sounds.played, isEmpty);
+    });
+
+    testWidgets('выход в полёте не звучит', (tester) async {
+      final sounds = FakeSounds();
+      await _pumpGame(tester, sounds: sounds);
+
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpWidget(const SizedBox());
+      expect(sounds.played, isEmpty);
+    });
+
     testWidgets('ровно один звук на показ', (tester) async {
       final sounds = FakeSounds();
       await _pumpGame(tester, sounds: sounds);

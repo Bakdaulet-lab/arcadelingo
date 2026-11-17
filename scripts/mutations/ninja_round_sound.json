@@ -1,0 +1,50 @@
+[
+  {
+    "name": "конец партии не звучит",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      widget.sounds.play(GameSound.roundEnd);\n",
+    "new": ""
+  },
+  {
+    "name": "итоги звучат дважды",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      widget.sounds.play(GameSound.roundEnd);",
+    "new": "      widget.sounds.play(GameSound.roundEnd);\n      widget.sounds.play(GameSound.roundEnd);"
+  },
+  {
+    "name": "сигнал играет до показа итогов, на последнем верном резе",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "  void _startReveal() {",
+    "new": "  void _startReveal() {\n    if (widget.session.isFinished) widget.sounds.play(GameSound.roundEnd);"
+  },
+  {
+    "name": "сигнал играет и между словами",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _run.advance();\n    if (_run.phase == NinjaPhase.over) {\n      widget.sounds.play(GameSound.roundEnd);",
+    "new": "    _run.advance();\n    widget.sounds.play(GameSound.roundEnd);\n    if (_run.phase == NinjaPhase.over) {"
+  },
+  {
+    "name": "потеря последней жизни оставляет итоги без звука",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "      widget.sounds.play(GameSound.roundEnd);",
+    "new": "      if (_run.lives > 0) widget.sounds.play(GameSound.roundEnd);"
+  },
+  {
+    "name": "пустая сессия звучит как завершённая партия",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _run.start();",
+    "new": "    _run.start();\n    if (_run.phase == NinjaPhase.nothingToday) widget.sounds.play(GameSound.roundEnd);"
+  },
+  {
+    "name": "уход в полёте звучит как завершённая партия",
+    "file": "lib/features/games/ninja_slash/ninja_slash_game.dart",
+    "old": "    _run.abandon(_elapsed);",
+    "new": "    if (_run.phase == NinjaPhase.flying) widget.sounds.play(GameSound.roundEnd);\n    _run.abandon(_elapsed);"
+  },
+  {
+    "name": "вместо финального файла назначен промах",
+    "file": "lib/data/sound/audio_sounds.dart",
+    "old": "  GameSound.roundEnd: 'sound/round_end.wav',",
+    "new": "  GameSound.roundEnd: 'sound/miss.wav',"
+  }
+]

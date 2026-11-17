@@ -45,6 +45,18 @@
 таблица `cmap` покрывает А-Я, а-я, Ё, ё, знак умножения, кавычки-ёлочки,
 тире и многоточие — всё, что встречается на экранах.
 
+## Звуковые эффекты «Ниндзя-слэша»
+
+- **Автор:** Kenney (Kenney Vleugels).
+- **Лицензия:** Creative Commons Zero 1.0 (CC0) —
+  <https://creativecommons.org/publicdomain/zero/1.0/>.
+- **RPG Audio:** <https://kenney.nl/assets/rpg-audio>. `knifeSlice.ogg`
+  → `slice.wav`, `knifeSlice2.ogg` → `slice_hot.wav`.
+- **Interface Sounds:** <https://kenney.nl/assets/interface-sounds>.
+  `drop_004.ogg` → `miss.wav`, `confirmation_001.ogg` → `round_end.wav`.
+- **Обработка:** резы укорочены и ускорены, удар укорочен и приглушён;
+  уровни скорректированы, все эффекты переведены в моно PCM WAV.
+
 ## Иконки Material
 
 Идут из Flutter SDK (`uses-material-design: true`), Apache License 2.0.

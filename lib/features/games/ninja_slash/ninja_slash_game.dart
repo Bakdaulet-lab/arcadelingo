@@ -264,6 +264,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     _reveal.stop();
     _run.advance();
     if (_run.phase == NinjaPhase.over) {
+      widget.sounds.play(GameSound.roundEnd);
       _footer = widget.summaryFooter?.call();
       widget.onRoundOver?.call();
     }
@@ -384,9 +385,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   /// Озвучить итог показа.
   ///
   /// Зовётся там же, где [_feel], и по тем же правилам: только на принятом
-  /// ответе. Горячая серия получает свой звук — тот же свист с тоном
-  /// поверх, а не второе событие: ухо должно узнать рез, а не услышать
-  /// что-то новое.
+  /// ответе. Горячая серия получает отдельный вариант звука реза.
   ///
   /// Флаг «убрать анимации» здесь не смотрится: звук не движение на экране.
   /// Выключён он или нет, решает хост подменой порта, а не страж внутри.

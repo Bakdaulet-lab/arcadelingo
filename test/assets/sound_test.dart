@@ -1,113 +1,71 @@
-// Три звука в `assets/sound/` — ровно то, что написано в SPEC.
-//
-// Главная проверка здесь не «файл на месте», а «файл — это те числа»:
-// тест пересобирает WAV в памяти из `tool/sound/sound_synth.dart` и сверяет
-// байты. Отсюда следует, что таблица в `SPEC.md` описывает содержимое
-// репозитория, а не намерение: разошлись — красный тест в тот же день, а
-// не тихо другой звук в проде.
-//
-// Прецедент — `tool/seed_rules.dart`: правила содержания живут в `tool/`, и
-// их же применяет тест ассета.
+import 'dart:typed_data' show Endian;
 
-import 'dart:convert';
-import 'dart:io';
-
+import 'package:arcadelingo/data/sound/audio_sounds.dart';
+import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../tool/sound/sound_synth.dart';
+const _expected = {
+  GameSound.slice: (path: 'sound/slice.wav', milliseconds: 230),
+  GameSound.sliceHot: (path: 'sound/slice_hot.wav', milliseconds: 290),
+  GameSound.miss: (path: 'sound/miss.wav', milliseconds: 170),
+  GameSound.roundEnd: (path: 'sound/round_end.wav', milliseconds: 290),
+};
 
-/// Целое из little-endian куска WAV-заголовка.
-int _le(List<int> bytes, int at, int width) {
-  var value = 0;
-  for (var i = width - 1; i >= 0; i--) {
-    value = (value << 8) | bytes[at + i];
+String _tag(ByteData data, int offset) => String.fromCharCodes([
+  for (var index = 0; index < 4; index++) data.getUint8(offset + index),
+]);
+
+ByteData _chunk(ByteData wav, String name) {
+  // WAV может содержать служебные чанки и байт выравнивания после нечётных.
+  for (var offset = 12; offset + 8 <= wav.lengthInBytes;) {
+    final length = wav.getUint32(offset + 4, Endian.little);
+    final start = offset + 8;
+    final end = start + length;
+    if (end > wav.lengthInBytes) break;
+    if (_tag(wav, offset) == name) return ByteData.sublistView(wav, start, end);
+    offset = end + (length & 1);
   }
-  return value;
+  throw StateError('В WAV не найден чанк $name');
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('Файлы — это те самые числа', () {
-    for (final name in sounds.keys) {
-      test('$name пересобирается байт в байт', () async {
-        final onDisk = File('assets/sound/$name').readAsBytesSync();
-
-        expect(
-          onDisk,
-          wav(sounds[name]!()),
-          reason:
-              'файл разошёлся с tool/sound/sound_synth.dart. Пересобрать: '
-              'dart run tool/sound/render_sounds.dart',
-        );
-      });
-    }
+  test('каждое звуковое событие связано со своим ассетом', () {
+    expect(
+      soundAssets,
+      _expected.map((sound, asset) => MapEntry(sound, asset.path)),
+    );
+    expect(soundAssets.keys, unorderedEquals(GameSound.values));
   });
 
-  group('Заголовок WAV', () {
-    late Map<String, List<int>> files;
+  for (final asset in _expected.values) {
+    test('${asset.path}: короткий моно PCM WAV включён в бандл', () async {
+      final wav = await rootBundle.load('assets/${asset.path}');
+      expect(_tag(wav, 0), 'RIFF');
+      expect(_tag(wav, 8), 'WAVE');
+      expect(wav.getUint32(4, Endian.little) + 8, wav.lengthInBytes);
 
-    setUpAll(() {
-      files = {
-        for (final name in sounds.keys)
-          name: File('assets/sound/$name').readAsBytesSync(),
-      };
-    });
+      final format = _chunk(wav, 'fmt ');
+      expect(format.getUint16(0, Endian.little), 1, reason: 'PCM');
+      expect(format.getUint16(2, Endian.little), 1, reason: 'моно');
+      expect(format.getUint32(4, Endian.little), 44100);
+      expect(format.getUint16(14, Endian.little), 16);
 
-    test('RIFF/WAVE, моно, 44.1 кГц, 16 бит', () {
-      for (final entry in files.entries) {
-        final bytes = entry.value;
-        expect(utf8.decode(bytes.sublist(0, 4)), 'RIFF', reason: entry.key);
-        expect(utf8.decode(bytes.sublist(8, 12)), 'WAVE', reason: entry.key);
-        expect(_le(bytes, 22, 2), 1, reason: 'каналов у ${entry.key}');
-        expect(_le(bytes, 24, 4), 44100, reason: 'частота у ${entry.key}');
-        expect(_le(bytes, 34, 2), 16, reason: 'бит у ${entry.key}');
+      final samples = _chunk(wav, 'data');
+      expect(samples.lengthInBytes.isEven, isTrue);
+      expect(samples.lengthInBytes / 2 / 44.1, closeTo(asset.milliseconds, 10));
+      var peak = 0;
+      for (var offset = 0; offset < samples.lengthInBytes; offset += 2) {
+        final amplitude = samples.getInt16(offset, Endian.little).abs();
+        if (amplitude > peak) peak = amplitude;
       }
+      expect(
+        peak,
+        inExclusiveRange(1000, 32767),
+        reason: 'не тишина и не клиппинг',
+      );
     });
-
-    test('длительности из SPEC: 180, 260 и 220 мс', () {
-      int ms(String name) {
-        final bytes = files[name]!;
-        return (_le(bytes, 40, 4) ~/ 2) * 1000 ~/ 44100;
-      }
-
-      expect(ms('slice.wav'), 180);
-      expect(ms('slice_hot.wav'), 260);
-      expect(ms('miss.wav'), 220);
-    });
-
-    test('не тишина и не клиппинг', () {
-      for (final entry in files.entries) {
-        final bytes = entry.value;
-        var loudest = 0;
-        for (var i = 44; i + 1 < bytes.length; i += 2) {
-          var sample = _le(bytes, i, 2);
-          if (sample >= 32768) sample -= 65536;
-          if (sample.abs() > loudest) loudest = sample.abs();
-        }
-        expect(loudest / 32767, closeTo(peak, 0.001), reason: entry.key);
-      }
-    });
-  });
-
-  group('Одинаковый сид — одинаковые байты', () {
-    test('свист не зависит от прогона: без этого сверка бессмысленна', () {
-      expect(wav(sliceWave()), wav(sliceWave()));
-      expect(wav(sliceHotWave()), wav(sliceHotWave()));
-    });
-  });
-
-  group('Ассеты зарегистрированы', () {
-    test('каждый файл читается из бандла, а не только с диска', () async {
-      // Шов `rootBundle`, а не `File`: в бандл едет то, что перечислено в
-      // pubspec, и забытая строка там — ровно тот дефект, который на диске
-      // не виден. Та же грабля, что в 0.14 с ATTRIBUTION.md.
-      for (final name in sounds.keys) {
-        final data = await rootBundle.load('assets/sound/$name');
-
-        expect(data.lengthInBytes, greaterThan(44), reason: name);
-      }
-    });
-  });
+  }
 }
