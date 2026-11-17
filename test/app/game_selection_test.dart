@@ -415,6 +415,7 @@ void main() {
       (CefrLevel.b1, 38),
       (CefrLevel.b2, 0),
       (CefrLevel.c1, 0),
+      (CefrLevel.c2, 0),
     ]) {
       final label = level.name.toUpperCase();
       testWidgets(
@@ -444,6 +445,7 @@ void main() {
               CefrLevel.b1,
               CefrLevel.b2,
               CefrLevel.c1,
+              CefrLevel.c2,
             ])
               if (other != level)
                 items

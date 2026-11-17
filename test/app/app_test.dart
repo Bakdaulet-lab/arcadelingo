@@ -454,13 +454,16 @@ void main() {
       );
     });
 
-    testWidgets('на экране указаны источник и лицензия C1', (tester) async {
+    testWidgets('на экране указаны источник и лицензии C1 и C2', (
+      tester,
+    ) async {
       await _pumpApp(tester);
       await _tapAndSettleRoute(tester, AppKeys.sources);
 
       final text = _screenText(tester);
       expect(text, contains('Octanove Labs'));
       expect(text, contains('CC BY-SA 4.0'));
+      expect(text, contains('words_c2.json'));
     });
 
     testWidgets('разметка съедена, а не показана', (tester) async {

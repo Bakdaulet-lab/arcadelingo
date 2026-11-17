@@ -33,33 +33,43 @@ void main() {
   late List<SeedProblem> problems;
   late List<Object?> words;
   late List<Object?> c1Words;
+  late List<Object?> c2Words;
   late String registeredPairs;
 
   // rootBundle, а не dart:io: заодно проверяет регистрацию ассета в pubspec.yaml.
   setUpAll(() async {
     final base = jsonDecode(await rootBundle.loadString(wordsSeedAssetPath));
     final c1 = jsonDecode(await rootBundle.loadString(wordsC1AssetPath));
+    final c2 = jsonDecode(await rootBundle.loadString(wordsC2AssetPath));
     words = _wordsOf(base);
     c1Words = _wordsOf(c1);
+    c2Words = _wordsOf(c2);
     combined = {
       'version': 1,
       'source_lang': 'en',
       'target_lang': 'ru',
-      'words': [...words, ...c1Words],
+      'words': [...words, ...c1Words, ...c2Words],
     };
     problems = [
       ...validateSeed(base),
       ...validateSeed(c1),
+      ...validateSeed(c2),
       ...validateSeed(combined),
     ];
     final basePairs = File(confusablesPath).readAsStringSync().trimRight();
     final c1Pairs = File('tool/c1/confusables.csv').readAsLinesSync().skip(1);
-    registeredPairs = [basePairs, ...c1Pairs].join('\n');
+    final c2Pairs = File('tool/c2/confusables.csv').readAsLinesSync().skip(1);
+    registeredPairs = [basePairs, ...c1Pairs, ...c2Pairs].join('\n');
   });
 
   test('865 карточек в отдельном ассете, все уровня C1', () {
     expect(c1Words, hasLength(865));
     expect(c1Words, everyElement(containsPair('level', 'c1')));
+  });
+
+  test('829 карточек в отдельном ассете, все уровня C2', () {
+    expect(c2Words, hasLength(829));
+    expect(c2Words, everyElement(containsPair('level', 'c2')));
   });
 
   void ruleTest(String name, SeedRule rule) {
