@@ -155,26 +155,29 @@ void main() {
   testWidgets('озвучивается английское слово текущей карточки', (tester) async {
     final speech = _Speech();
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-    await _pump(
-      tester,
-      WordIntroductionScreen(
-        words: const [_first, _second],
-        level: CefrLevel.b1,
-        speech: speech,
-        onStart: () {},
-      ),
-    );
-    expect(find.bySemanticsLabel('Произнести whisper'), findsOneWidget);
-    await _tap(tester, LearningKeys.speak);
-    expect(speech.spoken, ['whisper']);
-    await _tap(tester, LearningKeys.next);
-    await _tap(tester, LearningKeys.speak);
-    expect(speech.spoken, ['whisper', 'journey']);
-    expect(
-      speech.events.indexOf('stop'),
-      lessThan(speech.events.lastIndexOf('speak:journey')),
-    );
+    try {
+      await _pump(
+        tester,
+        WordIntroductionScreen(
+          words: const [_first, _second],
+          level: CefrLevel.b1,
+          speech: speech,
+          onStart: () {},
+        ),
+      );
+      expect(find.bySemanticsLabel('Произнести whisper'), findsOneWidget);
+      await _tap(tester, LearningKeys.speak);
+      expect(speech.spoken, ['whisper']);
+      await _tap(tester, LearningKeys.next);
+      await _tap(tester, LearningKeys.speak);
+      expect(speech.spoken, ['whisper', 'journey']);
+      expect(
+        speech.events.indexOf('stop'),
+        lessThan(speech.events.lastIndexOf('speak:journey')),
+      );
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('переход в игру ждёт остановки речи и выполняется один раз', (
