@@ -21,6 +21,8 @@ import 'dart:io';
 
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution_view.dart';
+import 'package:arcadelingo/app/games.dart';
+import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/ritual_views.dart';
@@ -61,6 +63,11 @@ void main() {
         onSettings: () {},
         onSources: () {},
         ritual: ritualView(days: 5),
+        games: wordarcadeGames,
+        selectedGameId: wordarcadeGames.last.id,
+        onGameSelected: (_) {},
+        selectedLevel: CefrLevel.a2,
+        onLevelSelected: (_) {},
       ),
     );
     await peek(tester, 'home_streak');

@@ -139,6 +139,8 @@ Future<void> pumpRitualGolden(
         games: wordarcadeGames,
         selectedGameId: wordarcadeGames.first.id,
         onGameSelected: (_) {},
+        selectedLevel: CefrLevel.a1,
+        onLevelSelected: (_) {},
       ),
     ),
   );

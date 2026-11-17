@@ -103,7 +103,7 @@ class HomeScreen extends StatefulWidget {
 
   final AppPorts ports;
 
-  /// Сид целиком: сессия сама решает, что из него взять.
+  /// Словарь всех уровней. Выбранный уровень передаётся при старте партии.
   final List<ReviewItem> items;
 
   final DateTime Function() now;
@@ -116,6 +116,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String? _selectedGameId;
+  CefrLevel _selectedLevel = CefrLevel.a1;
 
   GameEntry get _selectedGame => widget.games.firstWhere(
     (game) => game.id == _selectedGameId,
@@ -123,6 +124,11 @@ class _HomeScreenState extends State<HomeScreen> {
   );
 
   void _selectGame(String id) => setState(() => _selectedGameId = id);
+
+  bool get _hasWordsForLevel =>
+      widget.items.any((item) => item.word.level == _selectedLevel);
+
+  void _selectLevel(CefrLevel level) => setState(() => _selectedLevel = level);
 
   /// Серия глазами сегодняшнего дня; null — документ не читается.
   ///
@@ -152,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final failure = _stateFailure;
     return failure == null
         ? PlayView(
-          onPlay: _start,
+          onPlay: _hasWordsForLevel ? _start : null,
           onProgress: _openProgress,
           onSettings: _openSettings,
           onSources: _openSources,
@@ -161,6 +167,8 @@ class _HomeScreenState extends State<HomeScreen> {
           games: widget.games,
           selectedGameId: widget.games.isEmpty ? null : _selectedGame.id,
           onGameSelected: _selectGame,
+          selectedLevel: _selectedLevel,
+          onLevelSelected: _selectLevel,
         )
         : StateErrorView(message: failure.message, onReset: _reset);
   }
@@ -283,6 +291,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    final available = widget.items.map((item) => item.word.level).toSet();
+    _selectedLevel = CefrLevel.values.firstWhere(
+      available.contains,
+      orElse: () => CefrLevel.a1,
+    );
     _refreshRitual();
     // «Открыл приложение» — здесь, а не в `main.dart`: оттуда событие не
     // увидел бы ни один тест, а проводку без приборов проверять нечем.
@@ -377,6 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// результата. Это и было целью Этапа 1: «после ответа серия продлилась»
   /// проверяется без дерева виджетов.
   void _start() {
+    if (!_hasWordsForLevel) return;
     // Последнее состояние, приехавшее из сессии: по нему считается строка
     // итогов. До первого ответа это то, что прочитано из хранилища.
     var latest = <String, LeitnerCard>{};
@@ -386,6 +400,7 @@ class _HomeScreenState extends State<HomeScreen> {
       throw StateError('реестр игр пуст: запускать нечего');
     }
     final game = _selectedGame;
+    final level = _selectedLevel;
     final started = StartSession(
       cards: widget.ports.cards,
       streaks: widget.ports.streaks,
@@ -394,6 +409,7 @@ class _HomeScreenState extends State<HomeScreen> {
       answerLog: widget.ports.answers,
     )(
       items: widget.items,
+      level: level,
       gameId: game.id,
       onCardsChanged: (changed) => latest = changed,
     );
@@ -406,7 +422,7 @@ class _HomeScreenState extends State<HomeScreen> {
           AppEventKind.roundStart,
           sessionId: value is ObservedSession ? value.sessionId : null,
         );
-        _play(game, value, () => _footer(latest));
+        _play(game, value, () => _footer(latest, level));
       case Err(:final failure):
         setState(() => _stateFailure = failure);
     }
@@ -503,10 +519,11 @@ class _HomeScreenState extends State<HomeScreen> {
   /// «Возвращайся завтра» было бы ложью ровно наоборот. Верные ответы
   /// уходят в коробку 2 и выше, со сроком от суток, и из «готовых»
   /// выпадают сами.
-  String _footer(Map<String, LeitnerCard> cards) {
+  String _footer(Map<String, LeitnerCard> cards, CefrLevel level) {
     final now = widget.now();
     var fresh = false;
     for (final item in widget.items) {
+      if (item.word.level != level) continue;
       final card = cards[item.word.id];
       if (card == null) {
         fresh = true;

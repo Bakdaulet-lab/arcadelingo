@@ -7,8 +7,8 @@
 /// битая запись — [Err] с id слова, без исключений, без `as`/`.cast()` на
 /// данных из JSON, единственный `catch` — `FormatException` из `jsonDecode`.
 ///
-/// Здесь проверяется только форма: наличие и типы полей. Содержание —
-/// закрытый набор `part_of_speech`, ровно три дистрактора, кириллица,
+/// Здесь проверяется форма записи, а `level` разбирается как [CefrLevel].
+/// Содержание — закрытый набор `part_of_speech`, ровно три дистрактора, кириллица,
 /// уникальность id — валидируют контент-тесты
 /// `test/assets/words_seed_test.dart` на самом ассете: это свойства
 /// конкретного сида, а не формата.
@@ -76,6 +76,12 @@ Result<ReviewItem> _parseItem(int index, Object? raw) {
       Failure('сид слов: слово "$id": translation отсутствует или пуст'),
     );
   }
+  final level = _parseLevel(raw);
+  if (level == null) {
+    return Err(
+      Failure('сид слов: слово "$id": неизвестный level ${raw['level']}'),
+    );
+  }
   final partOfSpeech = raw['part_of_speech'];
   if (partOfSpeech is! String?) {
     return Err(
@@ -103,11 +109,23 @@ Result<ReviewItem> _parseItem(int index, Object? raw) {
         id: id,
         text: text,
         translation: translation,
+        level: level,
         partOfSpeech: partOfSpeech,
       ),
       distractors: distractors,
     ),
   );
+}
+
+/// В старых записях v1 поле может отсутствовать. Явно заданный уровень
+/// должен совпадать с одним из ключей CEFR, включая регистр.
+CefrLevel? _parseLevel(Map<String, Object?> raw) {
+  if (!raw.containsKey('level')) return CefrLevel.a1;
+  final value = raw['level'];
+  for (final level in CefrLevel.values) {
+    if (level.name == value) return level;
+  }
+  return null;
 }
 
 /// Непустая строка или `null`, если поля нет, оно не строка или пустое.

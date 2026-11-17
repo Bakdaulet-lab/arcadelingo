@@ -11,6 +11,7 @@
 library;
 
 import 'package:arcadelingo/app/games.dart';
+import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/ui/ritual_labels.dart';
 import 'package:arcadelingo/ui/streak_card.dart';
@@ -25,6 +26,8 @@ abstract final class AppKeys {
   static const Key play = Key('app.play');
 
   static const Key gameSelector = Key('app.game_selector');
+
+  static const Key levelSelector = Key('app.level_selector');
 
   static const Key stateError = Key('app.state_error');
 
@@ -69,7 +72,7 @@ abstract final class AppKeys {
   static const Key freeze = Key('app.freeze');
 }
 
-/// Домашний экран: одна кнопка.
+/// Домашний экран: выбор уровня и игры перед запуском.
 ///
 /// Сессия создаётся по нажатию, а не при старте приложения: очередь
 /// собирается на текущий момент и, пролежав на этом экране до полуночи,
@@ -86,6 +89,8 @@ class PlayView extends StatelessWidget {
     this.games = const [],
     this.selectedGameId,
     this.onGameSelected,
+    this.selectedLevel,
+    this.onLevelSelected,
   });
 
   /// Серия на сегодня; null — состояние не читается.
@@ -109,8 +114,10 @@ class PlayView extends StatelessWidget {
   final List<GameEntry> games;
   final String? selectedGameId;
   final ValueChanged<String>? onGameSelected;
+  final CefrLevel? selectedLevel;
+  final ValueChanged<CefrLevel>? onLevelSelected;
 
-  final VoidCallback onPlay;
+  final VoidCallback? onPlay;
 
   /// Вход на «Источники».
   ///
@@ -191,6 +198,25 @@ class PlayView extends StatelessWidget {
                             ),
                           ],
                         ],
+                        if (selectedLevel case final level?) ...[
+                          const SizedBox(height: 24),
+                          _LevelSelector(
+                            level: level,
+                            onSelected: onLevelSelected,
+                          ),
+                          if (onPlay == null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Semantics(
+                                liveRegion: true,
+                                child: Text(
+                                  'Для ${level.name.toUpperCase()} пока нет слов',
+                                  textAlign: TextAlign.center,
+                                  style: textTheme.bodyMedium,
+                                ),
+                              ),
+                            ),
+                        ],
                         if (games.length > 1) ...[
                           const SizedBox(height: 24),
                           GameSelector(
@@ -270,6 +296,47 @@ class PlayView extends StatelessWidget {
               ),
             ),
       ),
+    );
+  }
+}
+
+class _LevelSelector extends StatelessWidget {
+  const _LevelSelector({required this.level, required this.onSelected});
+
+  final CefrLevel level;
+  final ValueChanged<CefrLevel>? onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Column(
+      key: AppKeys.levelSelector,
+      children: [
+        Text('Уровень английского', style: theme.textTheme.titleSmall),
+        Wrap(
+          spacing: 4,
+          alignment: WrapAlignment.center,
+          children: [
+            for (final option in CefrLevel.values)
+              ChoiceChip(
+                label: Text(option.name.toUpperCase()),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 2),
+                selected: option == level,
+                onSelected:
+                    onSelected == null ? null : (_) => onSelected!(option),
+                selectedColor: colors.primary,
+                backgroundColor: colors.surfaceContainerHighest,
+                labelStyle: TextStyle(
+                  color: option == level ? colors.onPrimary : colors.onSurface,
+                ),
+                showCheckmark: false,
+                materialTapTargetSize: MaterialTapTargetSize.padded,
+                visualDensity: VisualDensity.standard,
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

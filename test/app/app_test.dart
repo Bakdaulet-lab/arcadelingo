@@ -162,7 +162,10 @@ const String _citation =
 /// с запасом над 300 мс `MaterialPageRoute`. Падение слова за это время
 /// уходит на полсекунды из шести, до таймаута далеко.
 Future<void> _tapAndSettleRoute(WidgetTester tester, Key key) async {
-  await tester.tap(find.byKey(key));
+  final button = find.byKey(key);
+  await tester.ensureVisible(button);
+  await tester.pump();
+  await tester.tap(button);
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 500));
 }
@@ -479,9 +482,6 @@ void main() {
       await _pumpApp(tester);
       await _tapAndSettleRoute(tester, AppKeys.sources);
 
-      // Кнопка внизу документа, на телефонный экран сразу не попадает.
-      await tester.ensureVisible(find.byKey(AppKeys.licenses));
-      await tester.pump();
       await _tapAndSettleRoute(tester, AppKeys.licenses);
 
       expect(

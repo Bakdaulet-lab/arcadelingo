@@ -53,11 +53,15 @@ class StartSession {
   /// нет ни у карточек, ни у серии. Хост показывает причину и предлагает
   /// сброс, который нажимает человек.
   ///
+  /// [level] ограничивает новые слова и повторы одним уровнем. Без него
+  /// сессия использует весь список. Карта прогресса остаётся полной.
+  ///
   /// [onCardsChanged] — для хоста: сохранение в порт usecase берёт на себя,
   /// а колбэк остаётся тому, кому нужна свежая карта (строка итогов).
   Result<ReviewSession> call({
     required List<ReviewItem> items,
     required String gameId,
+    CefrLevel? level,
     void Function(Map<String, LeitnerCard> cards)? onCardsChanged,
   }) {
     final Map<String, LeitnerCard> cards;
@@ -81,7 +85,10 @@ class StartSession {
     final startedAt = _now();
     final inner = LeitnerReviewSession.start(
       cards: cards,
-      items: items,
+      items:
+          level == null
+              ? items
+              : items.where((item) => item.word.level == level).toList(),
       target: _target,
       now: _now,
       onCardsChanged: (changed) {
