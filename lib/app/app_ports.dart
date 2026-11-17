@@ -22,6 +22,7 @@ import 'package:arcadelingo/domain/ports/reminders.dart';
 import 'package:arcadelingo/domain/ports/settings_store.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/ports/streak_store.dart';
+import 'package:arcadelingo/domain/ports/word_speech.dart';
 
 /// Умолчание для спроса разрешения на уведомления: платформы, у которой
 /// нечего спрашивать, для теста не существует.
@@ -35,6 +36,7 @@ class AppPorts {
     this.events = const NoopEventLog(),
     this.reminders = const NoopReminders(),
     this.sounds = const NoopSounds(),
+    this.speech = const NoopWordSpeech(),
     this.settings,
     this.askReminderPermission = alwaysAllowed,
   });
@@ -59,6 +61,9 @@ class AppPorts {
   /// Звук игр. Всегда настоящий: выключает его хост подменой на нулевой
   /// объект в момент запуска партии, а не страж внутри адаптера.
   final Sounds sounds;
+
+  /// Произношение по явному нажатию на учебной карточке.
+  final WordSpeech speech;
 
   /// Настройки напоминания; null — экран настроек недоступен, и это
   /// умолчание тестов, которые о них не знают.

@@ -20,10 +20,13 @@ import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution_view.dart';
 import 'package:arcadelingo/app/games.dart';
+import 'package:arcadelingo/app/learning_views.dart';
 import 'package:arcadelingo/app/progress_view.dart';
 import 'package:arcadelingo/app/settings_view.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
+import 'package:arcadelingo/domain/learning/learning_plan.dart';
+import 'package:arcadelingo/domain/learning/mistake_review_observer.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/reminders/reminder_policy.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
@@ -117,6 +120,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String? _selectedGameId;
   CefrLevel _selectedLevel = CefrLevel.a1;
+  bool _preparingLearning = false;
 
   GameEntry get _selectedGame => widget.games.firstWhere(
     (game) => game.id == _selectedGameId,
@@ -159,6 +163,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return failure == null
         ? PlayView(
           onPlay: _hasWordsForLevel ? _start : null,
+          onLearn:
+              _hasWordsForLevel && !_preparingLearning
+                  ? () => _start(learning: true)
+                  : null,
           onProgress: _openProgress,
           onSettings: _openSettings,
           onSources: _openSources,
@@ -389,18 +397,68 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Вся проводка — в usecase; здесь остаётся только навигация и разбор
   /// результата. Это и было целью Этапа 1: «после ответа серия продлилась»
   /// проверяется без дерева виджетов.
-  void _start() {
-    if (!_hasWordsForLevel) return;
-    // Последнее состояние, приехавшее из сессии: по нему считается строка
-    // итогов. До первого ответа это то, что прочитано из хранилища.
-    var latest = <String, LeitnerCard>{};
-    // Выбор принадлежит домашнему экрану, сессия создаётся только сейчас.
-    // Пустой реестр — дефект сборки, и молчать о нём хуже, чем упасть.
+  void _start({
+    bool learning = false,
+    GameEntry? chosenGame,
+    CefrLevel? chosenLevel,
+  }) {
+    if (!_hasWordsForLevel || _preparingLearning) return;
     if (widget.games.isEmpty) {
       throw StateError('реестр игр пуст: запускать нечего');
     }
-    final game = _selectedGame;
-    final level = _selectedLevel;
+    unawaited(
+      _startRound(
+        learning: learning,
+        game: chosenGame ?? _selectedGame,
+        level: chosenLevel ?? _selectedLevel,
+      ),
+    );
+  }
+
+  Future<void> _startRound({
+    required bool learning,
+    required GameEntry game,
+    required CefrLevel level,
+  }) async {
+    // Последнее состояние, приехавшее из сессии: по нему считается строка
+    // итогов. До первого ответа это то, что прочитано из хранилища.
+    var latest = <String, LeitnerCard>{};
+    var roundItems = widget.items;
+    if (learning) {
+      switch (widget.ports.cards.load()) {
+        case Err(:final failure):
+          setState(() => _stateFailure = failure);
+          return;
+        case Ok(:final value):
+          latest = value;
+          final plan = LearningPlan.build(
+            items: widget.items,
+            cards: value,
+            level: level,
+            now: widget.now(),
+            target: sessionTarget,
+          );
+          roundItems = plan.selectedItems;
+          if (plan.newWords.isNotEmpty) {
+            setState(() => _preparingLearning = true);
+            final start = await Navigator.of(context).push<bool>(
+              MaterialPageRoute<bool>(
+                builder:
+                    (context) => WordIntroductionScreen(
+                      words: plan.newWords,
+                      level: level,
+                      speech: widget.ports.speech,
+                      onStart: () => Navigator.of(context).pop(true),
+                    ),
+              ),
+            );
+            if (!mounted) return;
+            setState(() => _preparingLearning = false);
+            if (start != true) return;
+          }
+      }
+    }
+    final mistakes = MistakeReviewObserver(level: level);
     final started = StartSession(
       cards: widget.ports.cards,
       streaks: widget.ports.streaks,
@@ -408,10 +466,11 @@ class _HomeScreenState extends State<HomeScreen> {
       target: sessionTarget,
       answerLog: widget.ports.answers,
     )(
-      items: widget.items,
+      items: roundItems,
       level: level,
       gameId: game.id,
       onCardsChanged: (changed) => latest = changed,
+      observers: [mistakes],
     );
     switch (started) {
       case Ok(:final value):
@@ -422,7 +481,14 @@ class _HomeScreenState extends State<HomeScreen> {
           AppEventKind.roundStart,
           sessionId: value is ObservedSession ? value.sessionId : null,
         );
-        _play(game, value, () => _footer(latest, level));
+        _play(
+          game,
+          value,
+          () => _footer(latest, level),
+          mistakes: mistakes,
+          level: level,
+          learning: learning,
+        );
       case Err(:final failure):
         setState(() => _stateFailure = failure);
     }
@@ -442,7 +508,14 @@ class _HomeScreenState extends State<HomeScreen> {
     _start();
   }
 
-  void _play(GameEntry game, ReviewSession session, String Function() footer) {
+  void _play(
+    GameEntry game,
+    ReviewSession session,
+    String Function() footer, {
+    required MistakeReviewObserver mistakes,
+    required CefrLevel level,
+    required bool learning,
+  }) {
     final navigator = Navigator.of(context);
     final sessionId = session is ObservedSession ? session.sessionId : null;
     // Дошла ли партия до конца. По нему же отличается «бросил на середине»:
@@ -470,9 +543,28 @@ class _HomeScreenState extends State<HomeScreen> {
                       summaryFooter: footer,
                       onPlayAgain: () {
                         navigator.pop();
-                        _start();
+                        _start(
+                          learning: learning,
+                          chosenGame: game,
+                          chosenLevel: level,
+                        );
                       },
                       onExit: navigator.pop,
+                      mistakeCount: () => mistakes.mistakes.length,
+                      onReviewMistakes: () {
+                        unawaited(
+                          navigator.push(
+                            MaterialPageRoute<void>(
+                              builder:
+                                  (context) => MistakesReviewScreen(
+                                    words: mistakes.mistakes,
+                                    level: level,
+                                    speech: widget.ports.speech,
+                                  ),
+                            ),
+                          ),
+                        );
+                      },
                       onRoundOver: () {
                         finished = true;
                         _finishRound(sessionId);

@@ -41,6 +41,8 @@ dependencies:
   timezone: ^0.10.1
   flutter_timezone: ^5.1.0
   audioplayers: ^6.6.0
+  # 4.2.4 raises Android minSdk to 24 and requires a newer Android toolchain.
+  flutter_tts: ">=4.2.3 <4.2.4"
 
 dev_dependencies:
   flutter_test:

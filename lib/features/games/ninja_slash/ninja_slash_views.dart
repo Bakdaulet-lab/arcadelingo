@@ -516,6 +516,8 @@ class SummaryView extends StatelessWidget {
     required this.onExit,
     super.key,
     this.footer,
+    this.mistakeCount = 0,
+    this.onReviewMistakes,
   });
 
   final int score;
@@ -531,6 +533,9 @@ class SummaryView extends StatelessWidget {
 
   final VoidCallback onPlayAgain;
   final VoidCallback onExit;
+
+  final int mistakeCount;
+  final VoidCallback? onReviewMistakes;
 
   @override
   Widget build(BuildContext context) => ArcadeRoundSummary(
@@ -550,6 +555,15 @@ class SummaryView extends StatelessWidget {
           label: 'Ещё раз',
           onPressed: onPlayAgain,
         ),
+        if (mistakeCount > 0 && onReviewMistakes != null) ...[
+          const SizedBox(height: 10),
+          EndButton(
+            key: const Key('game.review_mistakes'),
+            label: 'Разобрать ошибки ($mistakeCount)',
+            primary: false,
+            onPressed: onReviewMistakes!,
+          ),
+        ],
         const SizedBox(height: 10),
         EndButton(
           key: NinjaKeys.exit,

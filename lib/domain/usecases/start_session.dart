@@ -63,6 +63,7 @@ class StartSession {
     required String gameId,
     CefrLevel? level,
     void Function(Map<String, LeitnerCard> cards)? onCardsChanged,
+    List<ReviewObserver> observers = const [],
   }) {
     final Map<String, LeitnerCard> cards;
     switch (_cards.load()) {
@@ -103,7 +104,7 @@ class StartSession {
         inner: inner,
         // Порядок наблюдателей значения не имеет: они не разговаривают
         // друг с другом и видят одно и то же событие.
-        observers: [LoggingObserver(log: _answerLog)],
+        observers: [LoggingObserver(log: _answerLog), ...observers],
         now: _now,
         gameId: gameId,
         // Момент старта, а не счётчик: партия длится минуты, столкнуться

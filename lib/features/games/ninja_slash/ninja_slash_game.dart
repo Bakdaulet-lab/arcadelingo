@@ -49,6 +49,8 @@ class NinjaSlashGame extends StatefulWidget {
     this.seed,
     this.summaryFooter,
     this.onRoundOver,
+    this.mistakeCount,
+    this.onReviewMistakes,
     this.sounds = const NoopSounds(),
   });
 
@@ -66,6 +68,10 @@ class NinjaSlashGame extends StatefulWidget {
 
   /// «Выйти» с итогов и с «на сегодня всё».
   final VoidCallback onExit;
+
+  /// Разбор и число разных слов с ошибками предоставляет хост.
+  final int Function()? mistakeCount;
+  final VoidCallback? onReviewMistakes;
 
   /// Строка «что дальше» под статистикой итогов; null — строки нет.
   /// Спрашивается один раз, в момент перехода к итогам.
@@ -554,6 +560,8 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
             footer: _footer,
             onPlayAgain: widget.onPlayAgain,
             onExit: widget.onExit,
+            mistakeCount: widget.mistakeCount?.call() ?? 0,
+            onReviewMistakes: widget.onReviewMistakes,
           ),
           NinjaPhase.flying || NinjaPhase.reveal => _playfield(context),
         },
