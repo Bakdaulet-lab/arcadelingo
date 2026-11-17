@@ -92,7 +92,7 @@ const Set<String> seedPartsOfSpeech = {'noun', 'verb', 'adj', 'adv'};
 const Set<String> seedLevels = {'a1', 'a2', 'b1', 'b2', 'c1', 'c2'};
 
 final RegExp _latinWord = RegExp(r'^[a-z]+$');
-final RegExp _cyrillicPhrase = RegExp(r'^[а-яё][а-яё -]*$');
+final RegExp _cyrillicPhrase = RegExp(r'^[А-Яа-яЁё][А-Яа-яЁё -]*$');
 
 /// Разобранный JSON сида → список нарушений. Пустой список — правила соблюдены.
 ///
