@@ -39,11 +39,17 @@ void main() {
       );
       await tester.runAsync(() async {
         await precacheImage(
-          const AssetImage('assets/images/home/ninja.png'),
+          const ResizeImage(
+            AssetImage('assets/images/home/ninja.png'),
+            width: 1200,
+          ),
           tester.element(find.byType(PlayView)),
         );
         await precacheImage(
-          const AssetImage('assets/images/home/falling-words.png'),
+          const ResizeImage(
+            AssetImage('assets/images/home/falling-words.png'),
+            width: 1200,
+          ),
           tester.element(find.byType(PlayView)),
         );
       });

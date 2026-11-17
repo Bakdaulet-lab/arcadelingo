@@ -144,6 +144,27 @@ Future<void> pumpRitualGolden(
       ),
     ),
   );
+  // Кадр снимается после декодирования тех же изображений, которые рисует
+  // карточка. Скорость файлового ввода не определяет содержимое эталона.
+  await tester.runAsync(() async {
+    final context = tester.element(find.byType(PlayView));
+    await Future.wait([
+      precacheImage(
+        const ResizeImage(
+          AssetImage('assets/images/home/ninja.png'),
+          width: 1200,
+        ),
+        context,
+      ),
+      precacheImage(
+        const ResizeImage(
+          AssetImage('assets/images/home/falling-words.png'),
+          width: 1200,
+        ),
+        context,
+      ),
+    ]);
+  });
   await tester.pump();
 }
 
