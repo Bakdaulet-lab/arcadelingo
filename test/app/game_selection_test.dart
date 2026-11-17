@@ -109,8 +109,8 @@ Future<void> _pump(
   await tester.pumpAndSettle();
 }
 
-SegmentedButton<String> _selector(WidgetTester tester) =>
-    tester.widget<SegmentedButton<String>>(find.byKey(AppKeys.gameSelector));
+GameSelector _selector(WidgetTester tester) =>
+    tester.widget<GameSelector>(find.byKey(AppKeys.gameSelector));
 
 Future<void> _tap(WidgetTester tester, Finder target) async {
   await tester.ensureVisible(target);
@@ -176,8 +176,8 @@ void main() {
     final f = _Fixture();
     await _pump(tester, f.app(f.games.reversed.toList()));
     final selector = _selector(tester);
-    expect(selector.segments.map((s) => s.value), ['beta', 'alpha']);
-    expect(selector.selected, {'beta'});
+    expect(selector.games.map((game) => game.id), ['beta', 'alpha']);
+    expect(selector.selectedId, 'beta');
     expect(find.text('Первая игра'), findsOneWidget);
     expect(find.text('Вторая игра'), findsOneWidget);
   });
@@ -197,7 +197,7 @@ void main() {
     await _pump(tester, f.app(f.games));
     expect(f.cards.reads, 0);
     await _tap(tester, find.text('Вторая игра'));
-    expect(_selector(tester).selected, {'beta'});
+    expect(_selector(tester).selectedId, 'beta');
     expect(f.cards.reads, 0);
     expect(f.cards.saves, isEmpty);
     expect(f.streaks.saves, isEmpty);
@@ -227,7 +227,7 @@ void main() {
     await _tap(tester, find.text('Вторая игра'));
     await _tap(tester, find.byKey(AppKeys.play));
     await _tap(tester, find.byKey(_exit));
-    expect(_selector(tester).selected, {'beta'});
+    expect(_selector(tester).selectedId, 'beta');
     await _tap(tester, find.text('Первая игра'));
     await _tap(tester, find.byKey(AppKeys.play));
     expect(f.launches.last.$1, 'alpha');
@@ -254,7 +254,7 @@ void main() {
     await _tap(tester, find.byKey(AppKeys.progress));
     await tester.pageBack();
     await tester.pumpAndSettle();
-    expect(_selector(tester).selected, {'beta'});
+    expect(_selector(tester).selectedId, 'beta');
   });
 
   testWidgets('новый корень сбрасывает выбор, прогресс остаётся', (
@@ -268,7 +268,7 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await tester.pumpWidget(f.app(f.games));
     await tester.pumpAndSettle();
-    expect(_selector(tester).selected, {'alpha'});
+    expect(_selector(tester).selectedId, 'alpha');
     expect(f.answers.records, hasLength(1));
   });
 
@@ -282,7 +282,7 @@ void main() {
       f.app([f.games.first, f.entry('gamma', 'Третья игра')]),
     );
     await tester.pumpAndSettle();
-    expect(_selector(tester).selected, {'alpha'});
+    expect(_selector(tester).selectedId, 'alpha');
     await _tap(tester, find.byKey(AppKeys.play));
     expect(f.launches.last.$1, 'alpha');
   });
@@ -367,7 +367,7 @@ void main() {
       expect(f.answers.records.last.wordId, 'engine');
 
       await _tap(tester, find.byKey(_exit));
-      expect(_selector(tester).selected, {'beta'});
+      expect(_selector(tester).selectedId, 'beta');
       expect(
         tester
             .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'B1'))
@@ -501,7 +501,7 @@ void main() {
   }
 
   for (final selected in ['falling_words', 'ninja_slash']) {
-    testWidgets('контраст и цели сегментов: $selected', (tester) async {
+    testWidgets('контраст, выбор и цели карточек: $selected', (tester) async {
       final semantics = tester.ensureSemantics();
       try {
         final f = _Fixture();
@@ -512,17 +512,20 @@ void main() {
             selected == 'falling_words' ? 'Падающие слова' : 'Ниндзя-слэш',
           ),
         );
-        expect(_selector(tester).selected, {selected});
+        expect(_selector(tester).selectedId, selected);
         // Пиксельный guideline не видит исчезнувшие буквы, если текст
-        // совпал с фоном. Читаем стиль самого рисуемого SegmentedButton,
-        // а не исходную тему: оба состояния обязаны давать WCAG 4.5:1.
-        final style = _selector(tester).style!;
-        for (final states in [
-          <WidgetState>{},
-          {WidgetState.selected},
-        ]) {
-          final foreground = style.foregroundColor!.resolve(states)!;
-          final background = style.backgroundColor!.resolve(states)!;
+        // совпал с фоном. У обеих карточек проверяем реальную подпись и
+        // поверхность, а выбранность должна быть доступна скринридеру.
+        for (final game in wordarcadeGames) {
+          final title = find.text(game.title);
+          final text = tester.widget<Text>(title);
+          final context = tester.element(title);
+          final foreground =
+              text.style?.color ?? DefaultTextStyle.of(context).style.color!;
+          final surface = tester.widgetList<Material>(
+            find.ancestor(of: title, matching: find.byType(Material)),
+          );
+          final background = surface.firstWhere((m) => m.color != null).color!;
           final a = foreground.computeLuminance();
           final b = background.computeLuminance();
           final contrast =
@@ -530,8 +533,19 @@ void main() {
           expect(
             contrast,
             greaterThanOrEqualTo(4.5),
-            reason: 'состояния $states',
+            reason: 'подпись карточки ${game.id}',
           );
+          final cardSemantics = tester
+              .widgetList<Semantics>(
+                find.ancestor(of: title, matching: find.byType(Semantics)),
+              )
+              .firstWhere(
+                (widget) =>
+                    widget.properties.button == true &&
+                    widget.properties.selected != null,
+              );
+          expect(cardSemantics.properties.selected, game.id == selected);
+          expect(tester.getRect(title).height, greaterThan(0));
         }
         expect(
           tester.getRect(find.byKey(AppKeys.gameSelector)).height,
