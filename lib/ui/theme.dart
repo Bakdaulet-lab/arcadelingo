@@ -85,7 +85,37 @@ ThemeData wordarcadeTheme({TargetPlatform? platform}) {
     platform: platform,
     fontFamily: wordarcadeFont,
   );
-  return base.copyWith(textTheme: _withAxis(base.textTheme));
+  final buttonShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(20),
+  );
+  return base.copyWith(
+    textTheme: _withAxis(base.textTheme),
+    appBarTheme: AppBarTheme(
+      backgroundColor: wordarcadeColors.surface,
+      foregroundColor: wordarcadeColors.onSurface,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      centerTitle: false,
+      titleTextStyle: withWeight(
+        base.textTheme.titleLarge!,
+        FontWeight.bold,
+      ).copyWith(color: wordarcadeColors.onSurface),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(48, 56),
+        shape: buttonShape,
+        textStyle: withWeight(base.textTheme.titleMedium!, FontWeight.w600),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(48, 56),
+        shape: buttonShape,
+        textStyle: withWeight(base.textTheme.titleMedium!, FontWeight.w600),
+      ),
+    ),
+  );
 }
 
 /// Проставляет ось веса каждому стилю темы.
