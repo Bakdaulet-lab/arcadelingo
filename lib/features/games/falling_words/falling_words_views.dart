@@ -220,15 +220,18 @@ class FallingField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    Widget word = Text(
-      text,
-      key: FallingWordsKeys.word,
-      textAlign: TextAlign.center,
-      maxLines: 2,
-      style: withWeight(
-        Theme.of(context).textTheme.displaySmall!,
-        FontWeight.bold,
-      ).copyWith(color: scheme.onSurface),
+    Widget word = FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(
+        text,
+        key: FallingWordsKeys.word,
+        textAlign: TextAlign.center,
+        softWrap: false,
+        style: withWeight(
+          Theme.of(context).textTheme.displaySmall!,
+          FontWeight.bold,
+        ).copyWith(color: scheme.onSurface),
+      ),
     );
     if (fadeProgress > 0) {
       word = Opacity(

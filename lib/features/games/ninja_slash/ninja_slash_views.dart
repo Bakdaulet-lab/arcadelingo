@@ -423,15 +423,18 @@ class NinjaField extends StatelessWidget {
                 top: 12,
                 left: 16,
                 right: 16,
-                child: Text(
-                  word,
-                  key: NinjaKeys.word,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  style: withWeight(
-                    Theme.of(context).textTheme.displaySmall!,
-                    FontWeight.bold,
-                  ).copyWith(color: scheme.onSurface),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    word,
+                    key: NinjaKeys.word,
+                    textAlign: TextAlign.center,
+                    softWrap: false,
+                    style: withWeight(
+                      Theme.of(context).textTheme.displaySmall!,
+                      FontWeight.bold,
+                    ).copyWith(color: scheme.onSurface),
+                  ),
                 ),
               ),
             Positioned.fill(
