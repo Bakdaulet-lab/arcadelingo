@@ -36,4 +36,18 @@ void main() {
     expect(text, contains('Tono Laboratory'));
     expect(text, contains('research and commercial purposes with no charge'));
   });
+
+  test('автор, изменения и лицензия словаря C1 указаны в бандле', () async {
+    final notice = await rootBundle.loadString('assets/words_c1.LICENSE.md');
+    for (final attribution in [text, notice]) {
+      expect(attribution, contains('Octanove Vocabulary Profile'));
+      expect(attribution, contains('Octanove Labs'));
+      expect(attribution, anyOf(contains('добавили'), contains('добавлены')));
+      expect(attribution, contains('CC BY-SA 4.0'));
+      expect(
+        attribution,
+        contains('https://creativecommons.org/licenses/by-sa/4.0/'),
+      );
+    }
+  });
 }
