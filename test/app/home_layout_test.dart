@@ -78,10 +78,12 @@ void main() {
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-    await _pumpHome(tester, size: const Size(320, 568));
-
-    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    try {
+      await _pumpHome(tester, size: const Size(320, 568));
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    } finally {
+      semantics.dispose();
+    }
   });
 
   for (final scale in [1.0, 2.0]) {
