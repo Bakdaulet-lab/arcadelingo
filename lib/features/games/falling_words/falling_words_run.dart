@@ -271,7 +271,12 @@ class FallingWordsRun {
       _combo = 0;
       _lives--;
     }
-    _report(correct: verdict == Verdict.correct, elapsed: elapsed);
+    _report(
+      correct: verdict == Verdict.correct,
+      elapsed: elapsed,
+      selectedIndex: _chosenIndex,
+      timedOut: verdict == Verdict.timeout,
+    );
   }
 
   /// Единственное место, где строится [ReviewOutcome].
@@ -279,12 +284,19 @@ class FallingWordsRun {
   /// Неотрицательность `responseTime` сторожит [_checkElapsed]: domain её
   /// не проверяет — шапка `lib/domain/srs/grade_outcome.dart`. Подсказок в
   /// этой игре нет, поэтому `hintsUsed` остаётся нулём по умолчанию.
-  void _report({required bool correct, required Duration elapsed}) {
+  void _report({
+    required bool correct,
+    required Duration elapsed,
+    int? selectedIndex,
+    bool timedOut = false,
+  }) {
     _session.report(
       ReviewOutcome(
         correct: correct,
         responseTime: elapsed,
         timeLimit: _timeLimit,
+        selectedAnswer: selectedIndex == null ? null : _options[selectedIndex],
+        timedOut: timedOut,
       ),
     );
   }

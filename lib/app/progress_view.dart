@@ -83,6 +83,7 @@ class ProgressScreen extends StatefulWidget {
     required this.cards,
     required this.streaks,
     required this.now,
+    this.onDictionary,
     super.key,
   });
 
@@ -90,6 +91,7 @@ class ProgressScreen extends StatefulWidget {
   final CardStore cards;
   final StreakStore streaks;
   final DateTime Function() now;
+  final VoidCallback? onDictionary;
 
   @override
   State<ProgressScreen> createState() => _ProgressScreenState();
@@ -129,9 +131,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => ArcadePage(
-    title: 'Прогресс',
-    child: FutureBuilder<ProgressData>(
+  Widget build(BuildContext context) {
+    final content = FutureBuilder<ProgressData>(
       future: _data,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -157,8 +158,34 @@ class _ProgressScreenState extends State<ProgressScreen> {
         }
         return ProgressBody(data: data);
       },
-    ),
-  );
+    );
+    return ArcadePage(
+      title: 'Прогресс',
+      child:
+          widget.onDictionary == null
+              ? content
+              : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                    child: OutlinedButton.icon(
+                      onPressed: widget.onDictionary,
+                      icon: const Icon(Icons.menu_book_rounded),
+                      label: const Text(
+                        'Личный словарь',
+                        textAlign: TextAlign.center,
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                      ),
+                    ),
+                  ),
+                  Expanded(child: content),
+                ],
+              ),
+    );
+  }
 }
 
 /// Вид без единого обращения к хранилищу: всё приходит параметром.

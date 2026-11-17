@@ -11,6 +11,7 @@ library;
 
 import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_ports.dart';
+import 'package:arcadelingo/data/dictionary/favorites_prefs_store.dart';
 import 'package:arcadelingo/data/log/drift_answer_log.dart';
 import 'package:arcadelingo/data/log/drift_event_log.dart';
 import 'package:arcadelingo/data/log/history_database.dart';
@@ -47,6 +48,7 @@ Future<void> main() async {
         // Файл открывается лениво, при первой записи: журнал не на пути
         // старта, и ждать его здесь незачем.
         answers: DriftAnswerLog(history),
+        favorites: FavoritesPrefsStore(prefs),
         events: DriftEventLog(history),
         reminders: reminders,
         settings: SettingsPrefsStore(prefs),

@@ -18,6 +18,7 @@ library;
 import 'package:arcadelingo/domain/ports/answer_log.dart';
 import 'package:arcadelingo/domain/ports/card_store.dart';
 import 'package:arcadelingo/domain/ports/event_log.dart';
+import 'package:arcadelingo/domain/ports/favorites_store.dart';
 import 'package:arcadelingo/domain/ports/reminders.dart';
 import 'package:arcadelingo/domain/ports/settings_store.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
@@ -34,6 +35,7 @@ class AppPorts {
     required this.streaks,
     this.answers = const NoopAnswerLog(),
     this.events = const NoopEventLog(),
+    this.favorites,
     this.reminders = const NoopReminders(),
     this.sounds = const NoopSounds(),
     this.speech = const NoopWordSpeech(),
@@ -54,6 +56,8 @@ class AppPorts {
 
   /// История событий: открыл, начал, доиграл, бросил.
   final EventLog events;
+
+  final FavoritesStore? favorites;
 
   /// Напоминания.
   final Reminders reminders;
