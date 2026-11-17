@@ -68,6 +68,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/images/home/
     - assets/words_seed.json
     - assets/words_c1.json
     - assets/words_c1.LICENSE.md

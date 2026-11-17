@@ -10,14 +10,18 @@
 /// сбрасывать нечего, и кнопки здесь не будет.
 library;
 
+import 'package:arcadelingo/app/game_selector.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
+import 'package:arcadelingo/ui/home_ritual_card.dart';
 import 'package:arcadelingo/ui/ritual_labels.dart';
 import 'package:arcadelingo/ui/streak_card.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter/material.dart';
+
+export 'game_selector.dart' show GameSelector;
 
 /// Ключи экранов хоста. Тест ищет по ним то, что не опознать по тексту:
 /// какой именно экран показан и есть ли на нём кнопка сброса.
@@ -66,10 +70,10 @@ abstract final class AppKeys {
   static const Key streak = streakCaptionKey;
 
   /// «Сегодня сыграно» / «Сегодня ещё не сыграно».
-  static const Key today = Key('app.today');
+  static const Key today = homeTodayKey;
 
   /// Состояние запаса заморозок; её нет, пока говорить нечего.
-  static const Key freeze = Key('app.freeze');
+  static const Key freeze = homeFreezeKey;
 }
 
 /// Домашний экран: выбор уровня и игры перед запуском.
@@ -134,168 +138,185 @@ class PlayView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final game = games.where((entry) => entry.id == selectedGameId).firstOrNull;
+
+    final scrollActions =
+        MediaQuery.sizeOf(context).height < 640 ||
+        MediaQuery.textScalerOf(context).scale(16) > 22;
+    final actions = _HomeActions(
+      game: game,
+      level: selectedLevel,
+      ritual: ritual,
+      onPlay: onPlay,
+      onProgress: onProgress,
+      onSettings: onSettings,
+    );
+
     return Scaffold(
-      body: LayoutBuilder(
-        builder:
-            (context, constraints) => SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Arcadelingo',
-                          textAlign: TextAlign.center,
-                          // `withWeight`, а не `copyWith(fontWeight:)`. Оси `wght`
-                          // обычный fontWeight не двигает (шапка lib/ui/theme.dart), и
-                          // заголовок всё это время рисовался обычным начертанием, а не
-                          // жирным. Заметно ровно здесь: это единственная строка в
-                          // приложении, набранная кеглем displaySmall.
-                          style: withWeight(
-                            textTheme.displaySmall!,
-                            FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Английские слова через аркаду',
-                          textAlign: TextAlign.center,
-                          style: textTheme.bodyLarge,
-                        ),
-                        if (ritual case final view?) ...[
-                          const SizedBox(height: 24),
-                          StreakCard(ritual: view, week: week),
-                          const SizedBox(height: 12),
-                          Text(
-                            ritualTodayLabel(view),
-                            key: AppKeys.today,
-                            textAlign: TextAlign.center,
-                            style: textTheme.bodyMedium?.copyWith(
-                              color:
-                                  view.playedToday
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          if (ritualFreezeLabel(view) case final freeze?) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              freeze,
-                              key: AppKeys.freeze,
-                              textAlign: TextAlign.center,
-                              style: textTheme.bodySmall?.copyWith(
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ],
-                        if (selectedLevel case final level?) ...[
-                          const SizedBox(height: 24),
-                          _LevelSelector(
-                            level: level,
-                            onSelected: onLevelSelected,
-                          ),
-                          if (onPlay == null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Semantics(
-                                liveRegion: true,
-                                child: Text(
-                                  'Для ${level.name.toUpperCase()} пока нет слов',
-                                  textAlign: TextAlign.center,
-                                  style: textTheme.bodyMedium,
-                                ),
-                              ),
-                            ),
-                        ],
-                        if (games.length > 1) ...[
-                          const SizedBox(height: 24),
-                          GameSelector(
-                            games: games,
-                            selectedId: selectedGameId ?? games.first.id,
-                            onSelected: onGameSelected ?? (_) {},
-                          ),
-                        ],
-                        const SizedBox(height: 40),
-                        FilledButton(
-                          key: AppKeys.play,
-                          onPressed: onPlay,
-                          style: ButtonStyle(
-                            minimumSize: WidgetStateProperty.all(
-                              const Size(220, 56),
-                            ),
-                            textStyle: WidgetStateProperty.all(
-                              textTheme.titleMedium,
-                            ),
-                          ),
+      body: SafeArea(
+        bottom: scrollActions,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
                           child: Text(
-                            ritual == null
-                                ? 'Играть'
-                                : ritualCallToAction(ritual!),
+                            'Arcadelingo',
+                            style: withWeight(
+                              theme.textTheme.headlineMedium!,
+                              FontWeight.bold,
+                            ).copyWith(fontSize: 30, letterSpacing: -.8),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        // `Wrap`, а не `Row`: три ссылки в строку не помещаются на
-                        // экране 360 dp — тест поймал переполнение на 127 px, — а при
-                        // системном шрифте 2× не поместились бы и две. Перенос на
-                        // вторую строку честнее, чем обрезанная третья кнопка.
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          children: [
-                            TextButton(
-                              key: AppKeys.progress,
-                              onPressed: onProgress,
-                              style: ButtonStyle(
-                                foregroundColor: WidgetStateProperty.all(
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              child: const Text('Прогресс'),
-                            ),
-                            TextButton(
-                              key: AppKeys.settings,
-                              onPressed: onSettings,
-                              style: ButtonStyle(
-                                foregroundColor: WidgetStateProperty.all(
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              child: const Text('Настройки'),
-                            ),
-                            TextButton(
-                              key: AppKeys.sources,
-                              onPressed: onSources,
-                              style: ButtonStyle(
-                                foregroundColor: WidgetStateProperty.all(
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              child: const Text('Источники'),
-                            ),
-                          ],
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filledTonal(
+                        key: AppKeys.sources,
+                        tooltip: 'Источники',
+                        onPressed: onSources,
+                        style: IconButton.styleFrom(
+                          backgroundColor: colors.surfaceContainerHighest,
+                          foregroundColor: colors.onSurfaceVariant,
+                          minimumSize: const Size(48, 48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
-                      ],
+                        icon: const Icon(Icons.info_outline_rounded),
+                      ),
+                    ],
+                  ),
+                  if (ritual case final view?) ...[
+                    const SizedBox(height: 16),
+                    HomeRitualCard(ritual: view, week: week),
+                  ],
+                  if (selectedLevel case final level?) ...[
+                    const SizedBox(height: 20),
+                    _LevelSelector(level: level, onSelected: onLevelSelected),
+                    if (onPlay == null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            'Для ${level.name.toUpperCase()} пока нет слов',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                      ),
+                  ],
+                  if (games.length > 1) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      'Выбери игру',
+                      style: withWeight(
+                        theme.textTheme.titleLarge!,
+                        FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    GameSelector(
+                      key: AppKeys.gameSelector,
+                      games: games,
+                      selectedId: selectedGameId ?? games.first.id,
+                      onSelected: onGameSelected ?? (_) {},
+                    ),
+                  ],
+                  if (scrollActions) ...[const SizedBox(height: 20), actions],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      bottomNavigationBar:
+          scrollActions
+              ? null
+              : SafeArea(
+                top: false,
+                child: Align(
+                  heightFactor: 1,
+                  alignment: Alignment.bottomCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                      child: actions,
                     ),
                   ),
                 ),
               ),
+    );
+  }
+}
+
+class _HomeActions extends StatelessWidget {
+  const _HomeActions({
+    required this.game,
+    required this.level,
+    required this.ritual,
+    required this.onPlay,
+    required this.onProgress,
+    required this.onSettings,
+  });
+
+  final GameEntry? game;
+  final CefrLevel? level;
+  final StreakView? ritual;
+  final VoidCallback? onPlay;
+  final VoidCallback onProgress;
+  final VoidCallback onSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (game != null && level != null) ...[
+          Text(
+            '${game!.title} · ${level!.name.toUpperCase()}',
+            textAlign: TextAlign.center,
+            style: withWeight(
+              theme.textTheme.labelLarge!,
+              FontWeight.w500,
+            ).copyWith(color: colors.onSurfaceVariant),
+          ),
+          const SizedBox(height: 10),
+        ],
+        FilledButton(
+          key: AppKeys.play,
+          onPressed: onPlay,
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(56),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
-      ),
+            textStyle: withWeight(theme.textTheme.titleLarge!, FontWeight.bold),
+          ),
+          child: Text(
+            ritual == null ? 'Играть' : ritualCallToAction(ritual!),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _HomeNavigation(onProgress: onProgress, onSettings: onSettings),
+      ],
     );
   }
 }
@@ -312,80 +333,166 @@ class _LevelSelector extends StatelessWidget {
     final colors = theme.colorScheme;
     return Column(
       key: AppKeys.levelSelector,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Уровень английского', style: theme.textTheme.titleSmall),
-        Wrap(
-          spacing: 4,
-          alignment: WrapAlignment.center,
-          children: [
-            for (final option in CefrLevel.values)
-              ChoiceChip(
-                label: Text(option.name.toUpperCase()),
-                labelPadding: const EdgeInsets.symmetric(horizontal: 2),
-                selected: option == level,
-                onSelected:
-                    onSelected == null ? null : (_) => onSelected!(option),
-                selectedColor: colors.primary,
-                backgroundColor: colors.surfaceContainerHighest,
-                labelStyle: TextStyle(
-                  color: option == level ? colors.onPrimary : colors.onSurface,
-                ),
-                showCheckmark: false,
-                materialTapTargetSize: MaterialTapTargetSize.padded,
-                visualDensity: VisualDensity.standard,
-              ),
-          ],
+        Text(
+          'Уровень английского',
+          style: withWeight(theme.textTheme.titleMedium!, FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final fontScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+            // Шесть целей касания по 48 dp и пять промежутков по 6 dp.
+            final columns =
+                fontScale > 1.4 || constraints.maxWidth < 318 ? 3 : 6;
+            final width = (constraints.maxWidth - 6 * (columns - 1)) / columns;
+            return Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                for (final option in CefrLevel.values)
+                  SizedBox(
+                    width: width,
+                    child: ChoiceChip(
+                      label: Center(child: Text(option.name.toUpperCase())),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      labelPadding: EdgeInsets.zero,
+                      selected: option == level,
+                      onSelected:
+                          onSelected == null
+                              ? null
+                              : (_) => onSelected!(option),
+                      selectedColor: colors.primary,
+                      backgroundColor: colors.surfaceContainerHighest,
+                      labelStyle: withWeight(
+                        theme.textTheme.labelLarge!,
+                        FontWeight.bold,
+                      ).copyWith(
+                        color:
+                            option == level
+                                ? colors.onPrimary
+                                : colors.onSurface,
+                      ),
+                      showCheckmark: false,
+                      side: BorderSide(
+                        color:
+                            option == level ? colors.primary : colors.outline,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      materialTapTargetSize: MaterialTapTargetSize.padded,
+                      visualDensity: VisualDensity.standard,
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ],
     );
   }
 }
 
-/// Представление реестра; выбранный id и изменение приходят от хоста.
-class GameSelector extends StatelessWidget {
-  const GameSelector({
-    required this.games,
-    required this.selectedId,
-    required this.onSelected,
-    super.key,
-  });
+class _HomeNavigation extends StatelessWidget {
+  const _HomeNavigation({required this.onProgress, required this.onSettings});
 
-  final List<GameEntry> games;
-  final String selectedId;
-  final ValueChanged<String> onSelected;
+  final VoidCallback onProgress;
+  final VoidCallback onSettings;
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final largeText = MediaQuery.textScalerOf(context).scale(12) > 17;
+    final destinations = [
+      _destination(
+        context,
+        label: 'Игры',
+        icon: Icons.sports_esports_rounded,
+        selected: true,
+        onPressed: () {},
+      ),
+      _destination(
+        context,
+        key: AppKeys.progress,
+        label: 'Прогресс',
+        icon: Icons.bar_chart_rounded,
+        onPressed: onProgress,
+      ),
+      _destination(
+        context,
+        key: AppKeys.settings,
+        label: 'Настройки',
+        icon: Icons.settings_rounded,
+        onPressed: onSettings,
+      ),
+    ];
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest.withValues(alpha: .65),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.outline.withValues(alpha: .45)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+        child:
+            largeText
+                ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: destinations,
+                )
+                : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final destination in destinations)
+                      Expanded(child: destination),
+                  ],
+                ),
+      ),
+    );
+  }
+
+  Widget _destination(
+    BuildContext context, {
+    Key? key,
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+    bool selected = false,
+  }) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    return SegmentedButton<String>(
-      key: AppKeys.gameSelector,
-      segments: [
-        for (final game in games)
-          ButtonSegment<String>(
-            value: game.id,
-            label: Text(game.title, textAlign: TextAlign.center),
+    final color =
+        selected
+            ? theme.colorScheme.primary
+            : theme.colorScheme.onSurfaceVariant;
+    return Semantics(
+      selected: selected,
+      child: TextButton(
+        key: key,
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          foregroundColor: color,
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          minimumSize: const Size(48, 56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-      ],
-      selected: {selectedId},
-      onSelectionChanged: (ids) => onSelected(ids.single),
-      showSelectedIcon: false,
-      expandedInsets: EdgeInsets.zero,
-      style: ButtonStyle(
-        minimumSize: WidgetStateProperty.all(const Size(48, 48)),
-        padding: WidgetStateProperty.all(const EdgeInsets.all(12)),
-        textStyle: WidgetStateProperty.all(theme.textTheme.labelLarge),
-        backgroundColor: WidgetStateProperty.resolveWith(
-          (states) =>
-              states.contains(WidgetState.selected)
-                  ? colors.primary
-                  : colors.surfaceContainerHighest,
         ),
-        foregroundColor: WidgetStateProperty.resolveWith(
-          (states) =>
-              states.contains(WidgetState.selected)
-                  ? colors.onPrimary
-                  : colors.onSurface,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 24),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: withWeight(
+                theme.textTheme.labelSmall!,
+                FontWeight.w500,
+              ).copyWith(color: color),
+            ),
+          ],
         ),
       ),
     );
