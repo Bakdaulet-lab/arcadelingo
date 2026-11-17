@@ -12,10 +12,10 @@ void main() {
 
   // Второй счётчик размера сида. Первый — «ровно N слов» в
   // test/assets/words_seed_test.dart; правятся оба и в одном коммите порции.
-  test('loadWordsSeed: 3604 единицы показа, порции B1 идут после A2', () async {
+  test('loadWordsSeed: 5801 единица показа, порции B2 идут после B1', () async {
     final items = ok(await loadWordsSeed());
 
-    expect(items, hasLength(3604));
+    expect(items, hasLength(5801));
     expect(items.first.word.id, 'apple');
     expect(items.first.word.level, CefrLevel.a1);
     expect(items.first.distractors, hasLength(3));
@@ -29,7 +29,11 @@ void main() {
     expect(items[1739].word.level, CefrLevel.b1);
     expect(items[1740].word.id, 'grill');
     expect(items[1740].word.level, CefrLevel.b1);
-    expect(items.last.word.id, 'publisher');
-    expect(items.last.word.level, CefrLevel.b1);
+    expect(items[3603].word.id, 'publisher');
+    expect(items[3603].word.level, CefrLevel.b1);
+    expect(items[3604].word.id, 'cooperate');
+    expect(items[3604].word.level, CefrLevel.b2);
+    expect(items.last.word.id, 'developing');
+    expect(items.last.word.level, CefrLevel.b2);
   });
 }
