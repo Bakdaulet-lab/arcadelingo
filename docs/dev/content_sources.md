@@ -6,8 +6,8 @@
 
 | Ассет | Источник | Лицензия | Проверено | Коммерческое / производные |
 |---|---|---|---|---|
-| `assets/words_seed.json`, поля `text` и `level` | CEFR-J Wordlist 1.5, копия <https://github.com/openlanguageprofiles/olp-en-cefrj> | «can be used for research and commercial purposes with no charge, provided that you cite the dataset properly». Копирайт — Tono Laboratory at TUFS | 2026-08-24 | Да / да, при дословном цитировании |
-| `assets/words_seed.json`, поля `translation` и `distractors` | Авторские: подобраны и вычитаны вручную, не машинный перевод и не выгрузка из внешнего словаря | Не требуется — внешнего источника нет | 2026-08-24 | Да / да |
+| `assets/words_seed.json`, поля `text` и `level` | CEFR-J Wordlist 1.5, копия <https://github.com/openlanguageprofiles/olp-en-cefrj> | «can be used for research and commercial purposes with no charge, provided that you cite the dataset properly». Копирайт — Tono Laboratory at TUFS | 2026-11-17 | Да / да, при дословном цитировании |
+| `assets/words_seed.json`, поля `translation` и `distractors` | Составлены для игры. Для порций 19–40 черновики подготовлены с помощью агента и отредактированы перед сведением. Без выгрузки из внешнего словаря | Не требуется — внешнего источника нет | 2026-11-17 | Да / да |
 | `assets/ATTRIBUTION.md` | Наш текст, внутри — дословные цитата и условия CEFR-J | — | 2026-08-24 | Да / да |
 
 Цитата обязана быть **в продукте**, а не только в репозитории: «cite properly» адресован

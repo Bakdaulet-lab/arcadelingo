@@ -69,14 +69,19 @@ void main() {
     SeedRule.identicalOptions,
   );
 
-  test('ровно 719 слов', () {
+  test('ровно 1702 слова: 685 A1 и 1017 A2', () {
     // Жёсткость намеренная: правка числа — часть коммита порции, набранная
     // руками. Сведение порции её не автоматизирует и автоматизировать не будет.
     //
     // Счётчиков в репозитории ДВА: этот и «единиц показа» в
     // test/data/words/words_seed_loader_test.dart. Правятся оба и в одном
     // коммите — порция 1 приехала красной ровно потому, что второй забыли.
-    expect(words, hasLength(719));
+    expect(words, hasLength(1702));
+    final levels = words.whereType<Map<String, Object?>>().map(
+      (word) => word['level'],
+    );
+    expect(levels.where((level) => level == 'a1'), hasLength(685));
+    expect(levels.where((level) => level == 'a2'), hasLength(1017));
   });
 
   test('каждое слово из файла ловушек есть в сиде', () {

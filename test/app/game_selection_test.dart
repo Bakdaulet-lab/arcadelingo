@@ -3,10 +3,12 @@ import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/games.dart';
+import 'package:arcadelingo/data/words/words_seed_loader.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/session/observed_session.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
+import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -238,6 +240,58 @@ void main() {
     expect(find.byType(NinjaSlashGame), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
+
+  for (final game in [fallingWordsEntry, ninjaSlashEntry]) {
+    testWidgets('${game.title}: карточка A2 из бандла и верный ответ', (
+      tester,
+    ) async {
+      final seed = (await tester.runAsync(loadWordsSeed))!;
+      final answers = InMemoryAnswerLog();
+      // Слово из последней порции ставим в очередь как просроченное.
+      final cards = InMemoryCardStore({
+        'bookcase': LeitnerCard(box: 2, due: _today),
+      });
+      await _pump(
+        tester,
+        WordarcadeApp(
+          ports: AppPorts(
+            cards: cards,
+            streaks: InMemoryStreakStore(),
+            answers: answers,
+          ),
+          seed: seed,
+          now: () => _today,
+        ),
+      );
+      await _tap(tester, find.text(game.title));
+      await tester.tap(find.byKey(AppKeys.play));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump(const Duration(milliseconds: 700));
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.text('bookcase'), findsOneWidget);
+      final answer = find.text('книжный шкаф');
+      expect(answer, findsOneWidget);
+      if (game.id == ninjaSlashEntry.id) {
+        expect(find.byType(NinjaSlashGame), findsOneWidget);
+        final center = tester.getCenter(answer);
+        final slash = await tester.startGesture(center - const Offset(20, 0));
+        await slash.moveTo(center + const Offset(20, 0));
+        await slash.up();
+      } else {
+        expect(find.byType(FallingWordsGame), findsOneWidget);
+        await tester.tap(answer);
+      }
+      await tester.pump();
+
+      final record = answers.records.single;
+      expect(record.wordId, 'bookcase');
+      expect(record.gameId, game.id);
+      expect(record.correct, isTrue);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
 
   for (final selected in ['falling_words', 'ninja_slash']) {
     testWidgets('контраст и цели сегментов: $selected', (tester) async {
