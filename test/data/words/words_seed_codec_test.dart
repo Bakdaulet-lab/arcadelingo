@@ -2,13 +2,14 @@
 //
 // Только инлайн-фикстуры: кодек чистый, ассет и binding ему не нужны.
 // Реальный файл через кодек прогоняет words_seed_loader_test.dart;
-// содержание сида (50 слов, закрытый набор part_of_speech, три дистрактора)
+// содержание сида (закрытый набор part_of_speech, три дистрактора)
 // проверяет test/assets/words_seed_test.dart.
 
 import 'dart:convert';
 
 import 'package:arcadelingo/data/words/words_seed_codec.dart';
 import 'package:arcadelingo/domain/core/result.dart';
+import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/result.dart';
@@ -68,6 +69,32 @@ void main() {
       );
 
       expect(items.single.word.partOfSpeech, isNull);
+    });
+
+    test('старый сид v1 без level читается как A1', () {
+      final items = ok(parseWordsSeed(_doc([_apple])));
+
+      expect(items.single.word.level, CefrLevel.a1);
+    });
+
+    test('читает все шесть уровней CEFR', () {
+      const levels = {
+        'a1': CefrLevel.a1,
+        'a2': CefrLevel.a2,
+        'b1': CefrLevel.b1,
+        'b2': CefrLevel.b2,
+        'c1': CefrLevel.c1,
+        'c2': CefrLevel.c2,
+      };
+      final items = ok(
+        parseWordsSeed(
+          _doc([
+            for (final level in levels.keys) {..._apple, 'level': level},
+          ]),
+        ),
+      );
+
+      expect(items.map((item) => item.word.level), levels.values);
     });
 
     test('порядок записей сохраняется', () {
@@ -160,6 +187,20 @@ void main() {
         ),
         _isErr,
       );
+    });
+
+    test('неизвестный или неверно записанный level → Err с id слова', () {
+      for (final level in [null, 1, '', 'A2', 'b3']) {
+        final failure = err(
+          parseWordsSeed(
+            _doc([
+              {..._apple, 'level': level},
+            ]),
+          ),
+        );
+
+        expect(failure.message, allOf(contains('apple'), contains('level')));
+      }
     });
 
     test('distractors отсутствует или содержит не строку', () {

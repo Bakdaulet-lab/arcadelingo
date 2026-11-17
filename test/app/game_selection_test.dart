@@ -83,12 +83,13 @@ class _Fixture {
     },
   );
 
-  Widget app(List<GameEntry> entries) => WordarcadeApp(
-    ports: AppPorts(cards: cards, streaks: streaks, answers: answers),
-    seed: Ok(wordItems(3)),
-    now: () => _today,
-    games: entries,
-  );
+  Widget app(List<GameEntry> entries, {List<ReviewItem>? items}) =>
+      WordarcadeApp(
+        ports: AppPorts(cards: cards, streaks: streaks, answers: answers),
+        seed: Ok(items ?? wordItems(3)),
+        now: () => _today,
+        games: entries,
+      );
 }
 
 Future<void> _pump(
@@ -241,6 +242,85 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('видны шесть уровней; выбор пустого C2 не запускает партию', (
+    tester,
+  ) async {
+    final f = _Fixture();
+    await _pump(tester, f.app(f.games));
+    for (final label in ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']) {
+      expect(find.widgetWithText(ChoiceChip, label), findsOneWidget);
+    }
+    expect(
+      tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'A1')).selected,
+      isTrue,
+    );
+
+    await _tap(tester, find.text('C2'));
+    expect(find.text('Для C2 пока нет слов'), findsOneWidget);
+    expect(
+      tester.widget<FilledButton>(find.byKey(AppKeys.play)).onPressed,
+      isNull,
+    );
+    expect(f.cards.reads, 0);
+    expect(f.launches, isEmpty);
+    expect(f.streaks.saves, isEmpty);
+
+    await _tap(tester, find.text('A1'));
+    expect(
+      tester.widget<FilledButton>(find.byKey(AppKeys.play)).onPressed,
+      isNotNull,
+    );
+  });
+
+  testWidgets(
+    'выбор B1 и второй игры сохраняется на «Ещё раз» и при возврате',
+    (tester) async {
+      final f = _Fixture();
+      const b1 = [
+        ReviewItem(
+          word: Word(
+            id: 'climate',
+            text: 'climate',
+            translation: 'климат',
+            level: CefrLevel.b1,
+          ),
+        ),
+        ReviewItem(
+          word: Word(
+            id: 'engine',
+            text: 'engine',
+            translation: 'двигатель',
+            level: CefrLevel.b1,
+          ),
+        ),
+      ];
+      await _pump(tester, f.app(f.games, items: [...wordItems(3), ...b1]));
+      await _tap(tester, find.text('B1'));
+      await _tap(tester, find.text('Вторая игра'));
+      expect(f.cards.reads, 0);
+      await _tap(tester, find.byKey(AppKeys.play));
+      expect(f.launches.last.$1, 'beta');
+      expect(f.launches.last.$2.session.total, 2);
+      await _tap(tester, find.byKey(_answer));
+      expect(f.answers.records.single.wordId, 'climate');
+
+      await _tap(tester, find.byKey(_again));
+      expect(f.launches.last.$1, 'beta');
+      expect(f.launches.last.$2.session.total, 1);
+      await _tap(tester, find.byKey(_answer));
+      expect(f.answers.records.last.wordId, 'engine');
+
+      await _tap(tester, find.byKey(_exit));
+      expect(_selector(tester).selected, {'beta'});
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'B1'))
+            .selected,
+        isTrue,
+      );
+    },
+  );
+
   for (final game in [fallingWordsEntry, ninjaSlashEntry]) {
     testWidgets('${game.title}: карточка A2 из бандла и верный ответ', (
       tester,
@@ -263,6 +343,7 @@ void main() {
           now: () => _today,
         ),
       );
+      await _tap(tester, find.text('A2'));
       await _tap(tester, find.text(game.title));
       await tester.tap(find.byKey(AppKeys.play));
       await tester.pump();
@@ -343,6 +424,7 @@ void main() {
     tester,
   ) async {
     var selected = 'falling_words';
+    var level = CefrLevel.a1;
     await _pump(
       tester,
       MaterialApp(
@@ -362,6 +444,8 @@ void main() {
                   games: wordarcadeGames,
                   selectedGameId: selected,
                   onGameSelected: (id) => setState(() => selected = id),
+                  selectedLevel: level,
+                  onLevelSelected: (value) => setState(() => level = value),
                 ),
               ),
         ),
@@ -369,6 +453,8 @@ void main() {
       height: 640,
     );
     expect(tester.takeException(), isNull);
+    await _tap(tester, find.text('C2'));
+    expect(level, CefrLevel.c2);
     await _tap(tester, find.text('Ниндзя-слэш'));
     final selectorRect = tester.getRect(find.byKey(AppKeys.gameSelector));
     for (final title in ['Падающие слова', 'Ниндзя-слэш']) {

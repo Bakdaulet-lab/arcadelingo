@@ -26,6 +26,9 @@ ReviewOutcome _correct() => const ReviewOutcome(
   timeLimit: Duration(seconds: 6),
 );
 
+ReviewItem _levelWord(String id, CefrLevel level) =>
+    ReviewItem(word: Word(id: id, text: id, translation: id, level: level));
+
 void main() {
   group('Не читается состояние — партии нет', () {
     test('битые карточки: Err с причиной, сессия не создаётся', () {
@@ -82,6 +85,91 @@ void main() {
   //
   // Чтение серии здесь осталось, и проверяет его группа «Ошибки хранилища»:
   // битый документ обязан стать громким на входе в партию, а не на итогах.
+
+  group('Уровень слов', () {
+    test('в раунде A2 только его новые слова и повторы', () {
+      final usecase = StartSession(
+        cards: InMemoryCardStore({
+          'a1-due': LeitnerCard(
+            box: 2,
+            due: _today.subtract(const Duration(days: 1)),
+          ),
+          'a2-due': LeitnerCard(box: 2, due: _today),
+        }),
+        streaks: InMemoryStreakStore(),
+        now: () => _today,
+        target: 15,
+      );
+
+      final session = ok(
+        usecase(
+          items: [
+            _levelWord('a1-due', CefrLevel.a1),
+            _levelWord('a2-new', CefrLevel.a2),
+            _levelWord('b1-new', CefrLevel.b1),
+            _levelWord('a2-due', CefrLevel.a2),
+          ],
+          gameId: 'falling_words',
+          level: CefrLevel.a2,
+        ),
+      );
+
+      expect(session.total, 2);
+      expect(session.nextItem()!.word.id, 'a2-due');
+      session.report(_correct());
+      expect(session.nextItem()!.word.id, 'a2-new');
+      session.report(_correct());
+      expect(session.nextItem(), isNull);
+    });
+
+    test('пустой B1 не подмешивает слова других уровней', () {
+      final usecase = StartSession(
+        cards: InMemoryCardStore(),
+        streaks: InMemoryStreakStore(),
+        now: () => _today,
+        target: 15,
+      );
+
+      final session = ok(
+        usecase(
+          items: [_levelWord('a2-new', CefrLevel.a2)],
+          gameId: 'ninja_slash',
+          level: CefrLevel.b1,
+        ),
+      );
+
+      expect(session.total, 0);
+      expect(session.isFinished, isTrue);
+      expect(session.nextItem(), isNull);
+    });
+
+    test('ответ на A2 не меняет сохранённую карточку другого уровня', () {
+      final a1Card = LeitnerCard(box: 4, due: _today);
+      final cards = InMemoryCardStore({'a1-due': a1Card});
+      final usecase = StartSession(
+        cards: cards,
+        streaks: InMemoryStreakStore(),
+        now: () => _today,
+        target: 15,
+      );
+
+      final session = ok(
+        usecase(
+          items: [
+            _levelWord('a1-due', CefrLevel.a1),
+            _levelWord('a2-new', CefrLevel.a2),
+          ],
+          gameId: 'ninja_slash',
+          level: CefrLevel.a2,
+        ),
+      );
+      expect(session.nextItem()!.word.id, 'a2-new');
+      session.report(_correct());
+
+      expect(cards.saves.single['a1-due'], a1Card);
+      expect(cards.saves.single['a2-new']?.box, 3);
+    });
+  });
 
   group('Карточки', () {
     test('состояние сохраняется в порт после каждого ответа', () {

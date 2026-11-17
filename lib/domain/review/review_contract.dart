@@ -7,12 +7,16 @@
 /// скриптом scripts/arch_check.sh.
 library;
 
+/// Уровень владения языком по CEFR.
+enum CefrLevel { a1, a2, b1, b2, c1, c2 }
+
 /// Слово, которое учим.
 class Word {
   const Word({
     required this.id,
     required this.text,
     required this.translation,
+    this.level = CefrLevel.a1,
     this.partOfSpeech,
     this.example,
   });
@@ -24,6 +28,9 @@ class Word {
 
   /// Перевод на язык интерфейса.
   final String translation;
+
+  /// Уровень слова для отбора карточек перед началом партии.
+  final CefrLevel level;
 
   /// Часть речи — нужна генератору дистракторов, чтобы обманки были правдоподобны.
   final String? partOfSpeech;
