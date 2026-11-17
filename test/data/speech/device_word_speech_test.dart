@@ -94,6 +94,28 @@ void main() {
   });
 
   test(
+    'Android understands plugin zero/one flags and skips missing data',
+    () async {
+      speech = DeviceWordSpeech(platform: TargetPlatform.android);
+      engine.voices = [
+        {'name': 'Cloud', 'locale': 'en-US', 'network_required': '1'},
+        {
+          'name': 'Download needed',
+          'locale': 'en-US',
+          'network_required': '0',
+          'features': 'notInstalled',
+        },
+        {'name': 'Installed', 'locale': 'en-GB', 'network_required': '0'},
+      ];
+      final result = speech.speak('library');
+      await _drain();
+      expect(engine.selectedVoice, {'name': 'Installed', 'locale': 'en-GB'});
+      engine.finish(0);
+      expect(await result, SpeechResult.completed);
+    },
+  );
+
+  test(
     'invalid voice lists are unavailable without an unhandled cast',
     () async {
       engine.voices = [
