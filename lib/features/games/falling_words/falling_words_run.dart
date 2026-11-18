@@ -37,9 +37,13 @@ enum Verdict { correct, wrong, timeout }
 /// Одна партия: спросила слово, показала, доложила результат.
 class FallingWordsRun {
   /// Слова берутся только из [session]; [random] перемешивает варианты.
-  FallingWordsRun({required ReviewSession session, required Random random})
-    : _session = session,
-      _random = random;
+  FallingWordsRun({
+    required ReviewSession session,
+    required Random random,
+    bool sprint = false,
+  }) : _session = session,
+       _random = random,
+       _sprintRemaining = sprint ? const Duration(seconds: 60) : null;
 
   /// Время падения слова без комбо.
   static const Duration baseFallTime = Duration(seconds: 6);
@@ -76,6 +80,10 @@ class FallingWordsRun {
 
   final ReviewSession _session;
   final Random _random;
+  Duration? _sprintRemaining;
+
+  /// Time available at the start of the current flight or reveal.
+  Duration? get sprintRemaining => _sprintRemaining;
 
   /// До [start] слова нет — это и есть «на сегодня всё», пока сессия не
   /// доказала обратное.
@@ -121,7 +129,19 @@ class FallingWordsRun {
   /// Сколько держать подсветку по [verdict]. Таймаут — тот же неверный
   /// ответ: верный вариант надо успеть прочитать.
   Duration get revealTime =>
-      _verdict == Verdict.correct ? correctReveal : wrongReveal;
+      _withinSprint(_verdict == Verdict.correct ? correctReveal : wrongReveal);
+
+  Duration _withinSprint(Duration duration) {
+    final remaining = _sprintRemaining;
+    return remaining != null && remaining < duration ? remaining : duration;
+  }
+
+  void _useSprintTime(Duration elapsed) {
+    final remaining = _sprintRemaining;
+    if (remaining == null) return;
+    _sprintRemaining =
+        remaining > elapsed ? remaining - elapsed : Duration.zero;
+  }
 
   int get lives => _lives;
 
@@ -186,7 +206,8 @@ class FallingWordsRun {
   /// Конец подсветки: следующее слово, итоги или конец по жизням.
   void advance() {
     if (_phase != FallingPhase.reveal) return;
-    if (_lives == 0) {
+    _useSprintTime(revealTime);
+    if (_lives == 0 || _sprintRemaining == Duration.zero) {
       _phase = FallingPhase.over;
       return;
     }
@@ -228,7 +249,7 @@ class FallingWordsRun {
     _item = item;
     _options = List.unmodifiable([for (final i in order) variants[i]]);
     _correctIndex = order.indexOf(0);
-    _timeLimit = _fallTime();
+    _timeLimit = _withinSprint(_fallTime());
     _verdict = null;
     _chosenIndex = null;
     _nearMiss = false;
@@ -252,6 +273,7 @@ class FallingWordsRun {
     _phase = FallingPhase.reveal;
     _verdict = verdict;
     _answeredCount++;
+    _useSprintTime(elapsed);
     if (verdict == Verdict.correct) {
       // Бонус только верному ответу: промах и таймаут бывают сколь угодно
       // поздними, и награждать за вышедшее время игра не станет.
@@ -269,7 +291,11 @@ class FallingWordsRun {
       _correctCount++;
     } else {
       _combo = 0;
-      _lives--;
+      if (_sprintRemaining == null) {
+        _lives--;
+      } else {
+        _useSprintTime(const Duration(seconds: 5));
+      }
     }
     _report(
       correct: verdict == Verdict.correct,

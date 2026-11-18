@@ -8,6 +8,7 @@ library;
 import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/courses.dart';
+import 'package:arcadelingo/data/challenges/challenge_prefs_store.dart';
 import 'package:arcadelingo/data/dictionary/favorites_prefs_store.dart';
 import 'package:arcadelingo/data/log/drift_answer_log.dart';
 import 'package:arcadelingo/data/log/drift_event_log.dart';
@@ -63,6 +64,7 @@ Future<void> main() async {
         events: DriftEventLog(history),
         reminders: reminders,
         settings: SettingsPrefsStore(prefs),
+        challengeRecords: ChallengePrefsStore(prefs),
         sounds: AudioSounds(),
         speech: speech,
         askReminderPermission: reminders.requestPermission,

@@ -517,6 +517,7 @@ class SummaryView extends StatelessWidget {
     required this.onExit,
     super.key,
     this.footer,
+    this.challengeRecord,
     this.mistakeCount = 0,
     this.onReviewMistakes,
   });
@@ -531,6 +532,7 @@ class SummaryView extends StatelessWidget {
 
   /// Текст «что дальше» от хоста; null — строки нет.
   final String? footer;
+  final Widget? challengeRecord;
 
   final VoidCallback onPlayAgain;
   final VoidCallback onExit;
@@ -547,6 +549,7 @@ class SummaryView extends StatelessWidget {
     answeredCount: answeredCount,
     outOfLives: outOfLives,
     footer: footer,
+    challengeRecord: challengeRecord,
     footerKey: NinjaKeys.summaryFooter,
     actions: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

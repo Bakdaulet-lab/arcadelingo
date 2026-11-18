@@ -26,6 +26,7 @@ import 'dart:math';
 
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -49,6 +50,7 @@ class NinjaSlashGame extends StatefulWidget {
     this.seed,
     this.summaryFooter,
     this.onRoundOver,
+    this.onChallengeComplete,
     this.mistakeCount,
     this.onReviewMistakes,
     this.sounds = const NoopSounds(),
@@ -83,6 +85,7 @@ class NinjaSlashGame extends StatefulWidget {
   /// партию. Уход с середины сюда не попадает: там `dispose` докладывает
   /// неответ, а экрана конца не бывает.
   final VoidCallback? onRoundOver;
+  final Widget Function(int score)? onChallengeComplete;
 
   @override
   State<NinjaSlashGame> createState() => _NinjaSlashGameState();
@@ -167,11 +170,16 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
 
   /// Ответ хоста на «что дальше», взятый на входе в итоги.
   String? _footer;
+  Widget? _challengeRecord;
 
   @override
   void initState() {
     super.initState();
-    _run = NinjaRun(session: widget.session, random: Random(widget.seed));
+    _run = NinjaRun(
+      session: widget.session,
+      random: Random(widget.seed),
+      streakChallenge: widget.onChallengeComplete != null,
+    );
     _windUp = AnimationController(
       vsync: this,
       duration: NinjaRun.windUpTime,
@@ -272,6 +280,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     if (_run.phase == NinjaPhase.over) {
       widget.sounds.play(GameSound.roundEnd);
       _footer = widget.summaryFooter?.call();
+      _challengeRecord = widget.onChallengeComplete?.call(_run.bestCombo);
       widget.onRoundOver?.call();
     }
     setState(() {});
@@ -558,6 +567,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
             // жизней раньше, чем спрашивает следующее слово.
             outOfLives: _run.lives == 0,
             footer: _footer,
+            challengeRecord: _challengeRecord,
             onPlayAgain: widget.onPlayAgain,
             onExit: widget.onExit,
             mistakeCount: widget.mistakeCount?.call() ?? 0,
@@ -595,6 +605,13 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
                   total: widget.session.total,
                 ),
               ),
+              if (_run.streakChallenge)
+                Text(
+                  context.strings.challengeStreak(
+                    _run.combo,
+                    NinjaRun.challengeTarget,
+                  ),
+                ),
               Expanded(
                 child: _field(
                   scheme,

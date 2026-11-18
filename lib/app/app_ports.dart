@@ -18,6 +18,7 @@ library;
 import 'package:arcadelingo/app/courses.dart';
 import 'package:arcadelingo/domain/ports/answer_log.dart';
 import 'package:arcadelingo/domain/ports/card_store.dart';
+import 'package:arcadelingo/domain/ports/challenge_records.dart';
 import 'package:arcadelingo/domain/ports/event_log.dart';
 import 'package:arcadelingo/domain/ports/favorites_store.dart';
 import 'package:arcadelingo/domain/ports/reminders.dart';
@@ -41,6 +42,7 @@ class AppPorts {
     this.sounds = const NoopSounds(),
     this.speech = const NoopWordSpeech(),
     this.settings,
+    this.challengeRecords,
     this.askReminderPermission = alwaysAllowed,
   });
 
@@ -54,6 +56,7 @@ class AppPorts {
     reminders: reminders,
     sounds: sounds,
     settings: settings,
+    challengeRecords: challengeRecords,
     askReminderPermission: askReminderPermission,
   );
 
@@ -86,6 +89,7 @@ class AppPorts {
   /// Настройки напоминания; null — экран настроек недоступен, и это
   /// умолчание тестов, которые о них не знают.
   final SettingsStore? settings;
+  final ChallengeRecords? challengeRecords;
 
   /// Спросить у системы разрешение на уведомления.
   ///

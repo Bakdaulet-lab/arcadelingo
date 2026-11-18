@@ -12,6 +12,7 @@ library;
 
 import 'package:arcadelingo/app/game_selector.dart';
 import 'package:arcadelingo/app/games.dart';
+import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
@@ -32,6 +33,8 @@ export 'game_selector.dart' show GameSelector;
 abstract final class AppKeys {
   /// Кнопка «Играть». Она же признак того, что показан домашний экран.
   static const Key play = Key('app.play');
+
+  static const Key challenge = Key('app.challenge');
 
   static const Key learn = Key('app.learn');
 
@@ -96,6 +99,7 @@ class PlayView extends StatelessWidget {
     required this.onSources,
     super.key,
     this.onLearn,
+    this.onChallenge,
     this.ritual,
     this.week,
     this.games = const [],
@@ -138,6 +142,7 @@ class PlayView extends StatelessWidget {
   final VoidCallback? onPlay;
 
   final VoidCallback? onLearn;
+  final VoidCallback? onChallenge;
 
   /// Вход на «Источники».
   ///
@@ -167,6 +172,7 @@ class PlayView extends StatelessWidget {
       ritual: ritual,
       onPlay: onPlay,
       onLearn: onLearn,
+      onChallenge: onChallenge,
       onProgress: onProgress,
       onSettings: onSettings,
     );
@@ -334,6 +340,7 @@ class _HomeActions extends StatelessWidget {
     required this.ritual,
     required this.onPlay,
     required this.onLearn,
+    required this.onChallenge,
     required this.onProgress,
     required this.onSettings,
   });
@@ -343,6 +350,7 @@ class _HomeActions extends StatelessWidget {
   final StreakView? ritual;
   final VoidCallback? onPlay;
   final VoidCallback? onLearn;
+  final VoidCallback? onChallenge;
   final VoidCallback onProgress;
   final VoidCallback onSettings;
 
@@ -365,6 +373,14 @@ class _HomeActions extends StatelessWidget {
           ),
           const SizedBox(height: 10),
         ],
+        if (onChallenge != null)
+          TextButton.icon(
+            key: AppKeys.challenge,
+            onPressed: onChallenge,
+            icon: const Icon(Icons.emoji_events_outlined),
+            label: Text(context.strings.challenge, textAlign: TextAlign.center),
+            style: TextButton.styleFrom(minimumSize: const Size(0, 48)),
+          ),
         if (onLearn != null) ...[
           OutlinedButton.icon(
             key: AppKeys.learn,
@@ -704,4 +720,78 @@ class _ErrorLayout extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<bool?> showChallengeDialog(
+  BuildContext context, {
+  required GameEntry game,
+  required ArcadeChallenge mode,
+  required StudyCourse course,
+  required CefrLevel level,
+  required int? best,
+}) => showDialog<bool>(
+  context: context,
+  builder: (context) {
+    final strings = context.strings;
+    final colors = Theme.of(context).colorScheme;
+    return AlertDialog(
+      title: Text(strings.challengeName(mode)),
+      scrollable: true,
+      backgroundColor: colors.surfaceContainerHighest,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: colors.outline),
+      ),
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(game.titleFor(strings)),
+          Text('${strings.courseName(course)} · ${level.name.toUpperCase()}'),
+          const SizedBox(height: 16),
+          Text(strings.challengeRules(mode)),
+          const SizedBox(height: 12),
+          Text(strings.challengeBest(best)),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: Navigator.of(context).pop,
+          child: Text(strings.cancel),
+        ),
+        FilledButton(
+          key: const Key('challenge.start'),
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(strings.startGame),
+        ),
+      ],
+    );
+  },
+);
+
+class ChallengeRecordLine extends StatelessWidget {
+  const ChallengeRecordLine({required this.best, super.key});
+
+  final Future<int?> best;
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<int?>(
+    future: best,
+    builder: (context, snapshot) {
+      final strings = context.strings;
+      final value = snapshot.data;
+      return Semantics(
+        liveRegion: true,
+        child: Text(
+          value != null
+              ? strings.challengeBest(value)
+              : snapshot.connectionState == ConnectionState.done
+              ? strings.challengeSaveFailed
+              : strings.savingChallenge,
+          textAlign: TextAlign.center,
+        ),
+      );
+    },
+  );
 }
