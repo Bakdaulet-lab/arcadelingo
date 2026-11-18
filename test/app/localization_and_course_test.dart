@@ -2,6 +2,7 @@ import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/courses.dart';
+import 'package:arcadelingo/app/settings_view.dart';
 import 'package:arcadelingo/data/dictionary/favorites_prefs_store.dart';
 import 'package:arcadelingo/data/log/drift_answer_log.dart';
 import 'package:arcadelingo/data/log/history_database.dart';
@@ -229,6 +230,57 @@ void main() {
     await _tap(tester, find.byKey(const ValueKey('course.ru-en')));
     expect(find.text('English level'), findsOneWidget);
   });
+
+  for (final locale in ['ru', 'en']) {
+    testWidgets('настройки $locale доступны на 360×640 при шрифте 2×', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({
+        'reminder_settings':
+            '{"version":2,"enabled":true,"hour":20,"minute":0,"interfaceLanguage":"$locale"}',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.view.reset);
+      addTearDown(tester.platformDispatcher.clearAllTestValues);
+      await tester.pumpWidget(
+        WordarcadeApp(
+          ports: AppPorts(
+            cards: InMemoryCardStore(),
+            streaks: InMemoryStreakStore(),
+            settings: SettingsPrefsStore(prefs),
+          ),
+          seed: const Ok([_fish]),
+          now: () => _now,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await _tap(tester, find.byKey(AppKeys.settings));
+      expect(tester.takeException(), isNull);
+      for (final key in [
+        SettingsKeys.language,
+        SettingsKeys.toggle,
+        SettingsKeys.time,
+        SettingsKeys.sound,
+      ]) {
+        final row = find.byKey(key);
+        expect(
+          row.hitTestable(),
+          findsOneWidget,
+          reason: 'строка доступна сразу: $key',
+        );
+        expect(tester.getSize(row).height, greaterThanOrEqualTo(48));
+      }
+      expect(tester.getSize(find.byType(AppBar)).height, lessThan(90));
+      await _tap(tester, find.byKey(SettingsKeys.sound));
+      expect(
+        tester.widget<SwitchListTile>(find.byKey(SettingsKeys.sound)).value,
+        isFalse,
+      );
+    });
+  }
 
   for (final (title, id) in [
     ('Falling Words', 'falling_words'),
