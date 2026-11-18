@@ -20,9 +20,11 @@ import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StreakPrefsStore implements StreakStore {
-  StreakPrefsStore(this._prefs);
+  StreakPrefsStore(this._prefs, {String? courseId})
+    : _storageKey = courseId == null ? key : '$key.$courseId';
 
   final SharedPreferences _prefs;
+  final String _storageKey;
 
   /// Ключ документа в prefs. Переименование — потеря серии у пользователей;
   /// тест держит это имя литералом именно поэтому.
@@ -32,7 +34,7 @@ class StreakPrefsStore implements StreakStore {
   /// документ — [Err]; стор при этом ничего не пишет и не сбрасывает.
   @override
   Result<StreakState> load() {
-    final raw = _prefs.getString(key);
+    final raw = _prefs.getString(_storageKey);
     if (raw == null) return Ok(StreakState.empty);
     return decodeStreakState(raw);
   }
@@ -44,8 +46,8 @@ class StreakPrefsStore implements StreakStore {
   /// это через `unawaited` на живом состоянии.
   @override
   Future<bool> save(StreakState state) =>
-      _prefs.setString(key, encodeStreakState(state));
+      _prefs.setString(_storageKey, encodeStreakState(state));
 
   @override
-  Future<bool> reset() => _prefs.remove(key);
+  Future<bool> reset() => _prefs.remove(_storageKey);
 }

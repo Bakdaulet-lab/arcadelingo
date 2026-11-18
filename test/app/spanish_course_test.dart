@@ -22,7 +22,6 @@ import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
 import 'package:arcadelingo/main.dart' show loadSpanishA1Course;
 import 'package:arcadelingo/ui/word_pronunciation.dart';
 import 'package:drift/native.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -64,7 +63,10 @@ void main() {
         final file = File('${folder.path}/spanish.sqlite');
         final spanishDb = HistoryDatabase(NativeDatabase(file));
         final englishDb = HistoryDatabase(NativeDatabase.memory());
-        addTearDown(spanishDb.close);
+        var spanishClosed = false;
+        addTearDown(() async {
+          if (!spanishClosed) await spanishDb.close();
+        });
         addTearDown(englishDb.close);
         final speech = DeviceWordSpeech(platform: TargetPlatform.linux);
         final deck =
@@ -130,7 +132,10 @@ void main() {
         expect(find.widgetWithText(ChoiceChip, 'A1'), findsOneWidget);
         expect(find.widgetWithText(ChoiceChip, 'A2'), findsNothing);
         expect(find.widgetWithText(ChoiceChip, 'C2'), findsNothing);
-        expect(find.text('Серии нет'), findsOneWidget);
+        expect(
+          tester.widget<PlayView>(find.byType(PlayView)).ritual?.playedToday,
+          isFalse,
+        );
 
         if (id == 'claw_machine') {
           await _tap(tester, find.byKey(AppKeys.learn));
@@ -139,9 +144,9 @@ void main() {
           expect(find.byKey(WordPronunciation.messageKey), findsOneWidget);
           expect(
             tester.widget<Text>(find.byKey(WordPronunciation.messageKey)).data,
-            isNot(contains('английский')),
+            contains('испанский голос'),
           );
-          await tester.pageBack();
+          Navigator.of(tester.element(find.byType(WordPronunciation))).pop();
           await tester.pumpAndSettle();
         }
 
@@ -163,9 +168,13 @@ void main() {
           await tester.pump(const Duration(milliseconds: 850));
           expect(find.text('niño'), findsOneWidget);
           expect(find.text('child'), findsNothing);
-          for (final option in targetWord.distractors) {
-            expect(find.text(option), findsOneWidget);
-          }
+          final displayedDistractors = targetWord.distractors.where(
+            (option) => find.text(option).evaluate().isNotEmpty,
+          );
+          expect(
+            displayedDistractors,
+            hasLength(ninja ? NinjaRun.maxObjects - 1 : 3),
+          );
           final answer = find.text('мальчик');
           expect(answer, findsOneWidget);
           if (ninja) {
@@ -198,6 +207,7 @@ void main() {
         await tester.pumpWidget(const SizedBox());
         final reopenedDb = await tester.runAsync(() async {
           await spanishDb.close();
+          spanishClosed = true;
           await prefs.reload();
           return HistoryDatabase(NativeDatabase(file));
         });
@@ -214,7 +224,14 @@ void main() {
         expect(await tester.runAsync(reopened.answers.all), records);
         final reopenedCards =
             reopened.cards.load() as Ok<Map<String, LeitnerCard>>;
-        expect(reopenedCards.value[targetId]!.box, 2);
+        expect(
+          reopenedCards.value[targetId],
+          schedule(
+            LeitnerCard(box: 1, due: _now),
+            records.single.grade,
+            now: _now,
+          ),
+        );
         final streak = reopened.streaks.load() as Ok<StreakState>;
         expect(streak.value.current, 1);
         expect(

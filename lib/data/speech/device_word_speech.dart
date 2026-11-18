@@ -7,7 +7,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import '../../domain/ports/word_speech.dart';
 
 /// One speech adapter per application: FlutterTts owns a shared native channel.
-/// Selects installed English voices; Android network voices are never used.
+/// Selects installed voices for the requested language; Android network voices are never used.
 class DeviceWordSpeech implements WordSpeech {
   DeviceWordSpeech({TargetPlatform? platform})
     : _platform = platform ?? defaultTargetPlatform;
@@ -17,7 +17,7 @@ class DeviceWordSpeech implements WordSpeech {
   _Request? _active;
   _Request? _speaking;
   Future<void> _commands = Future.value();
-  bool _prepared = false;
+  String? _voiceLanguage;
 
   // A broken plugin must not leave navigation or the pronunciation button stuck.
   static const _commandTimeout = Duration(seconds: 3);
@@ -29,10 +29,15 @@ class DeviceWordSpeech implements WordSpeech {
       _platform != TargetPlatform.linux &&
       _platform != TargetPlatform.fuchsia;
 
+  /// Binds a course to this engine without creating another native channel.
+  WordSpeech forLanguage(String language) => _CourseSpeech(this, language);
+
   @override
-  Future<SpeechResult> speak(String englishText) {
+  Future<SpeechResult> speak(String text) => _speak(text, 'en');
+
+  Future<SpeechResult> _speak(String text, String language) {
     _active?.finish(SpeechResult.cancelled);
-    final request = _Request(englishText.trim());
+    final request = _Request(text.trim(), language);
     _active = request;
     if (!_supported || request.text.isEmpty) {
       request.finish(SpeechResult.unavailable);
@@ -63,14 +68,15 @@ class DeviceWordSpeech implements WordSpeech {
       final tts = _tts ??= _createEngine();
       await _stopEngine();
       if (!_current(request)) return;
-      if (!_prepared) {
+      if (_voiceLanguage != request.language) {
         final voices = await tts.getVoices.timeout(_commandTimeout);
         if (!_current(request)) return;
-        final voice = _englishVoice(voices);
+        final voice = _localVoice(voices, request.language);
         if (voice == null) {
           request.finish(SpeechResult.unavailable);
           return;
         }
+        _voiceLanguage = null;
         final selected = await tts.setVoice(voice).timeout(_commandTimeout);
         if (!_current(request)) return;
         if (selected != 1) {
@@ -87,23 +93,23 @@ class DeviceWordSpeech implements WordSpeech {
         }
         await tts.setSpeechRate(0.45).timeout(_commandTimeout);
         if (!_current(request)) return;
-        _prepared = true;
+        _voiceLanguage = request.language;
       }
       // Keep setup/stop commands serial, but never hold the command queue while
       // waiting for speech: a subsequent stop must be able to interrupt it.
       request.timer = Timer(_utteranceTimeout, () {
         if (!_current(request)) return;
         request.finish(SpeechResult.failed);
-        _prepared = false;
+        _voiceLanguage = null;
         unawaited(_enqueue(_stopEngine));
       });
       _speaking = request;
       unawaited(_complete(request, tts.speak(request.text)));
     } on MissingPluginException {
-      _prepared = false;
+      _voiceLanguage = null;
       request.finish(SpeechResult.unavailable);
     } catch (_) {
-      _prepared = false;
+      _voiceLanguage = null;
       request.finish(SpeechResult.failed);
     }
   }
@@ -120,7 +126,7 @@ class DeviceWordSpeech implements WordSpeech {
     request.finish(result);
     _speaking = null;
     if (result == SpeechResult.failed) {
-      _prepared = false;
+      _voiceLanguage = null;
       unawaited(_enqueue(_stopEngine));
     }
   }
@@ -149,11 +155,11 @@ class DeviceWordSpeech implements WordSpeech {
       await tts.stop().timeout(_commandTimeout);
     } catch (_) {
       // Lifecycle cleanup remains safe when a device removes/disables its TTS.
-      _prepared = false;
+      _voiceLanguage = null;
     }
   }
 
-  Map<String, String>? _englishVoice(Object? rawVoices) {
+  Map<String, String>? _localVoice(Object? rawVoices, String language) {
     if (rawVoices is! List) return null;
     final voices = <Map<String, String>>[];
     for (final raw in rawVoices) {
@@ -161,8 +167,8 @@ class DeviceWordSpeech implements WordSpeech {
       final name = raw['name'];
       final locale = raw['locale'];
       if (name is! String || name.isEmpty || locale is! String) continue;
-      final language = locale.toLowerCase().replaceAll('_', '-');
-      if (language != 'en' && !language.startsWith('en-')) continue;
+      final tag = _normalizeTag(locale);
+      if (tag != language && !tag.startsWith('$language-')) continue;
       if (_platform == TargetPlatform.android) {
         final network = raw['network_required'];
         if (network != false &&
@@ -181,20 +187,34 @@ class DeviceWordSpeech implements WordSpeech {
     return voices.isEmpty ? null : voices.first;
   }
 
-  int _priority(String locale) => switch (locale.toLowerCase().replaceAll(
-    '_',
-    '-',
-  )) {
-    'en-us' => 0,
-    'en-gb' => 1,
+  String _normalizeTag(String locale) =>
+      locale.toLowerCase().replaceAll('_', '-');
+
+  int _priority(String locale) => switch (_normalizeTag(locale)) {
+    'en-us' || 'es-es' => 0,
+    'en-gb' || 'es-mx' => 1,
     _ => 2,
   };
 }
 
+class _CourseSpeech implements WordSpeech {
+  const _CourseSpeech(this._engine, this._language);
+
+  final DeviceWordSpeech _engine;
+  final String _language;
+
+  @override
+  Future<SpeechResult> speak(String text) => _engine._speak(text, _language);
+
+  @override
+  Future<void> stop() => _engine.stop();
+}
+
 class _Request {
-  _Request(this.text);
+  _Request(this.text, this.language);
 
   final String text;
+  final String language;
   final result = Completer<SpeechResult>();
   Timer? timer;
 

@@ -243,6 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// станет на тапе «Играть», а экран ошибки при входе в приложение
   /// появлялся бы раньше, чем человек о чём-либо попросил.
   StreakView? _ritual;
+  int _weekRequest = 0;
 
   /// Семь дней недели для полосы; null — журнал ещё читается.
   ///
@@ -275,6 +276,10 @@ class _HomeScreenState extends State<HomeScreen> {
           selectedGameId: widget.games.isEmpty ? null : _selectedGame.id,
           onGameSelected: _selectGame,
           selectedLevel: _selectedLevel,
+          levels:
+              widget.course.id == StudyCourse.englishFromRussianId
+                  ? CefrLevel.values
+                  : _availableLevels,
           onLevelSelected: _selectLevel,
           course: widget.course,
           onCourseSelected: widget.saveCourse == null ? null : _openCourses,
@@ -341,6 +346,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       answers: widget.ports.answers,
                                       favorites: favorites,
                                       speech: widget.ports.speech,
+                                      studyLanguage:
+                                          widget.course.studyLanguage,
                                       gameTitles: {
                                         for (final game in widget.games)
                                           game.id: game.titleFor(
@@ -480,12 +487,13 @@ class _HomeScreenState extends State<HomeScreen> {
     _refreshReminder();
   }
 
-  void _selectFirstAvailableLevel() {
+  List<CefrLevel> get _availableLevels {
     final available = widget.items.map((item) => item.word.level).toSet();
-    _selectedLevel = CefrLevel.values.firstWhere(
-      available.contains,
-      orElse: () => CefrLevel.a1,
-    );
+    return CefrLevel.values.where(available.contains).toList();
+  }
+
+  void _selectFirstAvailableLevel() {
+    _selectedLevel = _availableLevels.firstOrNull ?? CefrLevel.a1;
   }
 
   @override
@@ -494,6 +502,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (oldWidget.course.id != widget.course.id) {
       _selectFirstAvailableLevel();
       _stateFailure = null;
+      _week = null;
+      _refreshRitual();
+      _refreshReminder();
     }
   }
 
@@ -523,7 +534,8 @@ class _HomeScreenState extends State<HomeScreen> {
       Err() => null,
     };
     setState(() => _ritual = state == null ? null : streakAsOf(state, today));
-    if (state != null) unawaited(_refreshWeek(state, today));
+    final request = ++_weekRequest;
+    if (state != null) unawaited(_refreshWeek(state, today, request));
   }
 
   /// Собирает полосу недели: сыгранные дни — из журнала, замороженный — из
@@ -532,7 +544,11 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Журнал ведётся с Этапа 3.2, и дни до него в полосе пусты, сколько бы их
   /// ни было сыграно. Восстанавливать их неоткуда, и притворяться, что
   /// можно, хуже, чем показать пустой кружок (`SPEC.md`).
-  Future<void> _refreshWeek(StreakState state, StreakDay today) async {
+  Future<void> _refreshWeek(
+    StreakState state,
+    StreakDay today,
+    int request,
+  ) async {
     var monday = today;
     while (monday.weekday != DateTime.monday) {
       monday = monday.previous;
@@ -546,7 +562,7 @@ class _HomeScreenState extends State<HomeScreen> {
       from: monday,
       to: sunday,
     );
-    if (!mounted) return;
+    if (!mounted || request != _weekRequest) return;
     setState(() {
       _week = weekStrip(
         today: today,
@@ -632,6 +648,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       words: plan.newWords,
                       level: level,
                       speech: widget.ports.speech,
+                      studyLanguage: widget.course.studyLanguage,
                       onStart: () => Navigator.of(context).pop(true),
                     ),
               ),
@@ -745,6 +762,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     outcomes: mistakes.outcomes,
                                     level: level,
                                     speech: widget.ports.speech,
+                                    studyLanguage: widget.course.studyLanguage,
                                   ),
                             ),
                           ),

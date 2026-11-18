@@ -93,6 +93,7 @@ String _partOfSpeechLabel(String partOfSpeech, AppStrings strings) =>
       'adjective' || 'adj' => strings.adjective,
       'adverb' || 'adv' => strings.adverb,
       'pronoun' => strings.pronoun,
+      'numeral' => strings.numeral,
       'preposition' => strings.preposition,
       'conjunction' => strings.conjunction,
       'interjection' => strings.interjection,

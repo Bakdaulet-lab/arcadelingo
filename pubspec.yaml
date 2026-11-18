@@ -74,6 +74,7 @@ flutter:
   assets:
     - assets/images/home/
     - assets/words_seed.json
+    - assets/words_es_a1.json
     - assets/words_c1.json
     - assets/words_c1.LICENSE.md
     - assets/words_c2.json

@@ -37,6 +37,7 @@ class DictionaryScreen extends StatefulWidget {
     required this.favorites,
     required this.speech,
     required this.gameTitles,
+    this.studyLanguage = 'en',
     super.key,
   });
 
@@ -45,6 +46,7 @@ class DictionaryScreen extends StatefulWidget {
   final AnswerLog answers;
   final FavoritesStore favorites;
   final WordSpeech speech;
+  final String studyLanguage;
   final Map<String, String> gameTitles;
 
   @override
@@ -90,6 +92,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
           (context) => _DictionaryWordScreen(
             entry: entry,
             speech: widget.speech,
+            studyLanguage: widget.studyLanguage,
             gameTitles: widget.gameTitles,
             favorite: _favorites.contains(entry.word.id),
             setFavorite: (favorite) => _setFavorite(entry.word.id, favorite),
@@ -243,11 +246,13 @@ class _DictionaryWordScreen extends StatefulWidget {
     required this.speech,
     required this.gameTitles,
     required this.favorite,
+    required this.studyLanguage,
     required this.setFavorite,
   });
 
   final DictionaryEntry entry;
   final WordSpeech speech;
+  final String studyLanguage;
   final Map<String, String> gameTitles;
   final bool favorite;
   final Future<bool> Function(bool value) setFavorite;
@@ -307,7 +312,11 @@ class _DictionaryWordScreenState extends State<_DictionaryWordScreen> {
                   const SizedBox(height: 12),
                   WordPanel(word: word),
                   const SizedBox(height: 12),
-                  WordPronunciation(text: word.text, speech: widget.speech),
+                  WordPronunciation(
+                    text: word.text,
+                    speech: widget.speech,
+                    studyLanguage: widget.studyLanguage,
+                  ),
                   const SizedBox(height: 8),
                   FilledButton.tonalIcon(
                     onPressed: _saving ? null : _toggleFavorite,
