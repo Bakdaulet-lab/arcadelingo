@@ -13,6 +13,7 @@ library;
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution.dart';
 import 'package:arcadelingo/data/attribution_loader.dart';
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_page.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
@@ -42,7 +43,7 @@ class AttributionScreen extends StatefulWidget {
 
 class _AttributionScreenState extends State<AttributionScreen> {
   Future<String>? _source;
-  bool? _english;
+  InterfaceLanguage? _language;
   AssetBundle? _bundle;
 
   /// Future заводится один раз, а не в `build`: собранный в `build`, он
@@ -52,18 +53,19 @@ class _AttributionScreenState extends State<AttributionScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final english = context.strings.isEnglish;
+    final language = context.strings.language;
     final bundle = widget.bundle ?? DefaultAssetBundle.of(context);
-    if (_source == null || _english != english || _bundle != bundle) {
-      _english = english;
+    if (_source == null || _language != language || _bundle != bundle) {
+      _language = language;
       _bundle = bundle;
-      _source = loadAttribution(bundle: bundle, english: english);
+      _source = loadAttribution(bundle: bundle, language: language);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<String>(
+      key: ValueKey(_language),
       future: _source,
       builder: (context, snapshot) {
         final error = snapshot.error;
@@ -77,9 +79,9 @@ class _AttributionScreenState extends State<AttributionScreen> {
               child: ArcadePanel(
                 accent: Theme.of(context).colorScheme.error,
                 child: Text(
-                  context.strings.isEnglish
-                      ? context.strings.sourcesLoadFailed
-                      : '${context.strings.sourcesLoadFailed}: $error',
+                  context.strings.isRussian
+                      ? '${context.strings.sourcesLoadFailed}: $error'
+                      : context.strings.sourcesLoadFailed,
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
               ),

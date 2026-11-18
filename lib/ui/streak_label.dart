@@ -5,15 +5,20 @@
 /// «Серия: 1 дней» была бы заглушкой, которую видит пользователь.
 library;
 
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 
 /// «Серия: N дней» с правильной формой слова.
 String streakLabel(int days, {AppStrings strings = russianStrings}) =>
-    strings.isEnglish
-        ? 'Streak: $days ${englishDayWord(days)}'
-        : 'Серия: $days ${dayWord(days)}';
+    switch (strings.language) {
+      InterfaceLanguage.english => 'Streak: $days ${englishDayWord(days)}',
+      InterfaceLanguage.spanish => 'Racha: $days ${spanishDayWord(days)}',
+      InterfaceLanguage.russian ||
+      InterfaceLanguage.system => 'Серия: $days ${dayWord(days)}',
+    };
 
 String englishDayWord(int days) => days == 1 ? 'day' : 'days';
+String spanishDayWord(int days) => days == 1 ? 'día' : 'días';
 
 /// Форма слова «день» при числе [n].
 ///

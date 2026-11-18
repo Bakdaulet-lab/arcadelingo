@@ -152,7 +152,10 @@ class _WordarcadeAppState extends State<WordarcadeApp>
       theme: wordarcadeTheme(),
       debugShowCheckedModeBanner: false,
       locale: Locale(language.tag),
-      supportedLocales: const [Locale('en'), Locale('ru')],
+      supportedLocales: [
+        for (final option in InterfaceLanguage.values)
+          if (option != InterfaceLanguage.system) Locale(option.tag),
+      ],
       localizationsDelegates: const [
         AppStrings.delegate,
         ...GlobalMaterialLocalizations.delegates,

@@ -12,6 +12,7 @@
 library;
 
 import 'package:arcadelingo/domain/reminders/reminder_policy.dart';
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/streak_label.dart';
 
@@ -21,9 +22,13 @@ import 'package:arcadelingo/ui/streak_label.dart';
   AppStrings strings = russianStrings,
 }) => switch (plan.reason) {
   ReminderReason.atRisk => (
-    strings.isEnglish
-        ? 'Your ${plan.days}-day streak is at risk'
-        : '${streakLabel(plan.days)} под угрозой',
+    switch (strings.language) {
+      InterfaceLanguage.english => 'Your ${plan.days}-day streak is at risk',
+      InterfaceLanguage.spanish =>
+        'Tu racha de ${plan.days} ${spanishDayWord(plan.days)} está en riesgo',
+      InterfaceLanguage.russian ||
+      InterfaceLanguage.system => '${streakLabel(plan.days)} под угрозой',
+    },
     strings.reminderSavedByFreeze,
   ),
   ReminderReason.keepGoing => (

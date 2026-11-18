@@ -512,11 +512,11 @@ class _MetricRow extends StatelessWidget {
 }
 
 String _dateLabel(BuildContext context, StreakDay day) =>
-    context.strings.isEnglish
-        ? MaterialLocalizations.of(
+    context.strings.isRussian
+        ? '${day.day.toString().padLeft(2, '0')}.${day.month.toString().padLeft(2, '0')}'
+        : MaterialLocalizations.of(
           context,
-        ).formatShortMonthDay(DateTime(day.year, day.month, day.day))
-        : '${day.day.toString().padLeft(2, '0')}.${day.month.toString().padLeft(2, '0')}';
+        ).formatShortMonthDay(DateTime(day.year, day.month, day.day));
 
 class _Series extends StatelessWidget {
   const _Series({required this.days});

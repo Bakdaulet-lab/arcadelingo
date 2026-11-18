@@ -10,7 +10,8 @@ import '../review/study_course.dart';
 enum InterfaceLanguage {
   system('system'),
   russian('ru'),
-  english('en');
+  english('en'),
+  spanish('es');
 
   const InterfaceLanguage(this.tag);
   final String tag;

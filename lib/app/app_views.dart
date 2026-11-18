@@ -618,7 +618,7 @@ class StateErrorView extends StatelessWidget {
       viewKey: AppKeys.stateError,
       icon: Icons.warning_amber_rounded,
       title: context.strings.progressUnreadable,
-      message: context.strings.isEnglish ? null : message,
+      message: context.strings.isRussian ? message : null,
       hint: context.strings.resetHint,
       action: FilledButton(
         key: AppKeys.reset,
@@ -645,7 +645,7 @@ class SeedErrorView extends StatelessWidget {
       viewKey: AppKeys.seedError,
       icon: Icons.error_outline,
       title: context.strings.dictionaryUnreadable,
-      message: context.strings.isEnglish ? null : message,
+      message: context.strings.isRussian ? message : null,
       hint: context.strings.dictionaryRepairHint,
     );
   }

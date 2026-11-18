@@ -3,6 +3,7 @@ import 'package:arcadelingo/domain/ports/answer_log.dart';
 import 'package:arcadelingo/domain/ports/favorites_store.dart';
 import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_page.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
@@ -373,8 +374,12 @@ class _DictionaryWordScreenState extends State<_DictionaryWordScreen> {
                 final attempt = entry.attempts[index];
                 final day = attempt.localDay;
                 final date =
-                    '${day.day.toString().padLeft(2, '0')}.'
-                    '${day.month.toString().padLeft(2, '0')}.${day.year}';
+                    context.strings.language == InterfaceLanguage.spanish
+                        ? MaterialLocalizations.of(context).formatCompactDate(
+                          DateTime(day.year, day.month, day.day),
+                        )
+                        : '${day.day.toString().padLeft(2, '0')}.'
+                            '${day.month.toString().padLeft(2, '0')}.${day.year}';
                 final game = widget.gameTitles[attempt.gameId];
                 final accent = attempt.correct ? colors.primary : colors.error;
                 return Padding(
