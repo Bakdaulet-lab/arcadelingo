@@ -1,4 +1,5 @@
 import 'package:arcadelingo/domain/streak/streak_view.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/ritual_labels.dart';
 import 'package:arcadelingo/ui/streak_card.dart';
 import 'package:arcadelingo/ui/streak_flame.dart';
@@ -21,8 +22,8 @@ class HomeRitualCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final caption = ritualStreakLabel(ritual);
-    final freeze = ritualFreezeLabel(ritual);
+    final caption = ritualStreakLabel(ritual, strings: context.strings);
+    final freeze = ritualFreezeLabel(ritual, strings: context.strings);
     final tier = flameTier(ritual.days);
     final mood = flameMood(ritual);
     final flameExtent =
@@ -50,8 +51,8 @@ class HomeRitualCard extends StatelessWidget {
               MediaQuery.textScalerOf(context).scale(1) <= 1.3;
           final header = Semantics(
             label:
-                '${ritual.days == 0 ? 'Серии нет' : streakLabel(ritual.days)}. '
-                '${ritualTodayLabel(ritual)}',
+                '${ritual.days == 0 ? context.strings.noStreak : streakLabel(ritual.days, strings: context.strings)}. '
+                '${ritualTodayLabel(ritual, strings: context.strings)}',
             excludeSemantics: true,
             child: Row(
               children: [
@@ -102,7 +103,7 @@ class HomeRitualCard extends StatelessWidget {
                             ),
                           ] else
                             Text(
-                              'Начни свою серию',
+                              context.strings.startStreak,
                               style: withWeight(
                                 theme.textTheme.titleSmall!.copyWith(
                                   fontSize: compact ? 13 : null,
@@ -113,7 +114,7 @@ class HomeRitualCard extends StatelessWidget {
                         ],
                       ),
                       Text(
-                        ritualTodayLabel(ritual),
+                        ritualTodayLabel(ritual, strings: context.strings),
                         key: homeTodayKey,
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: compact ? 11 : null,
@@ -195,7 +196,8 @@ class _HomeWeekDay extends StatelessWidget {
         played ? scheme.primary : scheme.outline.withValues(alpha: 0.4);
 
     return Semantics(
-      label: '${day.letter}: ${weekDayDescription(day)}',
+      label:
+          '${context.strings.weekday(day.day.weekday, day.letter)}: ${weekDayDescription(day, strings: context.strings)}',
       excludeSemantics: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -204,7 +206,7 @@ class _HomeWeekDay extends StatelessWidget {
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                day.letter,
+                context.strings.weekday(day.day.weekday, day.letter),
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontSize: compact ? 11 : null,
                   color: scheme.onSurfaceVariant,

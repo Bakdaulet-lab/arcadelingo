@@ -11,6 +11,7 @@
 library;
 
 import 'package:arcadelingo/domain/streak/streak_view.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/streak_label.dart';
 
 /// Надпись на главной кнопке.
@@ -18,16 +19,21 @@ import 'package:arcadelingo/ui/streak_label.dart';
 /// Кнопка — это и есть приглашение, и оно разное: начать, продолжить,
 /// спасти или сыграть ещё раз. «Играть» на всех четырёх случаях сразу
 /// превратило бы ритуал обратно в экран с кнопкой.
-String ritualCallToAction(StreakView view) {
-  if (view.playedToday) return 'Сыграть ещё раз';
-  if (view.freezeWillCover) return 'Спасти серию';
-  if (view.alive) return 'Продолжить серию';
-  return 'Играть';
+String ritualCallToAction(
+  StreakView view, {
+  AppStrings strings = russianStrings,
+}) {
+  if (view.playedToday) return strings.playAnotherRound;
+  if (view.freezeWillCover) return strings.saveStreak;
+  if (view.alive) return strings.continueStreak;
+  return strings.play;
 }
 
 /// Что с сегодняшним днём: засчитан или ещё нет.
-String ritualTodayLabel(StreakView view) =>
-    view.playedToday ? 'Сегодня сыграно' : 'Сегодня ещё не сыграно';
+String ritualTodayLabel(
+  StreakView view, {
+  AppStrings strings = russianStrings,
+}) => view.playedToday ? strings.playedToday : strings.notPlayedToday;
 
 /// Подпись под пламенем, или null — показывать нечего.
 ///
@@ -39,23 +45,53 @@ String ritualTodayLabel(StreakView view) =>
 /// Ноль дней это не «0 дней подряд», а отсутствие подписи: у человека,
 /// который ещё не играл, и у человека, который серию оборвал, на экране
 /// одинаково пусто. Разница между ними — в кнопке, а не в счётчике.
-String? ritualStreakLabel(StreakView view) =>
-    view.days == 0 ? null : '${dayWord(view.days)} подряд';
+String? ritualStreakLabel(
+  StreakView view, {
+  AppStrings strings = russianStrings,
+}) =>
+    view.days == 0
+        ? null
+        : strings.isEnglish
+        ? '${englishDayWord(view.days)} in a row'
+        : '${dayWord(view.days)} подряд';
 
 /// Состояние запаса заморозок словами, или null — говорить нечего.
-String? ritualFreezeLabel(StreakView view) {
+String? ritualFreezeLabel(
+  StreakView view, {
+  AppStrings strings = russianStrings,
+}) {
   // До первой партии говорить не о чем: человек ещё не знает ни про серию,
   // ни про заморозку, и «вернётся через семь дней» было бы обещанием
   // непонятно чего.
   if (view.best == 0) return null;
-  if (view.freeze.available) return 'Заморозка в запасе';
+  if (view.freeze.available) return strings.freezeAvailable;
   final spent = view.freeze.spentOn;
   if (spent != null) {
+    if (strings.isEnglish) {
+      final month =
+          const [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'May',
+            'Jun',
+            'Jul',
+            'Aug',
+            'Sep',
+            'Oct',
+            'Nov',
+            'Dec',
+          ][spent.month - 1];
+      return 'Streak Freeze used for $month ${spent.day}';
+    }
     return 'Заморозка потрачена за '
         '${spent.day} ${monthInGenitive(spent.month)}';
   }
   final left = view.freeze.daysToNext;
-  return 'Заморозка вернётся через $left ${dayWord(left)}';
+  return strings.isEnglish
+      ? 'Streak Freeze returns in $left ${englishDayWord(left)}'
+      : 'Заморозка вернётся через $left ${dayWord(left)}';
 }
 
 /// Название месяца в родительном падеже: «27 **августа**».

@@ -3,6 +3,7 @@ import 'package:arcadelingo/domain/ports/answer_log.dart';
 import 'package:arcadelingo/domain/ports/favorites_store.dart';
 import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_page.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -11,13 +12,21 @@ import 'package:arcadelingo/ui/word_pronunciation.dart';
 import 'package:flutter/material.dart';
 
 enum _WordFilter {
-  recent('Недавно встретил', 'Пока нет встреченных слов'),
-  difficult('Часто ошибаюсь', 'Пока нет слов с частыми ошибками'),
-  favorites('Избранное', 'В избранном пока пусто');
+  recent,
+  difficult,
+  favorites;
 
-  const _WordFilter(this.label, this.emptyMessage);
-  final String label;
-  final String emptyMessage;
+  String label(AppStrings strings) => switch (this) {
+    recent => strings.recentWords,
+    difficult => strings.oftenMissed,
+    favorites => strings.favorites,
+  };
+
+  String emptyMessage(AppStrings strings) => switch (this) {
+    recent => strings.noRecentWords,
+    difficult => strings.noDifficultWords,
+    favorites => strings.noFavorites,
+  };
 }
 
 class DictionaryScreen extends StatefulWidget {
@@ -93,7 +102,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     return ArcadePage(
-      title: 'Личный словарь',
+      title: context.strings.personalDictionary,
       child: FutureBuilder<List<DictionaryEntry>>(
         future: _entries,
         builder: (context, snapshot) {
@@ -119,7 +128,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Уровень ${widget.level.name.toUpperCase()}',
+                        context.strings.level(widget.level.name.toUpperCase()),
                         style: withWeight(
                           theme.textTheme.titleMedium!,
                           FontWeight.bold,
@@ -132,7 +141,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                         children: [
                           for (final filter in _WordFilter.values)
                             ChoiceChip(
-                              label: Text(filter.label),
+                              label: Text(filter.label(context.strings)),
                               selected: _filter == filter,
                               onSelected:
                                   (_) => setState(() => _filter = filter),
@@ -152,20 +161,20 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Словарь не загрузился'),
+                        Text(context.strings.wordListLoadFailed),
                         TextButton(
                           onPressed: () => setState(() => _entries = _load()),
-                          child: const Text('Попробовать ещё раз'),
+                          child: Text(context.strings.retry),
                         ),
                       ],
                     ),
                   ),
                 )
               else if (visible == null)
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: Center(
                     child: CircularProgressIndicator(
-                      semanticsLabel: 'Загрузка словаря',
+                      semanticsLabel: context.strings.loadingWordList,
                     ),
                   ),
                 )
@@ -175,7 +184,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                   sliver: SliverToBoxAdapter(
                     child: ArcadePanel(
                       child: Text(
-                        _filter.emptyMessage,
+                        _filter.emptyMessage(context.strings),
                         style: theme.textTheme.titleMedium,
                       ),
                     ),
@@ -280,7 +289,7 @@ class _DictionaryWordScreenState extends State<_DictionaryWordScreen> {
     final entry = widget.entry;
     final word = entry.word;
     return ArcadePage(
-      title: 'Карточка слова',
+      title: context.strings.wordDetails,
       child: CustomScrollView(
         slivers: [
           SliverPadding(
@@ -290,7 +299,7 @@ class _DictionaryWordScreenState extends State<_DictionaryWordScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Уровень ${word.level.name.toUpperCase()}',
+                    context.strings.level(word.level.name.toUpperCase()),
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: colors.primary,
                     ),
@@ -308,7 +317,9 @@ class _DictionaryWordScreenState extends State<_DictionaryWordScreen> {
                           : Icons.bookmark_add_outlined,
                     ),
                     label: Text(
-                      _favorite ? 'Убрать из избранного' : 'В избранное',
+                      _favorite
+                          ? context.strings.removeFavorite
+                          : context.strings.addFavorite,
                       textAlign: TextAlign.center,
                     ),
                     style: FilledButton.styleFrom(
@@ -319,13 +330,13 @@ class _DictionaryWordScreenState extends State<_DictionaryWordScreen> {
                     Semantics(
                       liveRegion: true,
                       child: Text(
-                        'Не удалось сохранить избранное. Попробуй ещё раз.',
+                        context.strings.favoriteSaveFailed,
                         style: TextStyle(color: colors.error),
                       ),
                     ),
                   const SizedBox(height: 24),
                   Text(
-                    'История ответов',
+                    context.strings.answerHistory,
                     style: withWeight(
                       theme.textTheme.titleLarge!,
                       FontWeight.bold,
@@ -333,7 +344,10 @@ class _DictionaryWordScreenState extends State<_DictionaryWordScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Попыток: ${entry.attempts.length} · Ошибок: ${entry.mistakes}',
+                    context.strings.attemptCounts(
+                      entry.attempts.length,
+                      entry.mistakes,
+                    ),
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: colors.onSurfaceVariant,
                     ),
@@ -371,7 +385,9 @@ class _DictionaryWordScreenState extends State<_DictionaryWordScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                attempt.correct ? 'Верно' : 'Ошибка',
+                                attempt.correct
+                                    ? context.strings.correct
+                                    : context.strings.mistake,
                                 style: theme.textTheme.titleSmall?.copyWith(
                                   color: accent,
                                 ),

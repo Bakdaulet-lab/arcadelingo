@@ -19,6 +19,7 @@ import 'dart:async';
 import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution_view.dart';
+import 'package:arcadelingo/app/courses.dart';
 import 'package:arcadelingo/app/dictionary_view.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/app/learning_views.dart';
@@ -31,6 +32,7 @@ import 'package:arcadelingo/domain/learning/mistake_review_observer.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/reminders/reminder_policy.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/domain/session/observed_session.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
@@ -38,16 +40,19 @@ import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/domain/usecases/count_played_day.dart';
 import 'package:arcadelingo/domain/usecases/start_session.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
+import 'package:arcadelingo/ui/arcade_choice_dialog.dart';
 import 'package:arcadelingo/ui/reminder_labels.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 /// Размер сессии из SPEC. Его задаёт хост: игра про эту цифру не знает и
 /// заканчивает партию только по `nextItem() == null` и нулю жизней.
 const int sessionTarget = 15;
 
-class WordarcadeApp extends StatelessWidget {
+class WordarcadeApp extends StatefulWidget {
   /// [seed] уже разобран: читать ассет — работа `loadWordsSeed`, а этому
   /// слою остаётся решить, что делать с результатом.
   ///
@@ -59,6 +64,8 @@ class WordarcadeApp extends StatelessWidget {
     super.key,
     this.now = DateTime.now,
     this.games = wordarcadeGames,
+    this.additionalDecks = const [],
+    this.followSystemLocale = false,
   });
 
   /// Всё, что приложение получает снаружи (`app_ports.dart`).
@@ -70,24 +77,101 @@ class WordarcadeApp extends StatelessWidget {
   /// Что приложение умеет запускать. Умолчание — реестр из `games.dart`;
   /// тест подменяет список, чтобы проверить подключение второй игры.
   final List<GameEntry> games;
+  final List<CourseDeck> additionalDecks;
+  final bool followSystemLocale;
+
+  @override
+  State<WordarcadeApp> createState() => _WordarcadeAppState();
+}
+
+class _WordarcadeAppState extends State<WordarcadeApp>
+    with WidgetsBindingObserver {
+  late AppSettings _preferences = _readPreferences();
+
+  AppSettings _readPreferences() => switch (widget.ports.settings?.load()) {
+    Ok(:final value) => value,
+    Err() || null => AppSettings.defaults,
+  };
+
+  InterfaceLanguage _resolveLanguage(InterfaceLanguage choice) {
+    if (choice != InterfaceLanguage.system) return choice;
+    if (!widget.followSystemLocale) return InterfaceLanguage.russian;
+    for (final locale in WidgetsBinding.instance.platformDispatcher.locales) {
+      final language = InterfaceLanguage.fromTag(locale.languageCode);
+      if (language != InterfaceLanguage.system) return language;
+    }
+    return InterfaceLanguage.english;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeLocales(List<Locale>? locales) {
+    if (widget.followSystemLocale &&
+        _preferences.interfaceLanguage == InterfaceLanguage.system) {
+      setState(() {});
+    }
+  }
+
+  void _reloadPreferences() {
+    if (mounted) setState(() => _preferences = _readPreferences());
+  }
+
+  Future<bool> _saveCourse(StudyCourse course) async {
+    final store = widget.ports.settings;
+    final next = _readPreferences().copyWith(courseId: course.id);
+    if (store != null && !await store.save(next)) return false;
+    if (mounted) setState(() => _preferences = next);
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final language = _resolveLanguage(_preferences.interfaceLanguage);
+    final extras = widget.additionalDecks.where(
+      (deck) =>
+          deck.course.id != StudyCourse.englishFromRussianId &&
+          deck.items.isNotEmpty,
+    );
+    final deck =
+        extras
+            .where((deck) => deck.course.id == _preferences.courseId)
+            .firstOrNull;
     return MaterialApp(
-      // Подпись в списке недавних задач Android. Это тоже отображаемое имя
-      // приложения, просто второе: под иконкой стоит @string/app_name.
       title: 'Arcadelingo',
       theme: wordarcadeTheme(),
-      // Баннер перекрывает верхний правый угол, где живёт счёт, и попадал бы
-      // в каждый голден (задача 0.9). Пользы от него нет и в отладке: то,
-      // что сборка отладочная, видно по фреймтаймам.
       debugShowCheckedModeBanner: false,
-      home: switch (seed) {
+      locale: Locale(language.tag),
+      supportedLocales: const [Locale('en'), Locale('ru')],
+      localizationsDelegates: const [
+        AppStrings.delegate,
+        ...GlobalMaterialLocalizations.delegates,
+      ],
+      home: switch (widget.seed) {
         Ok(:final value) => HomeScreen(
-          ports: ports,
-          items: value,
-          now: now,
-          games: games,
+          ports: deck == null ? widget.ports : widget.ports.forDeck(deck),
+          items: deck?.items ?? value,
+          now: widget.now,
+          games: widget.games,
+          course: deck?.course ?? StudyCourse.englishFromRussian,
+          courses: [
+            StudyCourse.englishFromRussian,
+            for (final extra in extras) extra.course,
+          ],
+          saveCourse: _saveCourse,
+          onPreferencesChanged: _reloadPreferences,
+          interfaceLanguage: language,
+          resolveLanguage: _resolveLanguage,
         ),
         Err(:final failure) => SeedErrorView(message: failure.message),
       },
@@ -102,6 +186,12 @@ class HomeScreen extends StatefulWidget {
     required this.items,
     required this.now,
     required this.games,
+    this.course = StudyCourse.englishFromRussian,
+    this.courses = const [StudyCourse.englishFromRussian],
+    this.saveCourse,
+    this.onPreferencesChanged,
+    this.interfaceLanguage = InterfaceLanguage.russian,
+    this.resolveLanguage,
     super.key,
   });
 
@@ -114,6 +204,13 @@ class HomeScreen extends StatefulWidget {
 
   final List<GameEntry> games;
 
+  final StudyCourse course;
+  final List<StudyCourse> courses;
+  final Future<bool> Function(StudyCourse)? saveCourse;
+  final VoidCallback? onPreferencesChanged;
+  final InterfaceLanguage interfaceLanguage;
+  final InterfaceLanguage Function(InterfaceLanguage)? resolveLanguage;
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -122,6 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _selectedGameId;
   CefrLevel _selectedLevel = CefrLevel.a1;
   bool _preparingLearning = false;
+  bool _selectingCourse = false;
 
   GameEntry get _selectedGame => widget.games.firstWhere(
     (game) => game.id == _selectedGameId,
@@ -178,8 +276,35 @@ class _HomeScreenState extends State<HomeScreen> {
           onGameSelected: _selectGame,
           selectedLevel: _selectedLevel,
           onLevelSelected: _selectLevel,
+          course: widget.course,
+          onCourseSelected: widget.saveCourse == null ? null : _openCourses,
         )
         : StateErrorView(message: failure.message, onReset: _reset);
+  }
+
+  Future<void> _openCourses() async {
+    if (_selectingCourse) return;
+    _selectingCourse = true;
+    try {
+      final strings = context.strings;
+      final selected = await showArcadeChoice<StudyCourse>(
+        context,
+        title: strings.chooseCourse,
+        choices: widget.courses,
+        selected: widget.course,
+        label: strings.courseName,
+        optionKey: (course) => ValueKey('course.${course.id}'),
+      );
+      if (!mounted || selected == null) return;
+      final saved = await widget.saveCourse!(selected);
+      if (!saved && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.strings.settingsSaveFailed)),
+        );
+      }
+    } finally {
+      _selectingCourse = false;
+    }
   }
 
   /// Тап «Источники»: показать содержимое `assets/ATTRIBUTION.md`.
@@ -218,7 +343,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                       speech: widget.ports.speech,
                                       gameTitles: {
                                         for (final game in widget.games)
-                                          game.id: game.title,
+                                          game.id: game.titleFor(
+                                            context.strings,
+                                          ),
                                       },
                                     ),
                               ),
@@ -261,11 +388,23 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<bool> _applySettings(AppSettings next) async {
     final store = widget.ports.settings;
     if (store == null) return false;
-    if (next.enabled && !await widget.ports.askReminderPermission()) {
+    final previous = switch (store.load()) {
+      Ok(:final value) => value,
+      Err() => AppSettings.defaults,
+    };
+    final reminderChanged =
+        previous.enabled != next.enabled || previous.at != next.at;
+    if (next.enabled &&
+        reminderChanged &&
+        !await widget.ports.askReminderPermission()) {
       return false;
     }
-    await store.save(next);
-    await _rescheduleReminder(next);
+    if (!await store.save(next)) return false;
+    widget.onPreferencesChanged?.call();
+    final language =
+        widget.resolveLanguage?.call(next.interfaceLanguage) ??
+        widget.interfaceLanguage;
+    await _rescheduleReminder(next, language: language);
     return true;
   }
 
@@ -274,7 +413,10 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Зовётся на открытии приложения и после каждой партии: повод считается
   /// на день срабатывания, и чем свежее расписание, тем меньше шансов, что
   /// уведомление скажет про серию, которой уже нет.
-  Future<void> _rescheduleReminder(AppSettings settings) async {
+  Future<void> _rescheduleReminder(
+    AppSettings settings, {
+    InterfaceLanguage? language,
+  }) async {
     final streak = switch (widget.ports.streaks.load()) {
       Ok(:final value) => value,
       Err() => null,
@@ -290,7 +432,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _record(AppEventKind.reminderScheduled);
       return;
     }
-    final (title, body) = reminderText(plan);
+    final (title, body) = reminderText(
+      plan,
+      strings: AppStrings(language ?? widget.interfaceLanguage),
+    );
     await widget.ports.reminders.schedule(
       at: plan.at,
       title: title,
@@ -325,11 +470,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    final available = widget.items.map((item) => item.word.level).toSet();
-    _selectedLevel = CefrLevel.values.firstWhere(
-      available.contains,
-      orElse: () => CefrLevel.a1,
-    );
+    _selectFirstAvailableLevel();
     _refreshRitual();
     // «Открыл приложение» — здесь, а не в `main.dart`: оттуда событие не
     // увидел бы ни один тест, а проводку без приборов проверять нечем.
@@ -337,6 +478,23 @@ class _HomeScreenState extends State<HomeScreen> {
     // события не будет. Битый сид — дефект сборки, играть всё равно нечем.
     _record(AppEventKind.appOpen);
     _refreshReminder();
+  }
+
+  void _selectFirstAvailableLevel() {
+    final available = widget.items.map((item) => item.word.level).toSet();
+    _selectedLevel = CefrLevel.values.firstWhere(
+      available.contains,
+      orElse: () => CefrLevel.a1,
+    );
+  }
+
+  @override
+  void didUpdateWidget(HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.course.id != widget.course.id) {
+      _selectFirstAvailableLevel();
+      _stateFailure = null;
+    }
   }
 
   /// Пишет событие часами хоста и не ждёт записи.
@@ -428,7 +586,7 @@ class _HomeScreenState extends State<HomeScreen> {
     GameEntry? chosenGame,
     CefrLevel? chosenLevel,
   }) {
-    if (!_hasWordsForLevel || _preparingLearning) return;
+    if (!_hasWordsForLevel || _preparingLearning || _selectingCourse) return;
     if (widget.games.isEmpty) {
       throw StateError('реестр игр пуст: запускать нечего');
     }
@@ -647,9 +805,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (card == null) {
         fresh = true;
       } else if (!card.due.isAfter(now)) {
-        return 'Ещё есть слова — сыграй ещё раунд';
+        return context.strings.wordsReady;
       }
     }
-    return fresh ? 'Слова на сегодня кончились' : 'Возвращайся завтра';
+    return fresh
+        ? context.strings.dailyWordsDone
+        : context.strings.comeBackTomorrow;
   }
 }

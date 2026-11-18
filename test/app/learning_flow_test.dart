@@ -277,7 +277,7 @@ void main() {
       await _tap(tester, find.text(entry.title));
       await _tap(tester, find.byKey(_learn));
       await _tap(tester, find.byKey(LearningKeys.speak));
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
       expect(find.byKey(AppKeys.play), findsOneWidget);
       expect(fixture.cards.saves, isEmpty);

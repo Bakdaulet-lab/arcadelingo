@@ -1,3 +1,4 @@
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -46,7 +47,7 @@ class ArcadeHud extends StatelessWidget {
           runSpacing: 8,
           children: [
             Semantics(
-              label: 'Жизни: $lives из $maxLives',
+              label: context.strings.lives(lives, maxLives),
               excludeSemantics: true,
               child: Row(
                 mainAxisSize: MainAxisSize.min,

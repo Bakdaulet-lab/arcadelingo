@@ -191,7 +191,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(SettingsKeys.sound));
     await tester.pumpAndSettle();
-    await tester.pageBack();
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     await _play(tester);
 

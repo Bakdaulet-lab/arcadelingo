@@ -1,4 +1,5 @@
 import 'package:arcadelingo/app/games.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -48,7 +49,7 @@ class _GameCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final artwork = game.artwork;
-    final instruction = game.instruction;
+    final instruction = game.instructionFor(context.strings);
     final largeText = MediaQuery.textScalerOf(context).scale(16) > 22;
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(22),
@@ -112,7 +113,7 @@ class _GameCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        game.title,
+                        game.titleFor(context.strings),
                         style: withWeight(
                           theme.textTheme.titleLarge!,
                           FontWeight.bold,

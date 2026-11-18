@@ -13,7 +13,9 @@ library;
 import 'package:arcadelingo/app/game_selector.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
 import 'package:arcadelingo/ui/home_ritual_card.dart';
@@ -46,6 +48,7 @@ abstract final class AppKeys {
 
   /// Вход на «Настройки» с домашнего экрана.
   static const Key settings = Key('app.settings');
+  static const Key course = Key('app.course');
 
   /// Вход на «Прогресс» с домашнего экрана.
   ///
@@ -100,6 +103,8 @@ class PlayView extends StatelessWidget {
     this.onGameSelected,
     this.selectedLevel,
     this.onLevelSelected,
+    this.course,
+    this.onCourseSelected,
   });
 
   /// Серия на сегодня; null — состояние не читается.
@@ -125,6 +130,8 @@ class PlayView extends StatelessWidget {
   final ValueChanged<String>? onGameSelected;
   final CefrLevel? selectedLevel;
   final ValueChanged<CefrLevel>? onLevelSelected;
+  final StudyCourse? course;
+  final VoidCallback? onCourseSelected;
 
   final VoidCallback? onPlay;
 
@@ -192,7 +199,7 @@ class PlayView extends StatelessWidget {
                       const SizedBox(width: 8),
                       IconButton.filledTonal(
                         key: AppKeys.sources,
-                        tooltip: 'Источники',
+                        tooltip: context.strings.sources,
                         onPressed: onSources,
                         style: IconButton.styleFrom(
                           backgroundColor: colors.surfaceContainerHighest,
@@ -210,16 +217,63 @@ class PlayView extends StatelessWidget {
                     const SizedBox(height: 16),
                     HomeRitualCard(ritual: view, week: week),
                   ],
+                  if (course case final selected?) ...[
+                    const SizedBox(height: 14),
+                    ArcadePanel(
+                      padding: EdgeInsets.zero,
+                      child: Material(
+                        type: MaterialType.transparency,
+                        borderRadius: BorderRadius.circular(24),
+                        clipBehavior: Clip.antiAlias,
+                        child: ListTile(
+                          key: AppKeys.course,
+                          onTap: onCourseSelected,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          minTileHeight: 48,
+                          minVerticalPadding: 6,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          leading: Icon(
+                            Icons.language_rounded,
+                            size: 20,
+                            color: colors.primary,
+                          ),
+                          minLeadingWidth: 20,
+                          horizontalTitleGap: 10,
+                          trailing: Icon(
+                            Icons.expand_more_rounded,
+                            color: colors.onSurfaceVariant,
+                          ),
+                          title: Text(
+                            context.strings.courseName(selected),
+                            style: withWeight(
+                              theme.textTheme.titleSmall!,
+                              FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                   if (selectedLevel case final level?) ...[
-                    const SizedBox(height: 20),
-                    _LevelSelector(level: level, onSelected: onLevelSelected),
+                    SizedBox(height: course == null ? 20 : 14),
+                    _LevelSelector(
+                      level: level,
+                      onSelected: onLevelSelected,
+                      language: course?.studyLanguage ?? 'en',
+                    ),
                     if (onPlay == null)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Semantics(
                           liveRegion: true,
                           child: Text(
-                            'Для ${level.name.toUpperCase()} пока нет слов',
+                            context.strings.noWordsForLevel(
+                              level.name.toUpperCase(),
+                            ),
                             style: theme.textTheme.bodyMedium,
                           ),
                         ),
@@ -228,7 +282,7 @@ class PlayView extends StatelessWidget {
                   if (games.length > 1) ...[
                     const SizedBox(height: 20),
                     Text(
-                      'Выбери игру',
+                      context.strings.chooseGame,
                       style: withWeight(
                         theme.textTheme.titleLarge!,
                         FontWeight.bold,
@@ -299,7 +353,7 @@ class _HomeActions extends StatelessWidget {
       children: [
         if (game != null && level != null) ...[
           Text(
-            '${game!.title} · ${level!.name.toUpperCase()}',
+            '${game!.titleFor(context.strings)} · ${level!.name.toUpperCase()}',
             textAlign: TextAlign.center,
             style: withWeight(
               theme.textTheme.labelLarge!,
@@ -313,7 +367,10 @@ class _HomeActions extends StatelessWidget {
             key: AppKeys.learn,
             onPressed: onLearn,
             icon: const Icon(Icons.school_outlined),
-            label: const Text('Знакомство и игра', textAlign: TextAlign.center),
+            label: Text(
+              context.strings.learnAndPlay,
+              textAlign: TextAlign.center,
+            ),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -340,7 +397,9 @@ class _HomeActions extends StatelessWidget {
             textStyle: withWeight(theme.textTheme.titleLarge!, FontWeight.bold),
           ),
           child: Text(
-            ritual == null ? 'Играть' : ritualCallToAction(ritual!),
+            ritual == null
+                ? context.strings.play
+                : ritualCallToAction(ritual!, strings: context.strings),
             textAlign: TextAlign.center,
           ),
         ),
@@ -352,9 +411,14 @@ class _HomeActions extends StatelessWidget {
 }
 
 class _LevelSelector extends StatelessWidget {
-  const _LevelSelector({required this.level, required this.onSelected});
+  const _LevelSelector({
+    required this.level,
+    required this.onSelected,
+    required this.language,
+  });
 
   final CefrLevel level;
+  final String language;
   final ValueChanged<CefrLevel>? onSelected;
 
   @override
@@ -366,7 +430,7 @@ class _LevelSelector extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Уровень английского',
+          context.strings.levelOf(language),
           style: withWeight(theme.textTheme.titleMedium!, FontWeight.bold),
         ),
         const SizedBox(height: 8),
@@ -438,7 +502,7 @@ class _HomeNavigation extends StatelessWidget {
     final destinations = [
       _destination(
         context,
-        label: 'Игры',
+        label: context.strings.games,
         icon: Icons.sports_esports_rounded,
         selected: true,
         onPressed: () {},
@@ -446,14 +510,14 @@ class _HomeNavigation extends StatelessWidget {
       _destination(
         context,
         key: AppKeys.progress,
-        label: 'Прогресс',
+        label: context.strings.progress,
         icon: Icons.bar_chart_rounded,
         onPressed: onProgress,
       ),
       _destination(
         context,
         key: AppKeys.settings,
-        label: 'Настройки',
+        label: context.strings.settings,
         icon: Icons.settings_rounded,
         onPressed: onSettings,
       ),
@@ -548,16 +612,16 @@ class StateErrorView extends StatelessWidget {
     return _ErrorLayout(
       viewKey: AppKeys.stateError,
       icon: Icons.warning_amber_rounded,
-      title: 'Прогресс не читается',
-      message: message,
-      hint: 'После сброса слова начнутся заново, как при первом запуске.',
+      title: context.strings.progressUnreadable,
+      message: context.strings.isEnglish ? null : message,
+      hint: context.strings.resetHint,
       action: FilledButton(
         key: AppKeys.reset,
         onPressed: onReset,
         style: ButtonStyle(
           minimumSize: WidgetStateProperty.all(const Size(220, 56)),
         ),
-        child: const Text('Сбросить прогресс'),
+        child: Text(context.strings.resetProgress),
       ),
     );
   }
@@ -575,9 +639,9 @@ class SeedErrorView extends StatelessWidget {
     return _ErrorLayout(
       viewKey: AppKeys.seedError,
       icon: Icons.error_outline,
-      title: 'Словарь не читается',
-      message: message,
-      hint: 'Это дефект сборки: сбрасывать нечего, поможет только обновление.',
+      title: context.strings.dictionaryUnreadable,
+      message: context.strings.isEnglish ? null : message,
+      hint: context.strings.dictionaryRepairHint,
     );
   }
 }
@@ -597,7 +661,7 @@ class _ErrorLayout extends StatelessWidget {
   final Key viewKey;
   final IconData icon;
   final String title;
-  final String message;
+  final String? message;
   final String hint;
   final Widget? action;
 
@@ -613,14 +677,15 @@ class _ErrorLayout extends StatelessWidget {
         body: ArcadePanel(
           child: Column(
             children: [
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  height: 1.5,
+              if (message case final details?)
+                Text(
+                  details,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.5,
+                  ),
                 ),
-              ),
               const SizedBox(height: 16),
               Text(
                 hint,

@@ -12,21 +12,23 @@
 library;
 
 import 'package:arcadelingo/domain/reminders/reminder_policy.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/streak_label.dart';
 
 /// Заголовок и текст уведомления для запланированного напоминания.
-(String title, String body) reminderText(ReminderPlan plan) => switch (plan
-    .reason) {
+(String title, String body) reminderText(
+  ReminderPlan plan, {
+  AppStrings strings = russianStrings,
+}) => switch (plan.reason) {
   ReminderReason.atRisk => (
-    '${streakLabel(plan.days)} под угрозой',
-    'Сыграй сегодня — заморозка прикроет вчерашний пропуск',
+    strings.isEnglish
+        ? 'Your ${plan.days}-day streak is at risk'
+        : '${streakLabel(plan.days)} под угрозой',
+    strings.reminderSavedByFreeze,
   ),
   ReminderReason.keepGoing => (
-    streakLabel(plan.days),
-    'Одна партия — и день засчитан',
+    streakLabel(plan.days, strings: strings),
+    strings.oneRoundCounts,
   ),
-  ReminderReason.start => (
-    'Пора вернуться',
-    'Одна партия, и серия начнётся заново',
-  ),
+  ReminderReason.start => (strings.timeToReturn, strings.restartStreak),
 };

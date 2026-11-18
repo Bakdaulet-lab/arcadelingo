@@ -50,7 +50,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 520));
     expect(answers.records, isEmpty);
-    await tester.pageBack();
+    await tester.tap(find.byType(BackButton));
     await tester.pump(const Duration(milliseconds: 70));
     await tester.pumpAndSettle();
     expect(answers.records.single.correct, isFalse);
@@ -107,7 +107,7 @@ void main() {
     expect(find.text(letter), findsOneWidget);
     expect(find.text('fish'), findsOneWidget);
     expect(find.text('рыба'), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.byKey(ClawKeys.summary), findsOneWidget);
     expect(answers.records, hasLength(1));

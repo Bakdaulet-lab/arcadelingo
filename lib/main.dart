@@ -57,6 +57,7 @@ Future<void> main() async {
         askReminderPermission: reminders.requestPermission,
       ),
       seed: seed,
+      followSystemLocale: true,
     ),
   );
 }

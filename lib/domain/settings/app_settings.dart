@@ -5,6 +5,20 @@
 /// проверяется скриптом.
 library;
 
+import '../review/study_course.dart';
+
+enum InterfaceLanguage {
+  system('system'),
+  russian('ru'),
+  english('en');
+
+  const InterfaceLanguage(this.tag);
+  final String tag;
+
+  static InterfaceLanguage fromTag(Object? value) =>
+      values.where((language) => language.tag == value).firstOrNull ?? system;
+}
+
 /// Время суток без даты и без зоны.
 ///
 /// Зоны здесь нет по той же причине, что у `StreakDay`: «восемь вечера» — это
@@ -55,6 +69,8 @@ class AppSettings {
     required this.enabled,
     required this.at,
     this.soundOn = true,
+    this.interfaceLanguage = InterfaceLanguage.system,
+    this.courseId = StudyCourse.englishFromRussianId,
   });
 
   /// Умолчание: **выключено**.
@@ -81,13 +97,22 @@ class AppSettings {
   /// держит игру открытой, и беззвучный режим телефона его глушит без
   /// всяких настроек.
   final bool soundOn;
+  final InterfaceLanguage interfaceLanguage;
+  final String courseId;
 
-  AppSettings copyWith({bool? enabled, ReminderTime? at, bool? soundOn}) =>
-      AppSettings(
-        enabled: enabled ?? this.enabled,
-        at: at ?? this.at,
-        soundOn: soundOn ?? this.soundOn,
-      );
+  AppSettings copyWith({
+    bool? enabled,
+    ReminderTime? at,
+    bool? soundOn,
+    InterfaceLanguage? interfaceLanguage,
+    String? courseId,
+  }) => AppSettings(
+    enabled: enabled ?? this.enabled,
+    at: at ?? this.at,
+    soundOn: soundOn ?? this.soundOn,
+    interfaceLanguage: interfaceLanguage ?? this.interfaceLanguage,
+    courseId: courseId ?? this.courseId,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -95,10 +120,13 @@ class AppSettings {
       other is AppSettings &&
           enabled == other.enabled &&
           at == other.at &&
-          soundOn == other.soundOn;
+          soundOn == other.soundOn &&
+          interfaceLanguage == other.interfaceLanguage &&
+          courseId == other.courseId;
 
   @override
-  int get hashCode => Object.hash(enabled, at, soundOn);
+  int get hashCode =>
+      Object.hash(enabled, at, soundOn, interfaceLanguage, courseId);
 
   @override
   String toString() =>

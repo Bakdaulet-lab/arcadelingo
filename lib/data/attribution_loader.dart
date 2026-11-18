@@ -11,5 +11,9 @@ import 'package:flutter/services.dart';
 const String attributionAssetPath = 'assets/ATTRIBUTION.md';
 
 /// Текст атрибуции из [bundle] (по умолчанию [rootBundle]).
-Future<String> loadAttribution({AssetBundle? bundle}) =>
-    (bundle ?? rootBundle).loadString(attributionAssetPath);
+const String englishAttributionAssetPath = 'assets/ATTRIBUTION.en.md';
+
+Future<String> loadAttribution({AssetBundle? bundle, bool english = false}) =>
+    (bundle ?? rootBundle).loadString(
+      english ? englishAttributionAssetPath : attributionAssetPath,
+    );

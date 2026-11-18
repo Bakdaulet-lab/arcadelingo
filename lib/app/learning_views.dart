@@ -1,5 +1,6 @@
 import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_page.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -154,7 +155,10 @@ class _LearningDeckState extends State<_LearningDeck> {
     final word = words.isEmpty ? null : words[_index];
     final outcome = word == null ? null : widget.outcomes[word.id];
     return ArcadePage(
-      title: _review ? 'Разбор ошибок' : 'Знакомство',
+      title:
+          _review
+              ? context.strings.reviewMistakes
+              : context.strings.wordPreview,
       child: SingleChildScrollView(
         key: _review ? LearningKeys.mistakes : LearningKeys.introduction,
         controller: _scroll,
@@ -189,7 +193,7 @@ class _LearningDeckState extends State<_LearningDeck> {
                   Semantics(
                     liveRegion: true,
                     child: Text(
-                      'Слово ${_index + 1} из ${words.length}',
+                      context.strings.wordNumber(_index + 1, words.length),
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: colors.onSurfaceVariant,
                       ),
@@ -200,7 +204,7 @@ class _LearningDeckState extends State<_LearningDeck> {
             if (words.isEmpty) ...[
               const SizedBox(height: 20),
               Text(
-                'В этом раунде нет ошибок',
+                context.strings.noMistakes,
                 style: withWeight(
                   theme.textTheme.headlineSmall!,
                   FontWeight.bold,
@@ -208,7 +212,7 @@ class _LearningDeckState extends State<_LearningDeck> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Можно вернуться к итогам.',
+                context.strings.backToResults,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: colors.onSurfaceVariant,
                   height: 1.5,
@@ -225,7 +229,10 @@ class _LearningDeckState extends State<_LearningDeck> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Твой ответ', style: theme.textTheme.labelLarge),
+                      Text(
+                        context.strings.yourAnswer,
+                        style: theme.textTheme.labelLarge,
+                      ),
                       const SizedBox(height: 6),
                       Text(
                         answer,
@@ -239,7 +246,7 @@ class _LearningDeckState extends State<_LearningDeck> {
               ] else if (outcome?.timedOut == true) ...[
                 const SizedBox(height: 12),
                 Text(
-                  'Время вышло',
+                  context.strings.timeUp,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: colors.error,
                   ),
@@ -255,8 +262,8 @@ class _LearningDeckState extends State<_LearningDeck> {
               const SizedBox(height: 16),
               Text(
                 _review
-                    ? 'Повтори слова без таймера.'
-                    : 'Прочитай перевод и послушай слово перед игрой.',
+                    ? context.strings.reviewWithoutTimer
+                    : context.strings.readAndListen,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colors.onSurfaceVariant,
                   height: 1.4,
@@ -268,18 +275,24 @@ class _LearningDeckState extends State<_LearningDeck> {
               FilledButton(
                 key: LearningKeys.next,
                 onPressed: enabled ? () => _move(_index + 1) : null,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10),
-                  child: Text('Дальше', textAlign: TextAlign.center),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Text(
+                    context.strings.next,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             if (!_review && _last)
               FilledButton(
                 key: LearningKeys.start,
                 onPressed: enabled ? _finish : null,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10),
-                  child: Text('Начать игру', textAlign: TextAlign.center),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Text(
+                    context.strings.startGame,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             if (_index > 0) ...[
@@ -287,9 +300,12 @@ class _LearningDeckState extends State<_LearningDeck> {
               OutlinedButton(
                 key: LearningKeys.previous,
                 onPressed: enabled ? () => _move(_index - 1) : null,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10),
-                  child: Text('Назад', textAlign: TextAlign.center),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Text(
+                    context.strings.back,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             ],
@@ -298,9 +314,12 @@ class _LearningDeckState extends State<_LearningDeck> {
               FilledButton.tonal(
                 key: LearningKeys.done,
                 onPressed: enabled ? _finish : null,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10),
-                  child: Text('Готово', textAlign: TextAlign.center),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Text(
+                    context.strings.done,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             ] else ...[
@@ -308,9 +327,12 @@ class _LearningDeckState extends State<_LearningDeck> {
               TextButton(
                 key: LearningKeys.skip,
                 onPressed: enabled ? _finish : null,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10),
-                  child: Text('Сразу в игру', textAlign: TextAlign.center),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Text(
+                    context.strings.skipPreview,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             ],

@@ -11,6 +11,7 @@
 /// мужчин).
 library;
 
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_hud.dart';
 import 'package:arcadelingo/ui/arcade_reveal_pair.dart';
 import 'package:arcadelingo/ui/arcade_round_summary.dart';
@@ -504,14 +505,14 @@ class SummaryView extends StatelessWidget {
       children: [
         EndButton(
           key: FallingWordsKeys.playAgain,
-          label: 'Ещё раз',
+          label: context.strings.listenAgain,
           onPressed: onPlayAgain,
         ),
         if (mistakeCount > 0 && onReviewMistakes != null) ...[
           const SizedBox(height: 10),
           EndButton(
             key: const Key('game.review_mistakes'),
-            label: 'Разобрать ошибки ($mistakeCount)',
+            label: context.strings.reviewMistakesCount(mistakeCount),
             primary: false,
             onPressed: onReviewMistakes!,
           ),
@@ -519,7 +520,7 @@ class SummaryView extends StatelessWidget {
         const SizedBox(height: 10),
         EndButton(
           key: FallingWordsKeys.exit,
-          label: 'Выйти',
+          label: context.strings.exit,
           primary: false,
           onPressed: onExit,
         ),
@@ -584,9 +585,9 @@ class NothingTodayView extends StatelessWidget {
   Widget build(BuildContext context) => ArcadeStatusLayout(
     key: FallingWordsKeys.nothingToday,
     icon: Icons.task_alt,
-    title: 'На сегодня всё',
+    title: context.strings.nothingToday,
     body: Text(
-      'Слова к повторению кончились. Возвращайся завтра.',
+      context.strings.reviewsDone,
       textAlign: TextAlign.center,
       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -595,7 +596,7 @@ class NothingTodayView extends StatelessWidget {
     ),
     actions: EndButton(
       key: FallingWordsKeys.exit,
-      label: 'Выйти',
+      label: context.strings.exit,
       onPressed: onExit,
     ),
   );
