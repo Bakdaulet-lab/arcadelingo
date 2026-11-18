@@ -1,8 +1,9 @@
+import 'dart:convert';
+
 import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/courses.dart';
-import 'package:arcadelingo/app/learning_views.dart';
 import 'package:arcadelingo/app/settings_view.dart';
 import 'package:arcadelingo/data/dictionary/favorites_prefs_store.dart';
 import 'package:arcadelingo/data/settings/settings_prefs_store.dart';
@@ -73,6 +74,17 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
 Future<void> _choose(WidgetTester tester, Key menu, Key item) async {
   await _tap(tester, find.byKey(menu));
   await _tap(tester, find.byKey(item));
+}
+
+class _AttributionBundle extends CachingAssetBundle {
+  _AttributionBundle(this.spanish);
+
+  static const path = 'assets/ATTRIBUTION.es.md';
+  final ByteData spanish;
+
+  @override
+  Future<ByteData> load(String key) async =>
+      key == path ? spanish : rootBundle.load(key);
 }
 
 void main() {
@@ -280,6 +292,7 @@ void main() {
       }
 
       expect(find.text('Fin de la ronda'), findsOneWidget);
+      expect(find.text('Volver a jugar'), findsOneWidget);
       expect(
         find.text(claw ? 'Aciertos: 0 de 1' : 'Aciertos: 1 de 1'),
         findsOneWidget,
@@ -304,17 +317,31 @@ void main() {
     final prefs = await _preferences('es');
     _size(tester);
     final answers = InMemoryAnswerLog();
+    final bytes =
+        (await tester.runAsync(
+          () => rootBundle.load(_AttributionBundle.path),
+        ))!;
+    final bundle = _AttributionBundle(bytes);
+    final source = utf8.decode(Uint8List.sublistView(bytes));
+    expect(
+      source,
+      contains('The CEFR-J Wordlist Version 1.5. Compiled by Yukio Tono'),
+    );
+    expect(source, contains('CC BY-SA 4.0'));
     await tester.pumpWidget(
-      WordarcadeApp(
-        seed: const Ok([_fish]),
-        ports: AppPorts(
-          cards: InMemoryCardStore(),
-          streaks: InMemoryStreakStore(),
-          settings: SettingsPrefsStore(prefs),
-          answers: answers,
-          favorites: FavoritesPrefsStore(prefs),
+      DefaultAssetBundle(
+        bundle: bundle,
+        child: WordarcadeApp(
+          seed: const Ok([_fish]),
+          ports: AppPorts(
+            cards: InMemoryCardStore(),
+            streaks: InMemoryStreakStore(),
+            settings: SettingsPrefsStore(prefs),
+            answers: answers,
+            favorites: FavoritesPrefsStore(prefs),
+          ),
+          now: () => _now,
         ),
-        now: () => _now,
       ),
     );
     await _tap(tester, find.byKey(AppKeys.progress));
@@ -357,21 +384,20 @@ void main() {
       await _tap(tester, find.byTooltip('Atrás'));
     }
 
-    // Читаем ассет из бандла, чтобы проверить лицензионную цитату.
-    final source = await tester.runAsync(
-      () => rootBundle.loadString('assets/ATTRIBUTION.es.md'),
-    );
-    expect(
-      source,
-      contains('The CEFR-J Wordlist Version 1.5. Compiled by Yukio Tono'),
-    );
-    expect(source, contains('CC BY-SA 4.0'));
     await _tap(tester, find.byKey(AppKeys.sources));
     expect(find.text('Fuentes'), findsOneWidget);
     expect(
       find.text('Fuentes y materiales de terceros', findRichText: true),
       findsOneWidget,
     );
+    final licenses = find.byKey(AppKeys.licenses);
+    await tester.ensureVisible(licenses);
+    expect(find.text('Textos completos de las licencias'), findsOneWidget);
+    await tester.tap(licenses);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Licencias'), findsOneWidget);
+    expect(find.byTooltip('Atrás'), findsOneWidget);
   });
 
   testWidgets('Spanish error screens display localized recovery instructions', (
