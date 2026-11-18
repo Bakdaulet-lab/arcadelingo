@@ -36,6 +36,8 @@ String encodeSettings(AppSettings settings) => jsonEncode({
   'hour': settings.at.hour,
   'minute': settings.at.minute,
   'soundOn': settings.soundOn,
+  'interfaceLanguage': settings.interfaceLanguage.tag,
+  'courseId': settings.courseId,
 });
 
 /// JSON-документ → настройки; битые данные — [Err].
@@ -79,6 +81,11 @@ Result<AppSettings> decodeSettings(String json) {
       enabled: enabled,
       at: at,
       soundOn: sound as bool? ?? AppSettings.defaults.soundOn,
+      interfaceLanguage: InterfaceLanguage.fromTag(root['interfaceLanguage']),
+      courseId: switch (root['courseId']) {
+        final String id when id.isNotEmpty => id,
+        _ => AppSettings.defaults.courseId,
+      },
     ),
   );
 }

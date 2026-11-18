@@ -1,3 +1,4 @@
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -36,7 +37,10 @@ class ArcadeRoundSummary extends StatelessWidget {
               ? Icons.favorite_border_rounded
               : Icons.emoji_events_rounded,
       accent: outOfLives ? colors.error : colors.tertiary,
-      title: outOfLives ? 'Жизни кончились' : 'Раунд окончен',
+      title:
+          outOfLives
+              ? context.strings.outOfLives
+              : context.strings.roundComplete,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -44,7 +48,7 @@ class ArcadeRoundSummary extends StatelessWidget {
             accent: colors.primary,
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Счёт: $score',
+              context.strings.score(score),
               textAlign: TextAlign.center,
               style: withWeight(
                 theme.textTheme.headlineMedium!,
@@ -59,13 +63,16 @@ class ArcadeRoundSummary extends StatelessWidget {
               children: [
                 _ResultLine(
                   icon: Icons.local_fire_department_rounded,
-                  text: 'Лучшая серия: $bestCombo',
+                  text: context.strings.bestCombo(bestCombo),
                   color: colors.tertiary,
                 ),
                 const SizedBox(height: 12),
                 _ResultLine(
                   icon: Icons.check_circle_outline_rounded,
-                  text: 'Верных ответов: $correctCount из $answeredCount',
+                  text: context.strings.correctAnswers(
+                    correctCount,
+                    answeredCount,
+                  ),
                   color: colors.primary,
                 ),
               ],

@@ -413,7 +413,7 @@ void main() {
       await _pumpApp(tester);
       await _tapAndSettleRoute(tester, AppKeys.sources);
 
-      await tester.tap(find.byTooltip('Back'));
+      await tester.tap(find.byTooltip('Назад'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 

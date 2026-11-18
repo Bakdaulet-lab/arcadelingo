@@ -9,6 +9,7 @@
 library;
 
 import 'package:arcadelingo/domain/streak/streak_view.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/ritual_labels.dart';
 import 'package:arcadelingo/ui/streak_flame.dart';
 import 'package:arcadelingo/ui/streak_label.dart';
@@ -44,7 +45,7 @@ class StreakCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final tier = flameTier(ritual.days);
     final mood = flameMood(ritual);
-    final caption = ritualStreakLabel(ritual);
+    final caption = ritualStreakLabel(ritual, strings: context.strings);
 
     return Container(
       key: streakCardKey,
@@ -59,7 +60,10 @@ class StreakCard extends StatelessWidget {
           // Экранному диктору цифра в пламени ничего не говорит: он читает
           // подпись целиком, а не картинку под ней.
           Semantics(
-            label: ritual.days == 0 ? 'Серии нет' : streakLabel(ritual.days),
+            label:
+                ritual.days == 0
+                    ? context.strings.noStreak
+                    : streakLabel(ritual.days, strings: context.strings),
             excludeSemantics: true,
             child: _Flame(tier: tier, mood: mood, days: ritual.days),
           ),
@@ -285,7 +289,8 @@ class _WeekDot extends StatelessWidget {
     };
 
     return Semantics(
-      label: '${day.letter}: ${weekDayDescription(day)}',
+      label:
+          '${context.strings.weekday(day.day.weekday, day.letter)}: ${weekDayDescription(day, strings: context.strings)}',
       excludeSemantics: true,
       child: Container(
         width: weekDotSize,
@@ -311,7 +316,7 @@ class _WeekDot extends StatelessWidget {
             color: scheme.tertiary,
           ),
           _ => Text(
-            day.letter,
+            context.strings.weekday(day.day.weekday, day.letter),
             style: textTheme.bodySmall?.copyWith(
               color:
                   future
@@ -328,10 +333,11 @@ class _WeekDot extends StatelessWidget {
 }
 
 /// Что случилось с днём — словами, для экранного диктора.
-String weekDayDescription(WeekDay day) => switch (day.state) {
-  WeekDayState.played => 'сыграно',
-  WeekDayState.frozen => 'заморозка',
-  WeekDayState.missed => 'пропущено',
-  WeekDayState.pending => 'сегодня, ещё не сыграно',
-  WeekDayState.future => 'ещё не наступил',
-};
+String weekDayDescription(WeekDay day, {AppStrings strings = russianStrings}) =>
+    switch (day.state) {
+      WeekDayState.played => strings.playedDay,
+      WeekDayState.frozen => strings.frozenDay,
+      WeekDayState.missed => strings.missedDay,
+      WeekDayState.pending => strings.pendingDay,
+      WeekDayState.future => strings.futureDay,
+    };

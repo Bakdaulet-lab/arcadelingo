@@ -13,6 +13,7 @@ library;
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution.dart';
 import 'package:arcadelingo/data/attribution_loader.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_page.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -41,6 +42,8 @@ class AttributionScreen extends StatefulWidget {
 
 class _AttributionScreenState extends State<AttributionScreen> {
   Future<String>? _source;
+  bool? _english;
+  AssetBundle? _bundle;
 
   /// Future заводится один раз, а не в `build`: собранный в `build`, он
   /// пересоздавался бы на каждую перестройку, и экран моргал бы загрузкой
@@ -49,9 +52,13 @@ class _AttributionScreenState extends State<AttributionScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _source ??= loadAttribution(
-      bundle: widget.bundle ?? DefaultAssetBundle.of(context),
-    );
+    final english = context.strings.isEnglish;
+    final bundle = widget.bundle ?? DefaultAssetBundle.of(context);
+    if (_source == null || _english != english || _bundle != bundle) {
+      _english = english;
+      _bundle = bundle;
+      _source = loadAttribution(bundle: bundle, english: english);
+    }
   }
 
   @override
@@ -70,7 +77,9 @@ class _AttributionScreenState extends State<AttributionScreen> {
               child: ArcadePanel(
                 accent: Theme.of(context).colorScheme.error,
                 child: Text(
-                  'Источники не читаются: $error',
+                  context.strings.isEnglish
+                      ? context.strings.sourcesLoadFailed
+                      : '${context.strings.sourcesLoadFailed}: $error',
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
               ),
@@ -79,10 +88,10 @@ class _AttributionScreenState extends State<AttributionScreen> {
         }
         final source = snapshot.data;
         return source == null
-            ? const _Frame(
+            ? _Frame(
               child: Center(
                 child: CircularProgressIndicator(
-                  semanticsLabel: 'Загрузка источников',
+                  semanticsLabel: context.strings.loadingSources,
                 ),
               ),
             )
@@ -156,8 +165,8 @@ class AttributionView extends StatelessWidget {
                   ),
                 ),
                 icon: const Icon(Icons.description_outlined),
-                label: const Text(
-                  'Полные тексты лицензий',
+                label: Text(
+                  context.strings.licenses,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -180,8 +189,11 @@ class _Frame extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) =>
-      ArcadePage(key: AppKeys.sourcesView, title: 'Источники', child: child);
+  Widget build(BuildContext context) => ArcadePage(
+    key: AppKeys.sourcesView,
+    title: context.strings.sources,
+    child: child,
+  );
 }
 
 /// Один блок разметки.

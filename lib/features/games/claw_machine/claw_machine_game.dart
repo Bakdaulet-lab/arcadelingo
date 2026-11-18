@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -185,7 +186,7 @@ class _ClawMachineGameState extends State<ClawMachineGame>
     child: Scaffold(
       body: switch (_run.item?.word) {
         final Word word => _active(context, word),
-        null => _end(),
+        null => _end(context),
       },
     ),
   );
@@ -209,7 +210,7 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                     BackButton(onPressed: widget.onExit),
                     Expanded(
                       child: Text(
-                        'Автомат с клешнёй',
+                        context.strings.clawMachine,
                         style: withWeight(
                           theme.textTheme.titleMedium!,
                           FontWeight.bold,
@@ -324,14 +325,14 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                   FilledButton(
                     key: ClawKeys.next,
                     onPressed: _paused ? null : _next,
-                    child: const Text('Дальше'),
+                    child: Text(context.strings.next),
                   )
                 else ...[
                   Row(
                     children: [
                       IconButton.filledTonal(
                         key: ClawKeys.left,
-                        tooltip: 'Влево',
+                        tooltip: context.strings.left,
                         onPressed:
                             _canAim && _column > 0
                                 ? () => _aim(_column - 1)
@@ -341,7 +342,7 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                       const SizedBox(width: 6),
                       IconButton.filledTonal(
                         key: ClawKeys.right,
-                        tooltip: 'Вправо',
+                        tooltip: context.strings.right,
                         onPressed:
                             _canAim && _column < ClawMachineRun.columnCount - 1
                                 ? () => _aim(_column + 1)
@@ -353,8 +354,8 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                         child: FilledButton(
                           key: ClawKeys.grab,
                           onPressed: _canAim ? _grab : null,
-                          child: const Text(
-                            'Захватить',
+                          child: Text(
+                            context.strings.grab,
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -366,7 +367,7 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                       key: ClawKeys.hint,
                       onPressed: _canAim ? _hint : null,
                       icon: const Icon(Icons.lightbulb_outline_rounded),
-                      label: const Text('Подсказка'),
+                      label: Text(context.strings.hint),
                     ),
                   ),
                   AnimatedSwitcher(
@@ -381,7 +382,7 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                               key: ValueKey(missed),
                               liveRegion: true,
                               child: Text(
-                                'Буква $missed не подошла',
+                                context.strings.letterMiss(missed),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: colors.error),
                               ),
@@ -396,19 +397,24 @@ class _ClawMachineGameState extends State<ClawMachineGame>
     );
   }
 
-  Widget _end() {
+  Widget _end(BuildContext context) {
     final answered = widget.session.answered;
     final mistakes = widget.mistakeCount?.call() ?? 0;
     return ArcadeStatusLayout(
       key: ClawKeys.summary,
       icon: answered == 0 ? Icons.nightlight_round : Icons.emoji_events_rounded,
-      title: answered == 0 ? 'На сегодня всё' : 'Раунд окончен',
+      title:
+          answered == 0
+              ? context.strings.nothingToday
+              : context.strings.roundComplete,
       body:
           answered == 0
               ? null
               : Column(
                 children: [
-                  Text('Верных ответов: ${_run.correctCount} из $answered'),
+                  Text(
+                    context.strings.correctAnswers(_run.correctCount, answered),
+                  ),
                   if (_footer case final footer?) ...[
                     const SizedBox(height: 12),
                     Text(footer, textAlign: TextAlign.center),
@@ -422,14 +428,17 @@ class _ClawMachineGameState extends State<ClawMachineGame>
             OutlinedButton(
               key: const Key('game.review_mistakes'),
               onPressed: widget.onReviewMistakes,
-              child: Text('Разобрать ошибки ($mistakes)'),
+              child: Text(context.strings.reviewMistakesCount(mistakes)),
             ),
           if (answered > 0)
             FilledButton(
               onPressed: widget.onPlayAgain,
-              child: const Text('Ещё раз'),
+              child: Text(context.strings.listenAgain),
             ),
-          TextButton(onPressed: widget.onExit, child: const Text('Выйти')),
+          TextButton(
+            onPressed: widget.onExit,
+            child: Text(context.strings.exit),
+          ),
         ],
       ),
     );
@@ -453,7 +462,7 @@ class _AnswerSlots extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     return Semantics(
-      label: 'Собрано букв: $collected из ${answer.length}',
+      label: context.strings.lettersCollected(collected, answer.length),
       liveRegion: true,
       child: Wrap(
         key: ClawKeys.slots,

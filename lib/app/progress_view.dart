@@ -19,6 +19,7 @@ import 'package:arcadelingo/domain/progress/day_series.dart';
 import 'package:arcadelingo/domain/progress/word_progress.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_page.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/streak_label.dart';
@@ -136,22 +137,24 @@ class _ProgressScreenState extends State<ProgressScreen> {
       future: _data,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return const _ProgressNotice(
+          return _ProgressNotice(
             icon: Icons.sync_problem_rounded,
-            title: 'Прогресс не загрузился',
-            message: 'Попробуй открыть экран ещё раз.',
+            title: context.strings.progressLoadFailed,
+            message: context.strings.reopenProgress,
             error: true,
           );
         }
         final data = snapshot.data;
         if (data == null) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(semanticsLabel: 'Загрузка прогресса'),
-                SizedBox(height: 16),
-                Text('Загрузка прогресса'),
+                CircularProgressIndicator(
+                  semanticsLabel: context.strings.loadingProgress,
+                ),
+                const SizedBox(height: 16),
+                Text(context.strings.loadingProgress),
               ],
             ),
           );
@@ -160,7 +163,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
       },
     );
     return ArcadePage(
-      title: 'Прогресс',
+      title: context.strings.progress,
       child:
           widget.onDictionary == null
               ? content
@@ -172,8 +175,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
                     child: OutlinedButton.icon(
                       onPressed: widget.onDictionary,
                       icon: const Icon(Icons.menu_book_rounded),
-                      label: const Text(
-                        'Личный словарь',
+                      label: Text(
+                        context.strings.personalDictionary,
                         textAlign: TextAlign.center,
                       ),
                       style: OutlinedButton.styleFrom(
@@ -200,10 +203,10 @@ class ProgressBody extends StatelessWidget {
     final scheme = theme.colorScheme;
     final textTheme = theme.textTheme;
     if (data.isEmpty) {
-      return const _ProgressNotice(
+      return _ProgressNotice(
         key: ProgressKeys.empty,
         icon: Icons.auto_graph_rounded,
-        message: 'Сыграй первую партию, и здесь появится, сколько пройдено',
+        message: context.strings.firstRoundProgress,
       );
     }
 
@@ -219,7 +222,7 @@ class ProgressBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'За всё время',
+            context.strings.allTime,
             style: textTheme.bodyMedium?.copyWith(
               color: scheme.onSurfaceVariant,
             ),
@@ -227,13 +230,13 @@ class ProgressBody extends StatelessWidget {
           const SizedBox(height: 16),
           _Block(
             viewKey: ProgressKeys.words,
-            title: 'Слова',
+            title: context.strings.words,
             icon: Icons.school_rounded,
             accent: scheme.primary,
             rows: [
-              ('Выучено', '${data.words.learned}'),
-              ('В работе', '${data.words.learning}'),
-              ('Трудные', '${data.words.hard}'),
+              (context.strings.learned, '${data.words.learned}'),
+              (context.strings.learning, '${data.words.learning}'),
+              (context.strings.hardWords, '${data.words.hard}'),
             ],
           ),
           const SizedBox(height: 16),
@@ -243,13 +246,13 @@ class ProgressBody extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _PanelHeading(
-                  title: 'Две недели',
+                  title: context.strings.twoWeeks,
                   icon: Icons.bar_chart_rounded,
                   accent: scheme.primary,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Ответы по дням',
+                  context.strings.answersByDay,
                   style: textTheme.bodyMedium?.copyWith(
                     color: scheme.onSurfaceVariant,
                   ),
@@ -263,7 +266,7 @@ class ProgressBody extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          _dateLabel(data.series.first.day),
+                          _dateLabel(context, data.series.first.day),
                           style: textTheme.labelMedium?.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
@@ -272,7 +275,7 @@ class ProgressBody extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          _dateLabel(data.series.last.day),
+                          _dateLabel(context, data.series.last.day),
                           textAlign: TextAlign.end,
                           style: textTheme.labelMedium?.copyWith(
                             color: scheme.onSurfaceVariant,
@@ -288,24 +291,25 @@ class ProgressBody extends StatelessWidget {
           const SizedBox(height: 16),
           _Block(
             viewKey: ProgressKeys.answers,
-            title: 'Ответы',
+            title: context.strings.answers,
             icon: Icons.check_circle_outline_rounded,
             accent: const Color(0xFFBFA2FF),
             rows: [
-              ('Всего', '${data.totals.answers}'),
-              if (accuracy != null) ('Верных', '$accuracy%'),
+              (context.strings.total, '${data.totals.answers}'),
+              if (accuracy != null)
+                (context.strings.correctCount, '$accuracy%'),
             ],
           ),
           const SizedBox(height: 16),
           _Block(
             viewKey: ProgressKeys.days,
-            title: 'Дни',
+            title: context.strings.days,
             icon: Icons.local_fire_department_rounded,
             accent: scheme.tertiary,
             rows: [
-              ('С ответами', '${data.totals.days}'),
+              (context.strings.daysWithAnswers, '${data.totals.days}'),
               (
-                'Лучшая серия',
+                context.strings.bestStreak,
                 '${data.bestStreak} ${dayWord(data.bestStreak)}',
               ),
             ],
@@ -507,8 +511,12 @@ class _MetricRow extends StatelessWidget {
   }
 }
 
-String _dateLabel(StreakDay day) =>
-    '${day.day.toString().padLeft(2, '0')}.${day.month.toString().padLeft(2, '0')}';
+String _dateLabel(BuildContext context, StreakDay day) =>
+    context.strings.isEnglish
+        ? MaterialLocalizations.of(
+          context,
+        ).formatShortMonthDay(DateTime(day.year, day.month, day.day))
+        : '${day.day.toString().padLeft(2, '0')}.${day.month.toString().padLeft(2, '0')}';
 
 class _Series extends StatelessWidget {
   const _Series({required this.days});
@@ -559,7 +567,10 @@ class SeriesBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Semantics(
-      label: '${_dateLabel(day.day)}, ответов ${day.answers}',
+      label: context.strings.answersForDay(
+        _dateLabel(context, day.day),
+        day.answers,
+      ),
       child: SizedBox(
         width: seriesBarWidth,
         height: seriesHeight,

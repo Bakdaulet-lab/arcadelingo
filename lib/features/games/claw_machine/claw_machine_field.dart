@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -357,7 +358,7 @@ class _Capsule extends StatelessWidget {
       );
     }
     return Semantics(
-      label: hinted ? 'Капсула $letter, подсказка' : 'Капсула $letter',
+      label: context.strings.capsule(letter, hintShown: hinted),
       selected: selected,
       button: true,
       child: GestureDetector(

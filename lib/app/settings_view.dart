@@ -14,6 +14,7 @@ library;
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/ports/settings_store.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_page.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -34,6 +35,7 @@ abstract final class SettingsKeys {
 
   /// Звук в играх.
   static const Key sound = Key('settings.sound');
+  static const Key language = Key('settings.language');
 }
 
 /// Что хост делает с новым выбором.
@@ -64,14 +66,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// Система отказала в разрешении на прошлое включение.
   bool _denied = false;
+  bool _saving = false;
+  bool _choosingLanguage = false;
+  bool _languageSaveFailed = false;
 
   Future<void> _apply(AppSettings next) async {
-    final ok = await widget.onApply(next);
-    if (!mounted) return;
-    setState(() {
-      _denied = !ok;
-      if (ok) _settings = next;
-    });
+    if (_saving) return;
+    final languageChanged =
+        next.interfaceLanguage != _settings.interfaceLanguage;
+    setState(() => _saving = true);
+    try {
+      final ok = await widget.onApply(next);
+      if (!mounted) return;
+      setState(() {
+        _languageSaveFailed = languageChanged && !ok;
+        if (!languageChanged) _denied = !ok;
+        if (ok) _settings = next;
+      });
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  String _languageLabel(InterfaceLanguage language, AppStrings strings) =>
+      switch (language) {
+        InterfaceLanguage.system => strings.systemLanguage,
+        InterfaceLanguage.russian => 'Русский',
+        InterfaceLanguage.english => 'English',
+      };
+
+  Future<void> _chooseLanguage() async {
+    if (_saving || _choosingLanguage) return;
+    _choosingLanguage = true;
+    try {
+      final value = await showDialog<InterfaceLanguage>(
+        context: context,
+        builder:
+            (context) => SimpleDialog(
+              title: Text(context.strings.appLanguage),
+              children: [
+                for (final language in InterfaceLanguage.values)
+                  SimpleDialogOption(
+                    key: ValueKey('settings.language.${language.tag}'),
+                    onPressed: () => Navigator.pop(context, language),
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        language == _settings.interfaceLanguage
+                            ? Icons.check_circle_outline
+                            : Icons.language,
+                      ),
+                      title: Text(_languageLabel(language, context.strings)),
+                    ),
+                  ),
+              ],
+            ),
+      );
+      if (value != null && mounted && value != _settings.interfaceLanguage) {
+        await _apply(_settings.copyWith(interfaceLanguage: value));
+      }
+    } finally {
+      _choosingLanguage = false;
+    }
   }
 
   Future<void> _pickTime() async {
@@ -81,11 +137,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         hour: _settings.at.hour,
         minute: _settings.at.minute,
       ),
-      helpText: 'Время напоминания',
-      cancelText: 'Отмена',
-      confirmText: 'Сохранить',
-      hourLabelText: 'Часы',
-      minuteLabelText: 'Минуты',
+      helpText: context.strings.reminderTime,
+      cancelText: context.strings.cancel,
+      confirmText: context.strings.save,
+      hourLabelText: context.strings.hours,
+      minuteLabelText: context.strings.minutes,
       builder: (context, child) {
         final theme = Theme.of(context);
         return Theme(
@@ -122,13 +178,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
       height: 1.4,
     );
     return ArcadePage(
-      title: 'Настройки',
+      title: context.strings.settings,
       child: SingleChildScrollView(
         key: SettingsKeys.view,
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            ArcadePanel(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: ListTile(
+                key: SettingsKeys.language,
+                onTap: _saving ? null : _chooseLanguage,
+                contentPadding: tilePadding,
+                leading: largeText ? null : const Icon(Icons.language_rounded),
+                title: Text(context.strings.appLanguage, style: titleStyle),
+                subtitle: Text(
+                  _languageLabel(_settings.interfaceLanguage, context.strings),
+                  style: subtitleStyle,
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+              ),
+            ),
+            if (_languageSaveFailed)
+              Text(
+                context.strings.settingsSaveFailed,
+                style: TextStyle(color: scheme.error),
+              ),
+            const SizedBox(height: 16),
             ArcadePanel(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
               child: Column(
@@ -141,11 +218,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           horizontal: 8,
                           vertical: 8,
                         ),
-                        child: Text('Напоминание', style: titleStyle),
+                        child: Text(
+                          context.strings.reminder,
+                          style: titleStyle,
+                        ),
                       ),
                     ),
                   Semantics(
-                    label: largeText ? 'Напоминание' : null,
+                    label: largeText ? context.strings.reminder : null,
                     child: SwitchListTile(
                       key: SettingsKeys.toggle,
                       value: _settings.enabled,
@@ -162,9 +242,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title:
                           largeText
                               ? null
-                              : Text('Напоминание', style: titleStyle),
+                              : Text(
+                                context.strings.reminder,
+                                style: titleStyle,
+                              ),
                       subtitle: Text(
-                        'Одно уведомление в день',
+                        context.strings.dailyNotification,
                         style: subtitleStyle,
                       ),
                     ),
@@ -190,9 +273,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ? scheme.primary
                                       : scheme.onSurfaceVariant,
                             ),
-                    title: Text('Время', style: titleStyle),
+                    title: Text(context.strings.time, style: titleStyle),
                     subtitle: Text(
-                      _settings.at.toString(),
+                      context.strings.isEnglish
+                          ? TimeOfDay(
+                            hour: _settings.at.hour,
+                            minute: _settings.at.minute,
+                          ).format(context)
+                          : _settings.at.toString(),
                       style: withWeight(
                         textTheme.headlineSmall!,
                         FontWeight.bold,
@@ -229,9 +317,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           icon: Icons.volume_up_rounded,
                           color: scheme.tertiary,
                         ),
-                title: Text('Звук', style: titleStyle),
+                title: Text(context.strings.sound, style: titleStyle),
                 subtitle: Text(
-                  'Свист клинка и удар в ниндзя-слэше',
+                  context.strings.soundEffects,
                   style: subtitleStyle,
                 ),
               ),
@@ -244,8 +332,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   key: SettingsKeys.denied,
                   accent: scheme.error,
                   child: Text(
-                    'Система не разрешила уведомления. Включить их можно в '
-                    'настройках телефона.',
+                    context.strings.notificationsDenied,
                     style: textTheme.bodyMedium?.copyWith(color: scheme.error),
                   ),
                 ),

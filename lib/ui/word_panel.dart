@@ -1,4 +1,5 @@
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +34,7 @@ class WordPanel extends StatelessWidget {
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: Text(
-                _partOfSpeechLabel(partOfSpeech),
+                _partOfSpeechLabel(partOfSpeech, context.strings),
                 softWrap: false,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colors.onSurfaceVariant,
@@ -55,7 +56,7 @@ class WordPanel extends StatelessWidget {
           const SizedBox(height: 16),
           if (labelCorrectTranslation) ...[
             Text(
-              'Правильный перевод',
+              context.strings.correctTranslation,
               style: theme.textTheme.labelLarge?.copyWith(
                 color: colors.onSurfaceVariant,
               ),
@@ -85,15 +86,16 @@ class WordPanel extends StatelessWidget {
   }
 }
 
-String _partOfSpeechLabel(String partOfSpeech) => switch (partOfSpeech) {
-  'noun' => 'Существительное',
-  'verb' => 'Глагол',
-  'adjective' || 'adj' => 'Прилагательное',
-  'adverb' || 'adv' => 'Наречие',
-  'pronoun' => 'Местоимение',
-  'preposition' => 'Предлог',
-  'conjunction' => 'Союз',
-  'interjection' => 'Междометие',
-  'determiner' => 'Определитель',
-  _ => partOfSpeech,
-};
+String _partOfSpeechLabel(String partOfSpeech, AppStrings strings) =>
+    switch (partOfSpeech) {
+      'noun' => strings.noun,
+      'verb' => strings.verb,
+      'adjective' || 'adj' => strings.adjective,
+      'adverb' || 'adv' => strings.adverb,
+      'pronoun' => strings.pronoun,
+      'preposition' => strings.preposition,
+      'conjunction' => strings.conjunction,
+      'interjection' => strings.interjection,
+      'determiner' => strings.determiner,
+      _ => partOfSpeech,
+    };

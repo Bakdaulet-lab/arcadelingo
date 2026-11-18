@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:arcadelingo/domain/ports/word_speech.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:flutter/material.dart';
 
 /// Кнопка системного произношения для карточки слова.
@@ -74,10 +75,8 @@ class _WordPronunciationState extends State<WordPronunciation>
       _speaking = false;
       _message = switch (result) {
         SpeechResult.completed || SpeechResult.cancelled => null,
-        SpeechResult.unavailable =>
-          'Английский голос недоступен. Проверь настройки синтеза речи '
-              'на устройстве и установи английский голос.',
-        SpeechResult.failed => 'Не удалось произнести слово. Попробуй ещё раз.',
+        SpeechResult.unavailable => context.strings.voiceUnavailable,
+        SpeechResult.failed => context.strings.speechFailed,
       };
     });
   }
@@ -91,7 +90,7 @@ class _WordPronunciationState extends State<WordPronunciation>
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Semantics(
-          label: 'Произнести ${widget.text}',
+          label: context.strings.pronounce(widget.text),
           child: OutlinedButton(
             key: WordPronunciation.buttonKey,
             onPressed: widget.enabled ? _speak : null,
@@ -109,7 +108,9 @@ class _WordPronunciationState extends State<WordPronunciation>
                     const SizedBox(width: 10),
                     Flexible(
                       child: Text(
-                        _speaking ? 'Ещё раз' : 'Послушать',
+                        _speaking
+                            ? context.strings.listenAgain
+                            : context.strings.listen,
                         textAlign: TextAlign.center,
                       ),
                     ),

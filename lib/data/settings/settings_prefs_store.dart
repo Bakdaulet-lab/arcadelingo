@@ -32,8 +32,11 @@ class SettingsPrefsStore implements SettingsStore {
   }
 
   @override
-  Future<bool> save(AppSettings settings) =>
-      _prefs.setString(key, encodeSettings(settings));
+  Future<bool> save(AppSettings settings) async {
+    final saved = await _prefs.setString(key, encodeSettings(settings));
+    if (!saved) await _prefs.reload();
+    return saved;
+  }
 
   @override
   Future<bool> reset() => _prefs.remove(key);

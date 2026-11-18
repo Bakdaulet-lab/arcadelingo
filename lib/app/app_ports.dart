@@ -15,6 +15,7 @@
 /// Обязательны только два: без карточек и без серии играть не во что.
 library;
 
+import 'package:arcadelingo/app/courses.dart';
 import 'package:arcadelingo/domain/ports/answer_log.dart';
 import 'package:arcadelingo/domain/ports/card_store.dart';
 import 'package:arcadelingo/domain/ports/event_log.dart';
@@ -42,6 +43,19 @@ class AppPorts {
     this.settings,
     this.askReminderPermission = alwaysAllowed,
   });
+
+  AppPorts forDeck(CourseDeck deck) => AppPorts(
+    cards: deck.cards,
+    answers: deck.answers,
+    favorites: deck.favorites,
+    speech: deck.speech,
+    streaks: streaks,
+    events: events,
+    reminders: reminders,
+    sounds: sounds,
+    settings: settings,
+    askReminderPermission: askReminderPermission,
+  );
 
   /// Состояние повторения. Портом, а не конкретным стором: корень —
   /// единственное место, которое знает и о `data/`, и о `domain/`, и это

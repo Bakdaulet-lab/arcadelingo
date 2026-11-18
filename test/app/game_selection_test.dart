@@ -252,7 +252,7 @@ void main() {
     await _pump(tester, f.app(f.games));
     await _tap(tester, find.text('Вторая игра'));
     await _tap(tester, find.byKey(AppKeys.progress));
-    await tester.pageBack();
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(_selector(tester).selectedId, 'beta');
   });

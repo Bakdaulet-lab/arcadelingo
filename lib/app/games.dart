@@ -19,6 +19,7 @@ import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:flutter/material.dart';
 
 /// Всё, что игре нужно от хоста, одним значением.
@@ -99,6 +100,20 @@ class GameEntry {
 
   final String? artwork;
   final String? instruction;
+
+  String titleFor(AppStrings strings) => switch (id) {
+    'falling_words' => strings.fallingWords,
+    'ninja_slash' => strings.ninjaSlash,
+    'claw_machine' => strings.clawMachine,
+    _ => title,
+  };
+
+  String? instructionFor(AppStrings strings) => switch (id) {
+    'falling_words' => strings.fallingInstruction,
+    'ninja_slash' => strings.ninjaInstruction,
+    'claw_machine' => strings.clawInstruction,
+    _ => instruction,
+  };
 
   /// Экран игры на готовом [GameLaunch].
   final Widget Function(GameLaunch launch) build;

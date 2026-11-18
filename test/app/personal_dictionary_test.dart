@@ -128,7 +128,7 @@ void main() {
       expect(speech.spoken, ['climate']);
       await _tap(tester, find.text('В избранное'));
       expect(find.text('Убрать из избранного'), findsOneWidget);
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
       expect(speech.stopCalls, greaterThan(0));
       await tester.pumpWidget(const SizedBox.shrink());
@@ -141,7 +141,7 @@ void main() {
 
       await _tap(tester, find.text('climate'));
       await _tap(tester, find.text('Убрать из избранного'));
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
       expect(find.text('В избранном пока пусто'), findsOneWidget);
       expect(log.records, hasLength(4));
