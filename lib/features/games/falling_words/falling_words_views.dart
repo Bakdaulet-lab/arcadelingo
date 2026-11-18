@@ -505,7 +505,7 @@ class SummaryView extends StatelessWidget {
       children: [
         EndButton(
           key: FallingWordsKeys.playAgain,
-          label: context.strings.listenAgain,
+          label: context.strings.playAgain,
           onPressed: onPlayAgain,
         ),
         if (mistakeCount > 0 && onReviewMistakes != null) ...[

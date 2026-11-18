@@ -86,6 +86,7 @@ flutter:
     # в репозитории. Сторожится test/assets/attribution_test.dart.
     - assets/ATTRIBUTION.md
     - assets/ATTRIBUTION.en.md
+    - assets/ATTRIBUTION.es.md
     # Текст лицензии едет в бандл намеренно: OFL требует распространять её
     # вместе со шрифтом, а шрифт вшит в приложение. main.dart отдаёт её в
     # LicenseRegistry, чтобы она была видна в showLicensePage.

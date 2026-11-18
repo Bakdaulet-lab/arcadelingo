@@ -5,15 +5,25 @@
 /// `pubspec.yaml`), а не битые данные, и в `Failure` он не заворачивается.
 library;
 
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:flutter/services.dart';
 
 /// Путь ассета — тот же, что зарегистрирован в `pubspec.yaml`.
 const String attributionAssetPath = 'assets/ATTRIBUTION.md';
 
-/// Текст атрибуции из [bundle] (по умолчанию [rootBundle]).
 const String englishAttributionAssetPath = 'assets/ATTRIBUTION.en.md';
+const String spanishAttributionAssetPath = 'assets/ATTRIBUTION.es.md';
 
-Future<String> loadAttribution({AssetBundle? bundle, bool english = false}) =>
-    (bundle ?? rootBundle).loadString(
-      english ? englishAttributionAssetPath : attributionAssetPath,
-    );
+/// Текст атрибуции из [bundle] (по умолчанию [rootBundle]).
+Future<String> loadAttribution({
+  AssetBundle? bundle,
+  required InterfaceLanguage language,
+}) {
+  final asset = switch (language) {
+    InterfaceLanguage.english => englishAttributionAssetPath,
+    InterfaceLanguage.spanish => spanishAttributionAssetPath,
+    InterfaceLanguage.russian ||
+    InterfaceLanguage.system => attributionAssetPath,
+  };
+  return (bundle ?? rootBundle).loadString(asset);
+}

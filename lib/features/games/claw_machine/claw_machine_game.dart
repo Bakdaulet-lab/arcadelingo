@@ -433,7 +433,7 @@ class _ClawMachineGameState extends State<ClawMachineGame>
           if (answered > 0)
             FilledButton(
               onPressed: widget.onPlayAgain,
-              child: Text(context.strings.listenAgain),
+              child: Text(context.strings.playAgain),
             ),
           TextButton(
             onPressed: widget.onExit,

@@ -10,6 +10,7 @@
 /// различимы текстом, а не отсутствием строки.
 library;
 
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/streak_label.dart';
@@ -51,9 +52,13 @@ String? ritualStreakLabel(
 }) =>
     view.days == 0
         ? null
-        : strings.isEnglish
-        ? '${englishDayWord(view.days)} in a row'
-        : '${dayWord(view.days)} подряд';
+        : switch (strings.language) {
+          InterfaceLanguage.english => '${englishDayWord(view.days)} in a row',
+          InterfaceLanguage.spanish =>
+            view.days == 1 ? 'día seguido' : 'días seguidos',
+          InterfaceLanguage.russian ||
+          InterfaceLanguage.system => '${dayWord(view.days)} подряд',
+        };
 
 /// Состояние запаса заморозок словами, или null — говорить нечего.
 String? ritualFreezeLabel(
@@ -67,7 +72,24 @@ String? ritualFreezeLabel(
   if (view.freeze.available) return strings.freezeAvailable;
   final spent = view.freeze.spentOn;
   if (spent != null) {
-    if (strings.isEnglish) {
+    if (strings.language == InterfaceLanguage.spanish) {
+      const months = [
+        'enero',
+        'febrero',
+        'marzo',
+        'abril',
+        'mayo',
+        'junio',
+        'julio',
+        'agosto',
+        'septiembre',
+        'octubre',
+        'noviembre',
+        'diciembre',
+      ];
+      return 'Protección usada el ${spent.day} de ${months[spent.month - 1]}';
+    }
+    if (strings.language == InterfaceLanguage.english) {
       final month =
           const [
             'Jan',
@@ -89,9 +111,14 @@ String? ritualFreezeLabel(
         '${spent.day} ${monthInGenitive(spent.month)}';
   }
   final left = view.freeze.daysToNext;
-  return strings.isEnglish
-      ? 'Streak Freeze returns in $left ${englishDayWord(left)}'
-      : 'Заморозка вернётся через $left ${dayWord(left)}';
+  return switch (strings.language) {
+    InterfaceLanguage.english =>
+      'Streak Freeze returns in $left ${englishDayWord(left)}',
+    InterfaceLanguage.spanish =>
+      'Recuperas la protección en $left ${spanishDayWord(left)}',
+    InterfaceLanguage.russian || InterfaceLanguage.system =>
+      'Заморозка вернётся через $left ${dayWord(left)}',
+  };
 }
 
 /// Название месяца в родительном падеже: «27 **августа**».

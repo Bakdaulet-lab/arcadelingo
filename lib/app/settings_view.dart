@@ -84,6 +84,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         InterfaceLanguage.system => strings.systemLanguage,
         InterfaceLanguage.russian => 'Русский',
         InterfaceLanguage.english => 'English',
+        InterfaceLanguage.spanish => 'Español',
       };
 
   Future<void> _chooseLanguage() async {
@@ -160,12 +161,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     final canPickTime = _settings.enabled && !_saving;
     final time =
-        strings.isEnglish
-            ? TimeOfDay(
+        strings.isRussian
+            ? _settings.at.toString()
+            : TimeOfDay(
               hour: _settings.at.hour,
               minute: _settings.at.minute,
-            ).format(context)
-            : _settings.at.toString();
+            ).format(context);
     final formattedTime = Text(
       time,
       style: withWeight(
