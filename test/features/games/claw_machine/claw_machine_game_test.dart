@@ -1,3 +1,4 @@
+import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/features/games/claw_machine/claw_machine_field.dart'
     show ClawMachineField;
@@ -13,10 +14,19 @@ const _fish = ReviewItem(
   word: Word(id: 'fish', text: 'fish', translation: 'рыба'),
 );
 
+class _RecordingSounds implements Sounds {
+  final played = <GameSound>[];
+
+  @override
+  void play(GameSound sound) => played.add(sound);
+}
+
 Future<void> _show(
   WidgetTester tester,
   FakeReviewSession session, {
   VoidCallback? finish,
+  bool reduceMotion = false,
+  Sounds sounds = const NoopSounds(),
 }) async {
   tester.view.physicalSize = const Size(360, 720);
   tester.view.devicePixelRatio = 1;
@@ -24,8 +34,16 @@ Future<void> _show(
   await tester.pumpWidget(
     MaterialApp(
       theme: wordarcadeTheme(),
+      builder:
+          (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(disableAnimations: reduceMotion),
+            child: child!,
+          ),
       home: ClawMachineGame(
         session: session,
+        sounds: sounds,
         onExit: () {},
         onPlayAgain: () {},
         onRoundOver: finish,
@@ -38,6 +56,50 @@ Future<void> _show(
 }
 
 void main() {
+  testWidgets('горизонтальный жест на стекле выбирает дорожку', (tester) async {
+    final session = FakeReviewSession([_fish]);
+    await _show(tester, session);
+    final field = find.byType(ClawMachineField);
+    final glass = tester.getRect(field);
+    final start = Offset(glass.center.dx, glass.top + 55);
+    final drag = await tester.startGesture(start);
+    await drag.moveBy(const Offset(-35, 0));
+    await drag.moveTo(Offset(glass.left + 20, start.dy));
+    await drag.up();
+    await tester.pumpAndSettle();
+    expect(tester.widget<ClawMachineField>(field).column, 0);
+    expect(session.reports, isEmpty);
+  });
+
+  testWidgets('уменьшенное движение: захват быстрый, итог звучит один раз', (
+    tester,
+  ) async {
+    final session = FakeReviewSession([_fish]);
+    final sounds = _RecordingSounds();
+    await _show(tester, session, reduceMotion: true, sounds: sounds);
+    await spellWithClaw(tester, 'fis');
+    await tester.tap(clawCapsule('H'));
+    await tester.pump();
+    final grab = find.byKey(ClawKeys.grab);
+    await tester.tap(grab);
+    await tester.tap(grab);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 120));
+    expect(session.reports.single.outcome.correct, isTrue);
+    expect(find.text('FISH'), findsOneWidget);
+    expect(sounds.played, [
+      GameSound.clawCatch,
+      GameSound.clawCatch,
+      GameSound.clawCatch,
+      GameSound.clawWord,
+    ]);
+    await tapClaw(tester, ClawKeys.next);
+    expect(
+      sounds.played.where((sound) => sound == GameSound.roundEnd),
+      hasLength(1),
+    );
+  });
+
   testWidgets('быстрые стрелки останавливаются у края рельса', (tester) async {
     await _show(tester, FakeReviewSession([_fish]));
     await tapClaw(tester, ClawKeys.left);

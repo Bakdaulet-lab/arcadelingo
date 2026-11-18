@@ -10,6 +10,9 @@ const _expected = {
   GameSound.sliceHot: (path: 'sound/slice_hot.wav', milliseconds: 290),
   GameSound.miss: (path: 'sound/miss.wav', milliseconds: 170),
   GameSound.roundEnd: (path: 'sound/round_end.wav', milliseconds: 290),
+  GameSound.clawCatch: (path: 'sound/claw_catch.wav', milliseconds: 145),
+  GameSound.clawMiss: (path: 'sound/claw_miss.wav', milliseconds: 130),
+  GameSound.clawWord: (path: 'sound/claw_word.wav', milliseconds: 335),
 };
 
 String _tag(ByteData data, int offset) => String.fromCharCodes([

@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
@@ -18,6 +19,7 @@ class ClawMachineGame extends StatefulWidget {
     required this.onPlayAgain,
     this.onRoundOver,
     this.summaryFooter,
+    this.sounds = const NoopSounds(),
     this.mistakeCount,
     this.onReviewMistakes,
     this.now,
@@ -26,6 +28,7 @@ class ClawMachineGame extends StatefulWidget {
   });
 
   final ReviewSession session;
+  final Sounds sounds;
   final VoidCallback onExit;
   final VoidCallback onPlayAgain;
   final VoidCallback? onRoundOver;
