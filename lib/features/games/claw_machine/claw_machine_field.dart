@@ -25,6 +25,9 @@ class ClawMachineField extends StatelessWidget {
     required this.hintedColumn,
     required this.motion,
     required this.capturing,
+    required this.reducedMotion,
+    required this.refillColumn,
+    required this.refillSerial,
     required this.onAim,
     super.key,
   });
@@ -34,6 +37,9 @@ class ClawMachineField extends StatelessWidget {
   final int? hintedColumn;
   final Animation<double> motion;
   final bool capturing;
+  final bool reducedMotion;
+  final int? refillColumn;
+  final int refillSerial;
   final ValueChanged<int>? onAim;
 
   @override
@@ -53,90 +59,123 @@ class ClawMachineField extends StatelessWidget {
             size.height - 23 - diameter * (.5 + height * .84) - (lane % 3) * 4,
           );
 
-          return TweenAnimationBuilder<double>(
-            tween: Tween<double>(end: capsuleCenter(column, 0).dx),
-            duration:
-                MediaQuery.disableAnimationsOf(context)
-                    ? Duration.zero
-                    : const Duration(milliseconds: 135),
-            curve: Curves.easeOutCubic,
-            builder:
-                (context, x, _) => AnimatedBuilder(
-                  animation: motion,
-                  builder: (context, _) {
-                    final phase = capturing ? motion.value : 0.0;
-                    final holding = capturing && phase >= .48;
-                    final pileTop = capsuleCenter(
-                      column,
-                      stacks[column].length - 1,
-                    );
-                    final rest = 79 * scale;
-                    final low = pileTop.dy - 33 * scale;
-                    final progress =
-                        phase <= .48
-                            ? Curves.easeInOut.transform(phase / .48)
-                            : 1 -
-                                Curves.easeInOut.transform((phase - .48) / .52);
-                    final hinge = Offset(x, rest + (low - rest) * progress);
-                    return Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        const CustomPaint(painter: _CabinetPainter()),
-                        for (final (lane, stack) in stacks.indexed)
-                          for (final (height, letter) in stack.indexed)
-                            if (!(holding &&
-                                lane == column &&
-                                height == stack.length - 1))
-                              _placeCapsule(
-                                center: capsuleCenter(lane, height),
-                                diameter: diameter,
-                                child: _Capsule(
-                                  letter: letter,
-                                  lane: lane,
-                                  covered: height < stack.length - 1,
-                                  selected:
-                                      lane == column &&
-                                      height == stack.length - 1,
-                                  hinted:
-                                      lane == hintedColumn &&
-                                      height == stack.length - 1,
-                                  onTap:
-                                      height == stack.length - 1 &&
-                                              onAim != null
-                                          ? () => onAim!(lane)
-                                          : null,
-                                  key:
-                                      height == stack.length - 1
-                                          ? ClawKeys.topCapsule(lane)
-                                          : null,
+          void aimAt(double x) {
+            final lane = ((x - 12) / spacing).floor().clamp(
+              0,
+              stacks.length - 1,
+            );
+            onAim?.call(lane);
+          }
+
+          final pile = [
+            for (final (lane, stack) in stacks.indexed)
+              for (final (height, letter) in stack.indexed)
+                (
+                  captured: lane == column && height == stack.length - 1,
+                  view: _placeCapsule(
+                    key: ValueKey((lane, height)),
+                    center: capsuleCenter(lane, height),
+                    diameter: diameter,
+                    dropId:
+                        !reducedMotion &&
+                                lane == refillColumn &&
+                                height == stack.length - 1
+                            ? refillSerial
+                            : null,
+                    child: _Capsule(
+                      letter: letter,
+                      lane: lane,
+                      covered: height < stack.length - 1,
+                      selected: lane == column && height == stack.length - 1,
+                      hinted:
+                          lane == hintedColumn && height == stack.length - 1,
+                      onTap:
+                          height == stack.length - 1 && onAim != null
+                              ? () => onAim!(lane)
+                              : null,
+                      key:
+                          height == stack.length - 1
+                              ? ClawKeys.topCapsule(lane)
+                              : null,
+                    ),
+                  ),
+                ),
+          ];
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onHorizontalDragStart:
+                onAim == null
+                    ? null
+                    : (details) => aimAt(details.localPosition.dx),
+            onHorizontalDragUpdate:
+                onAim == null
+                    ? null
+                    : (details) => aimAt(details.localPosition.dx),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(end: capsuleCenter(column, 0).dx),
+              duration:
+                  reducedMotion
+                      ? Duration.zero
+                      : const Duration(milliseconds: 165),
+              curve: Curves.easeOutCubic,
+              builder:
+                  (context, x, _) => AnimatedBuilder(
+                    animation: motion,
+                    builder: (context, _) {
+                      final phase =
+                          capturing && !reducedMotion ? motion.value : 0.0;
+                      final pose = _GrabPose.at(phase);
+                      final pileTop = capsuleCenter(
+                        column,
+                        stacks[column].length - 1,
+                      );
+                      final rest = 79 * scale;
+                      final low = pileTop.dy - 33 * scale;
+                      final hinge = Offset(x, rest + (low - rest) * pose.depth);
+                      return Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          const RepaintBoundary(
+                            child: CustomPaint(painter: _CabinetPainter()),
+                          ),
+                          for (final capsule in pile)
+                            if (!pose.pickedUp || !capsule.captured)
+                              capsule.view,
+                          if (pose.pickedUp && pose.capsuleScale > 0)
+                            _placeCapsule(
+                              center: hinge.translate(0, 33 * scale),
+                              diameter: diameter,
+                              child: Opacity(
+                                opacity: pose.capsuleOpacity,
+                                child: Transform.scale(
+                                  scale: pose.capsuleScale,
+                                  child: _Capsule(
+                                    letter: stacks[column].last,
+                                    lane: column,
+                                    hinted: column == hintedColumn,
+                                  ),
                                 ),
                               ),
-                        if (holding)
-                          _placeCapsule(
-                            center: hinge.translate(0, 33 * scale),
-                            diameter: diameter,
-                            child: _Capsule(
-                              letter: stacks[column].last,
-                              lane: column,
+                            ),
+                          IgnorePointer(
+                            child: CustomPaint(
+                              painter: _ClawPainter(
+                                hinge: hinge,
+                                scale: scale,
+                                grip: pose.grip,
+                                glint: pose.glint,
+                                guideEnd:
+                                    onAim == null
+                                        ? null
+                                        : pileTop.dy - diameter / 2 - 6,
+                              ),
                             ),
                           ),
-                        IgnorePointer(
-                          child: CustomPaint(
-                            painter: _ClawPainter(
-                              hinge: hinge,
-                              scale: scale,
-                              holding: holding,
-                              guideEnd:
-                                  onAim == null
-                                      ? null
-                                      : pileTop.dy - diameter / 2 - 6,
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
+                        ],
+                      );
+                    },
+                  ),
+            ),
           );
         },
       ),
@@ -147,13 +186,55 @@ class ClawMachineField extends StatelessWidget {
     required Offset center,
     required double diameter,
     required Widget child,
+    int? dropId,
+    Key? key,
   }) => Positioned(
+    key: key,
     left: center.dx - diameter / 2,
     top: center.dy - diameter / 2,
     width: diameter,
     height: diameter,
-    child: child,
+    child:
+        dropId == null
+            ? child
+            : TweenAnimationBuilder<double>(
+              key: ValueKey(dropId),
+              tween: Tween(begin: 0, end: 1),
+              duration: const Duration(milliseconds: 245),
+              curve: Curves.bounceOut,
+              builder:
+                  (context, t, child) => Transform.translate(
+                    offset: Offset(0, -(1 - t) * diameter * 1.3),
+                    child: child,
+                  ),
+              child: child,
+            ),
   );
+}
+
+/// Все фазы держатся на одних часах, в том числе при сворачивании.
+class _GrabPose {
+  const _GrabPose(this.depth, this.grip, this.release, this.pickedUp);
+
+  factory _GrabPose.at(double t) {
+    final descend = Curves.easeInOutCubic.transform(_interval(t, 0, .40));
+    final lift = Curves.easeInOutCubic.transform(_interval(t, .52, .91));
+    final close = Curves.easeInOut.transform(_interval(t, .40, .52));
+    final release = _interval(t, .89, 1);
+    return _GrabPose(descend - lift, close * (1 - release), release, t >= .52);
+  }
+
+  final double depth;
+  final double grip;
+  final double release;
+  final bool pickedUp;
+
+  double get capsuleScale => 1 - Curves.easeInCubic.transform(release);
+  double get capsuleOpacity => 1 - release * release;
+  double get glint => math.sin(math.pi * release);
+
+  static double _interval(double t, double start, double end) =>
+      ((t - start) / (end - start)).clamp(0.0, 1.0);
 }
 
 class _Capsule extends StatelessWidget {
@@ -210,6 +291,20 @@ class _Capsule extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
+          Positioned(
+            top: 5,
+            left: 10,
+            child: Transform.rotate(
+              angle: -.45,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .38),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const SizedBox(width: 13, height: 3),
+              ),
+            ),
+          ),
           FractionallySizedBox(
             widthFactor: .94,
             child: Transform.rotate(
@@ -375,13 +470,15 @@ class _ClawPainter extends CustomPainter {
   const _ClawPainter({
     required this.hinge,
     required this.scale,
-    required this.holding,
+    required this.grip,
+    required this.glint,
     required this.guideEnd,
   });
 
   final Offset hinge;
   final double scale;
-  final bool holding;
+  final double grip;
+  final double glint;
   final double? guideEnd;
 
   @override
@@ -397,8 +494,8 @@ class _ClawPainter extends CustomPainter {
       }
     }
     final cable = Path()..moveTo(hinge.dx, 42);
-    for (var y = 42.0; y <= hinge.dy; y += 2.2) {
-      cable.lineTo(hinge.dx + math.sin(y * 1.04) * 4, y);
+    for (var y = 42.0; y <= hinge.dy; y += .9) {
+      cable.lineTo(hinge.dx + math.sin(y * .92) * 3.2, y);
     }
     canvas.drawPath(
       cable,
@@ -438,7 +535,7 @@ class _ClawPainter extends CustomPainter {
     canvas.scale(scale, scale);
     final housing = Rect.fromCenter(center: Offset.zero, width: 29, height: 18);
     for (final sign in [-1, 1]) {
-      final spread = holding ? 27.0 : 33.0;
+      final spread = 34 - 7 * grip;
       final jaw =
           Path()
             ..moveTo(sign * 11, 1)
@@ -462,6 +559,20 @@ class _ClawPainter extends CustomPainter {
       3.8,
       Paint()..color = const Color(0xFF473559),
     );
+    if (glint > 0) {
+      final paint =
+          Paint()
+            ..color = const Color(0xFF7CF4D3).withValues(alpha: .7 * glint);
+      for (var index = 0; index < 6; index++) {
+        final angle = index * math.pi / 3;
+        final radius = 26 + 11 * glint;
+        canvas.drawCircle(
+          Offset(math.cos(angle) * radius, 32 + math.sin(angle) * radius),
+          1.8 * glint,
+          paint,
+        );
+      }
+    }
     canvas.restore();
   }
 
@@ -469,6 +580,7 @@ class _ClawPainter extends CustomPainter {
   bool shouldRepaint(_ClawPainter oldDelegate) =>
       oldDelegate.hinge != hinge ||
       oldDelegate.scale != scale ||
-      oldDelegate.holding != holding ||
+      oldDelegate.grip != grip ||
+      oldDelegate.glint != glint ||
       oldDelegate.guideEnd != guideEnd;
 }

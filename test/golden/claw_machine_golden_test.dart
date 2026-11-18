@@ -44,7 +44,7 @@ void main() {
     await tapClaw(tester, ClawKeys.hint);
     await tester.tap(find.byKey(ClawKeys.grab));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 240));
+    await tester.pump(const Duration(milliseconds: 335));
     await expectGolden(tester, 'claw_grab');
   });
 

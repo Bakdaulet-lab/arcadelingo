@@ -168,6 +168,7 @@ Widget _buildNinjaSlash(GameLaunch launch) => NinjaSlashGame(
 
 Widget _buildClawMachine(GameLaunch launch) => ClawMachineGame(
   session: launch.session,
+  sounds: launch.sounds,
   summaryFooter: launch.summaryFooter,
   onPlayAgain: launch.onPlayAgain,
   onExit: launch.onExit,

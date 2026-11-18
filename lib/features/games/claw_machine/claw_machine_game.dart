@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:arcadelingo/domain/ports/sounds.dart';
@@ -6,6 +7,7 @@ import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'claw_machine_field.dart';
 import 'claw_machine_run.dart';
@@ -48,6 +50,9 @@ class _ClawMachineGameState extends State<ClawMachineGame>
   late final AnimationController _motion;
   late final AppLifecycleListener _lifecycle;
   int _column = ClawMachineRun.columnCount ~/ 2;
+  int? _refillColumn;
+  int _refillSerial = 0;
+  int _boardNumber = 0;
   bool _capturing = false;
   bool _paused = false;
   bool _leaving = false;
@@ -64,6 +69,8 @@ class _ClawMachineGameState extends State<ClawMachineGame>
     return _accumulated + (interval.isNegative ? Duration.zero : interval);
   }
 
+  bool get _reducedMotion => MediaQuery.disableAnimationsOf(context);
+
   bool get _canAim => !_leaving && !_paused && !_capturing && !_run.solved;
 
   @override
@@ -72,7 +79,7 @@ class _ClawMachineGameState extends State<ClawMachineGame>
     _run = ClawMachineRun(widget.session, Random(widget.seed))..advance();
     _motion = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 570),
+      animationBehavior: AnimationBehavior.preserve,
     )..addStatusListener(_grabFinished);
     _lifecycle = AppLifecycleListener(onStateChange: _onLifecycle);
     _paused = switch (WidgetsBinding.instance.lifecycleState) {
@@ -114,8 +121,14 @@ class _ClawMachineGameState extends State<ClawMachineGame>
   }
 
   void _aim(int column) {
-    if (!_canAim || column < 0 || column >= ClawMachineRun.columnCount) return;
+    if (!_canAim ||
+        column == _column ||
+        column < 0 ||
+        column >= ClawMachineRun.columnCount) {
+      return;
+    }
     setState(() => _column = column);
+    unawaited(HapticFeedback.selectionClick());
   }
 
   void _hint() {
@@ -126,27 +139,40 @@ class _ClawMachineGameState extends State<ClawMachineGame>
   void _grab() {
     if (!_canAim) return;
     setState(() => _capturing = true);
+    _motion.duration = Duration(milliseconds: _reducedMotion ? 80 : 570);
     _motion.forward(from: 0);
   }
 
   void _grabFinished(AnimationStatus status) {
     if (status != AnimationStatus.completed || !_capturing) return;
+    final depth = _run.stacks[_column].length;
     setState(() {
       _capturing = false;
       _run.grab(_column, _elapsed);
+      _refillColumn = _run.stacks[_column].length == depth ? _column : null;
+      _refillSerial++;
     });
+    if (_run.missedLetter != null) {
+      widget.sounds.play(GameSound.clawMiss);
+      return;
+    }
+    widget.sounds.play(_run.solved ? GameSound.clawWord : GameSound.clawCatch);
+    unawaited(HapticFeedback.lightImpact());
   }
 
   void _next() {
     if (_leaving || !_run.solved || _run.item == null || _paused) return;
     setState(() {
       _run.advance();
+      _refillColumn = null;
+      _boardNumber++;
       _column = ClawMachineRun.columnCount ~/ 2;
       _accumulated = Duration.zero;
       _started = _now;
     });
     if (_run.item == null) {
       _footer = widget.summaryFooter?.call();
+      widget.sounds.play(GameSound.roundEnd);
       widget.onRoundOver?.call();
     }
   }
@@ -223,7 +249,12 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                   ),
                 ),
                 const SizedBox(height: 14),
-                _AnswerSlots(answer: _run.answer, collected: _run.collected),
+                _AnswerSlots(
+                  key: ValueKey(_boardNumber),
+                  answer: _run.answer,
+                  collected: _run.collected,
+                  reducedMotion: _reducedMotion,
+                ),
                 const SizedBox(height: 16),
                 Stack(
                   alignment: Alignment.center,
@@ -234,36 +265,55 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                       hintedColumn: _run.hintedColumn,
                       motion: _motion,
                       capturing: _capturing,
+                      reducedMotion: _reducedMotion,
+                      refillColumn: _refillColumn,
+                      refillSerial: _refillSerial,
                       onAim: _canAim ? _aim : null,
                     ),
                     if (_run.solved)
-                      Padding(
-                        padding: const EdgeInsets.all(18),
-                        child: ArcadePanel(
-                          key: ClawKeys.result,
-                          accent: colors.primary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 22,
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.check_circle_outline_rounded,
-                                color: colors.primary,
-                                size: 32,
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: _reducedMotion ? 1 : 0, end: 1),
+                        duration:
+                            _reducedMotion
+                                ? Duration.zero
+                                : const Duration(milliseconds: 195),
+                        curve: Curves.easeOutCubic,
+                        builder:
+                            (context, progress, child) => Opacity(
+                              opacity: progress,
+                              child: Transform.scale(
+                                scale: .94 + progress * .06,
+                                child: child,
                               ),
-                              const SizedBox(height: 12),
-                              Text(
-                                _run.answer,
-                                textAlign: TextAlign.center,
-                                style: withWeight(
-                                  theme.textTheme.titleLarge!,
-                                  FontWeight.bold,
+                            ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(18),
+                          child: ArcadePanel(
+                            key: ClawKeys.result,
+                            accent: colors.primary,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 22,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.check_circle_outline_rounded,
+                                  color: colors.primary,
+                                  size: 32,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 12),
+                                Text(
+                                  _run.answer,
+                                  textAlign: TextAlign.center,
+                                  style: withWeight(
+                                    theme.textTheme.titleLarge!,
+                                    FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -311,17 +361,6 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                       ),
                     ],
                   ),
-                  if (missed != null) ...[
-                    const SizedBox(height: 8),
-                    Semantics(
-                      liveRegion: true,
-                      child: Text(
-                        'Буква $missed не подошла',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: colors.error),
-                      ),
-                    ),
-                  ],
                   Center(
                     child: TextButton.icon(
                       key: ClawKeys.hint,
@@ -329,6 +368,24 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                       icon: const Icon(Icons.lightbulb_outline_rounded),
                       label: const Text('Подсказка'),
                     ),
+                  ),
+                  AnimatedSwitcher(
+                    duration:
+                        _reducedMotion
+                            ? Duration.zero
+                            : const Duration(milliseconds: 125),
+                    child:
+                        missed == null
+                            ? const SizedBox.shrink()
+                            : Semantics(
+                              key: ValueKey(missed),
+                              liveRegion: true,
+                              child: Text(
+                                'Буква $missed не подошла',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: colors.error),
+                              ),
+                            ),
                   ),
                 ],
               ],
@@ -380,10 +437,16 @@ class _ClawMachineGameState extends State<ClawMachineGame>
 }
 
 class _AnswerSlots extends StatelessWidget {
-  const _AnswerSlots({required this.answer, required this.collected});
+  const _AnswerSlots({
+    required this.answer,
+    required this.collected,
+    required this.reducedMotion,
+    super.key,
+  });
 
   final String answer;
   final int collected;
+  final bool reducedMotion;
 
   @override
   Widget build(BuildContext context) {
@@ -399,19 +462,61 @@ class _AnswerSlots extends StatelessWidget {
         runSpacing: 5,
         children: [
           for (var i = 0; i < answer.length; i++)
-            Container(
-              constraints: const BoxConstraints(minWidth: 38, minHeight: 40),
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                color:
-                    i < collected
-                        ? colors.surfaceContainerHighest
-                        : colors.surface,
-                border: Border.all(
-                  color: i == collected ? colors.primary : colors.outline,
-                ),
-                borderRadius: BorderRadius.circular(9),
+            TweenAnimationBuilder<double>(
+              key: ValueKey((i, i < collected)),
+              tween: Tween(
+                begin: !reducedMotion && i == collected - 1 ? 0 : 1,
+                end: 1,
               ),
+              duration:
+                  reducedMotion
+                      ? Duration.zero
+                      : const Duration(milliseconds: 210),
+              builder: (context, t, child) {
+                final pulse = 1 - t;
+                return Transform.scale(
+                  scale: 1 + .12 * sin(pi * t),
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 38,
+                      minHeight: 40,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          i < collected
+                              ? Color.lerp(
+                                colors.surfaceContainerHighest,
+                                colors.primary,
+                                .24 * pulse,
+                              )
+                              : colors.surface,
+                      border: Border.all(
+                        color:
+                            i == collected
+                                ? colors.primary
+                                : Color.lerp(
+                                  colors.outline,
+                                  colors.primary,
+                                  pulse,
+                                )!,
+                      ),
+                      borderRadius: BorderRadius.circular(9),
+                      boxShadow: [
+                        if (pulse > 0)
+                          BoxShadow(
+                            color: colors.primary.withValues(alpha: .5 * pulse),
+                            blurRadius: 12 * pulse,
+                          ),
+                      ],
+                    ),
+                    child: child,
+                  ),
+                );
+              },
               child: Text(
                 i < collected ? answer[i] : ' ',
                 textAlign: TextAlign.center,
