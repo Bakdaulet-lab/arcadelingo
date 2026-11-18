@@ -150,9 +150,38 @@ Uint8List wav(List<double> wave) {
   return out.toBytes();
 }
 
+/// Тихий звон капсулы, мягкий глухой промах и восходящий аккорд слова.
+List<double> clawCatchWave() => _chime(145, [(0, 659.25, .23)]);
+List<double> clawMissWave() => _chime(130, [(0, 261.63, .15), (23, 196, .10)]);
+List<double> clawWordWave() =>
+    _chime(335, [(0, 659.25, .21), (54, 783.99, .19), (106, 987.77, .18)]);
+
+List<double> _chime(int milliseconds, List<(int, double, double)> notes) {
+  final count = _samples(Duration(milliseconds: milliseconds));
+  final wave = List<double>.filled(count, 0);
+  for (final (delay, pitch, amplitude) in notes) {
+    final start = _samples(Duration(milliseconds: delay));
+    for (var i = start; i < count; i++) {
+      final t = (i - start) / sampleRate;
+      final attack = min(t / .007, 1.0);
+      final fade = min((count - i) / (sampleRate * .024), 1.0);
+      final phase = 2 * pi * pitch * t;
+      wave[i] +=
+          amplitude *
+          attack *
+          fade *
+          (exp(-21 * t) * sin(phase) + .25 * exp(-38 * t) * sin(2 * phase));
+    }
+  }
+  return wave;
+}
+
 /// Что за чем лежит в `assets/sound/`: имя файла и его сэмплы.
 Map<String, List<double> Function()> get sounds => {
   'slice.wav': sliceWave,
   'slice_hot.wav': sliceHotWave,
   'miss.wav': missWave,
+  'claw_catch.wav': clawCatchWave,
+  'claw_miss.wav': clawMissWave,
+  'claw_word.wav': clawWordWave,
 };

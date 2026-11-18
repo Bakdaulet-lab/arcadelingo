@@ -18,6 +18,9 @@ const Map<GameSound, String> soundAssets = {
   GameSound.sliceHot: 'sound/slice_hot.wav',
   GameSound.miss: 'sound/miss.wav',
   GameSound.roundEnd: 'sound/round_end.wav',
+  GameSound.clawCatch: 'sound/claw_catch.wav',
+  GameSound.clawMiss: 'sound/claw_miss.wav',
+  GameSound.clawWord: 'sound/claw_word.wav',
 };
 
 /// Роль звука в системе: «ambient».

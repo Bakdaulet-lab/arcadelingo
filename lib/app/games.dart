@@ -16,6 +16,7 @@ library;
 
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
 import 'package:flutter/material.dart';
@@ -78,7 +79,13 @@ class GameLaunch {
 
 /// Одна игра в реестре.
 class GameEntry {
-  const GameEntry({required this.id, required this.title, required this.build});
+  const GameEntry({
+    required this.id,
+    required this.title,
+    required this.build,
+    this.artwork,
+    this.instruction,
+  });
 
   /// Идентификатор в событиях ответа.
   ///
@@ -90,6 +97,9 @@ class GameEntry {
   /// Название для человека: подпись сегмента выбора на домашнем экране.
   final String title;
 
+  final String? artwork;
+  final String? instruction;
+
   /// Экран игры на готовом [GameLaunch].
   final Widget Function(GameLaunch launch) build;
 }
@@ -99,6 +109,8 @@ const GameEntry fallingWordsEntry = GameEntry(
   id: 'falling_words',
   title: 'Падающие слова',
   build: _buildFallingWords,
+  artwork: 'assets/images/home/falling-words.png',
+  instruction: 'Нажми на верный перевод',
 );
 
 /// Ниндзя-слэш — вторая игра, Фаза 4.
@@ -111,13 +123,27 @@ const GameEntry ninjaSlashEntry = GameEntry(
   id: 'ninja_slash',
   title: 'Ниндзя-слэш',
   build: _buildNinjaSlash,
+  artwork: 'assets/images/home/ninja.png',
+  instruction: 'Разрежь правильный перевод',
+);
+
+const clawMachineEntry = GameEntry(
+  id: 'claw_machine',
+  title: 'Автомат с клешнёй',
+  build: _buildClawMachine,
+  artwork: 'assets/images/home/claw-machine.webp',
+  instruction: 'Собери слово из букв',
 );
 
 /// Все игры приложения.
 ///
 /// Порядок значим: первая запись — умолчание домашнего экрана. Выбор другой
 /// игры живёт в HomeScreen, а не в реестре, и не меняет этот список.
-const List<GameEntry> wordarcadeGames = [fallingWordsEntry, ninjaSlashEntry];
+const List<GameEntry> wordarcadeGames = [
+  fallingWordsEntry,
+  ninjaSlashEntry,
+  clawMachineEntry,
+];
 
 Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
   session: launch.session,
@@ -130,6 +156,17 @@ Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
 );
 
 Widget _buildNinjaSlash(GameLaunch launch) => NinjaSlashGame(
+  session: launch.session,
+  sounds: launch.sounds,
+  summaryFooter: launch.summaryFooter,
+  onPlayAgain: launch.onPlayAgain,
+  onExit: launch.onExit,
+  onRoundOver: launch.onRoundOver,
+  mistakeCount: launch.mistakeCount,
+  onReviewMistakes: launch.onReviewMistakes,
+);
+
+Widget _buildClawMachine(GameLaunch launch) => ClawMachineGame(
   session: launch.session,
   sounds: launch.sounds,
   summaryFooter: launch.summaryFooter,

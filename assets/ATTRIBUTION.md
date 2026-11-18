@@ -71,3 +71,8 @@ C1/C2 Version 1.0**, Octanove Labs. Исходный набор:
 ## Иконки Material
 
 Идут из Flutter SDK (`uses-material-design: true`), Apache License 2.0.
+
+## Звуковые эффекты «Автомата с клешнёй»
+
+Короткие звуки `claw_catch.wav`, `claw_miss.wav` и `claw_word.wav`
+синтезируются в `tool/sound/sound_synth.dart` без внешних сэмплов.

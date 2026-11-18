@@ -62,7 +62,19 @@ class ReviewOutcome {
     this.hintsUsed = 0,
     this.selectedAnswer,
     this.timedOut = false,
-  });
+  }) : isUntimed = false;
+
+  const ReviewOutcome.untimed({
+    required this.correct,
+    required this.responseTime,
+    this.hintsUsed = 0,
+    this.selectedAnswer,
+  }) : timeLimit = Duration.zero,
+       isUntimed = true,
+       timedOut = false;
+
+  /// Время ответа записывается, но не участвует в оценке.
+  final bool isUntimed;
 
   /// Ответил ли пользователь верно. Истёкшее время — это false.
   final bool correct;

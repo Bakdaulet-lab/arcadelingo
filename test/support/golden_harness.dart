@@ -150,20 +150,9 @@ Future<void> pumpRitualGolden(
   await tester.runAsync(() async {
     final context = tester.element(find.byType(PlayView));
     await Future.wait([
-      precacheImage(
-        const ResizeImage(
-          AssetImage('assets/images/home/ninja.png'),
-          width: 1200,
-        ),
-        context,
-      ),
-      precacheImage(
-        const ResizeImage(
-          AssetImage('assets/images/home/falling-words.png'),
-          width: 1200,
-        ),
-        context,
-      ),
+      for (final game in wordarcadeGames)
+        if (game.artwork case final artwork?)
+          precacheImage(ResizeImage(AssetImage(artwork), width: 1200), context),
     ]);
   });
   await tester.pumpAndSettle();
