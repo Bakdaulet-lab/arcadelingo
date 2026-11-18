@@ -36,3 +36,25 @@ Future<void> spellWithClaw(WidgetTester tester, String word) async {
     await catchClawLetter(tester, letter);
   }
 }
+
+Future<String> missWithClaw(
+  WidgetTester tester,
+  String correctLetter, {
+  String? avoid,
+}) async {
+  final capsules = find.byWidgetPredicate(
+    (widget) =>
+        widget.key is ValueKey<String> &&
+        (widget.key! as ValueKey<String>).value.startsWith('claw.capsule.'),
+  );
+  final wrong = tester
+      .widgetList<Text>(
+        find.descendant(of: capsules, matching: find.byType(Text)),
+      )
+      .map((text) => text.data!)
+      .firstWhere(
+        (letter) => letter != correctLetter.toUpperCase() && letter != avoid,
+      );
+  await catchClawLetter(tester, wrong);
+  return wrong;
+}

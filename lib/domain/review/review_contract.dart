@@ -73,6 +73,7 @@ class ReviewOutcome {
        isUntimed = true,
        timedOut = false;
 
+  /// Время ответа записывается, но не участвует в оценке.
   final bool isUntimed;
 
   /// Ответил ли пользователь верно. Истёкшее время — это false.

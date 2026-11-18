@@ -33,11 +33,13 @@ const double _goodBelow = 0.60;
 /// портит верный ответ, не превращая его в «забыл». Это порог, а не
 /// счётчик — пять подсказок стоят столько же, сколько одна.
 ///
-/// Нулевой лимит даёт `hard` через [responseRatio] (1.0 ≥ 0.60), отдельной
+/// В сессии без таймера верный ответ начинает с good.
+/// Нулевой лимит в сессии с таймером даёт `hard` через [responseRatio] (1.0 ≥ 0.60), отдельной
 /// ветки здесь нет.
 ReviewGrade gradeOutcome(ReviewOutcome outcome) {
   if (!outcome.correct) return ReviewGrade.again;
-  final bySpeed = _bySpeed(responseRatio(outcome));
+  final bySpeed =
+      outcome.isUntimed ? ReviewGrade.good : _bySpeed(responseRatio(outcome));
   return outcome.hintsUsed > 0 ? _demote(bySpeed) : bySpeed;
 }
 

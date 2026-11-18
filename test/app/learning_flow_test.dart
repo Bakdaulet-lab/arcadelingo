@@ -9,6 +9,7 @@ import 'package:arcadelingo/domain/events/app_event.dart';
 import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
+import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_run.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_views.dart'
     as falling;
@@ -18,6 +19,7 @@ import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_views.dart'
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/claw_actions.dart';
 import '../support/in_memory_answer_log.dart';
 import '../support/in_memory_event_log.dart';
 import '../support/in_memory_stores.dart';
@@ -112,11 +114,20 @@ void main() {
   });
 
   for (final entry in wordarcadeGames) {
+    final isClaw = entry.id == clawMachineEntry.id;
     final isNinja = entry.id == ninjaSlashEntry.id;
     final wordKey =
-        isNinja ? ninja.NinjaKeys.word : falling.FallingWordsKeys.word;
+        isClaw
+            ? ClawKeys.prompt
+            : isNinja
+            ? ninja.NinjaKeys.word
+            : falling.FallingWordsKeys.word;
     final summaryKey =
-        isNinja ? ninja.NinjaKeys.summary : falling.FallingWordsKeys.summary;
+        isClaw
+            ? ClawKeys.summary
+            : isNinja
+            ? ninja.NinjaKeys.summary
+            : falling.FallingWordsKeys.summary;
 
     for (final level in CefrLevel.values) {
       testWidgets(
@@ -124,7 +135,9 @@ void main() {
         (tester) async {
           final subset = [
             for (final cefr in CefrLevel.values)
-              ...bundled.where((item) => item.word.level == cefr).take(7),
+              ...bundled
+                  .where((item) => item.word.level == cefr)
+                  .take(isClaw ? 3 : 7),
           ];
           final selected =
               subset.where((item) => item.word.level == level).toList();
@@ -170,13 +183,22 @@ void main() {
           }
           await _beginGame(tester, isNinja, LearningKeys.start);
           expect(find.byKey(LearningKeys.introduction), findsNothing);
-          // Реальные тапы/свайпы по неверным ответам завершают обе игры тремя потерями.
+          // В играх с жизнями делаем три промаха. Автомат доходит
+          // до итогов по исчерпании короткой очереди из трёх слов.
           final choices = <String>[];
           for (var index = 0; index < 3; index++) {
+            final word = selected[index].word;
             expect(
               tester.widget<Text>(find.byKey(wordKey)).data,
-              selected[index].word.text,
+              isClaw ? word.translation : word.text,
             );
+            if (isClaw) {
+              choices.add(await missWithClaw(tester, word.text[0]));
+              await spellWithClaw(tester, word.text);
+              expect(fixture.answers.records.last.correct, isFalse);
+              await tapClaw(tester, ClawKeys.next);
+              continue;
+            }
             final wrongLabels =
                 isNinja
                     ? tester
@@ -280,11 +302,19 @@ void main() {
       await _tap(tester, find.text(entry.title));
       await _beginGame(tester, isNinja, _learn);
       expect(find.byKey(LearningKeys.introduction), findsNothing);
-      expect(tester.widget<Text>(find.byKey(wordKey)).data, item.word.text);
-      await _answer(tester, isNinja, item.word.translation);
-      await tester.pump(
-        isNinja ? NinjaRun.correctReveal : FallingWordsRun.correctReveal,
+      expect(
+        tester.widget<Text>(find.byKey(wordKey)).data,
+        isClaw ? item.word.translation : item.word.text,
       );
+      if (isClaw) {
+        await spellWithClaw(tester, item.word.text);
+        await tapClaw(tester, ClawKeys.next);
+      } else {
+        await _answer(tester, isNinja, item.word.translation);
+        await tester.pump(
+          isNinja ? NinjaRun.correctReveal : FallingWordsRun.correctReveal,
+        );
+      }
       expect(find.byKey(summaryKey), findsOneWidget);
       expect(find.byKey(_review), findsNothing);
       expect(fixture.answers.records.single.correct, isTrue);
@@ -301,11 +331,19 @@ void main() {
       await _tap(tester, find.text(entry.title));
       await _beginGame(tester, isNinja, AppKeys.play);
       expect(find.byKey(LearningKeys.introduction), findsNothing);
-      await tester.pump(const Duration(seconds: 8));
-      await tester.pump(const Duration(milliseconds: 800));
+      final String feedback;
+      if (isClaw) {
+        feedback = await missWithClaw(tester, item.word.text[0]);
+        await spellWithClaw(tester, item.word.text);
+        await tapClaw(tester, ClawKeys.next);
+      } else {
+        await tester.pump(const Duration(seconds: 8));
+        await tester.pump(const Duration(milliseconds: 800));
+        feedback = 'Время вышло';
+      }
       expect(find.byKey(summaryKey), findsOneWidget);
       await _tap(tester, find.byKey(_review));
-      expect(find.text('Время вышло'), findsOneWidget);
+      expect(find.text(feedback), findsOneWidget);
       expect(
         tester
             .widget<MistakesReviewScreen>(find.byType(MistakesReviewScreen))

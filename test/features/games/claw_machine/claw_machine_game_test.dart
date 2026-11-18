@@ -1,4 +1,6 @@
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/features/games/claw_machine/claw_machine_field.dart'
+    show ClawMachineField;
 import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -36,6 +38,20 @@ Future<void> _show(
 }
 
 void main() {
+  testWidgets('быстрые стрелки останавливаются у края рельса', (tester) async {
+    await _show(tester, FakeReviewSession([_fish]));
+    await tapClaw(tester, ClawKeys.left);
+    final left = find.byKey(ClawKeys.left);
+    await tester.tap(left);
+    await tester.tap(left);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(
+      tester.widget<ClawMachineField>(find.byType(ClawMachineField)).column,
+      0,
+    );
+  });
+
   testWidgets('нет таймаута, один самостоятельный доклад и один конец', (
     tester,
   ) async {
@@ -68,31 +84,22 @@ void main() {
   ) async {
     final session = FakeReviewSession([_fish]);
     await _show(tester, session);
-    final wrong = tester
-        .widgetList<Text>(
-          find.descendant(
-            of: find.byWidgetPredicate(
-              (widget) =>
-                  widget.key is ValueKey<String> &&
-                  (widget.key! as ValueKey<String>).value.startsWith(
-                    'claw.capsule.',
-                  ),
-            ),
-            matching: find.byType(Text),
-          ),
-        )
-        .map((text) => text.data!)
-        .firstWhere((letter) => letter != 'F');
-    await catchClawLetter(tester, wrong);
+    await catchClawLetter(tester, 'F');
+    final wrong = await missWithClaw(tester, 'I');
     expect(find.text('Буква $wrong не подошла'), findsOneWidget);
+    await missWithClaw(tester, 'I', avoid: wrong);
+    expect(
+      find.descendant(of: find.byKey(ClawKeys.slots), matching: find.text('F')),
+      findsOneWidget,
+    );
     expect(session.reports, isEmpty);
     await tapClaw(tester, ClawKeys.hint);
     await tapClaw(tester, ClawKeys.hint);
     await tapClaw(tester, ClawKeys.grab);
-    await spellWithClaw(tester, 'ish');
+    await spellWithClaw(tester, 'sh');
     final report = session.reports.single.outcome;
     expect(report.correct, isFalse);
-    expect(report.selectedAnswer, wrong);
+    expect(report.selectedAnswer, 'F$wrong');
     expect(report.hintsUsed, 1);
     expect(find.text('FISH'), findsOneWidget);
   });
@@ -108,12 +115,23 @@ void main() {
     await tester.tap(grab);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump(const Duration(seconds: 1));
+    expect(session.reports, isEmpty);
+    for (final state in [AppLifecycleState.hidden, AppLifecycleState.paused]) {
+      tester.binding.handleAppLifecycleStateChanged(state);
+    }
     await tester.pump();
     await tester.pump(const Duration(days: 1));
     expect(session.reports, isEmpty);
     expect(find.byKey(ClawKeys.result), findsNothing);
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    for (final state in [
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ]) {
+      tester.binding.handleAppLifecycleStateChanged(state);
+    }
     await tester.pumpAndSettle();
     expect(session.reports.single.outcome.correct, isTrue);
     expect(
@@ -127,8 +145,10 @@ void main() {
     final session = FakeReviewSession([_fish]);
     var ends = 0;
     await _show(tester, session, finish: () => ends++);
+    await missWithClaw(tester, 'F');
     await tester.pumpWidget(const SizedBox());
     expect(session.reports.single.outcome.correct, isFalse);
+    expect(session.reports.single.outcome.selectedAnswer, isNull);
     expect(session.reports.single.outcome.timedOut, isFalse);
     expect(ends, 0);
   });

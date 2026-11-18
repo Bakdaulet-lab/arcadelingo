@@ -47,16 +47,8 @@ class _GameCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final artwork = switch (game.id) {
-      'ninja_slash' => 'assets/images/home/ninja.png',
-      'falling_words' => 'assets/images/home/falling-words.png',
-      _ => null,
-    };
-    final instruction = switch (game.id) {
-      'ninja_slash' => 'Разрежь правильный перевод',
-      'falling_words' => 'Нажми на верный перевод',
-      _ => null,
-    };
+    final artwork = game.artwork;
+    final instruction = game.instruction;
     final largeText = MediaQuery.textScalerOf(context).scale(16) > 22;
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(22),
