@@ -4,13 +4,16 @@ import 'package:arcadelingo/domain/review/review_contract.dart';
 
 /// Партия хранит только раскладку и попытку по выданному слову.
 class ClawMachineRun {
-  ClawMachineRun(this.session, this.random);
+  ClawMachineRun(this.session, this.random, {int? hintLimit})
+    : _hintsRemaining = hintLimit;
 
   static const columnCount = 5;
   static const _alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
   final ReviewSession session;
   final Random random;
+  int? _hintsRemaining;
+  int? get hintsRemaining => _hintsRemaining;
 
   ReviewItem? item;
   String answer = '';
@@ -59,7 +62,10 @@ class ClawMachineRun {
     (stack) => stack.isNotEmpty && stack.last == answer[collected],
   );
 
-  int hint() {
+  int? hint() {
+    final remaining = _hintsRemaining;
+    if (remaining == 0) return null;
+    if (remaining != null) _hintsRemaining = remaining - 1;
     if (!_hintedAtPosition) {
       _hintedAtPosition = true;
       _hintCount++;

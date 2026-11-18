@@ -31,6 +31,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -51,6 +52,7 @@ class FallingWordsGame extends StatefulWidget {
     this.seed,
     this.summaryFooter,
     this.onRoundOver,
+    this.onChallengeComplete,
     this.mistakeCount,
     this.onReviewMistakes,
   });
@@ -86,6 +88,7 @@ class FallingWordsGame extends StatefulWidget {
   /// экрану конца, ровно один раз за партию. Уход с середины сюда не
   /// попадает: там `dispose` докладывает неответ, а экрана конца не бывает.
   final VoidCallback? onRoundOver;
+  final Widget Function(int score)? onChallengeComplete;
 
   @override
   State<FallingWordsGame> createState() => _FallingWordsGameState();
@@ -126,6 +129,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
   /// на итогах ничего не меняется, а хост считал бы очередь заново на
   /// каждую перестройку экрана.
   String? _footer;
+  Widget? _challengeRecord;
 
   @override
   void initState() {
@@ -133,6 +137,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     _run = FallingWordsRun(
       session: widget.session,
       random: Random(widget.seed),
+      sprint: widget.onChallengeComplete != null,
     );
     _windUp = AnimationController(
       vsync: this,
@@ -187,7 +192,12 @@ class _FallingWordsGameState extends State<FallingWordsGame>
   }
 
   void _startReveal() {
-    _reveal.duration = _run.revealTime;
+    final duration = _run.revealTime;
+    if (duration == Duration.zero) {
+      _advance();
+      return;
+    }
+    _reveal.duration = duration;
     _reveal.forward(from: 0);
   }
 
@@ -211,9 +221,14 @@ class _FallingWordsGameState extends State<FallingWordsGame>
   void _onRevealTick() {
     if (_run.phase != FallingPhase.reveal || _reveal.value < 1) return;
     _reveal.stop();
+    _advance();
+  }
+
+  void _advance() {
     _run.advance();
     if (_run.phase == FallingPhase.over) {
       _footer = widget.summaryFooter?.call();
+      _challengeRecord = widget.onChallengeComplete?.call(_run.score);
       widget.onRoundOver?.call();
     }
     setState(() {});
@@ -330,6 +345,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
             // жизней раньше, чем спрашивает следующее слово.
             outOfLives: _run.lives == 0,
             footer: _footer,
+            challengeRecord: _challengeRecord,
             onPlayAgain: widget.onPlayAgain,
             onExit: widget.onExit,
             mistakeCount: widget.mistakeCount?.call() ?? 0,
@@ -360,18 +376,25 @@ class _FallingWordsGameState extends State<FallingWordsGame>
             children: [
               Transform.translate(
                 offset: Offset(shake, 0),
-                child: GameHud(
-                  lives: _run.lives,
-                  maxLives: FallingWordsRun.startLives,
-                  score: _run.score,
-                  multiplier: _run.scoreMultiplier,
-                  combo: _run.combo,
-                  scorePulse: _pulse(juicy: juicy, revealing: revealing),
-                  // В фазе подсветки ответ уже доложен, и answered его
-                  // считает; в падении текущее слово ещё впереди счётчика.
-                  current: widget.session.answered + (revealing ? 0 : 1),
-                  total: widget.session.total,
-                ),
+                child:
+                    _run.sprintRemaining != null
+                        ? _sprintHud(context, revealing)
+                        : GameHud(
+                          lives: _run.lives,
+                          maxLives: FallingWordsRun.startLives,
+                          score: _run.score,
+                          multiplier: _run.scoreMultiplier,
+                          combo: _run.combo,
+                          scorePulse: _pulse(
+                            juicy: juicy,
+                            revealing: revealing,
+                          ),
+                          // В фазе подсветки ответ уже доложен, и answered его
+                          // считает; в падении текущее слово ещё впереди счётчика.
+                          current:
+                              widget.session.answered + (revealing ? 0 : 1),
+                          total: widget.session.total,
+                        ),
               ),
               Expanded(
                 child: _field(scheme, juicy: juicy, revealing: revealing),
@@ -383,6 +406,26 @@ class _FallingWordsGameState extends State<FallingWordsGame>
       ),
     );
   }
+
+  Widget _sprintHud(BuildContext context, bool revealing) {
+    final inPhase = revealing ? _revealLived : _elapsed;
+    final left = _run.sprintRemaining! - inPhase;
+    final seconds = left.isNegative ? 0 : (left.inMilliseconds / 1000).ceil();
+    final strings = context.strings;
+    return Padding(
+      padding: const EdgeInsets.all(10),
+      child: Chip(
+        avatar: const Icon(Icons.timer_outlined),
+        label: Text(
+          '${strings.sprintTime(seconds)} · ${strings.score(_run.score)}',
+        ),
+      ),
+    );
+  }
+
+  Duration get _revealLived => Duration(
+    microseconds: (_run.revealTime.inMicroseconds * _reveal.value).round(),
+  );
 
   /// Насколько сдвинуты HUD и кнопки в этом кадре.
   ///

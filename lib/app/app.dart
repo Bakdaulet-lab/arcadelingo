@@ -15,6 +15,7 @@
 library;
 
 import 'dart:async';
+import 'dart:math';
 
 import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
@@ -25,10 +26,12 @@ import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/app/learning_views.dart';
 import 'package:arcadelingo/app/progress_view.dart';
 import 'package:arcadelingo/app/settings_view.dart';
+import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
 import 'package:arcadelingo/domain/learning/learning_plan.dart';
 import 'package:arcadelingo/domain/learning/mistake_review_observer.dart';
+import 'package:arcadelingo/domain/ports/challenge_records.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/reminders/reminder_policy.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
@@ -223,6 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
   CefrLevel _selectedLevel = CefrLevel.a1;
   bool _preparingLearning = false;
   bool _selectingCourse = false;
+  bool _selectingChallenge = false;
 
   GameEntry get _selectedGame => widget.games.firstWhere(
     (game) => game.id == _selectedGameId,
@@ -269,6 +273,14 @@ class _HomeScreenState extends State<HomeScreen> {
           onLearn:
               _hasWordsForLevel && !_preparingLearning
                   ? () => _start(learning: true)
+                  : null,
+          onChallenge:
+              _hasWordsForLevel &&
+                      !_preparingLearning &&
+                      widget.ports.challengeRecords != null &&
+                      widget.games.isNotEmpty &&
+                      _selectedGame.challenge != null
+                  ? _openChallenge
                   : null,
           onProgress: _openProgress,
           onSettings: _openSettings,
@@ -595,6 +607,70 @@ class _HomeScreenState extends State<HomeScreen> {
     _refreshReminder();
   }
 
+  Future<void> _openChallenge() async {
+    if (_selectingCourse || _selectingChallenge || _preparingLearning) return;
+    final game = _selectedGame;
+    final mode = game.challenge;
+    final records = widget.ports.challengeRecords;
+    if (mode == null || records == null) return;
+
+    final course = widget.course;
+    final items = widget.items;
+    final key = (gameId: game.id, courseId: course.id, level: _selectedLevel);
+    final best = records.load(key);
+    _selectingChallenge = true;
+    try {
+      final start = await showChallengeDialog(
+        context,
+        game: game,
+        mode: mode,
+        course: course,
+        level: key.level,
+        best: best,
+      );
+      if (start == true && mounted) {
+        _launchChallenge(game, mode, key, items, records);
+      }
+    } finally {
+      _selectingChallenge = false;
+    }
+  }
+
+  void _launchChallenge(
+    GameEntry game,
+    ArcadeChallenge mode,
+    ChallengeKey key,
+    List<ReviewItem> items,
+    ChallengeRecords records,
+  ) {
+    final now = widget.now();
+    final mistakes = MistakeReviewObserver(level: key.level);
+    final session = ObservedSession(
+      inner: ChallengeSession(
+        items: items,
+        level: key.level,
+        random: Random(now.microsecondsSinceEpoch),
+        limit: mode.wordLimit,
+      ),
+      observers: [mistakes],
+      now: widget.now,
+      gameId: game.id,
+      sessionId: now.toIso8601String(),
+    );
+    _record(AppEventKind.roundStart, sessionId: session.sessionId);
+    _play(
+      game,
+      session,
+      () => '',
+      mistakes: mistakes,
+      level: key.level,
+      learning: false,
+      replayChallenge: () => _launchChallenge(game, mode, key, items, records),
+      onChallengeComplete:
+          (score) => ChallengeRecordLine(best: records.submit(key, score)),
+    );
+  }
+
   /// Тап «Играть»: собрать партию и показать её.
   ///
   /// Вся проводка — в usecase; здесь остаётся только навигация и разбор
@@ -605,7 +681,12 @@ class _HomeScreenState extends State<HomeScreen> {
     GameEntry? chosenGame,
     CefrLevel? chosenLevel,
   }) {
-    if (!_hasWordsForLevel || _preparingLearning || _selectingCourse) return;
+    if (!_hasWordsForLevel ||
+        _preparingLearning ||
+        _selectingCourse ||
+        _selectingChallenge) {
+      return;
+    }
     if (widget.games.isEmpty) {
       throw StateError('реестр игр пуст: запускать нечего');
     }
@@ -719,6 +800,8 @@ class _HomeScreenState extends State<HomeScreen> {
     required MistakeReviewObserver mistakes,
     required CefrLevel level,
     required bool learning,
+    VoidCallback? replayChallenge,
+    Widget Function(int score)? onChallengeComplete,
   }) {
     final navigator = Navigator.of(context);
     final sessionId = session is ObservedSession ? session.sessionId : null;
@@ -747,6 +830,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       summaryFooter: footer,
                       onPlayAgain: () {
                         navigator.pop();
+                        if (replayChallenge != null) {
+                          replayChallenge();
+                          return;
+                        }
                         _start(
                           learning: learning,
                           chosenGame: game,
@@ -754,6 +841,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                       onExit: navigator.pop,
+                      onChallengeComplete: onChallengeComplete,
                       mistakeCount: () => mistakes.mistakes.length,
                       onReviewMistakes: () {
                         unawaited(

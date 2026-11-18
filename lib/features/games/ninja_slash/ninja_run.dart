@@ -44,9 +44,12 @@ enum Verdict { correct, wrong, timeout }
 class NinjaRun {
   /// Слова берутся только из [session]; [random] выбирает обманки и
   /// расставляет объекты по дорожкам.
-  NinjaRun({required ReviewSession session, required Random random})
-    : _session = session,
-      _random = random;
+  NinjaRun({
+    required ReviewSession session,
+    required Random random,
+    this.streakChallenge = false,
+  }) : _session = session,
+       _random = random;
 
   /// Время полёта волны без комбо.
   static const Duration baseFlightTime = Duration(milliseconds: 3500);
@@ -91,6 +94,8 @@ class NinjaRun {
 
   final ReviewSession _session;
   final Random _random;
+  final bool streakChallenge;
+  static const int challengeTarget = 8;
 
   /// До [start] слова нет — это и есть «на сегодня всё», пока сессия не
   /// доказала обратное.
@@ -200,7 +205,7 @@ class NinjaRun {
   /// Конец подсветки: следующая волна, итоги или конец по жизням.
   void advance() {
     if (_phase != NinjaPhase.reveal) return;
-    if (_lives == 0) {
+    if (_lives == 0 || (streakChallenge && _combo >= challengeTarget)) {
       _phase = NinjaPhase.over;
       return;
     }

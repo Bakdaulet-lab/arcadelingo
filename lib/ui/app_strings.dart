@@ -1,3 +1,4 @@
+import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:flutter/foundation.dart';
@@ -22,6 +23,97 @@ class AppStrings {
         InterfaceLanguage.spanish => es,
         InterfaceLanguage.russian || InterfaceLanguage.system => ru,
       };
+
+  String get challenge =>
+      _text(en: 'Challenge', ru: 'Испытание', es: 'Desafío');
+
+  String challengeName(ArcadeChallenge mode) => switch (mode) {
+    ArcadeChallenge.sprint => _text(
+      en: '60-second sprint',
+      ru: '60 секунд',
+      es: 'Esprint de 60 segundos',
+    ),
+    ArcadeChallenge.streak => _text(
+      en: 'Eight in a row',
+      ru: 'Восемь точных ударов',
+      es: 'Ocho cortes seguidos',
+    ),
+    ArcadeChallenge.claw => _text(
+      en: 'Three words, one hint',
+      ru: 'Три слова, одна подсказка',
+      es: 'Tres palabras, una pista',
+    ),
+  };
+
+  String challengeRules(ArcadeChallenge mode) => switch (mode) {
+    ArcadeChallenge.sprint => _text(
+      en:
+          'Score as many points as you can in 60 seconds. A wrong or missed answer costs 5 seconds.',
+      ru:
+          'Набери как можно больше очков за 60 секунд. Промах или таймаут отнимает 5 секунд.',
+      es:
+          'Consigue todos los puntos que puedas en 60 segundos. Cada fallo o respuesta fuera de tiempo resta 5 segundos.',
+    ),
+    ArcadeChallenge.streak => _text(
+      en:
+          'Make eight correct cuts in a row. A miss resets the streak and costs a life. Your record is your longest streak.',
+      ru:
+          'Сделай восемь точных ударов подряд. Промах сбрасывает серию и отнимает жизнь. В рекорд идёт самая длинная серия.',
+      es:
+          'Haz ocho cortes correctos seguidos. Cada fallo reinicia la racha y cuesta una vida. Tu récord es la racha más larga.',
+    ),
+    ArcadeChallenge.claw => _text(
+      en:
+          'Spell three words with one hint for the whole round. Your record counts words spelled without a wrong grab.',
+      ru:
+          'Собери три слова. На весь раунд есть одна подсказка. В рекорд идут слова, собранные без ошибочных захватов.',
+      es:
+          'Forma tres palabras con una sola pista para toda la ronda. Para el récord cuentan las palabras completadas sin atrapar letras equivocadas.',
+    ),
+  };
+
+  String challengeBest(int? best) =>
+      best == null
+          ? _text(
+            en: 'No record yet',
+            ru: 'Рекорда пока нет',
+            es: 'Todavía no hay récord',
+          )
+          : _text(
+            en: 'Personal best: $best',
+            ru: 'Личный рекорд: $best',
+            es: 'Récord personal: $best',
+          );
+
+  String get savingChallenge => _text(
+    en: 'Saving result…',
+    ru: 'Сохраняем результат…',
+    es: 'Guardando el resultado…',
+  );
+
+  String get challengeSaveFailed => _text(
+    en: 'Couldn’t save the result',
+    ru: 'Не удалось сохранить результат',
+    es: 'No se pudo guardar el resultado',
+  );
+
+  String sprintTime(int seconds) => _text(
+    en: 'Time left: $seconds s',
+    ru: 'Осталось $seconds с',
+    es: 'Quedan $seconds s',
+  );
+
+  String challengeStreak(int hits, int target) => _text(
+    en: 'Streak: $hits/$target',
+    ru: 'Серия: $hits/$target',
+    es: 'Racha: $hits/$target',
+  );
+
+  String challengeHints(int count) => _text(
+    en: 'Hints left: $count',
+    ru: 'Подсказок осталось: $count',
+    es: 'Pistas restantes: $count',
+  );
 
   String get sources => _text(en: 'Sources', ru: 'Источники', es: 'Fuentes');
   String get chooseGame =>

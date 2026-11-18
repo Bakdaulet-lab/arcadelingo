@@ -21,6 +21,7 @@ class ClawMachineGame extends StatefulWidget {
     required this.onExit,
     required this.onPlayAgain,
     this.onRoundOver,
+    this.onChallengeComplete,
     this.summaryFooter,
     this.sounds = const NoopSounds(),
     this.mistakeCount,
@@ -35,6 +36,7 @@ class ClawMachineGame extends StatefulWidget {
   final VoidCallback onExit;
   final VoidCallback onPlayAgain;
   final VoidCallback? onRoundOver;
+  final Widget Function(int score)? onChallengeComplete;
   final String Function()? summaryFooter;
   final int Function()? mistakeCount;
   final VoidCallback? onReviewMistakes;
@@ -60,6 +62,7 @@ class _ClawMachineGameState extends State<ClawMachineGame>
   DateTime? _started;
   Duration _accumulated = Duration.zero;
   String? _footer;
+  Widget? _challengeRecord;
 
   DateTime get _now => (widget.now ?? DateTime.now)();
 
@@ -77,7 +80,11 @@ class _ClawMachineGameState extends State<ClawMachineGame>
   @override
   void initState() {
     super.initState();
-    _run = ClawMachineRun(widget.session, Random(widget.seed))..advance();
+    _run = ClawMachineRun(
+      widget.session,
+      Random(widget.seed),
+      hintLimit: widget.onChallengeComplete == null ? null : 1,
+    )..advance();
     _motion = AnimationController(
       vsync: this,
       animationBehavior: AnimationBehavior.preserve,
@@ -134,7 +141,9 @@ class _ClawMachineGameState extends State<ClawMachineGame>
 
   void _hint() {
     if (!_canAim) return;
-    setState(() => _column = _run.hint());
+    final column = _run.hint();
+    if (column == null) return;
+    setState(() => _column = column);
   }
 
   void _grab() {
@@ -173,6 +182,7 @@ class _ClawMachineGameState extends State<ClawMachineGame>
     });
     if (_run.item == null) {
       _footer = widget.summaryFooter?.call();
+      _challengeRecord = widget.onChallengeComplete?.call(_run.correctCount);
       widget.sounds.play(GameSound.roundEnd);
       widget.onRoundOver?.call();
     }
@@ -195,6 +205,7 @@ class _ClawMachineGameState extends State<ClawMachineGame>
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final missed = _run.missedLetter;
+    final hints = _run.hintsRemaining;
     return SafeArea(
       child: Align(
         alignment: Alignment.topCenter,
@@ -240,6 +251,13 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                   ],
                 ),
                 const SizedBox(height: 12),
+                if (hints != null)
+                  Text(
+                    context.strings.wordNumber(
+                      widget.session.answered + (_run.solved ? 0 : 1),
+                      widget.session.total,
+                    ),
+                  ),
                 Text(
                   word.translation,
                   key: ClawKeys.prompt,
@@ -365,9 +383,13 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                   Center(
                     child: TextButton.icon(
                       key: ClawKeys.hint,
-                      onPressed: _canAim ? _hint : null,
+                      onPressed: _canAim && hints != 0 ? _hint : null,
                       icon: const Icon(Icons.lightbulb_outline_rounded),
-                      label: Text(context.strings.hint),
+                      label: Text(
+                        hints == null
+                            ? context.strings.hint
+                            : context.strings.challengeHints(hints),
+                      ),
                     ),
                   ),
                   AnimatedSwitcher(
@@ -415,6 +437,10 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                   Text(
                     context.strings.correctAnswers(_run.correctCount, answered),
                   ),
+                  if (_challengeRecord case final record?) ...[
+                    const SizedBox(height: 12),
+                    record,
+                  ],
                   if (_footer case final footer?) ...[
                     const SizedBox(height: 12),
                     Text(footer, textAlign: TextAlign.center),

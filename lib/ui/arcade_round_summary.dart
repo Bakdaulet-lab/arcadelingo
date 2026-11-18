@@ -14,6 +14,7 @@ class ArcadeRoundSummary extends StatelessWidget {
     required this.outOfLives,
     required this.actions,
     this.footer,
+    this.challengeRecord,
     this.footerKey,
     super.key,
   });
@@ -25,6 +26,7 @@ class ArcadeRoundSummary extends StatelessWidget {
   final bool outOfLives;
   final Widget actions;
   final String? footer;
+  final Widget? challengeRecord;
   final Key? footerKey;
 
   @override
@@ -78,6 +80,10 @@ class ArcadeRoundSummary extends StatelessWidget {
               ],
             ),
           ),
+          if (challengeRecord case final record?) ...[
+            const SizedBox(height: 16),
+            record,
+          ],
           if (footer != null) ...[
             const SizedBox(height: 16),
             Text(

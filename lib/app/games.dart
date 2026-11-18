@@ -14,6 +14,7 @@
 /// не на «что выбрал человек».
 library;
 
+import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
@@ -37,6 +38,7 @@ class GameLaunch {
     this.sounds = const NoopSounds(),
     this.mistakeCount,
     this.onReviewMistakes,
+    this.onChallengeComplete,
   });
 
   /// Сессия, уже собранная usecase'ом и обёрнутая наблюдателями.
@@ -56,6 +58,7 @@ class GameLaunch {
 
   /// Открыть разбор, не создавая новую игровую сессию.
   final VoidCallback? onReviewMistakes;
+  final Widget Function(int score)? onChallengeComplete;
 
   /// Партия дошла до конца: игра показала экран итогов или «жизни кончились».
   ///
@@ -86,6 +89,7 @@ class GameEntry {
     required this.build,
     this.artwork,
     this.instruction,
+    this.challenge,
   });
 
   /// Идентификатор в событиях ответа.
@@ -100,6 +104,7 @@ class GameEntry {
 
   final String? artwork;
   final String? instruction;
+  final ArcadeChallenge? challenge;
 
   String titleFor(AppStrings strings) => switch (id) {
     'falling_words' => strings.fallingWords,
@@ -124,6 +129,7 @@ const GameEntry fallingWordsEntry = GameEntry(
   id: 'falling_words',
   title: 'Падающие слова',
   build: _buildFallingWords,
+  challenge: ArcadeChallenge.sprint,
   artwork: 'assets/images/home/falling-words.png',
   instruction: 'Нажми на верный перевод',
 );
@@ -138,6 +144,7 @@ const GameEntry ninjaSlashEntry = GameEntry(
   id: 'ninja_slash',
   title: 'Ниндзя-слэш',
   build: _buildNinjaSlash,
+  challenge: ArcadeChallenge.streak,
   artwork: 'assets/images/home/ninja.png',
   instruction: 'Разрежь правильный перевод',
 );
@@ -146,6 +153,7 @@ const clawMachineEntry = GameEntry(
   id: 'claw_machine',
   title: 'Автомат с клешнёй',
   build: _buildClawMachine,
+  challenge: ArcadeChallenge.claw,
   artwork: 'assets/images/home/claw-machine.webp',
   instruction: 'Собери слово из букв',
 );
@@ -162,7 +170,9 @@ const List<GameEntry> wordarcadeGames = [
 
 Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
   session: launch.session,
-  summaryFooter: launch.summaryFooter,
+  summaryFooter:
+      launch.onChallengeComplete == null ? launch.summaryFooter : null,
+  onChallengeComplete: launch.onChallengeComplete,
   onPlayAgain: launch.onPlayAgain,
   onExit: launch.onExit,
   onRoundOver: launch.onRoundOver,
@@ -173,7 +183,9 @@ Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
 Widget _buildNinjaSlash(GameLaunch launch) => NinjaSlashGame(
   session: launch.session,
   sounds: launch.sounds,
-  summaryFooter: launch.summaryFooter,
+  summaryFooter:
+      launch.onChallengeComplete == null ? launch.summaryFooter : null,
+  onChallengeComplete: launch.onChallengeComplete,
   onPlayAgain: launch.onPlayAgain,
   onExit: launch.onExit,
   onRoundOver: launch.onRoundOver,
@@ -184,7 +196,9 @@ Widget _buildNinjaSlash(GameLaunch launch) => NinjaSlashGame(
 Widget _buildClawMachine(GameLaunch launch) => ClawMachineGame(
   session: launch.session,
   sounds: launch.sounds,
-  summaryFooter: launch.summaryFooter,
+  summaryFooter:
+      launch.onChallengeComplete == null ? launch.summaryFooter : null,
+  onChallengeComplete: launch.onChallengeComplete,
   onPlayAgain: launch.onPlayAgain,
   onExit: launch.onExit,
   onRoundOver: launch.onRoundOver,
