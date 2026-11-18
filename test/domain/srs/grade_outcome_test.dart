@@ -31,6 +31,34 @@ ReviewOutcome _answer(
 );
 
 void main() {
+  test('в режиме без лимита оценка зависит от ответа и подсказки', () {
+    for (final seconds in [0, 600]) {
+      final elapsed = Duration(seconds: seconds);
+      expect(
+        gradeOutcome(
+          ReviewOutcome.untimed(correct: true, responseTime: elapsed),
+        ),
+        ReviewGrade.good,
+      );
+      expect(
+        gradeOutcome(
+          ReviewOutcome.untimed(
+            correct: true,
+            responseTime: elapsed,
+            hintsUsed: 1,
+          ),
+        ),
+        ReviewGrade.hard,
+      );
+      expect(
+        gradeOutcome(
+          ReviewOutcome.untimed(correct: false, responseTime: elapsed),
+        ),
+        ReviewGrade.again,
+      );
+    }
+  });
+
   group('Оценка ответа: неверный → again', () {
     test('неверный ответ → again, даже мгновенный', () {
       expect(gradeOutcome(_answer(0, correct: false)), ReviewGrade.again);
