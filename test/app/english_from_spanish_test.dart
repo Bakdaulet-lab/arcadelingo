@@ -14,6 +14,7 @@ import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
+import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_run.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
@@ -240,9 +241,9 @@ void main() {
       await deck.favorites!.save({target.word.id});
       expect(ports.favorites!.load(), {'fish'});
       expect(spanish.favorites!.load(), isEmpty);
-      expect((deck.streaks.load() as Ok).value.current, 1);
-      expect((ports.streaks.load() as Ok).value.current, 0);
-      expect((spanish.streaks.load() as Ok).value.current, 0);
+      expect((deck.streaks.load() as Ok<StreakState>).value.current, 1);
+      expect((ports.streaks.load() as Ok<StreakState>).value.current, 0);
+      expect((spanish.streaks.load() as Ok<StreakState>).value.current, 0);
 
       await tester.pumpWidget(const SizedBox());
       await prefs.reload();

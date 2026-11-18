@@ -21,6 +21,7 @@ import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
 import 'package:arcadelingo/data/words/words_seed_loader.dart';
 import 'package:arcadelingo/domain/core/result.dart';
+import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:drift_flutter/drift_flutter.dart';
@@ -37,17 +38,27 @@ Future<void> main() async {
   // Одна база на два журнала: у них одна природа и одна миграция. Файл
   // открывается лениво, при первой записи, — журналы не на пути старта.
   final history = HistoryDatabase(driftDatabase(name: 'wordarcade_answers'));
-  final spanishHistory = HistoryDatabase(
-    driftDatabase(name: 'wordarcade_answers_ru_es'),
-  );
   final speech = DeviceWordSpeech();
-  final spanish = await loadSpanishA1Course(
-    prefs: prefs,
-    history: spanishHistory,
-    speech: speech,
-  );
-  if (spanish case Err(:final failure)) {
-    debugPrint(failure.message);
+  final extraCourses = await Future.wait([
+    loadSpanishA1Course(
+      prefs: prefs,
+      history: HistoryDatabase(driftDatabase(name: 'wordarcade_answers_ru_es')),
+      speech: speech,
+    ),
+    loadEnglishA1FromSpanishCourse(
+      prefs: prefs,
+      history: HistoryDatabase(driftDatabase(name: 'wordarcade_answers_es_en')),
+      speech: speech,
+    ),
+  ]);
+  final additionalDecks = <CourseDeck>[];
+  for (final result in extraCourses) {
+    switch (result) {
+      case Ok(:final value):
+        additionalDecks.add(value);
+      case Err(:final failure):
+        debugPrint(failure.message);
+    }
   }
   // База зон и плагин поднимаются один раз: база IANA весит сотни килобайт,
   // и грузить её на каждое планирование незачем.
@@ -70,35 +81,59 @@ Future<void> main() async {
         askReminderPermission: reminders.requestPermission,
       ),
       seed: seed,
-      additionalDecks: [if (spanish case Ok(:final value)) value],
+      additionalDecks: additionalDecks,
       followSystemLocale: true,
     ),
   );
 }
 
-/// Собирает словарь и хранилища испанского курса.
+/// Собирает словарь и хранилища курса русского → испанского A1.
 Future<Result<CourseDeck>> loadSpanishA1Course({
   required SharedPreferences prefs,
   required HistoryDatabase history,
   required DeviceWordSpeech speech,
-}) async {
-  const course = StudyCourse.spanishFromRussian;
-  return switch (await loadSpanishA1Seed()) {
-    Ok(:final value) => Ok(
-      CourseDeck(
-        course: course,
-        items: value,
-        cards: LeitnerPrefsStore(prefs, courseId: course.id),
-        streaks: StreakPrefsStore(prefs, courseId: course.id),
-        answers: DriftAnswerLog(history),
-        events: DriftEventLog(history),
-        favorites: FavoritesPrefsStore(prefs, courseId: course.id),
-        speech: speech.forLanguage(course.studyLanguage),
-      ),
+}) async => _buildCourseDeck(
+  StudyCourse.spanishFromRussian,
+  await loadSpanishA1Seed(),
+  prefs: prefs,
+  history: history,
+  speech: speech,
+);
+
+/// Собирает словарь и хранилища курса испанского → английского A1.
+Future<Result<CourseDeck>> loadEnglishA1FromSpanishCourse({
+  required SharedPreferences prefs,
+  required HistoryDatabase history,
+  required DeviceWordSpeech speech,
+}) async => _buildCourseDeck(
+  StudyCourse.englishFromSpanish,
+  await loadEnglishA1FromSpanishSeed(),
+  prefs: prefs,
+  history: history,
+  speech: speech,
+);
+
+Result<CourseDeck> _buildCourseDeck(
+  StudyCourse course,
+  Result<List<ReviewItem>> seed, {
+  required SharedPreferences prefs,
+  required HistoryDatabase history,
+  required DeviceWordSpeech speech,
+}) => switch (seed) {
+  Ok(:final value) => Ok(
+    CourseDeck(
+      course: course,
+      items: value,
+      cards: LeitnerPrefsStore(prefs, courseId: course.id),
+      streaks: StreakPrefsStore(prefs, courseId: course.id),
+      answers: DriftAnswerLog(history),
+      events: DriftEventLog(history),
+      favorites: FavoritesPrefsStore(prefs, courseId: course.id),
+      speech: speech.forLanguage(course.studyLanguage),
     ),
-    Err(:final failure) => Err(failure),
-  };
-}
+  ),
+  Err(:final failure) => Err(failure),
+};
 
 /// Отдаёт лицензию шрифта в `showLicensePage`.
 ///
