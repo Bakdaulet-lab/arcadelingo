@@ -4,6 +4,7 @@ library;
 import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
+import 'package:arcadelingo/app/settings_view.dart';
 import 'package:arcadelingo/data/settings/settings_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
@@ -26,13 +27,17 @@ Future<void> _open(
   WidgetTester tester,
   String tag, {
   double textScale = 1,
+  double height = 780,
 }) async {
   SharedPreferences.setMockInitialValues({
     'reminder_settings':
         '{"version":2,"enabled":false,"hour":20,"minute":0,"interfaceLanguage":"$tag"}',
   });
   final prefs = await SharedPreferences.getInstance();
-  tester.view.physicalSize = peekPhysicalSize;
+  tester.view.physicalSize = Size(
+    peekPhysicalSize.width,
+    height * peekDevicePixelRatio,
+  );
   tester.view.devicePixelRatio = peekDevicePixelRatio;
   tester.platformDispatcher.textScaleFactorTestValue = textScale;
   addTearDown(tester.view.reset);
@@ -82,14 +87,18 @@ void main() {
       await tester.pumpAndSettle();
       await _tap(tester, find.byKey(AppKeys.settings));
       await peek(tester, 'localized_settings_$tag');
+      await _tap(tester, find.byKey(SettingsKeys.language));
+      await peek(tester, 'localized_language_$tag');
     });
   }
 
-  testWidgets('английский интерфейс с увеличенным шрифтом', (tester) async {
-    await _open(tester, 'en', textScale: 2);
-    await _tap(tester, find.byKey(AppKeys.settings));
-    await peek(tester, 'localized_settings_en_text2x');
-  });
+  for (final tag in ['ru', 'en']) {
+    testWidgets('компактные настройки $tag при шрифте 2×', (tester) async {
+      await _open(tester, tag, textScale: 2, height: 640);
+      await _tap(tester, find.byKey(AppKeys.settings));
+      await peek(tester, 'localized_settings_${tag}_text2x');
+    });
+  }
 
   for (final (name, id) in [
     ('Falling Words', 'falling'),

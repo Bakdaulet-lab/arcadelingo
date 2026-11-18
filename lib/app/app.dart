@@ -41,6 +41,7 @@ import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/domain/usecases/count_played_day.dart';
 import 'package:arcadelingo/domain/usecases/start_session.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
+import 'package:arcadelingo/ui/arcade_choice_dialog.dart';
 import 'package:arcadelingo/ui/reminder_labels.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:arcadelingo/ui/week_strip.dart';
@@ -285,28 +286,14 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_selectingCourse) return;
     _selectingCourse = true;
     try {
-      final selected = await showDialog<StudyCourse>(
-        context: context,
-        builder:
-            (context) => SimpleDialog(
-              title: Text(context.strings.chooseCourse),
-              children: [
-                for (final course in widget.courses)
-                  SimpleDialogOption(
-                    key: ValueKey('course.${course.id}'),
-                    onPressed: () => Navigator.pop(context, course),
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        course.id == widget.course.id
-                            ? Icons.check_circle_outline
-                            : Icons.language,
-                      ),
-                      title: Text(context.strings.courseName(course)),
-                    ),
-                  ),
-              ],
-            ),
+      final strings = context.strings;
+      final selected = await showArcadeChoice<StudyCourse>(
+        context,
+        title: strings.chooseCourse,
+        choices: widget.courses,
+        selected: widget.course,
+        label: strings.courseName,
+        optionKey: (course) => ValueKey('course.${course.id}'),
       );
       if (!mounted || selected == null) return;
       final saved = await widget.saveCourse!(selected);

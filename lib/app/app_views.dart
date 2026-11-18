@@ -219,18 +219,47 @@ class PlayView extends StatelessWidget {
                   ],
                   if (course case final selected?) ...[
                     const SizedBox(height: 14),
-                    OutlinedButton.icon(
-                      key: AppKeys.course,
-                      onPressed: onCourseSelected,
-                      icon: const Icon(Icons.language_rounded),
-                      label: Text(
-                        context.strings.courseName(selected),
-                        textAlign: TextAlign.center,
+                    ArcadePanel(
+                      padding: EdgeInsets.zero,
+                      child: Material(
+                        type: MaterialType.transparency,
+                        borderRadius: BorderRadius.circular(24),
+                        clipBehavior: Clip.antiAlias,
+                        child: ListTile(
+                          key: AppKeys.course,
+                          onTap: onCourseSelected,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          minTileHeight: 48,
+                          minVerticalPadding: 6,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          leading: Icon(
+                            Icons.language_rounded,
+                            size: 20,
+                            color: colors.primary,
+                          ),
+                          minLeadingWidth: 20,
+                          horizontalTitleGap: 10,
+                          trailing: Icon(
+                            Icons.expand_more_rounded,
+                            color: colors.onSurfaceVariant,
+                          ),
+                          title: Text(
+                            context.strings.courseName(selected),
+                            style: withWeight(
+                              theme.textTheme.titleSmall!,
+                              FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
                   if (selectedLevel case final level?) ...[
-                    const SizedBox(height: 20),
+                    SizedBox(height: course == null ? 20 : 14),
                     _LevelSelector(
                       level: level,
                       onSelected: onLevelSelected,

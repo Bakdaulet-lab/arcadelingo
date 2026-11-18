@@ -64,15 +64,10 @@ class AppStrings {
   String get save => isEnglish ? 'Save' : 'Сохранить';
   String get hours => isEnglish ? 'Hour' : 'Часы';
   String get minutes => isEnglish ? 'Minute' : 'Минуты';
-  String get reminder => isEnglish ? 'Reminder' : 'Напоминание';
-  String get dailyNotification =>
-      isEnglish ? 'One notification a day' : 'Одно уведомление в день';
+  String get dailyReminder =>
+      isEnglish ? 'Daily reminder' : 'Ежедневное напоминание';
   String get time => isEnglish ? 'Time' : 'Время';
-  String get sound => isEnglish ? 'Sound' : 'Звук';
-  String get soundEffects =>
-      isEnglish
-          ? 'Sound effects in games'
-          : 'Свист клинка и удар в ниндзя-слэше';
+  String get gameSounds => isEnglish ? 'Game sounds' : 'Звуки в играх';
   String get notificationsDenied =>
       isEnglish
           ? 'Notifications are blocked. You can allow them in your device settings.'

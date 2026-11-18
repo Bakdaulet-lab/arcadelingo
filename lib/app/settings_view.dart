@@ -1,20 +1,11 @@
-/// Экран настроек: единственная настройка — напоминание.
-///
-/// Экран заведён не «на будущее», а под одну вещь, у которой нет другого
-/// места: время, в которое человек хочет, чтобы его позвали. Всё остальное,
-/// что могло бы сюда попасть — сложность, длина сессии, тема, — либо решено
-/// за него, либо не существует.
-///
-/// Экран ничего не решает сам: он показывает, что лежит в хранилище, и
-/// докладывает наверх, что человек нажал. Просить разрешение, ставить
-/// напоминание в расписание и снимать его — работа хоста, который и так
-/// знает про `data/`.
+/// Язык интерфейса, звук и ежедневное напоминание.
 library;
 
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/ports/settings_store.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
+import 'package:arcadelingo/ui/arcade_choice_dialog.dart';
 import 'package:arcadelingo/ui/arcade_page.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -99,28 +90,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (_saving || _choosingLanguage) return;
     _choosingLanguage = true;
     try {
-      final value = await showDialog<InterfaceLanguage>(
-        context: context,
-        builder:
-            (context) => SimpleDialog(
-              title: Text(context.strings.appLanguage),
-              children: [
-                for (final language in InterfaceLanguage.values)
-                  SimpleDialogOption(
-                    key: ValueKey('settings.language.${language.tag}'),
-                    onPressed: () => Navigator.pop(context, language),
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        language == _settings.interfaceLanguage
-                            ? Icons.check_circle_outline
-                            : Icons.language,
-                      ),
-                      title: Text(_languageLabel(language, context.strings)),
-                    ),
-                  ),
-              ],
-            ),
+      final strings = context.strings;
+      final value = await showArcadeChoice<InterfaceLanguage>(
+        context,
+        title: strings.appLanguage,
+        choices: InterfaceLanguage.values,
+        selected: _settings.interfaceLanguage,
+        label: (choice) => _languageLabel(choice, strings),
+        optionKey: (language) => ValueKey('settings.language.${language.tag}'),
       );
       if (value != null && mounted && value != _settings.interfaceLanguage) {
         await _apply(_settings.copyWith(interfaceLanguage: value));
@@ -165,175 +142,163 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final strings = context.strings;
     final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.4;
-    final titleStyle = withWeight(textTheme.titleMedium!, FontWeight.w600);
-    final tilePadding = EdgeInsets.symmetric(
-      horizontal: largeText ? 4 : 12,
-      vertical: 8,
-    );
-    final subtitleStyle = textTheme.bodyMedium?.copyWith(
+    final titleStyle = withWeight(theme.textTheme.titleSmall!, FontWeight.w600);
+    final valueStyle = theme.textTheme.bodySmall!.copyWith(
       color: scheme.onSurfaceVariant,
-      height: 1.4,
     );
+    const rowPadding = EdgeInsets.symmetric(horizontal: 12);
+    final divider = Divider(
+      height: 1,
+      thickness: 1,
+      indent: largeText ? 12 : 54,
+      endIndent: 12,
+      color: scheme.outline.withValues(alpha: .55),
+    );
+    final canPickTime = _settings.enabled && !_saving;
+    final time =
+        strings.isEnglish
+            ? TimeOfDay(
+              hour: _settings.at.hour,
+              minute: _settings.at.minute,
+            ).format(context)
+            : _settings.at.toString();
+    final formattedTime = Text(
+      time,
+      style: withWeight(
+        valueStyle,
+        FontWeight.w600,
+      ).copyWith(color: canPickTime ? scheme.primary : scheme.onSurfaceVariant),
+    );
+
+    Widget? symbol(IconData icon, Color color) =>
+        largeText ? null : _SettingSymbol(icon: icon, color: color);
+
     return ArcadePage(
-      title: context.strings.settings,
+      title: strings.settings,
+      compactHeader: true,
       child: SingleChildScrollView(
         key: SettingsKeys.view,
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ArcadePanel(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: ListTile(
-                key: SettingsKeys.language,
-                onTap: _saving ? null : _chooseLanguage,
-                contentPadding: tilePadding,
-                leading: largeText ? null : const Icon(Icons.language_rounded),
-                title: Text(context.strings.appLanguage, style: titleStyle),
-                subtitle: Text(
-                  _languageLabel(_settings.interfaceLanguage, context.strings),
-                  style: subtitleStyle,
-                ),
-                trailing: const Icon(Icons.chevron_right_rounded),
-              ),
-            ),
-            if (_languageSaveFailed)
-              Text(
-                context.strings.settingsSaveFailed,
-                style: TextStyle(color: scheme.error),
-              ),
-            const SizedBox(height: 16),
-            ArcadePanel(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (largeText)
-                    ExcludeSemantics(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 8,
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Material(
+                type: MaterialType.transparency,
+                borderRadius: BorderRadius.circular(24),
+                clipBehavior: Clip.antiAlias,
+                child: ListTileTheme(
+                  data: ListTileThemeData(
+                    horizontalTitleGap: 10,
+                    minLeadingWidth: 30,
+                    titleTextStyle: titleStyle,
+                    subtitleTextStyle: valueStyle,
+                  ),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        key: SettingsKeys.language,
+                        onTap: _saving ? null : _chooseLanguage,
+                        contentPadding: rowPadding,
+                        minTileHeight: 56,
+                        minVerticalPadding: 5,
+                        leading: symbol(Icons.language_rounded, scheme.primary),
+                        title: Text(strings.appLanguage),
+                        subtitle: Text(
+                          _languageLabel(_settings.interfaceLanguage, strings),
                         ),
-                        child: Text(
-                          context.strings.reminder,
-                          style: titleStyle,
+                        trailing: const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
                         ),
                       ),
-                    ),
-                  Semantics(
-                    label: largeText ? context.strings.reminder : null,
-                    child: SwitchListTile(
-                      key: SettingsKeys.toggle,
-                      value: _settings.enabled,
-                      onChanged:
-                          (on) => _apply(_settings.copyWith(enabled: on)),
-                      contentPadding: tilePadding,
-                      secondary:
-                          largeText
-                              ? null
-                              : _SettingSymbol(
-                                icon: Icons.notifications_active_rounded,
-                                color: scheme.primary,
-                              ),
-                      title:
-                          largeText
-                              ? null
-                              : Text(
-                                context.strings.reminder,
-                                style: titleStyle,
-                              ),
-                      subtitle: Text(
-                        context.strings.dailyNotification,
-                        style: subtitleStyle,
+                      divider,
+                      SwitchListTile(
+                        key: SettingsKeys.toggle,
+                        value: _settings.enabled,
+                        onChanged:
+                            _saving
+                                ? null
+                                : (on) =>
+                                    _apply(_settings.copyWith(enabled: on)),
+                        contentPadding: rowPadding,
+                        secondary: symbol(
+                          Icons.notifications_none_rounded,
+                          scheme.primary,
+                        ),
+                        title: Text(strings.dailyReminder),
                       ),
-                    ),
-                  ),
-                  Divider(
-                    height: 20,
-                    indent: largeText ? 12 : 64,
-                    endIndent: 12,
-                    color: scheme.outline.withValues(alpha: .45),
-                  ),
-                  ListTile(
-                    key: SettingsKeys.time,
-                    enabled: _settings.enabled,
-                    onTap: _settings.enabled ? _pickTime : null,
-                    contentPadding: tilePadding,
-                    leading:
-                        largeText
-                            ? null
-                            : _SettingSymbol(
-                              icon: Icons.schedule_rounded,
+                      divider,
+                      ListTile(
+                        key: SettingsKeys.time,
+                        enabled: canPickTime,
+                        onTap: canPickTime ? _pickTime : null,
+                        contentPadding: rowPadding,
+                        minTileHeight: 52,
+                        minVerticalPadding: 5,
+                        leading: symbol(
+                          Icons.schedule_rounded,
+                          scheme.onSurfaceVariant,
+                        ),
+                        title: Text(strings.time),
+                        subtitle: largeText ? formattedTime : null,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!largeText) formattedTime,
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.chevron_right_rounded,
                               color:
-                                  _settings.enabled
+                                  canPickTime
                                       ? scheme.primary
                                       : scheme.onSurfaceVariant,
+                              size: 20,
                             ),
-                    title: Text(context.strings.time, style: titleStyle),
-                    subtitle: Text(
-                      context.strings.isEnglish
-                          ? TimeOfDay(
-                            hour: _settings.at.hour,
-                            minute: _settings.at.minute,
-                          ).format(context)
-                          : _settings.at.toString(),
-                      style: withWeight(
-                        textTheme.headlineSmall!,
-                        FontWeight.bold,
-                      ).copyWith(
-                        color:
-                            _settings.enabled
-                                ? scheme.primary
-                                : scheme.onSurfaceVariant,
-                      ),
-                    ),
-                    trailing: Icon(
-                      Icons.chevron_right_rounded,
-                      color:
-                          _settings.enabled
-                              ? scheme.primary
-                              : scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            ArcadePanel(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: SwitchListTile(
-                key: SettingsKeys.sound,
-                value: _settings.soundOn,
-                onChanged: (on) => _apply(_settings.copyWith(soundOn: on)),
-                contentPadding: tilePadding,
-                secondary:
-                    largeText
-                        ? null
-                        : _SettingSymbol(
-                          icon: Icons.volume_up_rounded,
-                          color: scheme.tertiary,
+                          ],
                         ),
-                title: Text(context.strings.sound, style: titleStyle),
-                subtitle: Text(
-                  context.strings.soundEffects,
-                  style: subtitleStyle,
+                      ),
+                      divider,
+                      SwitchListTile(
+                        key: SettingsKeys.sound,
+                        value: _settings.soundOn,
+                        onChanged:
+                            _saving
+                                ? null
+                                : (on) =>
+                                    _apply(_settings.copyWith(soundOn: on)),
+                        contentPadding: rowPadding,
+                        secondary: symbol(
+                          Icons.volume_up_rounded,
+                          scheme.tertiary,
+                        ),
+                        title: Text(strings.gameSounds),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-            if (_denied) ...[
-              const SizedBox(height: 16),
+            if (_languageSaveFailed || _denied) ...[
+              const SizedBox(height: 12),
               Semantics(
                 liveRegion: true,
                 child: ArcadePanel(
-                  key: SettingsKeys.denied,
+                  key: _denied ? SettingsKeys.denied : null,
                   accent: scheme.error,
+                  padding: const EdgeInsets.all(12),
                   child: Text(
-                    context.strings.notificationsDenied,
-                    style: textTheme.bodyMedium?.copyWith(color: scheme.error),
+                    _languageSaveFailed
+                        ? strings.settingsSaveFailed
+                        : strings.notificationsDenied,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.error,
+                    ),
                   ),
                 ),
               ),
@@ -354,13 +319,13 @@ class _SettingSymbol extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
     child: Container(
-      width: 36,
-      height: 36,
+      width: 30,
+      height: 30,
       decoration: BoxDecoration(
         color: color.withValues(alpha: .12),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
       ),
-      child: Icon(icon, color: color, size: 21),
+      child: Icon(icon, color: color, size: 18),
     ),
   );
 }
