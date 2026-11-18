@@ -16,6 +16,7 @@ const String wordsSeedAssetPath = 'assets/words_seed.json';
 const String wordsC1AssetPath = 'assets/words_c1.json';
 const String wordsC2AssetPath = 'assets/words_c2.json';
 const String wordsSpanishA1AssetPath = 'assets/words_es_a1.json';
+const String wordsEnglishA1FromSpanishAssetPath = 'assets/words_en_a1_es.json';
 
 /// Сид из [bundle] (по умолчанию [rootBundle]) → единицы показа.
 ///
@@ -55,18 +56,25 @@ Future<Result<List<ReviewItem>>> loadWordsSeed({AssetBundle? bundle}) async {
   return Ok(items);
 }
 
-Future<Result<List<ReviewItem>>> loadSpanishA1Seed({
+Future<Result<List<ReviewItem>>> loadSpanishA1Seed({AssetBundle? bundle}) =>
+    _loadA1Seed(wordsSpanishA1AssetPath, bundle);
+
+Future<Result<List<ReviewItem>>> loadEnglishA1FromSpanishSeed({
   AssetBundle? bundle,
-}) async {
-  final source = await (bundle ?? rootBundle).loadString(
-    wordsSpanishA1AssetPath,
-  );
+}) => _loadA1Seed(wordsEnglishA1FromSpanishAssetPath, bundle);
+
+Future<Result<List<ReviewItem>>> _loadA1Seed(
+  String path,
+  AssetBundle? bundle,
+) async {
+  final source = await (bundle ?? rootBundle).loadString(path);
+  final name = path.split('/').last;
   return switch (parseWordsSeed(source)) {
     Ok(:final value)
         when value.isNotEmpty &&
             value.every((item) => item.word.level == CefrLevel.a1) =>
       Ok(value),
-    Ok() => const Err(Failure('words_es_a1.json: ожидаются карточки A1')),
-    Err(:final failure) => Err(Failure('words_es_a1.json: ${failure.message}')),
+    Ok() => Err(Failure('$name: ожидаются карточки A1')),
+    Err(:final failure) => Err(Failure('$name: ${failure.message}')),
   };
 }

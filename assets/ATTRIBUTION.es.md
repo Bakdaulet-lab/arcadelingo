@@ -12,11 +12,13 @@ Condiciones de uso
 
 > CEFR-J vocabulary and grammar profile datasets can be used for research and commercial purposes with no charge, provided that you cite the dataset properly. The copyright belongs to Tono Laboratory at TUFS (Tokyo University of Foreign Studies). Neither CEFR-J nor Open Language Profiles is responsible or liable for any inaccuracies in the dataset or any damage resulting from using the dataset.
 
+El curso de inglés A1 para hispanohablantes utiliza una selección de esas palabras inglesas. Las traducciones y las opciones de respuesta en español se redactaron para ArcadeLingo.
+
 ## Curso de español A1
 
 Las palabras se seleccionaron para ArcadeLingo. Los temas se revisaron con la descripción del DELE A1 (<https://examenes.cervantes.es/es/dele/examenes/a1>). Para comprobar algunos significados se consultó el Diccionario de la lengua española (<https://dle.rae.es/>).
 
-Los cursos de inglés y español incluyen traducciones al ruso y opciones de respuesta redactadas para el juego.
+Las traducciones al ruso y las opciones de respuesta de este curso se redactaron para ArcadeLingo.
 
 ## Niveles C1 y C2 de inglés
 

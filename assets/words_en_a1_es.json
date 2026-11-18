@@ -1,0 +1,3319 @@
+{
+  "version": 1,
+  "source_lang": "en",
+  "target_lang": "es",
+  "words": [
+    {
+      "id": "fish",
+      "text": "fish",
+      "translation": "pez",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "perro",
+        "ratón",
+        "pájaro"
+      ]
+    },
+    {
+      "id": "cow",
+      "text": "cow",
+      "translation": "vaca",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "oveja",
+        "caballo",
+        "cerdo"
+      ]
+    },
+    {
+      "id": "bear",
+      "text": "bear",
+      "translation": "oso",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "tigre",
+        "mono",
+        "león"
+      ]
+    },
+    {
+      "id": "apple",
+      "text": "apple",
+      "translation": "manzana",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "uva",
+        "plátano",
+        "naranja"
+      ]
+    },
+    {
+      "id": "bread",
+      "text": "bread",
+      "translation": "pan",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "arroz",
+        "azúcar",
+        "pollo"
+      ]
+    },
+    {
+      "id": "water",
+      "text": "water",
+      "translation": "agua",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "leche",
+        "café",
+        "jugo"
+      ]
+    },
+    {
+      "id": "soup",
+      "text": "soup",
+      "translation": "sopa",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "galleta",
+        "sándwich",
+        "pizza"
+      ]
+    },
+    {
+      "id": "father",
+      "text": "father",
+      "translation": "padre",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "abuelo",
+        "hermano",
+        "madre"
+      ]
+    },
+    {
+      "id": "boy",
+      "text": "boy",
+      "translation": "niño",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "invitado",
+        "mujer",
+        "amigo"
+      ]
+    },
+    {
+      "id": "teacher",
+      "text": "teacher",
+      "translation": "profesor",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cantante",
+        "científico",
+        "conductor"
+      ]
+    },
+    {
+      "id": "house",
+      "text": "house",
+      "translation": "casa",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "habitación",
+        "cocina",
+        "baño"
+      ]
+    },
+    {
+      "id": "bed",
+      "text": "bed",
+      "translation": "cama",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "puerta",
+        "mesa",
+        "silla"
+      ]
+    },
+    {
+      "id": "book",
+      "text": "book",
+      "translation": "libro",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "bolsa",
+        "cuaderno",
+        "regla"
+      ]
+    },
+    {
+      "id": "bicycle",
+      "text": "bicycle",
+      "translation": "bicicleta",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "autobús",
+        "barco",
+        "camión"
+      ]
+    },
+    {
+      "id": "airport",
+      "text": "airport",
+      "translation": "aeropuerto",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "biblioteca",
+        "escuela",
+        "cine"
+      ]
+    },
+    {
+      "id": "umbrella",
+      "text": "umbrella",
+      "translation": "paraguas",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cuchillo",
+        "reloj",
+        "vaso"
+      ]
+    },
+    {
+      "id": "head",
+      "text": "head",
+      "translation": "cabeza",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "oreja",
+        "cuello",
+        "boca"
+      ]
+    },
+    {
+      "id": "cap",
+      "text": "cap",
+      "translation": "gorra",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "chaqueta",
+        "abrigo",
+        "falda"
+      ]
+    },
+    {
+      "id": "day",
+      "text": "day",
+      "translation": "día",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "semana",
+        "mes",
+        "verano"
+      ]
+    },
+    {
+      "id": "sun",
+      "text": "sun",
+      "translation": "sol",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "viento",
+        "lluvia",
+        "nube"
+      ]
+    },
+    {
+      "id": "river",
+      "text": "river",
+      "translation": "río",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "isla",
+        "mar",
+        "playa"
+      ]
+    },
+    {
+      "id": "tree",
+      "text": "tree",
+      "translation": "árbol",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "hoja",
+        "hierba",
+        "flor"
+      ]
+    },
+    {
+      "id": "basketball",
+      "text": "basketball",
+      "translation": "baloncesto",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "película",
+        "guitarra",
+        "piano"
+      ]
+    },
+    {
+      "id": "eat",
+      "text": "eat",
+      "translation": "comer",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "dormir",
+        "caminar",
+        "bailar"
+      ]
+    },
+    {
+      "id": "speak",
+      "text": "speak",
+      "translation": "hablar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "escribir",
+        "escuchar",
+        "leer"
+      ]
+    },
+    {
+      "id": "buy",
+      "text": "buy",
+      "translation": "comprar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "coleccionar",
+        "dar",
+        "elegir"
+      ]
+    },
+    {
+      "id": "go",
+      "text": "go",
+      "translation": "ir",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "volar",
+        "llegar",
+        "quedarse"
+      ]
+    },
+    {
+      "id": "open",
+      "text": "open",
+      "translation": "abrir",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "tomar",
+        "poner",
+        "llevar"
+      ]
+    },
+    {
+      "id": "study",
+      "text": "study",
+      "translation": "estudiar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "enseñar",
+        "olvidar",
+        "jugar"
+      ]
+    },
+    {
+      "id": "big",
+      "text": "big",
+      "translation": "grande",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "nuevo",
+        "fuerte",
+        "limpio"
+      ]
+    },
+    {
+      "id": "hot",
+      "text": "hot",
+      "translation": "caliente",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "lleno",
+        "frío",
+        "lento"
+      ]
+    },
+    {
+      "id": "red",
+      "text": "red",
+      "translation": "rojo",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "marrón",
+        "amarillo",
+        "azul"
+      ]
+    },
+    {
+      "id": "happy",
+      "text": "happy",
+      "translation": "feliz",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "triste",
+        "asustado",
+        "enfadado"
+      ]
+    },
+    {
+      "id": "always",
+      "text": "always",
+      "translation": "siempre",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "más tarde",
+        "nunca",
+        "pronto"
+      ]
+    },
+    {
+      "id": "here",
+      "text": "here",
+      "translation": "aquí",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "fuera",
+        "arriba",
+        "detrás"
+      ]
+    },
+    {
+      "id": "dog",
+      "text": "dog",
+      "translation": "perro",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "conejo",
+        "gato",
+        "pájaro"
+      ]
+    },
+    {
+      "id": "sheep",
+      "text": "sheep",
+      "translation": "oveja",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cerdo",
+        "abeja",
+        "caballo"
+      ]
+    },
+    {
+      "id": "lion",
+      "text": "lion",
+      "translation": "león",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "oso",
+        "mono",
+        "tigre"
+      ]
+    },
+    {
+      "id": "banana",
+      "text": "banana",
+      "translation": "plátano",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "patata",
+        "uva",
+        "manzana"
+      ]
+    },
+    {
+      "id": "butter",
+      "text": "butter",
+      "translation": "mantequilla",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "pan",
+        "pollo",
+        "queso"
+      ]
+    },
+    {
+      "id": "milk",
+      "text": "milk",
+      "translation": "leche",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "café",
+        "té",
+        "agua"
+      ]
+    },
+    {
+      "id": "salad",
+      "text": "salad",
+      "translation": "ensalada",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "pizza",
+        "pastel",
+        "galleta"
+      ]
+    },
+    {
+      "id": "mother",
+      "text": "mother",
+      "translation": "madre",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "abuelo",
+        "tío",
+        "hermano"
+      ]
+    },
+    {
+      "id": "girl",
+      "text": "girl",
+      "translation": "niña",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "hombre",
+        "amigo",
+        "invitado"
+      ]
+    },
+    {
+      "id": "student",
+      "text": "student",
+      "translation": "estudiante",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "profesor",
+        "enfermero",
+        "ingeniero"
+      ]
+    },
+    {
+      "id": "bedroom",
+      "text": "bedroom",
+      "translation": "dormitorio",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "apartamento",
+        "jardín",
+        "baño"
+      ]
+    },
+    {
+      "id": "chair",
+      "text": "chair",
+      "translation": "silla",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "mesa",
+        "cama",
+        "ventana"
+      ]
+    },
+    {
+      "id": "dictionary",
+      "text": "dictionary",
+      "translation": "diccionario",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "bolígrafo",
+        "cuaderno",
+        "bolsa"
+      ]
+    },
+    {
+      "id": "bus",
+      "text": "bus",
+      "translation": "autobús",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "coche",
+        "taxi",
+        "tren"
+      ]
+    },
+    {
+      "id": "hospital",
+      "text": "hospital",
+      "translation": "hospital",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "banco",
+        "aeropuerto",
+        "supermercado"
+      ]
+    },
+    {
+      "id": "key",
+      "text": "key",
+      "translation": "llave",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cuchillo",
+        "reloj",
+        "toalla"
+      ]
+    },
+    {
+      "id": "nose",
+      "text": "nose",
+      "translation": "nariz",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "oreja",
+        "cabeza",
+        "cuello"
+      ]
+    },
+    {
+      "id": "coat",
+      "text": "coat",
+      "translation": "abrigo",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "camisa",
+        "zapato",
+        "pantalones"
+      ]
+    },
+    {
+      "id": "week",
+      "text": "week",
+      "translation": "semana",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "verano",
+        "noche",
+        "día"
+      ]
+    },
+    {
+      "id": "rain",
+      "text": "rain",
+      "translation": "lluvia",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "nube",
+        "sol",
+        "viento"
+      ]
+    },
+    {
+      "id": "sea",
+      "text": "sea",
+      "translation": "mar",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "colina",
+        "isla",
+        "río"
+      ]
+    },
+    {
+      "id": "flower",
+      "text": "flower",
+      "translation": "flor",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "árbol",
+        "hierba",
+        "hoja"
+      ]
+    },
+    {
+      "id": "football",
+      "text": "football",
+      "translation": "fútbol",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "guitarra",
+        "canción",
+        "piano"
+      ]
+    },
+    {
+      "id": "drink",
+      "text": "drink",
+      "translation": "beber",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "cocinar",
+        "dormir",
+        "nadar"
+      ]
+    },
+    {
+      "id": "listen",
+      "text": "listen",
+      "translation": "escuchar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "preguntar",
+        "cantar",
+        "escribir"
+      ]
+    },
+    {
+      "id": "sell",
+      "text": "sell",
+      "translation": "vender",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "coleccionar",
+        "ayudar",
+        "pagar"
+      ]
+    },
+    {
+      "id": "come",
+      "text": "come",
+      "translation": "venir",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "quedarse",
+        "volar",
+        "salir"
+      ]
+    },
+    {
+      "id": "close",
+      "text": "close",
+      "translation": "cerrar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "empujar",
+        "llevar",
+        "lavar"
+      ]
+    },
+    {
+      "id": "learn",
+      "text": "learn",
+      "translation": "aprender",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "olvidar",
+        "dibujar",
+        "recordar"
+      ]
+    },
+    {
+      "id": "small",
+      "text": "small",
+      "translation": "pequeño",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "pesado",
+        "joven",
+        "limpio"
+      ]
+    },
+    {
+      "id": "cold",
+      "text": "cold",
+      "translation": "frío",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "difícil",
+        "fácil",
+        "caliente"
+      ]
+    },
+    {
+      "id": "blue",
+      "text": "blue",
+      "translation": "azul",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "amarillo",
+        "negro",
+        "rojo"
+      ]
+    },
+    {
+      "id": "sad",
+      "text": "sad",
+      "translation": "triste",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "tímido",
+        "asustado",
+        "cansado"
+      ]
+    },
+    {
+      "id": "never",
+      "text": "never",
+      "translation": "nunca",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "ahora",
+        "hoy",
+        "siempre"
+      ]
+    },
+    {
+      "id": "there",
+      "text": "there",
+      "translation": "allí",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "arriba",
+        "en todas partes",
+        "detrás"
+      ]
+    },
+    {
+      "id": "cat",
+      "text": "cat",
+      "translation": "gato",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "perro",
+        "serpiente",
+        "conejo"
+      ]
+    },
+    {
+      "id": "pig",
+      "text": "pig",
+      "translation": "cerdo",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "vaca",
+        "caballo",
+        "oveja"
+      ]
+    },
+    {
+      "id": "tiger",
+      "text": "tiger",
+      "translation": "tigre",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "mono",
+        "oso",
+        "león"
+      ]
+    },
+    {
+      "id": "orange",
+      "text": "orange",
+      "translation": "naranja",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "maíz",
+        "tomate",
+        "patata"
+      ]
+    },
+    {
+      "id": "cheese",
+      "text": "cheese",
+      "translation": "queso",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "azúcar",
+        "carne de res",
+        "pollo"
+      ]
+    },
+    {
+      "id": "coffee",
+      "text": "coffee",
+      "translation": "café",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "jugo",
+        "té",
+        "leche"
+      ]
+    },
+    {
+      "id": "sandwich",
+      "text": "sandwich",
+      "translation": "sándwich",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "sopa",
+        "pizza",
+        "pastel"
+      ]
+    },
+    {
+      "id": "brother",
+      "text": "brother",
+      "translation": "hermano",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "tío",
+        "tía",
+        "abuela"
+      ]
+    },
+    {
+      "id": "man",
+      "text": "man",
+      "translation": "hombre",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "invitado",
+        "mujer",
+        "niña"
+      ]
+    },
+    {
+      "id": "driver",
+      "text": "driver",
+      "translation": "conductor",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "estudiante",
+        "enfermero",
+        "científico"
+      ]
+    },
+    {
+      "id": "bathroom",
+      "text": "bathroom",
+      "translation": "baño",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "casa",
+        "cocina",
+        "jardín"
+      ]
+    },
+    {
+      "id": "desk",
+      "text": "desk",
+      "translation": "escritorio",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "sofá",
+        "estante",
+        "puerta"
+      ]
+    },
+    {
+      "id": "pen",
+      "text": "pen",
+      "translation": "bolígrafo",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "lápiz",
+        "papel",
+        "diccionario"
+      ]
+    },
+    {
+      "id": "car",
+      "text": "car",
+      "translation": "coche",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "autobús",
+        "avión",
+        "metro"
+      ]
+    },
+    {
+      "id": "bank",
+      "text": "bank",
+      "translation": "banco",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "escuela",
+        "iglesia",
+        "hospital"
+      ]
+    },
+    {
+      "id": "phone",
+      "text": "phone",
+      "translation": "teléfono",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "toalla",
+        "cámara",
+        "llave"
+      ]
+    },
+    {
+      "id": "ear",
+      "text": "ear",
+      "translation": "oreja",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "pelo",
+        "pierna",
+        "rodilla"
+      ]
+    },
+    {
+      "id": "dress",
+      "text": "dress",
+      "translation": "vestido",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "camisa",
+        "pantalones",
+        "abrigo"
+      ]
+    },
+    {
+      "id": "month",
+      "text": "month",
+      "translation": "mes",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "verano",
+        "día",
+        "semana"
+      ]
+    },
+    {
+      "id": "cloud",
+      "text": "cloud",
+      "translation": "nube",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "nieve",
+        "luna",
+        "estrella"
+      ]
+    },
+    {
+      "id": "mountain",
+      "text": "mountain",
+      "translation": "montaña",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "río",
+        "isla",
+        "mar"
+      ]
+    },
+    {
+      "id": "leaf",
+      "text": "leaf",
+      "translation": "hoja",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "lirio",
+        "flor",
+        "rosa"
+      ]
+    },
+    {
+      "id": "song",
+      "text": "song",
+      "translation": "canción",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "fútbol",
+        "piano",
+        "baloncesto"
+      ]
+    },
+    {
+      "id": "sleep",
+      "text": "sleep",
+      "translation": "dormir",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "cocinar",
+        "comer",
+        "correr"
+      ]
+    },
+    {
+      "id": "read",
+      "text": "read",
+      "translation": "leer",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "hablar",
+        "responder",
+        "preguntar"
+      ]
+    },
+    {
+      "id": "pay",
+      "text": "pay",
+      "translation": "pagar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "compartir",
+        "coleccionar",
+        "comprar"
+      ]
+    },
+    {
+      "id": "arrive",
+      "text": "arrive",
+      "translation": "llegar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "ir",
+        "visitar",
+        "viajar"
+      ]
+    },
+    {
+      "id": "cut",
+      "text": "cut",
+      "translation": "cortar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "lavar",
+        "empujar",
+        "poner"
+      ]
+    },
+    {
+      "id": "teach",
+      "text": "teach",
+      "translation": "enseñar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "pensar",
+        "recordar",
+        "jugar"
+      ]
+    },
+    {
+      "id": "new",
+      "text": "new",
+      "translation": "nuevo",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "fuerte",
+        "limpio",
+        "joven"
+      ]
+    },
+    {
+      "id": "fast",
+      "text": "fast",
+      "translation": "rápido",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "fácil",
+        "lleno",
+        "difícil"
+      ]
+    },
+    {
+      "id": "yellow",
+      "text": "yellow",
+      "translation": "amarillo",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "rojo",
+        "marrón",
+        "verde"
+      ]
+    },
+    {
+      "id": "afraid",
+      "text": "afraid",
+      "translation": "asustado",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "triste",
+        "tímido",
+        "cansado"
+      ]
+    },
+    {
+      "id": "often",
+      "text": "often",
+      "translation": "a menudo",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "ayer",
+        "hoy",
+        "ahora"
+      ]
+    },
+    {
+      "id": "above",
+      "text": "above",
+      "translation": "arriba",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "detrás",
+        "aquí",
+        "en todas partes"
+      ]
+    },
+    {
+      "id": "bird",
+      "text": "bird",
+      "translation": "pájaro",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "gato",
+        "conejo",
+        "ratón"
+      ]
+    },
+    {
+      "id": "horse",
+      "text": "horse",
+      "translation": "caballo",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cerdo",
+        "oveja",
+        "abeja"
+      ]
+    },
+    {
+      "id": "monkey",
+      "text": "monkey",
+      "translation": "mono",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "oso",
+        "león",
+        "tigre"
+      ]
+    },
+    {
+      "id": "grape",
+      "text": "grape",
+      "translation": "uva",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "plátano",
+        "manzana",
+        "frijol"
+      ]
+    },
+    {
+      "id": "egg",
+      "text": "egg",
+      "translation": "huevo",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "pan",
+        "pollo",
+        "queso"
+      ]
+    },
+    {
+      "id": "tea",
+      "text": "tea",
+      "translation": "té",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "agua",
+        "café",
+        "jugo"
+      ]
+    },
+    {
+      "id": "pizza",
+      "text": "pizza",
+      "translation": "pizza",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "sándwich",
+        "ensalada",
+        "sopa"
+      ]
+    },
+    {
+      "id": "sister",
+      "text": "sister",
+      "translation": "hermana",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "abuelo",
+        "hijo",
+        "madre"
+      ]
+    },
+    {
+      "id": "woman",
+      "text": "woman",
+      "translation": "mujer",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "invitado",
+        "amigo",
+        "hombre"
+      ]
+    },
+    {
+      "id": "nurse",
+      "text": "nurse",
+      "translation": "enfermero",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cantante",
+        "estudiante",
+        "conductor"
+      ]
+    },
+    {
+      "id": "kitchen",
+      "text": "kitchen",
+      "translation": "cocina",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "apartamento",
+        "dormitorio",
+        "casa"
+      ]
+    },
+    {
+      "id": "couch",
+      "text": "couch",
+      "translation": "sofá",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "puerta",
+        "mesa",
+        "cama"
+      ]
+    },
+    {
+      "id": "pencil",
+      "text": "pencil",
+      "translation": "lápiz",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "regla",
+        "papel",
+        "diccionario"
+      ]
+    },
+    {
+      "id": "plane",
+      "text": "plane",
+      "translation": "avión",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "autobús",
+        "tren",
+        "barco"
+      ]
+    },
+    {
+      "id": "supermarket",
+      "text": "supermarket",
+      "translation": "supermercado",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "biblioteca",
+        "banco",
+        "hospital"
+      ]
+    },
+    {
+      "id": "camera",
+      "text": "camera",
+      "translation": "cámara",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cuchillo",
+        "llave",
+        "teléfono"
+      ]
+    },
+    {
+      "id": "eye",
+      "text": "eye",
+      "translation": "ojo",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "pierna",
+        "rodilla",
+        "corazón"
+      ]
+    },
+    {
+      "id": "jacket",
+      "text": "jacket",
+      "translation": "chaqueta",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "pantalones",
+        "gorra",
+        "zapato"
+      ]
+    },
+    {
+      "id": "year",
+      "text": "year",
+      "translation": "año",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "verano",
+        "día",
+        "mes"
+      ]
+    },
+    {
+      "id": "snow",
+      "text": "snow",
+      "translation": "nieve",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "estrella",
+        "viento",
+        "nube"
+      ]
+    },
+    {
+      "id": "hill",
+      "text": "hill",
+      "translation": "colina",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "mar",
+        "playa",
+        "isla"
+      ]
+    },
+    {
+      "id": "grass",
+      "text": "grass",
+      "translation": "hierba",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "rosa",
+        "lirio",
+        "flor"
+      ]
+    },
+    {
+      "id": "piano",
+      "text": "piano",
+      "translation": "piano",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "canción",
+        "guitarra",
+        "fútbol"
+      ]
+    },
+    {
+      "id": "cook",
+      "text": "cook",
+      "translation": "cocinar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "bailar",
+        "caminar",
+        "beber"
+      ]
+    },
+    {
+      "id": "write",
+      "text": "write",
+      "translation": "escribir",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "escuchar",
+        "cantar",
+        "preguntar"
+      ]
+    },
+    {
+      "id": "choose",
+      "text": "choose",
+      "translation": "elegir",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "pagar",
+        "vender",
+        "ayudar"
+      ]
+    },
+    {
+      "id": "leave",
+      "text": "leave",
+      "translation": "salir",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "llegar",
+        "viajar",
+        "venir"
+      ]
+    },
+    {
+      "id": "put",
+      "text": "put",
+      "translation": "poner",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "llevar",
+        "cerrar",
+        "empujar"
+      ]
+    },
+    {
+      "id": "draw",
+      "text": "draw",
+      "translation": "dibujar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "pensar",
+        "olvidar",
+        "jugar"
+      ]
+    },
+    {
+      "id": "old",
+      "text": "old",
+      "translation": "viejo",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "nuevo",
+        "pequeño",
+        "limpio"
+      ]
+    },
+    {
+      "id": "slow",
+      "text": "slow",
+      "translation": "lento",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "seco",
+        "frío",
+        "fácil"
+      ]
+    },
+    {
+      "id": "green",
+      "text": "green",
+      "translation": "verde",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "rojo",
+        "negro",
+        "blanco"
+      ]
+    },
+    {
+      "id": "angry",
+      "text": "angry",
+      "translation": "enfadado",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "tímido",
+        "cansado",
+        "enfermo"
+      ]
+    },
+    {
+      "id": "today",
+      "text": "today",
+      "translation": "hoy",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "mañana",
+        "pronto",
+        "ahora"
+      ]
+    },
+    {
+      "id": "below",
+      "text": "below",
+      "translation": "abajo",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "aquí",
+        "fuera",
+        "allí"
+      ]
+    },
+    {
+      "id": "rabbit",
+      "text": "rabbit",
+      "translation": "conejo",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "rana",
+        "gato",
+        "ratón"
+      ]
+    },
+    {
+      "id": "bee",
+      "text": "bee",
+      "translation": "abeja",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "caballo",
+        "vaca",
+        "mariposa"
+      ]
+    },
+    {
+      "id": "tomato",
+      "text": "tomato",
+      "translation": "tomate",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "plátano",
+        "frijol",
+        "naranja"
+      ]
+    },
+    {
+      "id": "rice",
+      "text": "rice",
+      "translation": "arroz",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "azúcar",
+        "carne de res",
+        "mantequilla"
+      ]
+    },
+    {
+      "id": "juice",
+      "text": "juice",
+      "translation": "jugo",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "agua",
+        "té",
+        "café"
+      ]
+    },
+    {
+      "id": "hamburger",
+      "text": "hamburger",
+      "translation": "hamburguesa",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "pastel",
+        "ensalada",
+        "pizza"
+      ]
+    },
+    {
+      "id": "son",
+      "text": "son",
+      "translation": "hijo",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "abuelo",
+        "padre",
+        "hermana"
+      ]
+    },
+    {
+      "id": "friend",
+      "text": "friend",
+      "translation": "amigo",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "mujer",
+        "niña",
+        "hombre"
+      ]
+    },
+    {
+      "id": "farmer",
+      "text": "farmer",
+      "translation": "agricultor",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "periodista",
+        "conductor",
+        "cantante"
+      ]
+    },
+    {
+      "id": "garden",
+      "text": "garden",
+      "translation": "jardín",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "casa",
+        "dormitorio",
+        "baño"
+      ]
+    },
+    {
+      "id": "shelf",
+      "text": "shelf",
+      "translation": "estante",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "silla",
+        "cama",
+        "puerta"
+      ]
+    },
+    {
+      "id": "paper",
+      "text": "paper",
+      "translation": "papel",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "libro",
+        "regla",
+        "bolígrafo"
+      ]
+    },
+    {
+      "id": "train",
+      "text": "train",
+      "translation": "tren",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "bicicleta",
+        "coche",
+        "taxi"
+      ]
+    },
+    {
+      "id": "church",
+      "text": "church",
+      "translation": "iglesia",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "banco",
+        "escuela",
+        "cine"
+      ]
+    },
+    {
+      "id": "towel",
+      "text": "towel",
+      "translation": "toalla",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cuchillo",
+        "cámara",
+        "teléfono"
+      ]
+    },
+    {
+      "id": "mouth",
+      "text": "mouth",
+      "translation": "boca",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cuello",
+        "corazón",
+        "ojo"
+      ]
+    },
+    {
+      "id": "shoe",
+      "text": "shoe",
+      "translation": "zapato",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "pantalones",
+        "camisa",
+        "gorra"
+      ]
+    },
+    {
+      "id": "hour",
+      "text": "hour",
+      "translation": "hora",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "día",
+        "mes",
+        "minuto"
+      ]
+    },
+    {
+      "id": "wind",
+      "text": "wind",
+      "translation": "viento",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "nieve",
+        "sol",
+        "luna"
+      ]
+    },
+    {
+      "id": "beach",
+      "text": "beach",
+      "translation": "playa",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "montaña",
+        "isla",
+        "colina"
+      ]
+    },
+    {
+      "id": "rose",
+      "text": "rose",
+      "translation": "rosa",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "lirio",
+        "hoja",
+        "árbol"
+      ]
+    },
+    {
+      "id": "guitar",
+      "text": "guitar",
+      "translation": "guitarra",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "fútbol",
+        "tenis",
+        "película"
+      ]
+    },
+    {
+      "id": "walk",
+      "text": "walk",
+      "translation": "caminar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "nadar",
+        "beber",
+        "comer"
+      ]
+    },
+    {
+      "id": "ask",
+      "text": "ask",
+      "translation": "preguntar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "cantar",
+        "reír",
+        "escuchar"
+      ]
+    },
+    {
+      "id": "give",
+      "text": "give",
+      "translation": "dar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "ayudar",
+        "vender",
+        "coleccionar"
+      ]
+    },
+    {
+      "id": "travel",
+      "text": "travel",
+      "translation": "viajar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "venir",
+        "llegar",
+        "salir"
+      ]
+    },
+    {
+      "id": "take",
+      "text": "take",
+      "translation": "tomar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "empujar",
+        "lavar",
+        "cortar"
+      ]
+    },
+    {
+      "id": "play",
+      "text": "play",
+      "translation": "jugar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "enseñar",
+        "olvidar",
+        "aprender"
+      ]
+    },
+    {
+      "id": "young",
+      "text": "young",
+      "translation": "joven",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "pequeño",
+        "limpio",
+        "sucio"
+      ]
+    },
+    {
+      "id": "difficult",
+      "text": "difficult",
+      "translation": "difícil",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "rápido",
+        "lleno",
+        "seco"
+      ]
+    },
+    {
+      "id": "black",
+      "text": "black",
+      "translation": "negro",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "verde",
+        "rojo",
+        "blanco"
+      ]
+    },
+    {
+      "id": "hungry",
+      "text": "hungry",
+      "translation": "hambriento",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "cansado",
+        "asustado",
+        "triste"
+      ]
+    },
+    {
+      "id": "tomorrow",
+      "text": "tomorrow",
+      "translation": "mañana",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "hoy",
+        "ahora",
+        "siempre"
+      ]
+    },
+    {
+      "id": "behind",
+      "text": "behind",
+      "translation": "detrás",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "en todas partes",
+        "fuera",
+        "abajo"
+      ]
+    },
+    {
+      "id": "frog",
+      "text": "frog",
+      "translation": "rana",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "pájaro",
+        "pez",
+        "conejo"
+      ]
+    },
+    {
+      "id": "butterfly",
+      "text": "butterfly",
+      "translation": "mariposa",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "oveja",
+        "vaca",
+        "cerdo"
+      ]
+    },
+    {
+      "id": "potato",
+      "text": "potato",
+      "translation": "patata",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "naranja",
+        "tomate",
+        "plátano"
+      ]
+    },
+    {
+      "id": "sugar",
+      "text": "sugar",
+      "translation": "azúcar",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "huevo",
+        "pan",
+        "pollo"
+      ]
+    },
+    {
+      "id": "cake",
+      "text": "cake",
+      "translation": "pastel",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "sopa",
+        "pizza",
+        "galleta"
+      ]
+    },
+    {
+      "id": "daughter",
+      "text": "daughter",
+      "translation": "hija",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "hermano",
+        "padre",
+        "tío"
+      ]
+    },
+    {
+      "id": "guest",
+      "text": "guest",
+      "translation": "invitado",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "niña",
+        "mujer",
+        "amigo"
+      ]
+    },
+    {
+      "id": "engineer",
+      "text": "engineer",
+      "translation": "ingeniero",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "profesor",
+        "científico",
+        "agricultor"
+      ]
+    },
+    {
+      "id": "flat",
+      "text": "flat",
+      "translation": "apartamento",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "dormitorio",
+        "habitación",
+        "cocina"
+      ]
+    },
+    {
+      "id": "door",
+      "text": "door",
+      "translation": "puerta",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "mesa",
+        "sofá",
+        "ventana"
+      ]
+    },
+    {
+      "id": "notebook",
+      "text": "notebook",
+      "translation": "cuaderno",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "lápiz",
+        "bolsa",
+        "regla"
+      ]
+    },
+    {
+      "id": "taxi",
+      "text": "taxi",
+      "translation": "taxi",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "camión",
+        "barco",
+        "bicicleta"
+      ]
+    },
+    {
+      "id": "cinema",
+      "text": "cinema",
+      "translation": "cine",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "parque",
+        "hospital",
+        "aeropuerto"
+      ]
+    },
+    {
+      "id": "clock",
+      "text": "clock",
+      "translation": "reloj",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cuchillo",
+        "taza",
+        "botella"
+      ]
+    },
+    {
+      "id": "neck",
+      "text": "neck",
+      "translation": "cuello",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "ojo",
+        "mano",
+        "cabeza"
+      ]
+    },
+    {
+      "id": "shirt",
+      "text": "shirt",
+      "translation": "camisa",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "vestido",
+        "abrigo",
+        "gorra"
+      ]
+    },
+    {
+      "id": "minute",
+      "text": "minute",
+      "translation": "minuto",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "mes",
+        "semana",
+        "verano"
+      ]
+    },
+    {
+      "id": "moon",
+      "text": "moon",
+      "translation": "luna",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "lluvia",
+        "viento",
+        "nube"
+      ]
+    },
+    {
+      "id": "island",
+      "text": "island",
+      "translation": "isla",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "río",
+        "colina",
+        "playa"
+      ]
+    },
+    {
+      "id": "lily",
+      "text": "lily",
+      "translation": "lirio",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "hoja",
+        "hierba",
+        "árbol"
+      ]
+    },
+    {
+      "id": "photo",
+      "text": "photo",
+      "translation": "foto",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "película",
+        "baloncesto",
+        "piano"
+      ]
+    },
+    {
+      "id": "run",
+      "text": "run",
+      "translation": "correr",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "bailar",
+        "comer",
+        "dormir"
+      ]
+    },
+    {
+      "id": "answer",
+      "text": "answer",
+      "translation": "responder",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "reír",
+        "escribir",
+        "escuchar"
+      ]
+    },
+    {
+      "id": "collect",
+      "text": "collect",
+      "translation": "coleccionar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "vender",
+        "pagar",
+        "compartir"
+      ]
+    },
+    {
+      "id": "stay",
+      "text": "stay",
+      "translation": "quedarse",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "ir",
+        "venir",
+        "llegar"
+      ]
+    },
+    {
+      "id": "push",
+      "text": "push",
+      "translation": "empujar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "lavar",
+        "tomar",
+        "poner"
+      ]
+    },
+    {
+      "id": "remember",
+      "text": "remember",
+      "translation": "recordar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "aprender",
+        "jugar",
+        "dibujar"
+      ]
+    },
+    {
+      "id": "clean",
+      "text": "clean",
+      "translation": "limpio",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "joven",
+        "pequeño",
+        "pesado"
+      ]
+    },
+    {
+      "id": "easy",
+      "text": "easy",
+      "translation": "fácil",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "seco",
+        "lento",
+        "lleno"
+      ]
+    },
+    {
+      "id": "brown",
+      "text": "brown",
+      "translation": "marrón",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "rojo",
+        "amarillo",
+        "verde"
+      ]
+    },
+    {
+      "id": "tired",
+      "text": "tired",
+      "translation": "cansado",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "asustado",
+        "triste",
+        "tímido"
+      ]
+    },
+    {
+      "id": "yesterday",
+      "text": "yesterday",
+      "translation": "ayer",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "nunca",
+        "pronto",
+        "mañana"
+      ]
+    },
+    {
+      "id": "outside",
+      "text": "outside",
+      "translation": "fuera",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "en todas partes",
+        "aquí",
+        "arriba"
+      ]
+    },
+    {
+      "id": "snake",
+      "text": "snake",
+      "translation": "serpiente",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "perro",
+        "rana",
+        "gato"
+      ]
+    },
+    {
+      "id": "bean",
+      "text": "bean",
+      "translation": "frijol",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "patata",
+        "naranja",
+        "plátano"
+      ]
+    },
+    {
+      "id": "beef",
+      "text": "beef",
+      "translation": "carne de res",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "mantequilla",
+        "pan",
+        "huevo"
+      ]
+    },
+    {
+      "id": "biscuit",
+      "text": "biscuit",
+      "translation": "galleta",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "pastel",
+        "hamburguesa",
+        "sopa"
+      ]
+    },
+    {
+      "id": "aunt",
+      "text": "aunt",
+      "translation": "tía",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "padre",
+        "hijo",
+        "hermana"
+      ]
+    },
+    {
+      "id": "singer",
+      "text": "singer",
+      "translation": "cantante",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "ingeniero",
+        "científico",
+        "profesor"
+      ]
+    },
+    {
+      "id": "room",
+      "text": "room",
+      "translation": "habitación",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "casa",
+        "jardín",
+        "apartamento"
+      ]
+    },
+    {
+      "id": "window",
+      "text": "window",
+      "translation": "ventana",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "escritorio",
+        "mesa",
+        "silla"
+      ]
+    },
+    {
+      "id": "ruler",
+      "text": "ruler",
+      "translation": "regla",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "bolsa",
+        "lápiz",
+        "libro"
+      ]
+    },
+    {
+      "id": "ship",
+      "text": "ship",
+      "translation": "barco",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "coche",
+        "tren",
+        "bicicleta"
+      ]
+    },
+    {
+      "id": "park",
+      "text": "park",
+      "translation": "parque",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cine",
+        "escuela",
+        "banco"
+      ]
+    },
+    {
+      "id": "bottle",
+      "text": "bottle",
+      "translation": "botella",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "llave",
+        "cuchillo",
+        "taza"
+      ]
+    },
+    {
+      "id": "heart",
+      "text": "heart",
+      "translation": "corazón",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "pierna",
+        "rodilla",
+        "ojo"
+      ]
+    },
+    {
+      "id": "skirt",
+      "text": "skirt",
+      "translation": "falda",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "camisa",
+        "pantalones",
+        "chaqueta"
+      ]
+    },
+    {
+      "id": "night",
+      "text": "night",
+      "translation": "noche",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "mes",
+        "día",
+        "año"
+      ]
+    },
+    {
+      "id": "star",
+      "text": "star",
+      "translation": "estrella",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "lluvia",
+        "sol",
+        "luna"
+      ]
+    },
+    {
+      "id": "movie",
+      "text": "movie",
+      "translation": "película",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "fútbol",
+        "baloncesto",
+        "foto"
+      ]
+    },
+    {
+      "id": "swim",
+      "text": "swim",
+      "translation": "nadar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "bailar",
+        "caminar",
+        "comer"
+      ]
+    },
+    {
+      "id": "sing",
+      "text": "sing",
+      "translation": "cantar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "escuchar",
+        "responder",
+        "preguntar"
+      ]
+    },
+    {
+      "id": "share",
+      "text": "share",
+      "translation": "compartir",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "elegir",
+        "pagar",
+        "vender"
+      ]
+    },
+    {
+      "id": "visit",
+      "text": "visit",
+      "translation": "visitar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "llegar",
+        "volar",
+        "salir"
+      ]
+    },
+    {
+      "id": "carry",
+      "text": "carry",
+      "translation": "llevar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "poner",
+        "empujar",
+        "abrir"
+      ]
+    },
+    {
+      "id": "forget",
+      "text": "forget",
+      "translation": "olvidar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "recordar",
+        "enseñar",
+        "jugar"
+      ]
+    },
+    {
+      "id": "dirty",
+      "text": "dirty",
+      "translation": "sucio",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "fuerte",
+        "nuevo",
+        "joven"
+      ]
+    },
+    {
+      "id": "dry",
+      "text": "dry",
+      "translation": "seco",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "lleno",
+        "fácil",
+        "caliente"
+      ]
+    },
+    {
+      "id": "white",
+      "text": "white",
+      "translation": "blanco",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "rojo",
+        "negro",
+        "verde"
+      ]
+    },
+    {
+      "id": "sick",
+      "text": "sick",
+      "translation": "enfermo",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "asustado",
+        "tímido",
+        "cansado"
+      ]
+    },
+    {
+      "id": "now",
+      "text": "now",
+      "translation": "ahora",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "más tarde",
+        "ayer",
+        "pronto"
+      ]
+    },
+    {
+      "id": "everywhere",
+      "text": "everywhere",
+      "translation": "en todas partes",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "aquí",
+        "allí",
+        "fuera"
+      ]
+    },
+    {
+      "id": "mouse",
+      "text": "mouse",
+      "translation": "ratón",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "pez",
+        "conejo",
+        "pájaro"
+      ]
+    },
+    {
+      "id": "corn",
+      "text": "corn",
+      "translation": "maíz",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "plátano",
+        "frijol",
+        "uva"
+      ]
+    },
+    {
+      "id": "chicken",
+      "text": "chicken",
+      "translation": "pollo",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "carne de res",
+        "huevo",
+        "queso"
+      ]
+    },
+    {
+      "id": "uncle",
+      "text": "uncle",
+      "translation": "tío",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "hermano",
+        "abuela",
+        "madre"
+      ]
+    },
+    {
+      "id": "scientist",
+      "text": "scientist",
+      "translation": "científico",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "profesor",
+        "estudiante",
+        "ingeniero"
+      ]
+    },
+    {
+      "id": "table",
+      "text": "table",
+      "translation": "mesa",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "puerta",
+        "sofá",
+        "ventana"
+      ]
+    },
+    {
+      "id": "bag",
+      "text": "bag",
+      "translation": "bolsa",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "lápiz",
+        "cuaderno",
+        "papel"
+      ]
+    },
+    {
+      "id": "subway",
+      "text": "subway",
+      "translation": "metro",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "barco",
+        "taxi",
+        "camión"
+      ]
+    },
+    {
+      "id": "library",
+      "text": "library",
+      "translation": "biblioteca",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "hospital",
+        "iglesia",
+        "aeropuerto"
+      ]
+    },
+    {
+      "id": "cup",
+      "text": "cup",
+      "translation": "taza",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "paraguas",
+        "toalla",
+        "cuchillo"
+      ]
+    },
+    {
+      "id": "hair",
+      "text": "hair",
+      "translation": "pelo",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "boca",
+        "cabeza",
+        "cuello"
+      ]
+    },
+    {
+      "id": "trousers",
+      "text": "trousers",
+      "translation": "pantalones",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "abrigo",
+        "gorra",
+        "camisa"
+      ]
+    },
+    {
+      "id": "autumn",
+      "text": "autumn",
+      "translation": "otoño",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "mes",
+        "minuto",
+        "hora"
+      ]
+    },
+    {
+      "id": "tennis",
+      "text": "tennis",
+      "translation": "tenis",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "foto",
+        "piano",
+        "fútbol"
+      ]
+    },
+    {
+      "id": "dance",
+      "text": "dance",
+      "translation": "bailar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "beber",
+        "dormir",
+        "caminar"
+      ]
+    },
+    {
+      "id": "laugh",
+      "text": "laugh",
+      "translation": "reír",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "escribir",
+        "responder",
+        "escuchar"
+      ]
+    },
+    {
+      "id": "help",
+      "text": "help",
+      "translation": "ayudar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "pagar",
+        "dar",
+        "coleccionar"
+      ]
+    },
+    {
+      "id": "fly",
+      "text": "fly",
+      "translation": "volar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "salir",
+        "quedarse",
+        "venir"
+      ]
+    },
+    {
+      "id": "wash",
+      "text": "wash",
+      "translation": "lavar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "cerrar",
+        "llevar",
+        "empujar"
+      ]
+    },
+    {
+      "id": "think",
+      "text": "think",
+      "translation": "pensar",
+      "part_of_speech": "verb",
+      "level": "a1",
+      "distractors": [
+        "dibujar",
+        "aprender",
+        "olvidar"
+      ]
+    },
+    {
+      "id": "heavy",
+      "text": "heavy",
+      "translation": "pesado",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "grande",
+        "joven",
+        "fuerte"
+      ]
+    },
+    {
+      "id": "full",
+      "text": "full",
+      "translation": "lleno",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "lento",
+        "fácil",
+        "rápido"
+      ]
+    },
+    {
+      "id": "pink",
+      "text": "pink",
+      "translation": "rosado",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "rojo",
+        "verde",
+        "marrón"
+      ]
+    },
+    {
+      "id": "shy",
+      "text": "shy",
+      "translation": "tímido",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "triste",
+        "enfermo",
+        "enfadado"
+      ]
+    },
+    {
+      "id": "later",
+      "text": "later",
+      "translation": "más tarde",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "a menudo",
+        "ahora",
+        "mañana"
+      ]
+    },
+    {
+      "id": "grandma",
+      "text": "grandma",
+      "translation": "abuela",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "hija",
+        "padre",
+        "tía"
+      ]
+    },
+    {
+      "id": "reporter",
+      "text": "reporter",
+      "translation": "periodista",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cantante",
+        "agricultor",
+        "ingeniero"
+      ]
+    },
+    {
+      "id": "truck",
+      "text": "truck",
+      "translation": "camión",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "coche",
+        "taxi",
+        "tren"
+      ]
+    },
+    {
+      "id": "school",
+      "text": "school",
+      "translation": "escuela",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "parque",
+        "iglesia",
+        "banco"
+      ]
+    },
+    {
+      "id": "glass",
+      "text": "glass",
+      "translation": "vaso",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cuchillo",
+        "llave",
+        "botella"
+      ]
+    },
+    {
+      "id": "leg",
+      "text": "leg",
+      "translation": "pierna",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "ojo",
+        "cabeza",
+        "nariz"
+      ]
+    },
+    {
+      "id": "summer",
+      "text": "summer",
+      "translation": "verano",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "hora",
+        "mes",
+        "otoño"
+      ]
+    },
+    {
+      "id": "strong",
+      "text": "strong",
+      "translation": "fuerte",
+      "part_of_speech": "adj",
+      "level": "a1",
+      "distractors": [
+        "limpio",
+        "pesado",
+        "pequeño"
+      ]
+    },
+    {
+      "id": "soon",
+      "text": "soon",
+      "translation": "pronto",
+      "part_of_speech": "adv",
+      "level": "a1",
+      "distractors": [
+        "siempre",
+        "a menudo",
+        "hoy"
+      ]
+    },
+    {
+      "id": "grandpa",
+      "text": "grandpa",
+      "translation": "abuelo",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "hermano",
+        "tío",
+        "hijo"
+      ]
+    },
+    {
+      "id": "knife",
+      "text": "knife",
+      "translation": "cuchillo",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "toalla",
+        "teléfono",
+        "vaso"
+      ]
+    },
+    {
+      "id": "shoulder",
+      "text": "shoulder",
+      "translation": "hombro",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cabeza",
+        "ojo",
+        "rodilla"
+      ]
+    },
+    {
+      "id": "hand",
+      "text": "hand",
+      "translation": "mano",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "pierna",
+        "nariz",
+        "oreja"
+      ]
+    },
+    {
+      "id": "knee",
+      "text": "knee",
+      "translation": "rodilla",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "corazón",
+        "boca",
+        "oreja"
+      ]
+    },
+    {
+      "id": "tooth",
+      "text": "tooth",
+      "translation": "diente",
+      "part_of_speech": "noun",
+      "level": "a1",
+      "distractors": [
+        "cuello",
+        "boca",
+        "hombro"
+      ]
+    }
+  ]
+}
