@@ -195,6 +195,7 @@ void main() {
             ),
           ],
           cards: secondCards,
+          streaks: InMemoryStreakStore(),
           answers: secondAnswers,
         ),
       ],

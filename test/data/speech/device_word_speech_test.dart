@@ -58,6 +58,47 @@ void main() {
   );
 
   test(
+    'switches the shared engine to an installed Spanish voice and back',
+    () async {
+      speech = DeviceWordSpeech(platform: TargetPlatform.android);
+      final spanish = speech.forLanguage('es');
+      engine.voices = [
+        {'name': 'English', 'locale': 'en-US', 'network_required': false},
+        {'name': 'Cloud Spanish', 'locale': 'es-ES', 'network_required': true},
+        {'name': 'Local Spanish', 'locale': 'es_MX', 'network_required': false},
+      ];
+      final english = speech.speak('child');
+      await _drain();
+      expect(engine.selectedVoice, {'name': 'English', 'locale': 'en-US'});
+
+      final local = spanish.speak('niño');
+      expect(await english, SpeechResult.cancelled);
+      await _drain();
+      expect(engine.selectedVoice, {
+        'name': 'Local Spanish',
+        'locale': 'es_MX',
+      });
+      expect(engine.spoken, ['child', 'niño']);
+      engine.finish(0);
+      engine.finish(1);
+      expect(await local, SpeechResult.completed);
+
+      final back = speech.speak('music');
+      await _drain();
+      expect(engine.selectedVoice, {'name': 'English', 'locale': 'en-US'});
+      engine.finish(2);
+      expect(await back, SpeechResult.completed);
+    },
+  );
+
+  test('Spanish speech never uses the available English voice', () async {
+    final spanish = speech.forLanguage('es');
+    expect(await spanish.speak('música'), SpeechResult.unavailable);
+    expect(engine.spoken, isEmpty);
+    expect(engine.selectedVoice, isNull);
+  });
+
+  test(
     'Android selects only English voices explicitly marked offline',
     () async {
       speech = DeviceWordSpeech(platform: TargetPlatform.android);
