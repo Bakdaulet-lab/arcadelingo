@@ -20,9 +20,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Реализация порта [CardStore]. Тело класса при подключении порта не
 /// менялось: интерфейс списан с уже существовавших методов, а не наоборот.
 class LeitnerPrefsStore implements CardStore {
-  LeitnerPrefsStore(this._prefs);
+  LeitnerPrefsStore(this._prefs, {String? courseId})
+    : _storageKey = courseId == null ? key : '$key.$courseId';
 
   final SharedPreferences _prefs;
+  final String _storageKey;
 
   /// Ключ документа в prefs. Переименование — потеря прогресса у
   /// пользователей; тест стора держит это имя литералом именно поэтому.
@@ -44,7 +46,7 @@ class LeitnerPrefsStore implements CardStore {
   /// дотягивается; гарантия остаётся, она дешёвая.
   @override
   Result<Map<String, LeitnerCard>> load() {
-    final raw = _prefs.getString(key);
+    final raw = _prefs.getString(_storageKey);
     if (raw == null) {
       final empty = <String, LeitnerCard>{};
       return Ok(empty);
@@ -65,7 +67,7 @@ class LeitnerPrefsStore implements CardStore {
   /// Возвращает ответ платформы: `false` — запись не удалась.
   @override
   Future<bool> save(Map<String, LeitnerCard> cards) =>
-      _prefs.setString(key, encodeLeitnerState(cards));
+      _prefs.setString(_storageKey, encodeLeitnerState(cards));
 
   /// Удаляет документ состояния: следующий [load] — первый запуск.
   ///
@@ -73,5 +75,5 @@ class LeitnerPrefsStore implements CardStore {
   /// только пользователь — кнопкой на экране ошибки состояния (задача 0.8).
   /// Код приложения сам сюда не ходит: молчаливый сброс уничтожил бы улики.
   @override
-  Future<bool> reset() => _prefs.remove(key);
+  Future<bool> reset() => _prefs.remove(_storageKey);
 }

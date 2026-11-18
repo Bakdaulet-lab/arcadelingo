@@ -9,6 +9,7 @@ class WordPronunciation extends StatefulWidget {
   const WordPronunciation({
     required this.text,
     required this.speech,
+    this.studyLanguage = 'en',
     this.enabled = true,
     super.key,
   });
@@ -18,6 +19,7 @@ class WordPronunciation extends StatefulWidget {
 
   final String text;
   final WordSpeech speech;
+  final String studyLanguage;
   final bool enabled;
 
   @override
@@ -75,7 +77,9 @@ class _WordPronunciationState extends State<WordPronunciation>
       _speaking = false;
       _message = switch (result) {
         SpeechResult.completed || SpeechResult.cancelled => null,
-        SpeechResult.unavailable => context.strings.voiceUnavailable,
+        SpeechResult.unavailable => context.strings.voiceUnavailable(
+          widget.studyLanguage,
+        ),
         SpeechResult.failed => context.strings.speechFailed,
       };
     });

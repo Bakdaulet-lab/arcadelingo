@@ -185,15 +185,26 @@ class AppStrings {
   String get verb => isEnglish ? 'Verb' : 'Глагол';
   String get adjective => isEnglish ? 'Adjective' : 'Прилагательное';
   String get adverb => isEnglish ? 'Adverb' : 'Наречие';
+  String get numeral => isEnglish ? 'Numeral' : 'Числительное';
   String get pronoun => isEnglish ? 'Pronoun' : 'Местоимение';
   String get preposition => isEnglish ? 'Preposition' : 'Предлог';
   String get conjunction => isEnglish ? 'Conjunction' : 'Союз';
   String get interjection => isEnglish ? 'Interjection' : 'Междометие';
   String get determiner => isEnglish ? 'Determiner' : 'Определитель';
-  String get voiceUnavailable =>
-      isEnglish
-          ? 'English speech is unavailable. Check your device’s text-to-speech settings for a local English voice.'
-          : 'Английский голос недоступен. Проверь настройки синтеза речи на устройстве и установи английский голос.';
+  String voiceUnavailable(String language) => switch ((isEnglish, language)) {
+    (true, 'en') =>
+      'English speech is unavailable. Check your device’s text-to-speech settings for a local English voice.',
+    (false, 'en') =>
+      'Английский голос недоступен. Проверь настройки синтеза речи на устройстве и установи английский голос.',
+    (true, 'es') =>
+      'Spanish speech is unavailable. Install a local Spanish voice in your device’s text-to-speech settings.',
+    (false, 'es') =>
+      'Испанский голос недоступен. Установи испанский голос в настройках синтеза речи устройства.',
+    (true, _) =>
+      'Speech is unavailable. Install a voice for the course language in your device’s text-to-speech settings.',
+    (false, _) =>
+      'Озвучка недоступна. Установи голос для языка курса в настройках синтеза речи устройства.',
+  };
   String get speechFailed =>
       isEnglish
           ? 'Couldn’t play the pronunciation. Try again.'

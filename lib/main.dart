@@ -1,9 +1,5 @@
 /// Точка входа: разрешить асинхронные зависимости и отдать их корню.
 ///
-/// Здесь только то, что нельзя сделать внутри дерева виджетов, — два
-/// `await`. Что делать с их результатами, решает `WordarcadeApp`:
-/// `lib/app/app.dart`.
-///
 /// Состояние читается не здесь, хотя `SharedPreferences` уже под рукой:
 /// сессия строится по тапу «Играть» (0.6), и чтение состояния идёт тем же
 /// тапом. Прочитанное на старте успело бы устареть.
@@ -11,6 +7,7 @@ library;
 
 import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_ports.dart';
+import 'package:arcadelingo/app/courses.dart';
 import 'package:arcadelingo/data/dictionary/favorites_prefs_store.dart';
 import 'package:arcadelingo/data/log/drift_answer_log.dart';
 import 'package:arcadelingo/data/log/drift_event_log.dart';
@@ -22,6 +19,8 @@ import 'package:arcadelingo/data/speech/device_word_speech.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
 import 'package:arcadelingo/data/words/words_seed_loader.dart';
+import 'package:arcadelingo/domain/core/result.dart';
+import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/foundation.dart';
@@ -37,6 +36,18 @@ Future<void> main() async {
   // Одна база на два журнала: у них одна природа и одна миграция. Файл
   // открывается лениво, при первой записи, — журналы не на пути старта.
   final history = HistoryDatabase(driftDatabase(name: 'wordarcade_answers'));
+  final spanishHistory = HistoryDatabase(
+    driftDatabase(name: 'wordarcade_answers_ru_es'),
+  );
+  final speech = DeviceWordSpeech();
+  final spanish = await loadSpanishA1Course(
+    prefs: prefs,
+    history: spanishHistory,
+    speech: speech,
+  );
+  if (spanish case Err(:final failure)) {
+    debugPrint(failure.message);
+  }
   // База зон и плагин поднимаются один раз: база IANA весит сотни килобайт,
   // и грузить её на каждое планирование незачем.
   final reminders = await PluginReminders.start();
@@ -53,13 +64,38 @@ Future<void> main() async {
         reminders: reminders,
         settings: SettingsPrefsStore(prefs),
         sounds: AudioSounds(),
-        speech: DeviceWordSpeech(),
+        speech: speech,
         askReminderPermission: reminders.requestPermission,
       ),
       seed: seed,
+      additionalDecks: [if (spanish case Ok(:final value)) value],
       followSystemLocale: true,
     ),
   );
+}
+
+/// Собирает словарь и хранилища испанского курса.
+Future<Result<CourseDeck>> loadSpanishA1Course({
+  required SharedPreferences prefs,
+  required HistoryDatabase history,
+  required DeviceWordSpeech speech,
+}) async {
+  const course = StudyCourse.spanishFromRussian;
+  return switch (await loadSpanishA1Seed()) {
+    Ok(:final value) => Ok(
+      CourseDeck(
+        course: course,
+        items: value,
+        cards: LeitnerPrefsStore(prefs, courseId: course.id),
+        streaks: StreakPrefsStore(prefs, courseId: course.id),
+        answers: DriftAnswerLog(history),
+        events: DriftEventLog(history),
+        favorites: FavoritesPrefsStore(prefs, courseId: course.id),
+        speech: speech.forLanguage(course.studyLanguage),
+      ),
+    ),
+    Err(:final failure) => Err(failure),
+  };
 }
 
 /// Отдаёт лицензию шрифта в `showLicensePage`.

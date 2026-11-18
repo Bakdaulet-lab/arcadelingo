@@ -13,6 +13,12 @@ class StudyCourse {
     translationLanguage: 'ru',
   );
 
+  static const spanishFromRussian = StudyCourse(
+    id: 'ru-es',
+    studyLanguage: 'es',
+    translationLanguage: 'ru',
+  );
+
   final String id;
   final String studyLanguage;
   final String translationLanguage;

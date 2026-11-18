@@ -30,12 +30,14 @@ class WordIntroductionScreen extends StatelessWidget {
     required this.level,
     required this.speech,
     required this.onStart,
+    this.studyLanguage = 'en',
     super.key,
   }) : words = _validatedWords(words, level, allowEmpty: false);
 
   final List<Word> words;
   final CefrLevel level;
   final WordSpeech speech;
+  final String studyLanguage;
   final VoidCallback onStart;
 
   @override
@@ -43,6 +45,7 @@ class WordIntroductionScreen extends StatelessWidget {
     words: words,
     level: level,
     speech: speech,
+    studyLanguage: studyLanguage,
     onStart: onStart,
   );
 }
@@ -54,6 +57,7 @@ class MistakesReviewScreen extends StatelessWidget {
     required this.level,
     required this.speech,
     Map<String, ReviewOutcome> outcomes = const {},
+    this.studyLanguage = 'en',
     super.key,
   }) : words = _validatedWords(words, level, allowEmpty: true),
        outcomes = Map.unmodifiable(outcomes);
@@ -61,12 +65,14 @@ class MistakesReviewScreen extends StatelessWidget {
   final List<Word> words;
   final CefrLevel level;
   final WordSpeech speech;
+  final String studyLanguage;
 
   @override
   Widget build(BuildContext context) => _LearningDeck(
     words: words,
     level: level,
     speech: speech,
+    studyLanguage: studyLanguage,
     outcomes: outcomes,
   );
 
@@ -92,6 +98,7 @@ class _LearningDeck extends StatefulWidget {
     required this.words,
     required this.level,
     required this.speech,
+    required this.studyLanguage,
     this.onStart,
     this.outcomes = const {},
   });
@@ -99,6 +106,7 @@ class _LearningDeck extends StatefulWidget {
   final List<Word> words;
   final CefrLevel level;
   final WordSpeech speech;
+  final String studyLanguage;
   final VoidCallback? onStart;
   final Map<String, ReviewOutcome> outcomes;
 
@@ -257,6 +265,7 @@ class _LearningDeckState extends State<_LearningDeck> {
                 key: ValueKey(word.id),
                 text: word.text,
                 speech: widget.speech,
+                studyLanguage: widget.studyLanguage,
                 enabled: enabled,
               ),
               const SizedBox(height: 16),

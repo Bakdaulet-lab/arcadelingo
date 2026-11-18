@@ -102,6 +102,7 @@ class PlayView extends StatelessWidget {
     this.selectedGameId,
     this.onGameSelected,
     this.selectedLevel,
+    this.levels = CefrLevel.values,
     this.onLevelSelected,
     this.course,
     this.onCourseSelected,
@@ -129,6 +130,7 @@ class PlayView extends StatelessWidget {
   final String? selectedGameId;
   final ValueChanged<String>? onGameSelected;
   final CefrLevel? selectedLevel;
+  final List<CefrLevel> levels;
   final ValueChanged<CefrLevel>? onLevelSelected;
   final StudyCourse? course;
   final VoidCallback? onCourseSelected;
@@ -262,6 +264,7 @@ class PlayView extends StatelessWidget {
                     SizedBox(height: course == null ? 20 : 14),
                     _LevelSelector(
                       level: level,
+                      levels: levels,
                       onSelected: onLevelSelected,
                       language: course?.studyLanguage ?? 'en',
                     ),
@@ -413,11 +416,13 @@ class _HomeActions extends StatelessWidget {
 class _LevelSelector extends StatelessWidget {
   const _LevelSelector({
     required this.level,
+    required this.levels,
     required this.onSelected,
     required this.language,
   });
 
   final CefrLevel level;
+  final List<CefrLevel> levels;
   final String language;
   final ValueChanged<CefrLevel>? onSelected;
 
@@ -445,7 +450,7 @@ class _LevelSelector extends StatelessWidget {
               spacing: 6,
               runSpacing: 4,
               children: [
-                for (final option in CefrLevel.values)
+                for (final option in levels)
                   SizedBox(
                     width: width,
                     child: ChoiceChip(
