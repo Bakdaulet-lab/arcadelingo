@@ -33,14 +33,25 @@ Future<void> _tap(WidgetTester tester, Finder target) async {
 void main() {
   setUpAll(useTestSqlite);
 
-  for (final (courseId, translation) in [
-    ('ru-es', 'экскурсия'),
-    ('en-es', 'excursion'),
-  ]) {
-    for (final (game, title) in [
-      ('falling_words', 'Falling Words'),
-      ('ninja_slash', 'Ninja Slash'),
-      ('claw_machine', 'Claw Machine'),
+  for (final courseId in ['ru-es', 'en-es']) {
+    for (final (game, title, wordId, spanish, russian, english) in [
+      (
+        'falling_words',
+        'Falling Words',
+        'es_buzon',
+        'buzón',
+        'почтовый ящик',
+        'mailbox',
+      ),
+      ('ninja_slash', 'Ninja Slash', 'es_venda', 'venda', 'бинт', 'bandage'),
+      (
+        'claw_machine',
+        'Claw Machine',
+        'es_cumpleanos',
+        'cumpleaños',
+        'день рождения',
+        'birthday',
+      ),
     ]) {
       testWidgets('$courseId A2 in $title uses its own words and progress', (
         tester,
@@ -73,14 +84,16 @@ void main() {
               );
             }))!;
         final (selected, other) = courseId == 'ru-es' ? (ru, en) : (en, ru);
+        final translation = courseId == 'ru-es' ? russian : english;
 
         final target = selected.items.singleWhere(
-          (item) => item.word.id == 'es_excursion',
+          (item) => item.word.id == wordId,
         );
         final a1 = selected.items.singleWhere(
           (item) => item.word.id == 'es_nino',
         );
         expect(target.word.level, CefrLevel.a2);
+        expect(target.word.text, spanish);
         expect(target.word.translation, translation);
         final dueA1 = LeitnerCard(box: 3, due: _now);
         await selected.cards.save({
@@ -140,7 +153,7 @@ void main() {
             ninja ? NinjaRun.windUpTime : FallingWordsRun.windUpTime,
           );
           await tester.pump(const Duration(milliseconds: 850));
-          expect(find.text('excursión'), findsOneWidget);
+          expect(find.text(spanish), findsOneWidget);
           expect(find.text('niño'), findsNothing);
           expect(
             target.distractors.where(

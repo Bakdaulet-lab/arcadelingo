@@ -27,7 +27,7 @@ void main() {
       final ru = await _read('words_es_a2', 'ru');
       final en = await _read('words_es_a2_en', 'en');
 
-      expect(ru, hasLength(120));
+      expect(ru, hasLength(300));
       expect(en, hasLength(ru.length));
       expect(ru.map((item) => item.word.id).toSet(), hasLength(ru.length));
       expect(ru.map((item) => item.word.text).toSet(), hasLength(ru.length));
