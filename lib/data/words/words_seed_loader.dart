@@ -16,6 +16,7 @@ const String wordsSeedAssetPath = 'assets/words_seed.json';
 const String wordsC1AssetPath = 'assets/words_c1.json';
 const String wordsC2AssetPath = 'assets/words_c2.json';
 const String wordsSpanishA1AssetPath = 'assets/words_es_a1.json';
+const String wordsSpanishA1FromEnglishAssetPath = 'assets/words_es_a1_en.json';
 const String wordsEnglishA1FromSpanishAssetPath = 'assets/words_en_a1_es.json';
 
 /// Сид из [bundle] (по умолчанию [rootBundle]) → единицы показа.
@@ -62,6 +63,10 @@ Future<Result<List<ReviewItem>>> loadSpanishA1Seed({AssetBundle? bundle}) =>
 Future<Result<List<ReviewItem>>> loadEnglishA1FromSpanishSeed({
   AssetBundle? bundle,
 }) => _loadA1Seed(wordsEnglishA1FromSpanishAssetPath, bundle);
+
+Future<Result<List<ReviewItem>>> loadSpanishA1FromEnglishSeed({
+  AssetBundle? bundle,
+}) => _loadA1Seed(wordsSpanishA1FromEnglishAssetPath, bundle);
 
 Future<Result<List<ReviewItem>>> _loadA1Seed(
   String path,

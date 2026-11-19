@@ -18,6 +18,12 @@ The Russian translations and answer choices were written for ArcadeLingo.
 
 The English A1 course for Spanish speakers uses a selection of the same English headwords. Its Spanish translations and answer choices were written for ArcadeLingo.
 
+## Spanish A1 courses
+
+The two Spanish A1 courses use the same Spanish headwords selected for
+ArcadeLingo. The course for English speakers has English translations and
+answer choices written for the game.
+
 ## C1 and C2 levels — Octanove Labs
 
 English headwords, levels, and parts of speech come from the **Octanove Vocabulary Profile C1/C2 Version 1.0**, Octanove Labs.

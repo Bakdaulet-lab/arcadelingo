@@ -14,11 +14,11 @@ Condiciones de uso
 
 El curso de inglés A1 para hispanohablantes utiliza una selección de esas palabras inglesas. Las traducciones y las opciones de respuesta en español se redactaron para ArcadeLingo.
 
-## Curso de español A1
+## Cursos de español A1
 
-Las palabras se seleccionaron para ArcadeLingo. Los temas se revisaron con la descripción del DELE A1 (<https://examenes.cervantes.es/es/dele/examenes/a1>). Para comprobar algunos significados se consultó el Diccionario de la lengua española (<https://dle.rae.es/>).
+Los dos cursos de español A1 comparten las palabras seleccionadas para ArcadeLingo. Los temas se revisaron con la descripción del DELE A1 (<https://examenes.cervantes.es/es/dele/examenes/a1>). Para comprobar algunos significados se consultó el Diccionario de la lengua española (<https://dle.rae.es/>).
 
-Las traducciones al ruso y las opciones de respuesta de este curso se redactaron para ArcadeLingo.
+Las traducciones y las opciones de respuesta de ambos cursos se redactaron para ArcadeLingo. Un curso ofrece traducciones al ruso y el otro, al inglés.
 
 ## Niveles C1 y C2 de inglés
 
