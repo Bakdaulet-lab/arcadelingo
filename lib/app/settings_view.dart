@@ -1,4 +1,4 @@
-/// Язык интерфейса, звук и ежедневное напоминание.
+/// Тема, язык интерфейса, звук и ежедневное напоминание.
 library;
 
 import 'package:arcadelingo/domain/core/result.dart';
@@ -27,6 +27,7 @@ abstract final class SettingsKeys {
   /// Звук в играх.
   static const Key sound = Key('settings.sound');
   static const Key language = Key('settings.language');
+  static const Key theme = Key('settings.theme');
 }
 
 /// Что хост делает с новым выбором.
@@ -58,20 +59,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// Система отказала в разрешении на прошлое включение.
   bool _denied = false;
   bool _saving = false;
-  bool _choosingLanguage = false;
-  bool _languageSaveFailed = false;
+  bool _choosing = false;
+  bool _appearanceSaveFailed = false;
 
   Future<void> _apply(AppSettings next) async {
     if (_saving) return;
-    final languageChanged =
-        next.interfaceLanguage != _settings.interfaceLanguage;
+    final preferenceChanged =
+        next.interfaceLanguage != _settings.interfaceLanguage ||
+        next.theme != _settings.theme;
     setState(() => _saving = true);
     try {
       final ok = await widget.onApply(next);
       if (!mounted) return;
       setState(() {
-        _languageSaveFailed = languageChanged && !ok;
-        if (!languageChanged) _denied = !ok;
+        _appearanceSaveFailed = preferenceChanged && !ok;
+        if (!preferenceChanged) _denied = !ok;
         if (ok) _settings = next;
       });
     } finally {
@@ -87,24 +89,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
         InterfaceLanguage.spanish => 'Español',
       };
 
-  Future<void> _chooseLanguage() async {
-    if (_saving || _choosingLanguage) return;
-    _choosingLanguage = true;
+  String _themeLabel(AppTheme theme, AppStrings strings) => switch (theme) {
+    AppTheme.light => strings.lightTheme,
+    AppTheme.dark => strings.darkTheme,
+  };
+
+  Future<void> _chooseLanguage() {
+    final strings = context.strings;
+    return _choose(
+      title: strings.appLanguage,
+      choices: InterfaceLanguage.values,
+      current: _settings.interfaceLanguage,
+      label: (language) => _languageLabel(language, strings),
+      key: (language) => ValueKey('settings.language.${language.tag}'),
+      update: (language) => _settings.copyWith(interfaceLanguage: language),
+    );
+  }
+
+  Future<void> _chooseTheme() {
+    final strings = context.strings;
+    return _choose(
+      title: strings.appearance,
+      choices: const [AppTheme.light, AppTheme.dark],
+      current: _settings.theme,
+      label: (theme) => _themeLabel(theme, strings),
+      key: (theme) => ValueKey('settings.theme.${theme.name}'),
+      update: (theme) => _settings.copyWith(theme: theme),
+    );
+  }
+
+  Future<void> _choose<T>({
+    required String title,
+    required List<T> choices,
+    required T current,
+    required String Function(T) label,
+    required Key Function(T) key,
+    required AppSettings Function(T) update,
+  }) async {
+    if (_saving || _choosing) return;
+    _choosing = true;
     try {
-      final strings = context.strings;
-      final value = await showArcadeChoice<InterfaceLanguage>(
+      final value = await showArcadeChoice<T>(
         context,
-        title: strings.appLanguage,
-        choices: InterfaceLanguage.values,
-        selected: _settings.interfaceLanguage,
-        label: (choice) => _languageLabel(choice, strings),
-        optionKey: (language) => ValueKey('settings.language.${language.tag}'),
+        title: title,
+        choices: choices,
+        selected: current,
+        label: label,
+        optionKey: key,
       );
-      if (value != null && mounted && value != _settings.interfaceLanguage) {
-        await _apply(_settings.copyWith(interfaceLanguage: value));
+      if (value != null && mounted && value != current) {
+        await _apply(update(value));
       }
     } finally {
-      _choosingLanguage = false;
+      _choosing = false;
     }
   }
 
@@ -203,6 +240,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Column(
                     children: [
                       ListTile(
+                        key: SettingsKeys.theme,
+                        onTap: _saving ? null : _chooseTheme,
+                        contentPadding: rowPadding,
+                        minTileHeight: 56,
+                        minVerticalPadding: 5,
+                        leading: symbol(
+                          Icons.light_mode_outlined,
+                          scheme.primary,
+                        ),
+                        title: Text(strings.appearance),
+                        subtitle: Text(_themeLabel(_settings.theme, strings)),
+                        trailing: const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
+                        ),
+                      ),
+                      divider,
+                      ListTile(
                         key: SettingsKeys.language,
                         onTap: _saving ? null : _chooseLanguage,
                         contentPadding: rowPadding,
@@ -285,7 +340,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ),
-            if (_languageSaveFailed || _denied) ...[
+            if (_appearanceSaveFailed || _denied) ...[
               const SizedBox(height: 12),
               Semantics(
                 liveRegion: true,
@@ -294,7 +349,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   accent: scheme.error,
                   padding: const EdgeInsets.all(12),
                   child: Text(
-                    _languageSaveFailed
+                    _appearanceSaveFailed
                         ? strings.settingsSaveFailed
                         : strings.notificationsDenied,
                     style: theme.textTheme.bodySmall?.copyWith(

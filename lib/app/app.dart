@@ -49,6 +49,7 @@ import 'package:arcadelingo/ui/reminder_labels.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 /// Размер сессии из SPEC. Его задаёт хост: игра про эту цифру не знает и
@@ -150,9 +151,25 @@ class _WordarcadeAppState extends State<WordarcadeApp>
         extras
             .where((deck) => deck.course.id == _preferences.courseId)
             .firstOrNull;
+    final paper = _preferences.theme == AppTheme.light;
     return MaterialApp(
       title: 'Arcadelingo',
-      theme: wordarcadeTheme(),
+      theme: wordarcadeTheme(
+        brightness: paper ? Brightness.light : Brightness.dark,
+      ),
+      builder:
+          (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+            value: (paper
+                    ? SystemUiOverlayStyle.dark
+                    : SystemUiOverlayStyle.light)
+                .copyWith(
+                  systemNavigationBarColor:
+                      Theme.of(context).colorScheme.surface,
+                  systemNavigationBarIconBrightness:
+                      paper ? Brightness.dark : Brightness.light,
+                ),
+            child: child!,
+          ),
       debugShowCheckedModeBanner: false,
       locale: Locale(language.tag),
       supportedLocales: [
@@ -423,6 +440,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     if (!await store.save(next)) return false;
     widget.onPreferencesChanged?.call();
+    if (previous.theme != next.theme &&
+        previous.copyWith(theme: next.theme) == next) {
+      return true;
+    }
     final language =
         widget.resolveLanguage?.call(next.interfaceLanguage) ??
         widget.interfaceLanguage;

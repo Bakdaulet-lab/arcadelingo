@@ -20,6 +20,13 @@ enum InterfaceLanguage {
       values.where((language) => language.tag == value).firstOrNull ?? system;
 }
 
+enum AppTheme {
+  dark,
+  light;
+
+  static AppTheme fromTag(Object? value) => value == light.name ? light : dark;
+}
+
 /// Время суток без даты и без зоны.
 ///
 /// Зоны здесь нет по той же причине, что у `StreakDay`: «восемь вечера» — это
@@ -59,12 +66,7 @@ class ReminderTime {
       '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
 }
 
-/// Что человек выбрал: про напоминания и про звук.
-///
-/// Один документ на две настройки, а не два: заводить второй документ prefs
-/// ради одного булева — цена вперёд пользы, ровно как с выбором игры между
-/// запусками. Имя класса перестало быть `ReminderSettings` в тот момент,
-/// когда жильцов стало двое.
+/// Настройки напоминаний, звука, языка, курса и темы хранятся одним документом.
 class AppSettings {
   const AppSettings({
     required this.enabled,
@@ -72,6 +74,7 @@ class AppSettings {
     this.soundOn = true,
     this.interfaceLanguage = InterfaceLanguage.system,
     this.courseId = StudyCourse.englishFromRussianId,
+    this.theme = AppTheme.dark,
   });
 
   /// Умолчание: **выключено**.
@@ -100,6 +103,7 @@ class AppSettings {
   final bool soundOn;
   final InterfaceLanguage interfaceLanguage;
   final String courseId;
+  final AppTheme theme;
 
   AppSettings copyWith({
     bool? enabled,
@@ -107,12 +111,14 @@ class AppSettings {
     bool? soundOn,
     InterfaceLanguage? interfaceLanguage,
     String? courseId,
+    AppTheme? theme,
   }) => AppSettings(
     enabled: enabled ?? this.enabled,
     at: at ?? this.at,
     soundOn: soundOn ?? this.soundOn,
     interfaceLanguage: interfaceLanguage ?? this.interfaceLanguage,
     courseId: courseId ?? this.courseId,
+    theme: theme ?? this.theme,
   );
 
   @override
@@ -123,11 +129,12 @@ class AppSettings {
           at == other.at &&
           soundOn == other.soundOn &&
           interfaceLanguage == other.interfaceLanguage &&
-          courseId == other.courseId;
+          courseId == other.courseId &&
+          theme == other.theme;
 
   @override
   int get hashCode =>
-      Object.hash(enabled, at, soundOn, interfaceLanguage, courseId);
+      Object.hash(enabled, at, soundOn, interfaceLanguage, courseId, theme);
 
   @override
   String toString() =>

@@ -32,6 +32,7 @@ import 'dart:math';
 
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
+import 'package:arcadelingo/ui/paper_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -480,6 +481,8 @@ class _FallingWordsGameState extends State<FallingWordsGame>
             ),
             child: Stack(
               children: [
+                if (scheme.brightness == Brightness.light)
+                  const Positioned.fill(child: PaperRules()),
                 if (missed)
                   RevealPair(
                     word: _run.item!.word.text,

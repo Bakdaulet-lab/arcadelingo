@@ -162,5 +162,7 @@ void _registerFontLicense() {
   LicenseRegistry.addLicense(() async* {
     final text = await rootBundle.loadString('assets/fonts/OFL.txt');
     yield LicenseEntryWithLineBreaks([wordarcadeFont], text);
+    final lora = await rootBundle.loadString('assets/fonts/Lora-OFL.txt');
+    yield LicenseEntryWithLineBreaks([warmPaperFont], lora);
   });
 }

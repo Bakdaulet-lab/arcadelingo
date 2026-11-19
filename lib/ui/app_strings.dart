@@ -127,6 +127,9 @@ class AppStrings {
   String get games => _text(en: 'Games', ru: 'Игры', es: 'Juegos');
   String get progress => _text(en: 'Progress', ru: 'Прогресс', es: 'Progreso');
   String get settings => _text(en: 'Settings', ru: 'Настройки', es: 'Ajustes');
+  String get appearance => _text(en: 'Theme', ru: 'Тема', es: 'Tema');
+  String get lightTheme => _text(en: 'Light', ru: 'Светлая', es: 'Claro');
+  String get darkTheme => _text(en: 'Dark', ru: 'Тёмная', es: 'Oscuro');
   String get progressUnreadable => _text(
     en: 'Unable to read progress',
     ru: 'Прогресс не читается',

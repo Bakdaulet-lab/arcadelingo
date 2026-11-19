@@ -293,7 +293,10 @@ class ProgressBody extends StatelessWidget {
             viewKey: ProgressKeys.answers,
             title: context.strings.answers,
             icon: Icons.check_circle_outline_rounded,
-            accent: const Color(0xFFBFA2FF),
+            accent:
+                scheme.brightness == Brightness.light
+                    ? scheme.primary
+                    : const Color(0xFFBFA2FF),
             rows: [
               (context.strings.total, '${data.totals.answers}'),
               if (accuracy != null)
@@ -578,7 +581,10 @@ class SeriesBar extends StatelessWidget {
           alignment: Alignment.bottomCenter,
           child: Container(
             width: seriesBarWidth,
-            height: barHeight(answers: day.answers, peak: peak),
+            height:
+                scheme.brightness == Brightness.light && day.answers == 0
+                    ? 3
+                    : barHeight(answers: day.answers, peak: peak),
             decoration: BoxDecoration(
               color:
                   day.answers == 0

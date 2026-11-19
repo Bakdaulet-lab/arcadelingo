@@ -27,6 +27,7 @@ import 'dart:math';
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
+import 'package:arcadelingo/ui/paper_rules.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -684,6 +685,8 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
               child: Stack(
                 fit: StackFit.expand,
                 children: [
+                  if (scheme.brightness == Brightness.light)
+                    const Positioned.fill(child: PaperRules()),
                   // Подсветка не трясётся: это фон поля, и у поля не должно
                   // быть края, который ездит.
                   // Подсветка не трясётся и не перерисовывается: она меняется
