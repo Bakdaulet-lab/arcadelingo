@@ -19,7 +19,7 @@ import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_run.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
-import 'package:arcadelingo/main.dart' show loadSpanishA1Course;
+import 'package:arcadelingo/main.dart' show loadSpanishCourse;
 import 'package:arcadelingo/ui/word_pronunciation.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -71,7 +71,7 @@ void main() {
         final speech = DeviceWordSpeech(platform: TargetPlatform.linux);
         final deck =
             (await tester.runAsync(() async {
-              final loaded = await loadSpanishA1Course(
+              final loaded = await loadSpanishCourse(
                 prefs: prefs,
                 history: spanishDb,
                 speech: speech,
@@ -214,7 +214,7 @@ void main() {
         addTearDown(reopenedDb!.close);
         final reopened =
             (await tester.runAsync(() async {
-              final loaded = await loadSpanishA1Course(
+              final loaded = await loadSpanishCourse(
                 prefs: prefs,
                 history: reopenedDb,
                 speech: speech,

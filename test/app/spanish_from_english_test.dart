@@ -23,8 +23,8 @@ import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
 import 'package:arcadelingo/main.dart'
     show
         loadEnglishA1FromSpanishCourse,
-        loadSpanishA1Course,
-        loadSpanishA1FromEnglishCourse;
+        loadSpanishCourse,
+        loadSpanishFromEnglishCourse;
 import 'package:arcadelingo/ui/word_pronunciation.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -93,7 +93,7 @@ void main() {
         return 1;
       });
       addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
-      final result = await loadSpanishA1FromEnglishCourse(
+      final result = await loadSpanishFromEnglishCourse(
         prefs: prefs,
         history: db,
         speech: DeviceWordSpeech(platform: TargetPlatform.android),
@@ -152,7 +152,7 @@ void main() {
         final speech = DeviceWordSpeech(platform: TargetPlatform.linux);
         final deck =
             (await tester.runAsync(() async {
-              final loaded = await loadSpanishA1FromEnglishCourse(
+              final loaded = await loadSpanishFromEnglishCourse(
                 prefs: prefs,
                 history: spanishDb,
                 speech: speech,
@@ -165,7 +165,7 @@ void main() {
         addTearDown(esEnglishDb.close);
         final (ruSpanish, esEnglish) =
             (await tester.runAsync(() async {
-              final russianCourse = await loadSpanishA1Course(
+              final russianCourse = await loadSpanishCourse(
                 prefs: prefs,
                 history: ruSpanishDb,
                 speech: speech,
@@ -341,7 +341,7 @@ void main() {
         addTearDown(reopenedDb!.close);
         final reopened =
             (await tester.runAsync(() async {
-              final loaded = await loadSpanishA1FromEnglishCourse(
+              final loaded = await loadSpanishFromEnglishCourse(
                 prefs: prefs,
                 history: reopenedDb,
                 speech: speech,

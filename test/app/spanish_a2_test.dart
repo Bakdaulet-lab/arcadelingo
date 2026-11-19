@@ -12,7 +12,7 @@ import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_run.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
 import 'package:arcadelingo/main.dart'
-    show loadSpanishA1Course, loadSpanishA1FromEnglishCourse;
+    show loadSpanishCourse, loadSpanishFromEnglishCourse;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -57,12 +57,12 @@ void main() {
         final speech = DeviceWordSpeech(platform: TargetPlatform.linux);
         final (ru, en) =
             (await tester.runAsync(() async {
-              final ru = await loadSpanishA1Course(
+              final ru = await loadSpanishCourse(
                 prefs: prefs,
                 history: ruDb,
                 speech: speech,
               );
-              final en = await loadSpanishA1FromEnglishCourse(
+              final en = await loadSpanishFromEnglishCourse(
                 prefs: prefs,
                 history: enDb,
                 speech: speech,

@@ -16,7 +16,9 @@ const String wordsSeedAssetPath = 'assets/words_seed.json';
 const String wordsC1AssetPath = 'assets/words_c1.json';
 const String wordsC2AssetPath = 'assets/words_c2.json';
 const String wordsSpanishA1AssetPath = 'assets/words_es_a1.json';
+const String wordsSpanishA2AssetPath = 'assets/words_es_a2.json';
 const String wordsSpanishA1FromEnglishAssetPath = 'assets/words_es_a1_en.json';
+const String wordsSpanishA2FromEnglishAssetPath = 'assets/words_es_a2_en.json';
 const String wordsEnglishA1FromSpanishAssetPath = 'assets/words_en_a1_es.json';
 
 /// Сид из [bundle] (по умолчанию [rootBundle]) → единицы показа.
@@ -57,19 +59,44 @@ Future<Result<List<ReviewItem>>> loadWordsSeed({AssetBundle? bundle}) async {
   return Ok(items);
 }
 
-Future<Result<List<ReviewItem>>> loadSpanishA1Seed({AssetBundle? bundle}) =>
-    _loadA1Seed(wordsSpanishA1AssetPath, bundle);
+Future<Result<List<ReviewItem>>> loadSpanishSeed({AssetBundle? bundle}) =>
+    _loadSpanishSeed(wordsSpanishA1AssetPath, wordsSpanishA2AssetPath, bundle);
 
 Future<Result<List<ReviewItem>>> loadEnglishA1FromSpanishSeed({
   AssetBundle? bundle,
-}) => _loadA1Seed(wordsEnglishA1FromSpanishAssetPath, bundle);
+}) => _loadLevelSeed(wordsEnglishA1FromSpanishAssetPath, CefrLevel.a1, bundle);
 
-Future<Result<List<ReviewItem>>> loadSpanishA1FromEnglishSeed({
+Future<Result<List<ReviewItem>>> loadSpanishFromEnglishSeed({
   AssetBundle? bundle,
-}) => _loadA1Seed(wordsSpanishA1FromEnglishAssetPath, bundle);
+}) => _loadSpanishSeed(
+  wordsSpanishA1FromEnglishAssetPath,
+  wordsSpanishA2FromEnglishAssetPath,
+  bundle,
+);
 
-Future<Result<List<ReviewItem>>> _loadA1Seed(
+Future<Result<List<ReviewItem>>> _loadSpanishSeed(
+  String a1Path,
+  String a2Path,
+  AssetBundle? bundle,
+) async {
+  final a1 = await _loadLevelSeed(a1Path, CefrLevel.a1, bundle);
+  if (a1 is! Ok<List<ReviewItem>>) return a1;
+  final a2 = await _loadLevelSeed(a2Path, CefrLevel.a2, bundle);
+  if (a2 is! Ok<List<ReviewItem>>) return a2;
+
+  final ids = <String>{};
+  final items = [...a1.value, ...a2.value];
+  for (final item in items) {
+    if (!ids.add(item.word.id)) {
+      return Err(Failure('$a1Path, $a2Path: повторяется id «${item.word.id}»'));
+    }
+  }
+  return Ok(items);
+}
+
+Future<Result<List<ReviewItem>>> _loadLevelSeed(
   String path,
+  CefrLevel level,
   AssetBundle? bundle,
 ) async {
   final source = await (bundle ?? rootBundle).loadString(path);
@@ -77,9 +104,11 @@ Future<Result<List<ReviewItem>>> _loadA1Seed(
   return switch (parseWordsSeed(source)) {
     Ok(:final value)
         when value.isNotEmpty &&
-            value.every((item) => item.word.level == CefrLevel.a1) =>
+            value.every((item) => item.word.level == level) =>
       Ok(value),
-    Ok() => Err(Failure('$name: ожидаются карточки A1')),
+    Ok() => Err(
+      Failure('$name: ожидаются карточки ${level.name.toUpperCase()}'),
+    ),
     Err(:final failure) => Err(Failure('$name: ${failure.message}')),
   };
 }
