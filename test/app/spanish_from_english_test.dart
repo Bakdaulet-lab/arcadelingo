@@ -213,9 +213,10 @@ void main() {
           'streak_state.es-en',
           'favorite_word_ids.es-en',
         ];
-        final previousProgress = {
+        Map<String, Object?> otherCourseProgress() => {
           for (final key in otherProgressKeys) key: prefs.get(key),
         };
+        final previousProgress = otherCourseProgress();
         expect(deck.favorites!.load(), isEmpty);
         // Keep one real bundled card due so the test can finish a whole round.
         await deck.cards.save({
@@ -324,9 +325,7 @@ void main() {
         expect(await tester.runAsync(englishAnswers.all), isEmpty);
         expect(await tester.runAsync(ruSpanish.answers.all), isEmpty);
         expect(await tester.runAsync(esEnglish.answers.all), isEmpty);
-        expect({
-          for (final key in otherProgressKeys) key: prefs.get(key),
-        }, previousProgress);
+        expect(otherCourseProgress(), previousProgress);
         expect(englishFavorites.load(), {targetId});
         expect(await deck.favorites!.save({targetId}), isTrue);
         expect(await deck.favorites!.save({deck.items.first.word.id}), isTrue);
@@ -381,9 +380,7 @@ void main() {
         await _tap(tester, find.byKey(AppKeys.course));
         await _tap(tester, find.byKey(_english));
         expect(find.text('English · Russian translations'), findsOneWidget);
-        expect({
-          for (final key in otherProgressKeys) key: prefs.get(key),
-        }, previousProgress);
+        expect(otherCourseProgress(), previousProgress);
         await tester.pumpWidget(const SizedBox());
       },
     );

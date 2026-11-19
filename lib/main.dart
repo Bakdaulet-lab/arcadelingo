@@ -50,6 +50,11 @@ Future<void> main() async {
       history: HistoryDatabase(driftDatabase(name: 'wordarcade_answers_es_en')),
       speech: speech,
     ),
+    loadSpanishA1FromEnglishCourse(
+      prefs: prefs,
+      history: HistoryDatabase(driftDatabase(name: 'wordarcade_answers_en_es')),
+      speech: speech,
+    ),
   ]);
   final additionalDecks = <CourseDeck>[];
   for (final result in extraCourses) {
@@ -108,6 +113,19 @@ Future<Result<CourseDeck>> loadEnglishA1FromSpanishCourse({
 }) async => _buildCourseDeck(
   StudyCourse.englishFromSpanish,
   await loadEnglishA1FromSpanishSeed(),
+  prefs: prefs,
+  history: history,
+  speech: speech,
+);
+
+/// Собирает словарь и хранилища курса английского → испанского A1.
+Future<Result<CourseDeck>> loadSpanishA1FromEnglishCourse({
+  required SharedPreferences prefs,
+  required HistoryDatabase history,
+  required DeviceWordSpeech speech,
+}) async => _buildCourseDeck(
+  StudyCourse.spanishFromEnglish,
+  await loadSpanishA1FromEnglishSeed(),
   prefs: prefs,
   history: history,
   speech: speech,
