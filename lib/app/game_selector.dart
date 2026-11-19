@@ -18,19 +18,49 @@ class GameSelector extends StatelessWidget {
   final ValueChanged<String> onSelected;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      for (final (index, game) in games.indexed) ...[
-        if (index > 0) const SizedBox(height: 12),
-        _GameCard(
-          game: game,
-          selected: game.id == selectedId,
-          onPressed: () => onSelected(game.id),
-        ),
+  Widget build(BuildContext context) {
+    if (Theme.of(context).brightness == Brightness.light) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final paired =
+              constraints.maxWidth >= 300 &&
+              MediaQuery.textScalerOf(context).scale(16) <= 22;
+          return Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final (index, game) in games.indexed)
+                SizedBox(
+                  width:
+                      paired && index > 0
+                          ? (constraints.maxWidth - 8) / 2
+                          : constraints.maxWidth,
+                  child: _PaperGameCard(
+                    game: game,
+                    selected: game.id == selectedId,
+                    compact: paired && index > 0,
+                    onPressed: () => onSelected(game.id),
+                  ),
+                ),
+            ],
+          );
+        },
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (index, game) in games.indexed) ...[
+          if (index > 0) const SizedBox(height: 12),
+          _GameCard(
+            game: game,
+            selected: game.id == selectedId,
+            onPressed: () => onSelected(game.id),
+          ),
+        ],
       ],
-    ],
-  );
+    );
+  }
 }
 
 class _GameCard extends StatelessWidget {
@@ -156,6 +186,124 @@ class _GameCard extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PaperGameCard extends StatelessWidget {
+  const _PaperGameCard({
+    required this.game,
+    required this.selected,
+    required this.compact,
+    required this.onPressed,
+  });
+
+  final GameEntry game;
+  final bool selected;
+  final bool compact;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final artwork = game.artwork;
+    final instruction = game.instructionFor(context.strings);
+    final tint = switch (game.id) {
+      'falling_words' => const Color(0xFFF8E3BB),
+      'ninja_slash' => const Color(0xFFEBDEEE),
+      'claw_machine' => const Color(0xFFE9EAD4),
+      _ => colors.surfaceContainerHigh,
+    };
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(
+        color: selected ? colors.primary : colors.outlineVariant,
+        width: selected ? 2 : 1,
+      ),
+    );
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: Material(
+        color: tint,
+        shape: shape,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onPressed,
+          customBorder: shape,
+          child: Stack(
+            alignment: compact ? Alignment.bottomLeft : Alignment.centerLeft,
+            children: [
+              if (artwork != null)
+                Positioned.fill(
+                  child: FractionallySizedBox(
+                    widthFactor: compact ? .87 : .52,
+                    alignment: Alignment.centerRight,
+                    child: ExcludeSemantics(
+                      child: ShaderMask(
+                        shaderCallback:
+                            (rect) => LinearGradient(
+                              begin:
+                                  compact
+                                      ? Alignment.bottomCenter
+                                      : Alignment.centerLeft,
+                              end:
+                                  compact
+                                      ? Alignment.topCenter
+                                      : Alignment.centerRight,
+                              colors: const [Colors.transparent, Colors.white],
+                              stops:
+                                  compact ? const [.14, .95] : const [0, .78],
+                            ).createShader(rect),
+                        blendMode: BlendMode.dstIn,
+                        child: Image.asset(
+                          artwork,
+                          bundle: rootBundle,
+                          alignment: Alignment.centerRight,
+                          fit: BoxFit.cover,
+                          cacheWidth: 1200,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: compact ? 66 : 86),
+                  child: FractionallySizedBox(
+                    widthFactor: compact || artwork == null ? 1 : .66,
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment:
+                          compact
+                              ? MainAxisAlignment.end
+                              : MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          game.titleFor(context.strings),
+                          style: withWeight(
+                            theme.textTheme.titleMedium!,
+                            FontWeight.bold,
+                          ),
+                        ),
+                        if (!compact && instruction != null) ...[
+                          const SizedBox(height: 4),
+                          Text(instruction, style: theme.textTheme.bodySmall),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -161,6 +161,7 @@ class PlayView extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final paper = theme.brightness == Brightness.light;
     final game = games.where((entry) => entry.id == selectedGameId).firstOrNull;
 
     final scrollActions =
@@ -185,7 +186,7 @@ class PlayView extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              padding: EdgeInsets.fromLTRB(20, paper ? 8 : 12, 20, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -200,7 +201,11 @@ class PlayView extends StatelessWidget {
                             style: withWeight(
                               theme.textTheme.headlineMedium!,
                               FontWeight.bold,
-                            ).copyWith(fontSize: 30, letterSpacing: -.8),
+                            ).copyWith(
+                              fontFamily: paper ? wordarcadeFont : null,
+                              fontSize: paper ? 26 : 30,
+                              letterSpacing: -.8,
+                            ),
                           ),
                         ),
                       ),
@@ -221,12 +226,19 @@ class PlayView extends StatelessWidget {
                       ),
                     ],
                   ),
+                  if (paper) ...[
+                    const SizedBox(height: 6),
+                    _HomeNavigation(
+                      onProgress: onProgress,
+                      onSettings: onSettings,
+                    ),
+                  ],
                   if (ritual case final view?) ...[
-                    const SizedBox(height: 16),
+                    SizedBox(height: paper ? 10 : 16),
                     HomeRitualCard(ritual: view, week: week),
                   ],
                   if (course case final selected?) ...[
-                    const SizedBox(height: 14),
+                    SizedBox(height: paper ? 10 : 14),
                     ArcadePanel(
                       padding: EdgeInsets.zero,
                       child: Material(
@@ -239,7 +251,7 @@ class PlayView extends StatelessWidget {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
                           ),
-                          minTileHeight: 48,
+                          minTileHeight: paper ? 44 : 48,
                           minVerticalPadding: 6,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -258,7 +270,9 @@ class PlayView extends StatelessWidget {
                           title: Text(
                             context.strings.courseName(selected),
                             style: withWeight(
-                              theme.textTheme.titleSmall!,
+                              paper
+                                  ? theme.textTheme.bodySmall!
+                                  : theme.textTheme.titleSmall!,
                               FontWeight.w600,
                             ),
                           ),
@@ -267,7 +281,7 @@ class PlayView extends StatelessWidget {
                     ),
                   ],
                   if (selectedLevel case final level?) ...[
-                    SizedBox(height: course == null ? 20 : 14),
+                    SizedBox(height: paper ? 8 : (course == null ? 20 : 14)),
                     _LevelSelector(
                       level: level,
                       levels: levels,
@@ -289,7 +303,7 @@ class PlayView extends StatelessWidget {
                       ),
                   ],
                   if (games.length > 1) ...[
-                    const SizedBox(height: 20),
+                    SizedBox(height: paper ? 10 : 20),
                     Text(
                       context.strings.chooseGame,
                       style: withWeight(
@@ -297,7 +311,7 @@ class PlayView extends StatelessWidget {
                         FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: paper ? 8 : 12),
                     GameSelector(
                       key: AppKeys.gameSelector,
                       games: games,
@@ -358,11 +372,27 @@ class _HomeActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final paper = theme.brightness == Brightness.light;
+    final challenge =
+        onChallenge == null
+            ? null
+            : TextButton.icon(
+              key: AppKeys.challenge,
+              onPressed: onChallenge,
+              icon: const Icon(Icons.emoji_events_outlined),
+              label: Text(
+                context.strings.challenge,
+                textAlign: TextAlign.center,
+              ),
+              style: TextButton.styleFrom(
+                minimumSize: Size(0, paper ? 44 : 48),
+              ),
+            );
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (game != null && level != null) ...[
+        if (!paper && game != null && level != null) ...[
           Text(
             '${game!.titleFor(context.strings)} · ${level!.name.toUpperCase()}',
             textAlign: TextAlign.center,
@@ -373,14 +403,7 @@ class _HomeActions extends StatelessWidget {
           ),
           const SizedBox(height: 10),
         ],
-        if (onChallenge != null)
-          TextButton.icon(
-            key: AppKeys.challenge,
-            onPressed: onChallenge,
-            icon: const Icon(Icons.emoji_events_outlined),
-            label: Text(context.strings.challenge, textAlign: TextAlign.center),
-            style: TextButton.styleFrom(minimumSize: const Size(0, 48)),
-          ),
+        if (!paper && challenge != null) challenge,
         if (onLearn != null) ...[
           OutlinedButton.icon(
             key: AppKeys.learn,
@@ -391,29 +414,37 @@ class _HomeActions extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(52),
+              minimumSize: Size.fromHeight(paper ? 46 : 52),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               textStyle: withWeight(
                 theme.textTheme.titleMedium!,
                 FontWeight.w600,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(paper ? 12 : 18),
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: paper ? 7 : 10),
         ],
         FilledButton(
           key: AppKeys.play,
           onPressed: onPlay,
           style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(56),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+            minimumSize: Size.fromHeight(paper ? 48 : 56),
+            padding: EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: paper ? 12 : 14,
             ),
-            textStyle: withWeight(theme.textTheme.titleLarge!, FontWeight.bold),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(paper ? 12 : 20),
+            ),
+            textStyle: withWeight(
+              paper
+                  ? theme.textTheme.titleMedium!
+                  : theme.textTheme.titleLarge!,
+              FontWeight.bold,
+            ),
           ),
           child: Text(
             ritual == null
@@ -422,8 +453,11 @@ class _HomeActions extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ),
-        const SizedBox(height: 12),
-        _HomeNavigation(onProgress: onProgress, onSettings: onSettings),
+        if (paper && challenge != null) challenge,
+        if (!paper) ...[
+          const SizedBox(height: 12),
+          _HomeNavigation(onProgress: onProgress, onSettings: onSettings),
+        ],
       ],
     );
   }
@@ -450,11 +484,13 @@ class _LevelSelector extends StatelessWidget {
       key: AppKeys.levelSelector,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          context.strings.levelOf(language),
-          style: withWeight(theme.textTheme.titleMedium!, FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
+        if (theme.brightness == Brightness.dark) ...[
+          Text(
+            context.strings.levelOf(language),
+            style: withWeight(theme.textTheme.titleMedium!, FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+        ],
         LayoutBuilder(
           builder: (context, constraints) {
             final fontScale = MediaQuery.textScalerOf(context).scale(14) / 14;
@@ -462,46 +498,52 @@ class _LevelSelector extends StatelessWidget {
             final columns =
                 fontScale > 1.4 || constraints.maxWidth < 318 ? 3 : 6;
             final width = (constraints.maxWidth - 6 * (columns - 1)) / columns;
-            return Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: [
-                for (final option in levels)
-                  SizedBox(
-                    width: width,
-                    child: ChoiceChip(
-                      label: Center(child: Text(option.name.toUpperCase())),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      labelPadding: EdgeInsets.zero,
-                      selected: option == level,
-                      onSelected:
-                          onSelected == null
-                              ? null
-                              : (_) => onSelected!(option),
-                      selectedColor: colors.primary,
-                      backgroundColor: colors.surfaceContainerHighest,
-                      labelStyle: withWeight(
-                        theme.textTheme.labelLarge!,
-                        FontWeight.bold,
-                      ).copyWith(
-                        color:
-                            option == level
-                                ? colors.onPrimary
-                                : colors.onSurface,
+            return Semantics(
+              label:
+                  theme.brightness == Brightness.light
+                      ? context.strings.levelOf(language)
+                      : null,
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  for (final option in levels)
+                    SizedBox(
+                      width: width,
+                      child: ChoiceChip(
+                        label: Center(child: Text(option.name.toUpperCase())),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        labelPadding: EdgeInsets.zero,
+                        selected: option == level,
+                        onSelected:
+                            onSelected == null
+                                ? null
+                                : (_) => onSelected!(option),
+                        selectedColor: colors.primary,
+                        backgroundColor: colors.surfaceContainerHighest,
+                        labelStyle: withWeight(
+                          theme.textTheme.labelLarge!,
+                          FontWeight.bold,
+                        ).copyWith(
+                          color:
+                              option == level
+                                  ? colors.onPrimary
+                                  : colors.onSurface,
+                        ),
+                        showCheckmark: false,
+                        side: BorderSide(
+                          color:
+                              option == level ? colors.primary : colors.outline,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        materialTapTargetSize: MaterialTapTargetSize.padded,
+                        visualDensity: VisualDensity.standard,
                       ),
-                      showCheckmark: false,
-                      side: BorderSide(
-                        color:
-                            option == level ? colors.primary : colors.outline,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      materialTapTargetSize: MaterialTapTargetSize.padded,
-                      visualDensity: VisualDensity.standard,
                     ),
-                  ),
-              ],
+                ],
+              ),
             );
           },
         ),
@@ -519,6 +561,7 @@ class _HomeNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final paper = colors.brightness == Brightness.light;
     final largeText = MediaQuery.textScalerOf(context).scale(12) > 17;
     final destinations = [
       _destination(
@@ -545,9 +588,15 @@ class _HomeNavigation extends StatelessWidget {
     ];
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest.withValues(alpha: .65),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colors.outline.withValues(alpha: .45)),
+        color:
+            paper
+                ? null
+                : colors.surfaceContainerHighest.withValues(alpha: .65),
+        borderRadius: paper ? null : BorderRadius.circular(20),
+        border:
+            paper
+                ? Border(bottom: BorderSide(color: colors.outlineVariant))
+                : Border.all(color: colors.outline.withValues(alpha: .45)),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
@@ -589,26 +638,36 @@ class _HomeNavigation extends StatelessWidget {
         style: TextButton.styleFrom(
           foregroundColor: color,
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          minimumSize: const Size(48, 56),
+          minimumSize: Size(48, theme.brightness == Brightness.light ? 44 : 56),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 24),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: withWeight(
-                theme.textTheme.labelSmall!,
-                FontWeight.w500,
-              ).copyWith(color: color),
-            ),
-          ],
-        ),
+        child:
+            theme.brightness == Brightness.light
+                ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, size: 17),
+                    const SizedBox(width: 4),
+                    Flexible(child: Text(label, textAlign: TextAlign.center)),
+                  ],
+                )
+                : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 24),
+                    const SizedBox(height: 3),
+                    Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: withWeight(
+                        theme.textTheme.labelSmall!,
+                        FontWeight.w500,
+                      ).copyWith(color: color),
+                    ),
+                  ],
+                ),
       ),
     );
   }

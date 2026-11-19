@@ -22,6 +22,7 @@ class HomeRitualCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final paper = theme.brightness == Brightness.light;
     final caption = ritualStreakLabel(ritual, strings: context.strings);
     final freeze = ritualFreezeLabel(ritual, strings: context.strings);
     final tier = flameTier(ritual.days);
@@ -31,7 +32,7 @@ class HomeRitualCard extends StatelessWidget {
 
     return Container(
       key: streakCardKey,
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(paper ? 8 : 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -42,7 +43,7 @@ class HomeRitualCard extends StatelessWidget {
           ],
         ),
         border: Border.all(color: scheme.outline.withValues(alpha: 0.6)),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(paper ? 12 : 20),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -154,7 +155,7 @@ class HomeRitualCard extends StatelessWidget {
                   children: [
                     Expanded(child: header),
                     const SizedBox(width: 8),
-                    SizedBox(width: 138, child: weekStrip),
+                    SizedBox(width: paper ? 119 : 138, child: weekStrip),
                   ],
                 )
               else ...[

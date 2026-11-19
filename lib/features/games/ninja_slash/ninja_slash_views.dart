@@ -1085,6 +1085,7 @@ class FieldLighting extends StatelessWidget {
       size: Size.infinite,
       painter: _LightingPainter(
         accent: Theme.of(context).colorScheme.primary,
+        paper: Theme.of(context).brightness == Brightness.light,
         topAlpha: topLightAlpha(combo),
         // Свечение кромок — только на пике серии, там же, где тон выходит
         // на потолок. Один порог, а не второй похожий.
@@ -1098,11 +1099,13 @@ class _LightingPainter extends CustomPainter {
   const _LightingPainter({
     required this.accent,
     required this.topAlpha,
+    required this.paper,
     required this.rim,
   });
 
   final Color accent;
   final double topAlpha;
+  final bool paper;
 
   /// Пик серии: у поля светятся кромки.
   final bool rim;
@@ -1132,6 +1135,11 @@ class _LightingPainter extends CustomPainter {
           stops: const [0, topLightPeak / topLightSpan, 1],
         ).createShader(top),
     );
+    if (!paper) _paintNightShadows(canvas, size);
+    if (rim) _rim(canvas, size);
+  }
+
+  void _paintNightShadows(Canvas canvas, Size size) {
     // Низ — глубже: объекты вылетают из темноты.
     final bottom = Rect.fromLTWH(
       0,
@@ -1159,7 +1167,6 @@ class _LightingPainter extends CustomPainter {
           stops: const [vignetteInner, 1],
         ).createShader(all),
     );
-    if (rim) _rim(canvas, size);
   }
 
   /// Свечение кромок: четыре полосы по краям, каждая гаснет внутрь.
@@ -1212,5 +1219,8 @@ class _LightingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_LightingPainter old) =>
-      old.topAlpha != topAlpha || old.accent != accent || old.rim != rim;
+      old.topAlpha != topAlpha ||
+      old.accent != accent ||
+      old.paper != paper ||
+      old.rim != rim;
 }

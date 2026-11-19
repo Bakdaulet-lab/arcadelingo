@@ -1,4 +1,4 @@
-/// Кодек настроек напоминания: JSON-документ ↔ [AppSettings].
+/// Кодек настроек приложения: JSON-документ ↔ [AppSettings].
 ///
 /// Формат v2:
 /// ```json
@@ -10,6 +10,8 @@
 /// решал, и он получает то же самое умолчание, что и новый игрок. Это не
 /// подарок, как заморозки в миграции серии v1 → v2, а буквальное отсутствие
 /// выбора.
+///
+/// Поле `theme` необязательное: прежние документы открываются в тёмной теме.
 ///
 /// Контракт ошибок тот же, что у кодеков Лейтнера и серии: битые данные —
 /// [Err], без исключений, без `as` на данных из JSON, единственный `catch` —
@@ -38,6 +40,7 @@ String encodeSettings(AppSettings settings) => jsonEncode({
   'soundOn': settings.soundOn,
   'interfaceLanguage': settings.interfaceLanguage.tag,
   'courseId': settings.courseId,
+  'theme': settings.theme.name,
 });
 
 /// JSON-документ → настройки; битые данные — [Err].
@@ -82,6 +85,7 @@ Result<AppSettings> decodeSettings(String json) {
       at: at,
       soundOn: sound as bool? ?? AppSettings.defaults.soundOn,
       interfaceLanguage: InterfaceLanguage.fromTag(root['interfaceLanguage']),
+      theme: AppTheme.fromTag(root['theme']),
       courseId: switch (root['courseId']) {
         final String id when id.isNotEmpty => id,
         _ => AppSettings.defaults.courseId,

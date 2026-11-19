@@ -34,6 +34,8 @@ Se seleccionaron entradas de una sola palabra, se eliminaron duplicados y se añ
 - **Origen.** <https://github.com/google/fonts/tree/main/ofl/rubik>.
 - **Archivo.** `assets/fonts/Rubik-Variable.ttf`. Fuente variable con pesos de 300 a 900. El peso predeterminado es 300. Se cambió el nombre del archivo para incluirlo en el paquete de recursos.
 
+El tema claro utiliza Lora, de The Lora Project Authors, para los títulos. La licencia SIL Open Font License 1.1 se incluye en `assets/fonts/Lora-OFL.txt`. Origen <https://github.com/google/fonts/tree/main/ofl/lora>.
+
 ## Efectos de sonido de Corte ninja
 
 - **Autor.** Kenney (Kenney Vleugels).

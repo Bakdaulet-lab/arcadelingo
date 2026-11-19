@@ -65,6 +65,8 @@ C1/C2 Version 1.0**, Octanove Labs. Исходный набор:
 таблица `cmap` покрывает А-Я, а-я, Ё, ё, знак умножения, кавычки-ёлочки,
 тире и многоточие — всё, что встречается на экранах.
 
+Шрифт Lora используется в заголовках светлой темы. Авторы — The Lora Project Authors. Лицензия SIL Open Font License 1.1 входит в приложение в файле `assets/fonts/Lora-OFL.txt`. Источник <https://github.com/google/fonts/tree/main/ofl/lora>.
+
 ## Звуковые эффекты «Ниндзя-слэша»
 
 - **Автор:** Kenney (Kenney Vleugels).

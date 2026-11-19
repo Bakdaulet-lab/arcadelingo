@@ -50,6 +50,7 @@ class ClawMachineField extends StatelessWidget {
       borderRadius: BorderRadius.circular(22),
       child: LayoutBuilder(
         builder: (context, constraints) {
+          final paper = Theme.of(context).brightness == Brightness.light;
           final size = constraints.biggest;
           final spacing = (size.width - 24) / stacks.length;
           final diameter = spacing - 3;
@@ -136,8 +137,10 @@ class ClawMachineField extends StatelessWidget {
                       return Stack(
                         fit: StackFit.expand,
                         children: [
-                          const RepaintBoundary(
-                            child: CustomPaint(painter: _CabinetPainter()),
+                          RepaintBoundary(
+                            child: CustomPaint(
+                              painter: _CabinetPainter(paper: paper),
+                            ),
                           ),
                           for (final capsule in pile)
                             if (!pose.pickedUp || !capsule.captured)
@@ -161,6 +164,7 @@ class ClawMachineField extends StatelessWidget {
                           IgnorePointer(
                             child: CustomPaint(
                               painter: _ClawPainter(
+                                paper: paper,
                                 hinge: hinge,
                                 scale: scale,
                                 grip: pose.grip,
@@ -259,13 +263,13 @@ class _Capsule extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final tint =
-        const [
-          Color(0xFFFFBE64),
-          Color(0xFF69D5C4),
-          Color(0xFFC8A0FF),
-        ][(letter.codeUnitAt(0) + lane) % 3];
-    final edge = hinted ? scheme.primary : tint;
+    final paper = scheme.brightness == Brightness.light;
+    final palette =
+        paper
+            ? const [Color(0xFFF1C372), Color(0xFFBBD1AB), Color(0xFFCCB5DA)]
+            : const [Color(0xFFFFBE64), Color(0xFF69D5C4), Color(0xFFC8A0FF)];
+    final tint = palette[(letter.codeUnitAt(0) + lane) % palette.length];
+    final edge = hinted || (paper && selected) ? scheme.primary : tint;
     final body = DecoratedBox(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
@@ -276,14 +280,25 @@ class _Capsule extends StatelessWidget {
         gradient: RadialGradient(
           center: const Alignment(-.37, -.75),
           radius: 1.04,
-          colors: [tint, tint.withValues(alpha: .52), const Color(0xFF211331)],
+          colors:
+              paper
+                  ? [
+                    scheme.surfaceContainerLow,
+                    tint,
+                    Color.lerp(tint, scheme.onSurface, .37)!,
+                  ]
+                  : [
+                    tint,
+                    tint.withValues(alpha: .52),
+                    const Color(0xFF211331),
+                  ],
           stops: const [0, .48, 1],
         ),
         boxShadow: [
-          const BoxShadow(
-            color: Color(0xAA070610),
+          BoxShadow(
+            color: paper ? const Color(0x403B291E) : const Color(0xAA070610),
             blurRadius: 6,
-            offset: Offset(0, 3),
+            offset: const Offset(0, 3),
           ),
           if (hinted)
             BoxShadow(color: edge.withValues(alpha: .65), blurRadius: 13),
@@ -341,7 +356,10 @@ class _Capsule extends StatelessWidget {
                       style: withWeight(
                         Theme.of(context).textTheme.titleLarge!,
                         FontWeight.bold,
-                      ).copyWith(color: const Color(0xFF24162D)),
+                      ).copyWith(
+                        color:
+                            paper ? scheme.onSurface : const Color(0xFF24162D),
+                      ),
                     ),
                   ),
                 ),
@@ -371,7 +389,9 @@ class _Capsule extends StatelessWidget {
 }
 
 class _CabinetPainter extends CustomPainter {
-  const _CabinetPainter();
+  const _CabinetPainter({required this.paper});
+
+  final bool paper;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -380,16 +400,24 @@ class _CabinetPainter extends CustomPainter {
     canvas.drawRRect(
       outer,
       Paint()
-        ..shader = const LinearGradient(
+        ..shader = LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF935CC1),
-            Color(0xFF312240),
-            Color(0xFF4E3176),
-            Color(0xFF221A32),
-          ],
-          stops: [0, .28, .76, 1],
+          colors:
+              paper
+                  ? const [
+                    Color(0xFFF2D9B5),
+                    Color(0xFFDFC5A4),
+                    Color(0xFFEAD7BB),
+                    Color(0xFFC9A37F),
+                  ]
+                  : const [
+                    Color(0xFF935CC1),
+                    Color(0xFF312240),
+                    Color(0xFF4E3176),
+                    Color(0xFF221A32),
+                  ],
+          stops: const [0, .28, .76, 1],
         ).createShader(bounds),
     );
     final window = Rect.fromLTWH(7, 13, size.width - 14, size.height - 32);
@@ -397,16 +425,27 @@ class _CabinetPainter extends CustomPainter {
     canvas.drawRRect(
       glass,
       Paint()
-        ..shader = const RadialGradient(
-          center: Alignment(0, -.75),
+        ..shader = RadialGradient(
+          center: const Alignment(0, -.75),
           radius: .96,
-          colors: [Color(0xFF3B2A58), Color(0xFF201931), Color(0xFF131223)],
+          colors:
+              paper
+                  ? const [
+                    Color(0xFFFFFBEE),
+                    Color(0xFFFFF1D8),
+                    Color(0xFFE6CBA8),
+                  ]
+                  : const [
+                    Color(0xFF3B2A58),
+                    Color(0xFF201931),
+                    Color(0xFF131223),
+                  ],
         ).createShader(window),
     );
     canvas.drawRRect(
       glass,
       Paint()
-        ..color = const Color(0xFFA085C1)
+        ..color = paper ? const Color(0xFFA88463) : const Color(0xFFA085C1)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.25,
     );
@@ -430,7 +469,7 @@ class _CabinetPainter extends CustomPainter {
     final rail = Rect.fromLTWH(12, 32, size.width - 24, 8);
     canvas.drawRRect(
       RRect.fromRectAndRadius(rail, const Radius.circular(4)),
-      Paint()..shader = _metal.createShader(rail),
+      Paint()..shader = (paper ? _paperMetal : _metal).createShader(rail),
     );
     for (final x in [size.width * .27, size.width * .73]) {
       final fixture = Rect.fromCenter(
@@ -451,13 +490,14 @@ class _CabinetPainter extends CustomPainter {
       canvas.drawCircle(
         Offset(x, size.height - 9),
         2.1,
-        Paint()..color = const Color(0xFFAA96BF),
+        Paint()
+          ..color = paper ? const Color(0xFF987250) : const Color(0xFFAA96BF),
       );
     }
   }
 
   @override
-  bool shouldRepaint(_CabinetPainter oldDelegate) => false;
+  bool shouldRepaint(_CabinetPainter oldDelegate) => paper != oldDelegate.paper;
 }
 
 const _metal = LinearGradient(
@@ -467,8 +507,16 @@ const _metal = LinearGradient(
   stops: [0, .37, 1],
 );
 
+const _paperMetal = LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: [Color(0xFFFFF3D9), Color(0xFFAC8664), Color(0xFF755236)],
+  stops: [0, .37, 1],
+);
+
 class _ClawPainter extends CustomPainter {
   const _ClawPainter({
+    required this.paper,
     required this.hinge,
     required this.scale,
     required this.grip,
@@ -476,6 +524,7 @@ class _ClawPainter extends CustomPainter {
     required this.guideEnd,
   });
 
+  final bool paper;
   final Offset hinge;
   final double scale;
   final double grip;
@@ -484,10 +533,11 @@ class _ClawPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final metal = paper ? _paperMetal : _metal;
     if (guideEnd case final end?) {
       final guide =
           Paint()
-            ..color = const Color(0x665FEDCA)
+            ..color = paper ? const Color(0xAA9A3F27) : const Color(0x665FEDCA)
             ..strokeWidth = 1
             ..strokeCap = StrokeCap.round;
       for (var y = hinge.dy + 49 * scale; y + 3 <= end; y += 8) {
@@ -501,7 +551,7 @@ class _ClawPainter extends CustomPainter {
     canvas.drawPath(
       cable,
       Paint()
-        ..color = const Color(0xFF78688B)
+        ..color = paper ? const Color(0xFF8D6C51) : const Color(0xFF78688B)
         ..strokeWidth = 2.1
         ..style = PaintingStyle.stroke,
     );
@@ -513,10 +563,21 @@ class _ClawPainter extends CustomPainter {
     canvas.drawRRect(
       RRect.fromRectAndRadius(carriage, const Radius.circular(7)),
       Paint()
-        ..shader = const LinearGradient(
+        ..shader = LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFBA87E6), Color(0xFF583784), Color(0xFF31204C)],
+          colors:
+              paper
+                  ? const [
+                    Color(0xFFDA9977),
+                    Color(0xFF9A3F27),
+                    Color(0xFF743521),
+                  ]
+                  : const [
+                    Color(0xFFBA87E6),
+                    Color(0xFF583784),
+                    Color(0xFF31204C),
+                  ],
         ).createShader(carriage),
     );
     canvas.drawRRect(
@@ -528,7 +589,8 @@ class _ClawPainter extends CustomPainter {
         ),
         const Radius.circular(2),
       ),
-      Paint()..color = const Color(0xFF74E6D3),
+      Paint()
+        ..color = paper ? const Color(0xFFFFDB88) : const Color(0xFF74E6D3),
     );
 
     canvas.save();
@@ -545,7 +607,7 @@ class _ClawPainter extends CustomPainter {
       canvas.drawPath(
         jaw,
         Paint()
-          ..shader = _metal.createShader(const Rect.fromLTWH(-34, 0, 68, 45))
+          ..shader = metal.createShader(const Rect.fromLTWH(-34, 0, 68, 45))
           ..strokeWidth = 5
           ..strokeCap = StrokeCap.round
           ..style = PaintingStyle.stroke,
@@ -553,12 +615,13 @@ class _ClawPainter extends CustomPainter {
     }
     canvas.drawRRect(
       RRect.fromRectAndRadius(housing, const Radius.circular(5)),
-      Paint()..shader = _metal.createShader(housing),
+      Paint()..shader = metal.createShader(housing),
     );
     canvas.drawCircle(
       Offset.zero,
       3.8,
-      Paint()..color = const Color(0xFF473559),
+      Paint()
+        ..color = paper ? const Color(0xFF744D32) : const Color(0xFF473559),
     );
     if (glint > 0) {
       final paint =
@@ -579,6 +642,7 @@ class _ClawPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ClawPainter oldDelegate) =>
+      oldDelegate.paper != paper ||
       oldDelegate.hinge != hinge ||
       oldDelegate.scale != scale ||
       oldDelegate.grip != grip ||

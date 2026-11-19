@@ -38,6 +38,8 @@ ArcadeLingo selected single-word entries, removed duplicates, and added Russian 
 - **Source:** <https://github.com/google/fonts/tree/main/ofl/rubik>.
 - **File:** `assets/fonts/Rubik-Variable.ttf`, with a weight range of 300–900 and a default of 300. The original variable font file was renamed for compatibility with the asset bundle.
 
+The light theme uses Lora by The Lora Project Authors for headings. The bundled SIL Open Font License 1.1 is in `assets/fonts/Lora-OFL.txt`. Source <https://github.com/google/fonts/tree/main/ofl/lora>.
+
 ## Ninja Slash sound effects
 
 - **Author:** Kenney (Kenney Vleugels).

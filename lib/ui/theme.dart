@@ -27,6 +27,7 @@ const Color wordarcadeSeed = Color(0xFF3DFFC0);
 /// Семейство. Файл — `assets/fonts/Rubik-Variable.ttf`, лицензия OFL 1.1
 /// лежит рядом и уходит в `LicenseRegistry` из `main.dart`.
 const String wordarcadeFont = 'Rubik';
+const String warmPaperFont = 'Lora';
 
 /// Палитра «ночной автомат»: глубокий тёмный фон и два неоновых акцента.
 ///
@@ -54,6 +55,35 @@ final ColorScheme wordarcadeColors = ColorScheme.fromSeed(
   tertiary: const Color(0xFFFFC93D),
 );
 
+/// Кремовый фон, тёплые поверхности и терракотовый акцент.
+final ColorScheme warmPaperColors = ColorScheme.fromSeed(
+  seedColor: const Color(0xFF9A3F27),
+).copyWith(
+  surface: const Color(0xFFFCF5E9),
+  surfaceContainerLow: const Color(0xFFFFFDF8),
+  surfaceContainer: const Color(0xFFF8EFE0),
+  surfaceContainerHigh: const Color(0xFFF5ECDC),
+  surfaceContainerHighest: const Color(0xFFF2E7D4),
+  onSurface: const Color(0xFF3B291E),
+  onSurfaceVariant: const Color(0xFF675345),
+  outline: const Color(0xFF8D715A),
+  outlineVariant: const Color(0xFFE0CEB7),
+  primary: const Color(0xFF9A3F27),
+  onPrimary: const Color(0xFFFFFDF8),
+  primaryContainer: const Color(0xFFF8E5D8),
+  onPrimaryContainer: const Color(0xFF7B311E),
+  secondaryContainer: const Color(0xFFF0E3CF),
+  onSecondaryContainer: const Color(0xFF483524),
+  error: const Color(0xFFA32B37),
+  onError: const Color(0xFFFFFDF8),
+  errorContainer: const Color(0xFFFCE7E5),
+  onErrorContainer: const Color(0xFF89212D),
+  tertiary: const Color(0xFF754412),
+  onTertiary: const Color(0xFFFFFDF8),
+  tertiaryContainer: const Color(0xFFFCE7B5),
+  onTertiaryContainer: const Color(0xFF56310D),
+);
+
 /// Вес для вариативного шрифта.
 ///
 /// Обычный `fontWeight` на `Rubik` **не работает**: замерено — одна и та же
@@ -79,27 +109,48 @@ TextStyle withWeight(TextStyle style, FontWeight weight) => style.copyWith(
 /// `android`, — так что мутацией пин не поймать. Он остаётся как явно
 /// названная цель съёмки: то поведение живёт внутри `assert`. Приложение
 /// параметр не передаёт — там платформа настоящая.
-ThemeData wordarcadeTheme({TargetPlatform? platform}) {
+ThemeData wordarcadeTheme({
+  TargetPlatform? platform,
+  Brightness brightness = Brightness.dark,
+}) {
+  final paper = brightness == Brightness.light;
+  final colors = paper ? warmPaperColors : wordarcadeColors;
   final base = ThemeData(
-    colorScheme: wordarcadeColors,
+    colorScheme: colors,
     platform: platform,
     fontFamily: wordarcadeFont,
   );
   final buttonShape = RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(20),
+    borderRadius: BorderRadius.circular(paper ? 12 : 20),
   );
+  final type = _withAxis(base.textTheme);
+  final text =
+      paper
+          ? type.copyWith(
+            headlineLarge: type.headlineLarge?.copyWith(
+              fontFamily: warmPaperFont,
+            ),
+            headlineMedium: type.headlineMedium?.copyWith(
+              fontFamily: warmPaperFont,
+            ),
+            headlineSmall: type.headlineSmall?.copyWith(
+              fontFamily: warmPaperFont,
+            ),
+            titleLarge: type.titleLarge?.copyWith(fontFamily: warmPaperFont),
+          )
+          : type;
   return base.copyWith(
-    textTheme: _withAxis(base.textTheme),
+    textTheme: text,
     appBarTheme: AppBarTheme(
-      backgroundColor: wordarcadeColors.surface,
-      foregroundColor: wordarcadeColors.onSurface,
+      backgroundColor: colors.surface,
+      foregroundColor: colors.onSurface,
       surfaceTintColor: Colors.transparent,
       scrolledUnderElevation: 0,
       centerTitle: false,
       titleTextStyle: withWeight(
-        base.textTheme.titleLarge!,
+        text.titleLarge!,
         FontWeight.bold,
-      ).copyWith(color: wordarcadeColors.onSurface),
+      ).copyWith(color: colors.onSurface),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(

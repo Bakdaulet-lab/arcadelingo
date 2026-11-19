@@ -93,6 +93,7 @@ flutter:
     # вместе со шрифтом, а шрифт вшит в приложение. main.dart отдаёт её в
     # LicenseRegistry, чтобы она была видна в showLicensePage.
     - assets/fonts/OFL.txt
+    - assets/fonts/Lora-OFL.txt
 
   fonts:
     # Один вариативный файл вместо трёх статических: Google Fonts статические
@@ -106,6 +107,9 @@ flutter:
     - family: Rubik
       fonts:
         - asset: assets/fonts/Rubik-Variable.ttf
+    - family: Lora
+      fonts:
+        - asset: assets/fonts/Lora-Variable.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
