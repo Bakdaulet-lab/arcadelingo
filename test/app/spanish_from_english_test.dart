@@ -256,7 +256,7 @@ void main() {
         await _tap(tester, find.byKey(_spanish));
         expect(find.text('Spanish level'), findsOneWidget);
         expect(find.widgetWithText(ChoiceChip, 'A1'), findsOneWidget);
-        expect(find.widgetWithText(ChoiceChip, 'A2'), findsNothing);
+        expect(find.widgetWithText(ChoiceChip, 'A2'), findsOneWidget);
         expect(find.widgetWithText(ChoiceChip, 'C2'), findsNothing);
         expect(
           tester.widget<PlayView>(find.byType(PlayView)).ritual?.playedToday,
