@@ -1,6 +1,6 @@
 /// Загрузка сида слов из бандла приложения.
 ///
-/// Читает словари A1–B2, C1 и C2 и объединяет карточки в памяти.
+/// Читает словари и объединяет карточки каждого курса в памяти.
 /// Отсутствие ассета — `FlutterError` из `loadString`: это дефект сборки
 /// (файл не зарегистрирован в `pubspec.yaml`), а не битые данные, и в
 /// [Failure] он не заворачивается.
@@ -17,8 +17,10 @@ const String wordsC1AssetPath = 'assets/words_c1.json';
 const String wordsC2AssetPath = 'assets/words_c2.json';
 const String wordsSpanishA1AssetPath = 'assets/words_es_a1.json';
 const String wordsSpanishA2AssetPath = 'assets/words_es_a2.json';
+const String wordsSpanishB1AssetPath = 'assets/words_es_b1.json';
 const String wordsSpanishA1FromEnglishAssetPath = 'assets/words_es_a1_en.json';
 const String wordsSpanishA2FromEnglishAssetPath = 'assets/words_es_a2_en.json';
+const String wordsSpanishB1FromEnglishAssetPath = 'assets/words_es_b1_en.json';
 const String wordsEnglishA1FromSpanishAssetPath = 'assets/words_en_a1_es.json';
 
 /// Сид из [bundle] (по умолчанию [rootBundle]) → единицы показа.
@@ -59,8 +61,14 @@ Future<Result<List<ReviewItem>>> loadWordsSeed({AssetBundle? bundle}) async {
   return Ok(items);
 }
 
-Future<Result<List<ReviewItem>>> loadSpanishSeed({AssetBundle? bundle}) =>
-    _loadSpanishSeed(wordsSpanishA1AssetPath, wordsSpanishA2AssetPath, bundle);
+Future<Result<List<ReviewItem>>> loadSpanishSeed({AssetBundle? bundle}) {
+  const sources = [
+    (wordsSpanishA1AssetPath, CefrLevel.a1),
+    (wordsSpanishA2AssetPath, CefrLevel.a2),
+    (wordsSpanishB1AssetPath, CefrLevel.b1),
+  ];
+  return _loadSpanishSeed(sources, bundle);
+}
 
 Future<Result<List<ReviewItem>>> loadEnglishA1FromSpanishSeed({
   AssetBundle? bundle,
@@ -68,27 +76,29 @@ Future<Result<List<ReviewItem>>> loadEnglishA1FromSpanishSeed({
 
 Future<Result<List<ReviewItem>>> loadSpanishFromEnglishSeed({
   AssetBundle? bundle,
-}) => _loadSpanishSeed(
-  wordsSpanishA1FromEnglishAssetPath,
-  wordsSpanishA2FromEnglishAssetPath,
-  bundle,
-);
+}) {
+  const sources = [
+    (wordsSpanishA1FromEnglishAssetPath, CefrLevel.a1),
+    (wordsSpanishA2FromEnglishAssetPath, CefrLevel.a2),
+    (wordsSpanishB1FromEnglishAssetPath, CefrLevel.b1),
+  ];
+  return _loadSpanishSeed(sources, bundle);
+}
 
 Future<Result<List<ReviewItem>>> _loadSpanishSeed(
-  String a1Path,
-  String a2Path,
+  List<(String, CefrLevel)> sources,
   AssetBundle? bundle,
 ) async {
-  final a1 = await _loadLevelSeed(a1Path, CefrLevel.a1, bundle);
-  if (a1 is! Ok<List<ReviewItem>>) return a1;
-  final a2 = await _loadLevelSeed(a2Path, CefrLevel.a2, bundle);
-  if (a2 is! Ok<List<ReviewItem>>) return a2;
-
   final ids = <String>{};
-  final items = [...a1.value, ...a2.value];
-  for (final item in items) {
-    if (!ids.add(item.word.id)) {
-      return Err(Failure('$a1Path, $a2Path: повторяется id «${item.word.id}»'));
+  final items = <ReviewItem>[];
+  for (final (path, level) in sources) {
+    final loaded = await _loadLevelSeed(path, level, bundle);
+    if (loaded is! Ok<List<ReviewItem>>) return loaded;
+    for (final item in loaded.value) {
+      if (!ids.add(item.word.id)) {
+        return Err(Failure('$path: повторяется id «${item.word.id}»'));
+      }
+      items.add(item);
     }
   }
   return Ok(items);
