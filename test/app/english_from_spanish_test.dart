@@ -19,7 +19,7 @@ import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_run.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
 import 'package:arcadelingo/main.dart'
-    show loadEnglishA1FromSpanishCourse, loadSpanishA1Course;
+    show loadEnglishA1FromSpanishCourse, loadSpanishCourse;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -115,7 +115,7 @@ void main() {
               history: newHistory,
               speech: speech,
             );
-            final spanishCourse = await loadSpanishA1Course(
+            final spanishCourse = await loadSpanishCourse(
               prefs: prefs,
               history: spanishHistory,
               speech: speech,
