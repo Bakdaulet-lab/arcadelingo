@@ -155,11 +155,14 @@ void main() {
       }
     });
 
-    test('в реестре три игры, и падающие слова по-прежнему первые', () {
+    test('в реестре шесть игр, и падающие слова по-прежнему первые', () {
       expect(wordarcadeGames.map((g) => g.id), [
         'falling_words',
         'ninja_slash',
         'claw_machine',
+        'brick_breaker',
+        'match_three',
+        'word_mahjong',
       ]);
       expect(
         wordarcadeGames.first,

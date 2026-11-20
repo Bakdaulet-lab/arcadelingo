@@ -100,8 +100,8 @@ class StartSession {
       },
     );
     return Ok(
-      ObservedSession(
-        inner: inner,
+      ObservedBoardSession(
+        board: inner,
         // Порядок наблюдателей значения не имеет: они не разговаривают
         // друг с другом и видят одно и то же событие.
         observers: [LoggingObserver(log: _answerLog), ...observers],

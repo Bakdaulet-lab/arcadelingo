@@ -33,6 +33,7 @@ import 'package:arcadelingo/domain/learning/learning_plan.dart';
 import 'package:arcadelingo/domain/learning/mistake_review_observer.dart';
 import 'package:arcadelingo/domain/ports/challenge_records.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
+import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/reminders/reminder_policy.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
@@ -638,7 +639,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final course = widget.course;
     final items = widget.items;
     final key = (gameId: game.id, courseId: course.id, level: _selectedLevel);
-    final best = records.load(key);
+    final best = records.load(key, mode: game.challengeRecordMode);
     _selectingChallenge = true;
     try {
       final start = await showChallengeDialog(
@@ -688,7 +689,9 @@ class _HomeScreenState extends State<HomeScreen> {
       learning: false,
       replayChallenge: () => _launchChallenge(game, mode, key, items, records),
       onChallengeComplete:
-          (score) => ChallengeRecordLine(best: records.submit(key, score)),
+          (score) => ChallengeRecordLine(
+            best: records.submit(key, score, mode: game.challengeRecordMode),
+          ),
     );
   }
 
@@ -825,6 +828,16 @@ class _HomeScreenState extends State<HomeScreen> {
     Widget Function(int score)? onChallengeComplete,
   }) {
     final navigator = Navigator.of(context);
+    final settings = switch (widget.ports.settings?.load()) {
+      Ok(value: final it) => it,
+      Err() || null => AppSettings.defaults,
+    };
+    final records = widget.ports.challengeRecords;
+    final recordKey = (
+      gameId: game.id,
+      courseId: widget.course.id,
+      level: level,
+    );
     final sessionId = session is ObservedSession ? session.sessionId : null;
     // Дошла ли партия до конца. По нему же отличается «бросил на середине»:
     // ухода игра не сообщает, и не сообщать — правильно, потому что
@@ -848,6 +861,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   (context) => game.build(
                     GameLaunch(
                       session: session,
+                      course: widget.course,
+                      level: level,
                       summaryFooter: footer,
                       onPlayAgain: () {
                         navigator.pop();
@@ -863,6 +878,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       onExit: navigator.pop,
                       onChallengeComplete: onChallengeComplete,
+                      onRoundScore:
+                          onChallengeComplete == null &&
+                                  game.tracksRoundScore &&
+                                  records != null
+                              ? (score) => ChallengeRecordLine(
+                                best: records.submit(recordKey, score),
+                              )
+                              : null,
                       mistakeCount: () => mistakes.mistakes.length,
                       onReviewMistakes: () {
                         unawaited(
@@ -888,7 +911,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       // а не флагом: «выключено» тогда значит «никто не
                       // зовёт», а не «зовут и молчат». Настройка читается в
                       // момент запуска партии — ровно как очередь слов.
-                      sounds: _sounds(),
+                      sounds:
+                          settings.soundOn
+                              ? widget.ports.sounds
+                              : const NoopSounds(),
+                      speech:
+                          settings.soundOn
+                              ? widget.ports.speech
+                              : const NoopWordSpeech(),
                     ),
                   ),
             ),
@@ -902,19 +932,6 @@ class _HomeScreenState extends State<HomeScreen> {
             _refreshRitual();
           }),
     );
-  }
-
-  /// Звук для новой партии — с учётом настройки.
-  ///
-  /// Битый документ настроек звук не отключает: `Err` здесь означает «не
-  /// знаем, что человек выбирал», а умолчание у звука — включён. Отключить
-  /// его из-за испорченного файла значило бы наказать за чужую поломку.
-  Sounds _sounds() {
-    final settings = switch (widget.ports.settings?.load()) {
-      Ok(value: final it) => it,
-      Err() || null => AppSettings.defaults,
-    };
-    return settings.soundOn ? widget.ports.sounds : const NoopSounds();
   }
 
   /// Что писать под статистикой итогов.

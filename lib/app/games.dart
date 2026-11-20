@@ -16,10 +16,15 @@ library;
 
 import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
+import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/review/study_course.dart';
+import 'package:arcadelingo/features/games/brick_breaker/brick_breaker_game.dart';
 import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
+import 'package:arcadelingo/features/games/match_three/match_three_game.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
+import 'package:arcadelingo/features/games/word_mahjong/word_mahjong_game.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:flutter/material.dart';
 
@@ -39,10 +44,16 @@ class GameLaunch {
     this.mistakeCount,
     this.onReviewMistakes,
     this.onChallengeComplete,
+    this.onRoundScore,
+    this.speech = const NoopWordSpeech(),
+    this.course,
+    this.level,
   });
 
   /// Сессия, уже собранная usecase'ом и обёрнутая наблюдателями.
   final ReviewSession session;
+  final StudyCourse? course;
+  final CefrLevel? level;
 
   /// Строка «что дальше» на итогах; считает её хост.
   final String Function() summaryFooter;
@@ -59,6 +70,8 @@ class GameLaunch {
   /// Открыть разбор, не создавая новую игровую сессию.
   final VoidCallback? onReviewMistakes;
   final Widget Function(int score)? onChallengeComplete;
+  final Widget Function(int score)? onRoundScore;
+  final WordSpeech speech;
 
   /// Партия дошла до конца: игра показала экран итогов или «жизни кончились».
   ///
@@ -90,6 +103,7 @@ class GameEntry {
     this.artwork,
     this.instruction,
     this.challenge,
+    this.tracksRoundScore = false,
   });
 
   /// Идентификатор в событиях ответа.
@@ -105,11 +119,18 @@ class GameEntry {
   final String? artwork;
   final String? instruction;
   final ArcadeChallenge? challenge;
+  final bool tracksRoundScore;
+
+  ArcadeChallenge? get challengeRecordMode =>
+      tracksRoundScore ? challenge : null;
 
   String titleFor(AppStrings strings) => switch (id) {
     'falling_words' => strings.fallingWords,
     'ninja_slash' => strings.ninjaSlash,
     'claw_machine' => strings.clawMachine,
+    'brick_breaker' => strings.brickBreaker,
+    'match_three' => strings.matchThree,
+    'word_mahjong' => strings.wordMahjong,
     _ => title,
   };
 
@@ -117,6 +138,9 @@ class GameEntry {
     'falling_words' => strings.fallingInstruction,
     'ninja_slash' => strings.ninjaInstruction,
     'claw_machine' => strings.clawInstruction,
+    'brick_breaker' => strings.brickInstruction,
+    'match_three' => strings.matchInstruction,
+    'word_mahjong' => strings.mahjongInstruction,
     _ => instruction,
   };
 
@@ -158,6 +182,34 @@ const clawMachineEntry = GameEntry(
   instruction: 'Собери слово из букв',
 );
 
+const brickBreakerEntry = GameEntry(
+  id: 'brick_breaker',
+  title: 'Арканоид',
+  build: _buildBrickBreaker,
+  challenge: ArcadeChallenge.brick,
+  artwork: 'assets/images/home/brick-breaker.webp',
+  instruction: 'Разбивай кирпичи и лови переводы',
+  tracksRoundScore: true,
+);
+
+const matchThreeEntry = GameEntry(
+  id: 'match_three',
+  title: 'Три в ряд',
+  build: _buildMatchThree,
+  artwork: 'assets/images/home/match-three.webp',
+  instruction: 'Собирай кристаллы и открывай словесные бонусы',
+  tracksRoundScore: true,
+);
+
+const wordMahjongEntry = GameEntry(
+  id: 'word_mahjong',
+  title: 'Маджонг со словами',
+  build: _buildWordMahjong,
+  artwork: 'assets/images/home/word-mahjong.webp',
+  instruction: 'Снимай пары из слова и его перевода',
+  tracksRoundScore: true,
+);
+
 /// Все игры приложения.
 ///
 /// Порядок значим: первая запись — умолчание домашнего экрана. Выбор другой
@@ -166,6 +218,9 @@ const List<GameEntry> wordarcadeGames = [
   fallingWordsEntry,
   ninjaSlashEntry,
   clawMachineEntry,
+  brickBreakerEntry,
+  matchThreeEntry,
+  wordMahjongEntry,
 ];
 
 Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
@@ -199,6 +254,51 @@ Widget _buildClawMachine(GameLaunch launch) => ClawMachineGame(
   summaryFooter:
       launch.onChallengeComplete == null ? launch.summaryFooter : null,
   onChallengeComplete: launch.onChallengeComplete,
+  onPlayAgain: launch.onPlayAgain,
+  onExit: launch.onExit,
+  onRoundOver: launch.onRoundOver,
+  mistakeCount: launch.mistakeCount,
+  onReviewMistakes: launch.onReviewMistakes,
+);
+
+Widget _buildBrickBreaker(GameLaunch launch) => BrickBreakerGame(
+  session: launch.session,
+  sounds: launch.sounds,
+  speech: launch.speech,
+  summaryFooter:
+      launch.onChallengeComplete == null ? launch.summaryFooter : null,
+  onRoundScore: launch.onRoundScore,
+  onChallengeComplete: launch.onChallengeComplete,
+  onPlayAgain: launch.onPlayAgain,
+  onExit: launch.onExit,
+  onRoundOver: launch.onRoundOver,
+  mistakeCount: launch.mistakeCount,
+  onReviewMistakes: launch.onReviewMistakes,
+);
+
+Widget _buildMatchThree(GameLaunch launch) => MatchThreeGame(
+  session: launch.session,
+  course: launch.course,
+  level: launch.level,
+  speech: launch.speech,
+  sounds: launch.sounds,
+  summaryFooter: launch.summaryFooter,
+  onRoundScore: launch.onRoundScore,
+  onPlayAgain: launch.onPlayAgain,
+  onExit: launch.onExit,
+  onRoundOver: launch.onRoundOver,
+  mistakeCount: launch.mistakeCount,
+  onReviewMistakes: launch.onReviewMistakes,
+);
+
+Widget _buildWordMahjong(GameLaunch launch) => WordMahjongGame(
+  session: launch.session as BoardReviewSession,
+  course: launch.course,
+  level: launch.level,
+  speech: launch.speech,
+  sounds: launch.sounds,
+  summaryFooter: launch.summaryFooter,
+  onRoundScore: launch.onRoundScore,
   onPlayAgain: launch.onPlayAgain,
   onExit: launch.onExit,
   onRoundOver: launch.onRoundOver,

@@ -28,7 +28,7 @@ const int _repeatAfter = 3;
 /// без второго ключа равные `due` дали бы произвольный порядок.
 typedef _Ready = ({ReviewItem item, DateTime due, int index});
 
-class LeitnerReviewSession implements ReviewSession {
+class LeitnerReviewSession implements BoardReviewSession {
   LeitnerReviewSession._({
     required Map<String, LeitnerCard> cards,
     required List<ReviewItem> queue,
@@ -150,17 +150,36 @@ class LeitnerReviewSession implements ReviewSession {
         'или ответ по нему уже доложен',
       );
     }
+    _current = null;
+    _apply(item, outcome, repeatsInQueue: true);
+  }
+
+  @override
+  List<ReviewItem> get remainingItems => List.unmodifiable(_queue);
+
+  @override
+  void reportPair(ReviewItem item, ReviewOutcome outcome) {
+    if (_current != null || !_queue.remove(item)) {
+      throw StateError('Cannot report an unavailable pair: ${item.word.id}');
+    }
+    _apply(item, outcome, repeatsInQueue: false);
+  }
+
+  void _apply(
+    ReviewItem item,
+    ReviewOutcome outcome, {
+    required bool repeatsInQueue,
+  }) {
     final now = _now();
     final id = item.word.id;
     final before = _cards[id] ?? LeitnerCard(box: LeitnerCard.minBox, due: now);
     final after = schedule(before, gradeOutcome(outcome), now: now);
     _cards[id] = after;
-    _current = null;
     _answered++;
     // Коробка 1 — это `due == now`: again, а также hard на карточке коробки 1.
     // Правило по карточке, не по оценке: при SM-2, где ничего не бывает
     // готово немедленно, оно исчезнет само.
-    if (!after.due.isAfter(now)) _requeue(item);
+    if (repeatsInQueue && !after.due.isAfter(now)) _requeue(item);
     // Колбэк последним: если он бросит, сессия уже в согласованном
     // состоянии, а не «в полёте» с неотвеченным словом.
     _onCardsChanged(UnmodifiableMapView(_cards));

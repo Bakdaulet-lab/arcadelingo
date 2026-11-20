@@ -125,6 +125,10 @@ class ObservedSession implements ReviewSession {
         'внутренняя сессия приняла report() без выданного слова',
       );
     }
+    _notify(item, outcome);
+  }
+
+  void _notify(ReviewItem item, ReviewOutcome outcome) {
     final event = ReviewEvent(
       item: item,
       outcome: outcome,
@@ -161,4 +165,28 @@ class ObservedSession implements ReviewSession {
 
   @override
   int get total => _inner.total;
+}
+
+/// Receives board answers through the same observers as sequential games.
+class ObservedBoardSession extends ObservedSession
+    implements BoardReviewSession {
+  ObservedBoardSession({
+    required BoardReviewSession board,
+    required super.observers,
+    required super.now,
+    required super.gameId,
+    required super.sessionId,
+  }) : _board = board,
+       super(inner: board);
+
+  final BoardReviewSession _board;
+
+  @override
+  List<ReviewItem> get remainingItems => _board.remainingItems;
+
+  @override
+  void reportPair(ReviewItem item, ReviewOutcome outcome) {
+    _board.reportPair(item, outcome);
+    _notify(item, outcome);
+  }
 }

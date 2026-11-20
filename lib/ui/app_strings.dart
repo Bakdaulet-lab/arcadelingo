@@ -43,6 +43,11 @@ class AppStrings {
       ru: 'Три слова, одна подсказка',
       es: 'Tres palabras, una pista',
     ),
+    ArcadeChallenge.brick => _text(
+      en: 'Three Golden Bricks',
+      ru: 'Три золотых кирпича',
+      es: 'Tres bloques dorados',
+    ),
   };
 
   String challengeRules(ArcadeChallenge mode) => switch (mode) {
@@ -69,6 +74,14 @@ class AppStrings {
           'Собери три слова. На весь раунд есть одна подсказка. В рекорд идут слова, собранные без ошибочных захватов.',
       es:
           'Forma tres palabras con una sola pista para toda la ronda. Para el récord cuentan las palabras completadas sin atrapar letras equivocadas.',
+    ),
+    ArcadeChallenge.brick => _text(
+      en:
+          'Break three golden bricks with one life. Each brick earns points. A correct translation gives you three balls. Letting all choices fall spends one chance. Your score counts toward the record.',
+      ru:
+          'Разбей три золотых кирпича за одну жизнь. Кирпичи приносят очки, а верный перевод даёт три мяча. Если все варианты упали, попытка расходуется. В рекорд идёт счёт партии.',
+      es:
+          'Rompe tres bloques dorados con una sola vida. Cada bloque da puntos y cada traducción correcta te da tres bolas. Si dejas caer todas las opciones, gastas un intento. Tu puntuación cuenta para el récord.',
     ),
   };
 
@@ -183,6 +196,138 @@ class AppStrings {
   );
   String get chooseCourse =>
       _text(en: 'Choose a course', ru: 'Выбери курс', es: 'Elige un curso');
+  String get brickBreaker =>
+      _text(en: 'Brick Breaker', ru: 'Арканоид', es: 'Rompebloques');
+  String get matchThree =>
+      _text(en: 'Match Three', ru: 'Три в ряд', es: 'Combina tres');
+  String get matchInstruction => _text(
+    en: 'Match gems to unlock word bonuses',
+    ru: 'Собирай кристаллы и открывай словесные бонусы',
+    es: 'Combina gemas para activar bonos de vocabulario',
+  );
+  String get matchGuide => _text(
+    en: 'Slide the highlighted gem down to make a match of four.',
+    ru: 'Сдвинь выделенный кристалл вниз, чтобы собрать четыре в ряд.',
+    es: 'Desliza la gema resaltada hacia abajo para alinear cuatro gemas.',
+  );
+  String get matchHint => _text(
+    en: 'Match four gems in a row to unlock a word.',
+    ru: 'Собери четыре кристалла в ряд, чтобы открыть слово.',
+    es: 'Alinea cuatro gemas para descubrir una palabra.',
+  );
+  String get matchInvalidMove => _text(
+    en: 'Swap two gems to line up three of the same kind.',
+    ru: 'Поменяй два кристалла местами, чтобы собрать три одинаковых в ряд.',
+    es: 'Intercambia dos gemas para alinear tres del mismo tipo.',
+  );
+  String get matchBonus => _text(
+    en: 'Clear a row',
+    ru: 'Бонус «Очистить строку»',
+    es: 'Bono «Limpia una fila»',
+  );
+  String get matchCleared => _text(
+    en: 'Row cleared. Correct translation +60.',
+    ru: 'Строка очищена. За верный перевод +60.',
+    es: 'Fila eliminada. Traducción correcta +60.',
+  );
+  String matchMoves(int count) =>
+      _text(en: 'Moves: $count', ru: 'Ходы: $count', es: 'Movimientos: $count');
+  String matchGem(int kind, int row, int column) {
+    final names = _text(
+      en:
+          'cyan diamond,pink sphere,amber hexagon,lilac crystal,mint square,blue triangle,charged gem',
+      ru:
+          'голубой ромб,розовая сфера,янтарный шестигранник,лиловый кристалл,мятный квадрат,синий треугольник,заряженная фишка',
+      es:
+          'rombo turquesa,esfera rosa,hexágono ámbar,cristal lila,cuadrado verde,triángulo azul,gema cargada',
+    ).split(',');
+    final name =
+        kind < 0
+            ? _text(en: 'empty cell', ru: 'пустая клетка', es: 'casilla vacía')
+            : names[kind];
+    return _text(
+      en: '$name, row $row, column $column',
+      ru: '$name, ряд $row, столбец $column',
+      es: '$name, fila $row, columna $column',
+    );
+  }
+
+  String get wordMahjong => _text(
+    en: 'Word Mahjong',
+    ru: 'Маджонг со словами',
+    es: 'Mahjong de palabras',
+  );
+  String get mahjongInstruction => _text(
+    en: 'Match each word with its translation',
+    ru: 'Снимай пары из слова и его перевода',
+    es: 'Empareja cada palabra con su traducción',
+  );
+  String get mahjongRules => _text(
+    en:
+        'Match a word with its translation. Each tile must be uncovered and have a free side.',
+    ru:
+        'Соедини слово и перевод. Плитка должна быть открыта сверху и свободна хотя бы с одной стороны.',
+    es:
+        'Une una palabra con su traducción. Cada ficha debe estar descubierta y tener un lado libre.',
+  );
+  String get mahjongMismatch => _text(
+    en: 'These tiles do not match. Try again.',
+    ru: 'Эти плитки не совпадают. Попробуй ещё раз.',
+    es: 'Estas fichas no forman pareja. Inténtalo de nuevo.',
+  );
+  String get mahjongHintShown => _text(
+    en: 'Tap both highlighted tiles to remove the pair.',
+    ru: 'Нажми на обе подсвеченные плитки, чтобы снять пару.',
+    es: 'Toca las dos fichas resaltadas para retirar la pareja.',
+  );
+  String get mahjongWord => _text(en: 'word', ru: 'слово', es: 'palabra');
+  String get mahjongTranslation =>
+      _text(en: 'translation', ru: 'перевод', es: 'traducción');
+  String mahjongPairs(int count, int total) => _text(
+    en: 'Pairs: $count / $total',
+    ru: 'Пары: $count / $total',
+    es: 'Parejas: $count / $total',
+  );
+
+  String get brickInstruction => _text(
+    en: 'Break bricks and catch translations',
+    ru: 'Разбивай кирпичи и лови переводы',
+    es: 'Rompe bloques y atrapa traducciones',
+  );
+  String get brickCatch => _text(
+    en: 'Catch the translation with the paddle',
+    ru: 'Поймай перевод платформой',
+    es: 'Atrapa la traducción con la pala',
+  );
+  String get brickGold => _text(
+    en: 'Break a gold brick to reveal a word',
+    ru: 'Разбей золотой кирпич, чтобы открыть слово',
+    es: 'Rompe un bloque dorado para descubrir una palabra',
+  );
+  String get brickMove => _text(
+    en: 'Drag sideways to move the paddle',
+    ru: 'Веди пальцем влево или вправо',
+    es: 'Desliza el dedo a los lados para mover la pala',
+  );
+  String get brickLaunch =>
+      _text(en: 'Launch', ru: 'Пустить мяч', es: 'Lanzar');
+  String get brickPause => _text(en: 'Pause', ru: 'Пауза', es: 'Pausar');
+  String get brickPaused => _text(en: 'Paused', ru: 'На паузе', es: 'En pausa');
+  String get brickResume =>
+      _text(en: 'Resume', ru: 'Продолжить', es: 'Continuar');
+  String get brickMultiball => _text(
+    en: 'Bonus: three balls',
+    ru: 'Бонус: три мяча',
+    es: 'Bono: tres bolas',
+  );
+  String get brickMissed => _text(
+    en: 'Missed the catch. Break another gold brick to try again.',
+    ru: 'Промах. Разбей ещё один золотой кирпич для новой попытки.',
+    es:
+        'No atrapaste ninguna opción. Rompe otro bloque dorado para volver a intentarlo.',
+  );
+  String brickField(int value) =>
+      _text(en: 'Board $value', ru: 'Поле $value', es: 'Tablero $value');
   String get appLanguage => _text(
     en: 'App language',
     ru: 'Язык приложения',
