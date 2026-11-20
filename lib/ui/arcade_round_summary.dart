@@ -4,7 +4,7 @@ import 'package:arcadelingo/ui/arcade_status_layout.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
-/// Одинаковое представление результатов двух игр, полученных от их сессий.
+/// Общий экран счёта и точности за раунд.
 class ArcadeRoundSummary extends StatelessWidget {
   const ArcadeRoundSummary({
     required this.score,
@@ -34,6 +34,7 @@ class ArcadeRoundSummary extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     return ArcadeStatusLayout(
+      animateResultBadge: true,
       icon:
           outOfLives
               ? Icons.favorite_border_rounded

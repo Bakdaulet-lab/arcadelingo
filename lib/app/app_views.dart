@@ -18,6 +18,7 @@ import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
+import 'package:arcadelingo/ui/arcade_press_feedback.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
 import 'package:arcadelingo/ui/home_ritual_card.dart';
 import 'package:arcadelingo/ui/ritual_labels.dart';
@@ -427,31 +428,35 @@ class _HomeActions extends StatelessWidget {
           ),
           SizedBox(height: paper ? 7 : 10),
         ],
-        FilledButton(
-          key: AppKeys.play,
-          onPressed: onPlay,
-          style: FilledButton.styleFrom(
-            minimumSize: Size.fromHeight(paper ? 48 : 56),
-            padding: EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: paper ? 12 : 14,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(paper ? 12 : 20),
-            ),
-            textStyle: withWeight(
-              paper
-                  ? theme.textTheme.titleMedium!
-                  : theme.textTheme.titleLarge!,
-              FontWeight.bold,
-            ),
-          ),
-          child: Text(
-            ritual == null
-                ? context.strings.play
-                : ritualCallToAction(ritual!, strings: context.strings),
-            textAlign: TextAlign.center,
-          ),
+        ArcadePressFeedback(
+          builder:
+              (states) => FilledButton(
+                statesController: states,
+                key: AppKeys.play,
+                onPressed: onPlay,
+                style: FilledButton.styleFrom(
+                  minimumSize: Size.fromHeight(paper ? 48 : 56),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: paper ? 12 : 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(paper ? 12 : 20),
+                  ),
+                  textStyle: withWeight(
+                    paper
+                        ? theme.textTheme.titleMedium!
+                        : theme.textTheme.titleLarge!,
+                    FontWeight.bold,
+                  ),
+                ),
+                child: Text(
+                  ritual == null
+                      ? context.strings.play
+                      : ritualCallToAction(ritual!, strings: context.strings),
+                  textAlign: TextAlign.center,
+                ),
+              ),
         ),
         if (paper && challenge != null) challenge,
         if (!paper) ...[

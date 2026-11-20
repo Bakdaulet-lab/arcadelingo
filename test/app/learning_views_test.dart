@@ -107,6 +107,59 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(loadBundledFonts);
 
+  for (final review in [false, true]) {
+    testWidgets('карточка входит со стороны листания, разбор=$review', (
+      tester,
+    ) async {
+      final screen =
+          review
+              ? MistakesReviewScreen(
+                words: const [_first, _second],
+                level: CefrLevel.b1,
+                speech: _Speech(),
+              )
+              : WordIntroductionScreen(
+                words: const [_first, _second],
+                level: CefrLevel.b1,
+                speech: _Speech(),
+                onStart: () {},
+              );
+      await _pump(tester, screen);
+      final word = find.byKey(LearningKeys.word);
+      double left() => tester.getTopLeft(word).dx;
+      final restingX = left();
+
+      Future<void> turn(Key button) async {
+        final target = find.byKey(button);
+        await tester.ensureVisible(target);
+        await tester.tap(target);
+        await tester.pump();
+      }
+
+      await turn(LearningKeys.next);
+      final forwardStart = left();
+      expect(find.text(_first.text), findsNothing);
+      expect(find.text(_second.translation), findsOneWidget);
+      expect(forwardStart, greaterThan(restingX + 2));
+      await tester.pump(const Duration(milliseconds: 70));
+      expect(left(), inExclusiveRange(restingX, forwardStart));
+      // Можно сразу передумать и листнуть обратно, пока карточка ещё движется.
+      await turn(LearningKeys.previous);
+      expect(find.text(_first.translation), findsOneWidget);
+      expect(find.text(_second.text), findsNothing);
+      expect(left(), lessThan(restingX - 2));
+      await tester.pumpAndSettle();
+      expect(left(), closeTo(restingX, .01));
+
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      await tester.pump();
+      await turn(LearningKeys.next);
+      expect(find.text(_second.text), findsOneWidget);
+      expect(left(), closeTo(restingX, .01));
+    });
+  }
+
   testWidgets('знакомство: выбранный уровень, перевод и пример до игры', (
     tester,
   ) async {

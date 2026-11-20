@@ -19,6 +19,7 @@
 /// переопределены ровно те, что видно (задача 0.12).
 library;
 
+import 'package:arcadelingo/ui/arcade_page_transitions.dart';
 import 'package:flutter/material.dart';
 
 /// Зерно, от которого достраиваются неиспользуемые роли.
@@ -112,6 +113,7 @@ TextStyle withWeight(TextStyle style, FontWeight weight) => style.copyWith(
 ThemeData wordarcadeTheme({
   TargetPlatform? platform,
   Brightness brightness = Brightness.dark,
+  bool reduceMotion = false,
 }) {
   final paper = brightness == Brightness.light;
   final colors = paper ? warmPaperColors : wordarcadeColors;
@@ -119,6 +121,7 @@ ThemeData wordarcadeTheme({
     colorScheme: colors,
     platform: platform,
     fontFamily: wordarcadeFont,
+    pageTransitionsTheme: arcadePageTransitions(reduceMotion: reduceMotion),
   );
   final buttonShape = RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(paper ? 12 : 20),

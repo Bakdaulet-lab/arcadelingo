@@ -424,6 +424,7 @@ class _ClawMachineGameState extends State<ClawMachineGame>
     final mistakes = widget.mistakeCount?.call() ?? 0;
     return ArcadeStatusLayout(
       key: ClawKeys.summary,
+      animateResultBadge: answered > 0,
       icon: answered == 0 ? Icons.nightlight_round : Icons.emoji_events_rounded,
       title:
           answered == 0
