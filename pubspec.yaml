@@ -78,10 +78,12 @@ flutter:
     - assets/words_es_a2.json
     - assets/words_es_b1.json
     - assets/words_es_b2.json
+    - assets/words_es_c1.json
     - assets/words_es_a1_en.json
     - assets/words_es_a2_en.json
     - assets/words_es_b1_en.json
     - assets/words_es_b2_en.json
+    - assets/words_es_c1_en.json
     - assets/words_en_a1_es.json
     - assets/words_c1.json
     - assets/words_c1.LICENSE.md

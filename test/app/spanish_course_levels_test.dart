@@ -93,28 +93,55 @@ void main() {
         CefrLevel.b2,
         'falling_words',
         'Falling Words',
-        'es_matiz',
-        'matiz',
-        'оттенок смысла',
-        'nuance',
+        'es_hipoteca',
+        'hipoteca',
+        'ипотека',
+        'mortgage',
       ),
       (
         CefrLevel.b2,
         'ninja_slash',
         'Ninja Slash',
-        'es_sesgo',
-        'sesgo',
-        'предвзятость',
-        'bias',
+        'es_desahucio',
+        'desahucio',
+        'выселение',
+        'eviction',
       ),
       (
         CefrLevel.b2,
         'claw_machine',
         'Claw Machine',
-        'es_desempeno',
-        'desempeño',
-        'результативность работы',
-        'job performance',
+        'es_hazana',
+        'hazaña',
+        'подвиг',
+        'feat',
+      ),
+      (
+        CefrLevel.c1,
+        'falling_words',
+        'Falling Words',
+        'es_falacia',
+        'falacia',
+        'логическая ошибка',
+        'fallacy',
+      ),
+      (
+        CefrLevel.c1,
+        'ninja_slash',
+        'Ninja Slash',
+        'es_auditoria',
+        'auditoría',
+        'аудит',
+        'audit',
+      ),
+      (
+        CefrLevel.c1,
+        'claw_machine',
+        'Claw Machine',
+        'es_resquicio',
+        'resquicio',
+        'лазейка',
+        'loophole',
       ),
     ]) {
       final levelLabel = level.name.toUpperCase();
@@ -163,10 +190,11 @@ void main() {
                           'es_nino',
                           'es_buzon',
                           'es_cuota',
+                          'es_hipoteca',
                         ].contains(item.word.id),
                   )
                   .toList();
-          expect(dueOutsideLevel, hasLength(level == CefrLevel.b2 ? 3 : 2));
+          expect(dueOutsideLevel, hasLength(level == CefrLevel.c1 ? 4 : 3));
           expect(target.word.level, level);
           expect(target.word.text, spanish);
           expect(target.word.translation, translation);
