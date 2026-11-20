@@ -16,7 +16,9 @@ library;
 
 import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
+import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/features/games/brick_breaker/brick_breaker_game.dart';
 import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
@@ -39,6 +41,8 @@ class GameLaunch {
     this.mistakeCount,
     this.onReviewMistakes,
     this.onChallengeComplete,
+    this.onRoundScore,
+    this.speech = const NoopWordSpeech(),
   });
 
   /// Сессия, уже собранная usecase'ом и обёрнутая наблюдателями.
@@ -59,6 +63,8 @@ class GameLaunch {
   /// Открыть разбор, не создавая новую игровую сессию.
   final VoidCallback? onReviewMistakes;
   final Widget Function(int score)? onChallengeComplete;
+  final Widget Function(int score)? onRoundScore;
+  final WordSpeech speech;
 
   /// Партия дошла до конца: игра показала экран итогов или «жизни кончились».
   ///
@@ -90,6 +96,7 @@ class GameEntry {
     this.artwork,
     this.instruction,
     this.challenge,
+    this.tracksRoundScore = false,
   });
 
   /// Идентификатор в событиях ответа.
@@ -105,11 +112,13 @@ class GameEntry {
   final String? artwork;
   final String? instruction;
   final ArcadeChallenge? challenge;
+  final bool tracksRoundScore;
 
   String titleFor(AppStrings strings) => switch (id) {
     'falling_words' => strings.fallingWords,
     'ninja_slash' => strings.ninjaSlash,
     'claw_machine' => strings.clawMachine,
+    'brick_breaker' => strings.brickBreaker,
     _ => title,
   };
 
@@ -117,6 +126,7 @@ class GameEntry {
     'falling_words' => strings.fallingInstruction,
     'ninja_slash' => strings.ninjaInstruction,
     'claw_machine' => strings.clawInstruction,
+    'brick_breaker' => strings.brickInstruction,
     _ => instruction,
   };
 
@@ -158,6 +168,15 @@ const clawMachineEntry = GameEntry(
   instruction: 'Собери слово из букв',
 );
 
+const brickBreakerEntry = GameEntry(
+  id: 'brick_breaker',
+  title: 'Арканоид',
+  build: _buildBrickBreaker,
+  artwork: 'assets/images/home/brick-breaker.webp',
+  instruction: 'Разбивай кирпичи и лови переводы',
+  tracksRoundScore: true,
+);
+
 /// Все игры приложения.
 ///
 /// Порядок значим: первая запись — умолчание домашнего экрана. Выбор другой
@@ -166,6 +185,7 @@ const List<GameEntry> wordarcadeGames = [
   fallingWordsEntry,
   ninjaSlashEntry,
   clawMachineEntry,
+  brickBreakerEntry,
 ];
 
 Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
@@ -199,6 +219,19 @@ Widget _buildClawMachine(GameLaunch launch) => ClawMachineGame(
   summaryFooter:
       launch.onChallengeComplete == null ? launch.summaryFooter : null,
   onChallengeComplete: launch.onChallengeComplete,
+  onPlayAgain: launch.onPlayAgain,
+  onExit: launch.onExit,
+  onRoundOver: launch.onRoundOver,
+  mistakeCount: launch.mistakeCount,
+  onReviewMistakes: launch.onReviewMistakes,
+);
+
+Widget _buildBrickBreaker(GameLaunch launch) => BrickBreakerGame(
+  session: launch.session,
+  sounds: launch.sounds,
+  speech: launch.speech,
+  summaryFooter: launch.summaryFooter,
+  onRoundScore: launch.onRoundScore,
   onPlayAgain: launch.onPlayAgain,
   onExit: launch.onExit,
   onRoundOver: launch.onRoundOver,

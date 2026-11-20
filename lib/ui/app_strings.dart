@@ -183,6 +183,47 @@ class AppStrings {
   );
   String get chooseCourse =>
       _text(en: 'Choose a course', ru: 'Выбери курс', es: 'Elige un curso');
+  String get brickBreaker =>
+      _text(en: 'Brick Breaker', ru: 'Арканоид', es: 'Rompebloques');
+  String get brickInstruction => _text(
+    en: 'Break bricks and catch translations',
+    ru: 'Разбивай кирпичи и лови переводы',
+    es: 'Rompe bloques y atrapa traducciones',
+  );
+  String get brickCatch => _text(
+    en: 'Catch the translation with the paddle',
+    ru: 'Поймай перевод платформой',
+    es: 'Atrapa la traducción con la pala',
+  );
+  String get brickGold => _text(
+    en: 'Break a gold brick to reveal a word',
+    ru: 'Разбей золотой кирпич, чтобы открыть слово',
+    es: 'Rompe un bloque dorado para descubrir una palabra',
+  );
+  String get brickMove => _text(
+    en: 'Drag sideways to move the paddle',
+    ru: 'Веди пальцем влево или вправо',
+    es: 'Desliza el dedo a los lados para mover la pala',
+  );
+  String get brickLaunch =>
+      _text(en: 'Launch', ru: 'Пустить мяч', es: 'Lanzar');
+  String get brickPause => _text(en: 'Pause', ru: 'Пауза', es: 'Pausar');
+  String get brickPaused => _text(en: 'Paused', ru: 'На паузе', es: 'En pausa');
+  String get brickResume =>
+      _text(en: 'Resume', ru: 'Продолжить', es: 'Continuar');
+  String get brickMultiball => _text(
+    en: 'Bonus: three balls',
+    ru: 'Бонус: три мяча',
+    es: 'Bono: tres bolas',
+  );
+  String get brickMissed => _text(
+    en: 'Missed the catch. Break another gold brick to try again.',
+    ru: 'Промах. Разбей ещё один золотой кирпич для новой попытки.',
+    es:
+        'No atrapaste ninguna opción. Rompe otro bloque dorado para volver a intentarlo.',
+  );
+  String brickField(int value) =>
+      _text(en: 'Board $value', ru: 'Поле $value', es: 'Tablero $value');
   String get appLanguage => _text(
     en: 'App language',
     ru: 'Язык приложения',

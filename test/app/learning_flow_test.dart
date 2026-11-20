@@ -9,6 +9,9 @@ import 'package:arcadelingo/domain/events/app_event.dart';
 import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
+import 'package:arcadelingo/features/games/brick_breaker/brick_breaker_field.dart';
+import 'package:arcadelingo/features/games/brick_breaker/brick_breaker_game.dart';
+import 'package:arcadelingo/features/games/brick_breaker/brick_breaker_run.dart';
 import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_run.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_views.dart'
@@ -78,12 +81,49 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> _beginGame(WidgetTester tester, bool isNinja, Key action) async {
+Future<void> _beginGame(
+  WidgetTester tester,
+  GameEntry entry,
+  Key action,
+) async {
   await tester.ensureVisible(find.byKey(action));
   await tester.tap(find.byKey(action));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 350));
-  await tester.pump(isNinja ? NinjaRun.windUpTime : FallingWordsRun.windUpTime);
+  if (entry.id == brickBreakerEntry.id) {
+    await _openBrickBonus(tester);
+  } else {
+    await tester.pump(
+      entry.id == ninjaSlashEntry.id
+          ? NinjaRun.windUpTime
+          : FallingWordsRun.windUpTime,
+    );
+  }
+}
+
+Future<void> _openBrickBonus(WidgetTester tester) async {
+  final field = find.byKey(BrickBreakerKeys.field);
+  final run = tester.widget<BrickBreakerField>(field).run;
+  final board = tester.getRect(field);
+  final gold = run.bricks.singleWhere((brick) => brick.gold);
+  await tester.tapAt(
+    Offset(
+      board.left + gold.bounds.center.dx * board.width / BrickBreakerRun.width,
+      board.bottom - 22,
+    ),
+  );
+  await tester.tap(find.byKey(BrickBreakerKeys.launch));
+  for (var i = 0; i < 80; i++) {
+    await tester.pump(const Duration(milliseconds: 16));
+  }
+  expect(find.byKey(BrickBreakerKeys.word), findsOneWidget);
+}
+
+Future<void> _answerBrick(WidgetTester tester, String translation) async {
+  final board = tester.getRect(find.byKey(BrickBreakerKeys.field));
+  final x = tester.getCenter(find.text(translation)).dx;
+  await tester.tapAt(Offset(x, board.bottom - 22));
+  await tester.pumpAndSettle(const Duration(milliseconds: 20));
 }
 
 Future<void> _answer(
@@ -114,16 +154,21 @@ void main() {
   });
 
   for (final entry in wordarcadeGames) {
+    final isBrick = entry.id == brickBreakerEntry.id;
     final isClaw = entry.id == clawMachineEntry.id;
     final isNinja = entry.id == ninjaSlashEntry.id;
     final wordKey =
-        isClaw
+        isBrick
+            ? BrickBreakerKeys.word
+            : isClaw
             ? ClawKeys.prompt
             : isNinja
             ? ninja.NinjaKeys.word
             : falling.FallingWordsKeys.word;
     final summaryKey =
-        isClaw
+        isBrick
+            ? BrickBreakerKeys.summary
+            : isClaw
             ? ClawKeys.summary
             : isNinja
             ? ninja.NinjaKeys.summary
@@ -137,7 +182,7 @@ void main() {
             for (final cefr in CefrLevel.values)
               ...bundled
                   .where((item) => item.word.level == cefr)
-                  .take(isClaw ? 3 : 7),
+                  .take(isClaw || isBrick ? 3 : 7),
           ];
           final selected =
               subset.where((item) => item.word.level == level).toList();
@@ -181,7 +226,7 @@ void main() {
               await _tap(tester, find.byKey(LearningKeys.next));
             }
           }
-          await _beginGame(tester, isNinja, LearningKeys.start);
+          await _beginGame(tester, entry, LearningKeys.start);
           expect(find.byKey(LearningKeys.introduction), findsNothing);
           // В играх с жизнями делаем три промаха. Автомат доходит
           // до итогов по исчерпании короткой очереди из трёх слов.
@@ -197,6 +242,17 @@ void main() {
               await spellWithClaw(tester, word.text);
               expect(fixture.answers.records.last.correct, isFalse);
               await tapClaw(tester, ClawKeys.next);
+              continue;
+            }
+            if (isBrick) {
+              expect(fixture.speech.spoken.last, word.text);
+              final wrong = selected[index].distractors.firstWhere(
+                (label) => find.text(label).evaluate().isNotEmpty,
+              );
+              choices.add(wrong);
+              await _answerBrick(tester, wrong);
+              expect(fixture.answers.records.last.correct, isFalse);
+              if (index < 2) await _openBrickBonus(tester);
               continue;
             }
             final wrongLabels =
@@ -300,7 +356,7 @@ void main() {
       );
       await _pump(tester, fixture);
       await _tap(tester, find.text(entry.title));
-      await _beginGame(tester, isNinja, _learn);
+      await _beginGame(tester, entry, _learn);
       expect(find.byKey(LearningKeys.introduction), findsNothing);
       expect(
         tester.widget<Text>(find.byKey(wordKey)).data,
@@ -309,6 +365,8 @@ void main() {
       if (isClaw) {
         await spellWithClaw(tester, item.word.text);
         await tapClaw(tester, ClawKeys.next);
+      } else if (isBrick) {
+        await _answerBrick(tester, item.word.translation);
       } else {
         await _answer(tester, isNinja, item.word.translation);
         await tester.pump(
@@ -329,13 +387,18 @@ void main() {
       final fixture = _Fixture([item]);
       await _pump(tester, fixture);
       await _tap(tester, find.text(entry.title));
-      await _beginGame(tester, isNinja, AppKeys.play);
+      await _beginGame(tester, entry, AppKeys.play);
       expect(find.byKey(LearningKeys.introduction), findsNothing);
       final String feedback;
       if (isClaw) {
         feedback = await missWithClaw(tester, item.word.text[0]);
         await spellWithClaw(tester, item.word.text);
         await tapClaw(tester, ClawKeys.next);
+      } else if (isBrick) {
+        feedback = item.distractors.firstWhere(
+          (label) => find.text(label).evaluate().isNotEmpty,
+        );
+        await _answerBrick(tester, feedback);
       } else {
         await tester.pump(const Duration(seconds: 8));
         await tester.pump(const Duration(milliseconds: 800));
