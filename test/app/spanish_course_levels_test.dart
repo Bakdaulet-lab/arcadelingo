@@ -120,28 +120,28 @@ void main() {
         CefrLevel.c1,
         'falling_words',
         'Falling Words',
-        'es_falacia',
-        'falacia',
-        'логическая ошибка',
-        'fallacy',
+        'es_desgravacion',
+        'desgravación',
+        'налоговый вычет',
+        'tax deduction',
       ),
       (
         CefrLevel.c1,
         'ninja_slash',
         'Ninja Slash',
-        'es_auditoria',
-        'auditoría',
-        'аудит',
-        'audit',
+        'es_convalecer',
+        'convalecer',
+        'оправляться после болезни',
+        'convalesce',
       ),
       (
         CefrLevel.c1,
         'claw_machine',
         'Claw Machine',
-        'es_resquicio',
-        'resquicio',
-        'лазейка',
-        'loophole',
+        'es_socavon',
+        'socavón',
+        'провал грунта',
+        'sinkhole',
       ),
     ]) {
       final levelLabel = level.name.toUpperCase();
@@ -237,6 +237,9 @@ void main() {
           await tester.pumpAndSettle();
           await _tap(tester, find.byKey(AppKeys.course));
           await _tap(tester, find.byKey(ValueKey('course.$courseId')));
+          if (level == CefrLevel.c1) {
+            expect(find.widgetWithText(ChoiceChip, 'C2'), findsNothing);
+          }
           await _tap(tester, find.widgetWithText(ChoiceChip, levelLabel));
           await _tap(tester, find.text(title));
           final play = find.byKey(AppKeys.play);
