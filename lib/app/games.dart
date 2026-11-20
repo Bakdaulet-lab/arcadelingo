@@ -18,9 +18,11 @@ import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/features/games/brick_breaker/brick_breaker_game.dart';
 import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
+import 'package:arcadelingo/features/games/match_three/match_three_game.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:flutter/material.dart';
@@ -43,10 +45,14 @@ class GameLaunch {
     this.onChallengeComplete,
     this.onRoundScore,
     this.speech = const NoopWordSpeech(),
+    this.course,
+    this.level,
   });
 
   /// Сессия, уже собранная usecase'ом и обёрнутая наблюдателями.
   final ReviewSession session;
+  final StudyCourse? course;
+  final CefrLevel? level;
 
   /// Строка «что дальше» на итогах; считает её хост.
   final String Function() summaryFooter;
@@ -122,6 +128,7 @@ class GameEntry {
     'ninja_slash' => strings.ninjaSlash,
     'claw_machine' => strings.clawMachine,
     'brick_breaker' => strings.brickBreaker,
+    'match_three' => strings.matchThree,
     _ => title,
   };
 
@@ -130,6 +137,7 @@ class GameEntry {
     'ninja_slash' => strings.ninjaInstruction,
     'claw_machine' => strings.clawInstruction,
     'brick_breaker' => strings.brickInstruction,
+    'match_three' => strings.matchInstruction,
     _ => instruction,
   };
 
@@ -181,6 +189,15 @@ const brickBreakerEntry = GameEntry(
   tracksRoundScore: true,
 );
 
+const matchThreeEntry = GameEntry(
+  id: 'match_three',
+  title: 'Три в ряд',
+  build: _buildMatchThree,
+  artwork: 'assets/images/home/match-three.webp',
+  instruction: 'Собирай кристаллы и открывай словесные бонусы',
+  tracksRoundScore: true,
+);
+
 /// Все игры приложения.
 ///
 /// Порядок значим: первая запись — умолчание домашнего экрана. Выбор другой
@@ -190,6 +207,7 @@ const List<GameEntry> wordarcadeGames = [
   ninjaSlashEntry,
   clawMachineEntry,
   brickBreakerEntry,
+  matchThreeEntry,
 ];
 
 Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
@@ -238,6 +256,21 @@ Widget _buildBrickBreaker(GameLaunch launch) => BrickBreakerGame(
       launch.onChallengeComplete == null ? launch.summaryFooter : null,
   onRoundScore: launch.onRoundScore,
   onChallengeComplete: launch.onChallengeComplete,
+  onPlayAgain: launch.onPlayAgain,
+  onExit: launch.onExit,
+  onRoundOver: launch.onRoundOver,
+  mistakeCount: launch.mistakeCount,
+  onReviewMistakes: launch.onReviewMistakes,
+);
+
+Widget _buildMatchThree(GameLaunch launch) => MatchThreeGame(
+  session: launch.session,
+  course: launch.course,
+  level: launch.level,
+  speech: launch.speech,
+  sounds: launch.sounds,
+  summaryFooter: launch.summaryFooter,
+  onRoundScore: launch.onRoundScore,
   onPlayAgain: launch.onPlayAgain,
   onExit: launch.onExit,
   onRoundOver: launch.onRoundOver,

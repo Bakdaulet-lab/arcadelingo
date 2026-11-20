@@ -861,6 +861,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   (context) => game.build(
                     GameLaunch(
                       session: session,
+                      course: widget.course,
+                      level: level,
                       summaryFooter: footer,
                       onPlayAgain: () {
                         navigator.pop();

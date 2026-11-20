@@ -198,6 +198,60 @@ class AppStrings {
       _text(en: 'Choose a course', ru: 'Выбери курс', es: 'Elige un curso');
   String get brickBreaker =>
       _text(en: 'Brick Breaker', ru: 'Арканоид', es: 'Rompebloques');
+  String get matchThree =>
+      _text(en: 'Match Three', ru: 'Три в ряд', es: 'Combina tres');
+  String get matchInstruction => _text(
+    en: 'Match gems to unlock word bonuses',
+    ru: 'Собирай кристаллы и открывай словесные бонусы',
+    es: 'Combina gemas para activar bonos de vocabulario',
+  );
+  String get matchGuide => _text(
+    en: 'Slide the highlighted gem down to make a match of four.',
+    ru: 'Сдвинь выделенный кристалл вниз, чтобы собрать четыре в ряд.',
+    es: 'Desliza la gema resaltada hacia abajo para alinear cuatro gemas.',
+  );
+  String get matchHint => _text(
+    en: 'Match four gems in a row to unlock a word.',
+    ru: 'Собери четыре кристалла в ряд, чтобы открыть слово.',
+    es: 'Alinea cuatro gemas para descubrir una palabra.',
+  );
+  String get matchInvalidMove => _text(
+    en: 'Swap two gems to line up three of the same kind.',
+    ru: 'Поменяй два кристалла местами, чтобы собрать три одинаковых в ряд.',
+    es: 'Intercambia dos gemas para alinear tres del mismo tipo.',
+  );
+  String get matchBonus => _text(
+    en: 'Clear a row',
+    ru: 'Бонус «Очистить строку»',
+    es: 'Bono «Limpia una fila»',
+  );
+  String get matchCleared => _text(
+    en: 'Row cleared. Correct translation +60.',
+    ru: 'Строка очищена. За верный перевод +60.',
+    es: 'Fila eliminada. Traducción correcta +60.',
+  );
+  String matchMoves(int count) =>
+      _text(en: 'Moves: $count', ru: 'Ходы: $count', es: 'Movimientos: $count');
+  String matchGem(int kind, int row, int column) {
+    final names = _text(
+      en:
+          'cyan diamond,pink sphere,amber hexagon,lilac crystal,mint square,blue triangle,charged gem',
+      ru:
+          'голубой ромб,розовая сфера,янтарный шестигранник,лиловый кристалл,мятный квадрат,синий треугольник,заряженная фишка',
+      es:
+          'rombo turquesa,esfera rosa,hexágono ámbar,cristal lila,cuadrado verde,triángulo azul,gema cargada',
+    ).split(',');
+    final name =
+        kind < 0
+            ? _text(en: 'empty cell', ru: 'пустая клетка', es: 'casilla vacía')
+            : names[kind];
+    return _text(
+      en: '$name, row $row, column $column',
+      ru: '$name, ряд $row, столбец $column',
+      es: '$name, fila $row, columna $column',
+    );
+  }
+
   String get brickInstruction => _text(
     en: 'Break bricks and catch translations',
     ru: 'Разбивай кирпичи и лови переводы',
