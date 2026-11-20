@@ -96,7 +96,9 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.byKey(ClawKeys.grab));
         await tester.pump();
-        await tester.pump(const Duration(milliseconds: 570));
+        // The capture finishes on the first frame past its 570 ms duration.
+        await tester.pump(const Duration(milliseconds: 580));
+        expect(label, findsOneWidget);
         await tester.pump(const Duration(milliseconds: 60));
         final moving = tester.getRect(label);
         await tester.pumpAndSettle();
