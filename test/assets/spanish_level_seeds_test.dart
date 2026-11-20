@@ -19,7 +19,7 @@ void main() {
 
   for (final (level, count, earlierLevels) in [
     (CefrLevel.a2, 300, ['a1']),
-    (CefrLevel.b1, 180, ['a1', 'a2']),
+    (CefrLevel.b1, 300, ['a1', 'a2']),
   ]) {
     test(
       'Spanish ${level.name} aligns both courses and has four distinct same-POS options',
