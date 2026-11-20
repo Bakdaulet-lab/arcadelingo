@@ -252,7 +252,7 @@ class _FieldPainter extends CustomPainter {
       return;
     }
     for (final ball in run.balls) {
-      final position = ball.position;
+      final position = run.displayedBallPosition(ball);
       if (effects && run.phase == BrickPhase.flying) {
         paint
           ..color = colors.primary.withValues(alpha: .25)

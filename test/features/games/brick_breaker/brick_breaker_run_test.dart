@@ -18,6 +18,15 @@ void openBonus(BrickBreakerRun run) {
 }
 
 void main() {
+  test('подписи движутся между шагами физики', () {
+    final run = BrickBreakerRun(FakeReviewSession([agua]), Random(4));
+    run.launch();
+    run.advance(const Duration(microseconds: 8333 * 300));
+    expect(run.phase, BrickPhase.bonus);
+    final first = run.dropY;
+    run.advance(const Duration(milliseconds: 2));
+    expect(run.dropY, greaterThan(first));
+  });
   test('ловля платформой выдаёт три мяча и один учебный ответ', () {
     final session = FakeReviewSession([agua, agua]);
     final run = BrickBreakerRun(session, Random(4));

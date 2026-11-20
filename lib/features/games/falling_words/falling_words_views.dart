@@ -13,6 +13,7 @@ library;
 
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_hud.dart';
+import 'package:arcadelingo/ui/arcade_press_feedback.dart';
 import 'package:arcadelingo/ui/arcade_reveal_pair.dart';
 import 'package:arcadelingo/ui/arcade_round_summary.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
@@ -315,59 +316,70 @@ class AnswerButton extends StatelessWidget {
       ),
     };
     final radius = BorderRadius.circular(20);
-    return Opacity(
-      opacity: state == AnswerState.dimmed ? .5 : 1,
-      child: Material(
-        color: background,
-        borderRadius: radius,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: radius,
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 56, maxHeight: 88),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
+    return ArcadePressFeedback(
+      enabled: state == AnswerState.idle && onTap != null,
+      builder:
+          (states) => Opacity(
+            opacity: state == AnswerState.dimmed ? .5 : 1,
+            child: Material(
+              color: background,
               borderRadius: radius,
-              border: Border.all(
-                color: icon == null ? scheme.outline : foreground,
-                width: icon == null ? 1 : 3,
-              ),
-            ),
-            child: LayoutBuilder(
-              builder:
-                  (context, constraints) => FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: SizedBox(
-                      width: constraints.maxWidth,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (icon != null) ...[
-                            Icon(icon, color: foreground, size: 24),
-                            const SizedBox(width: 8),
-                          ],
-                          Flexible(
-                            child: Text(
-                              label,
-                              textAlign: TextAlign.center,
-                              style: withWeight(
-                                theme.textTheme.titleMedium!,
-                                FontWeight.w600,
-                              ).copyWith(
-                                fontSize: 18,
-                                color: foreground,
-                                height: 1.25,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+              child: InkWell(
+                statesController: states,
+                onTap: onTap,
+                borderRadius: radius,
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minHeight: 56,
+                    maxHeight: 88,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: radius,
+                    border: Border.all(
+                      color: icon == null ? scheme.outline : foreground,
+                      width: icon == null ? 1 : 3,
                     ),
                   ),
+                  child: LayoutBuilder(
+                    builder:
+                        (context, constraints) => FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: SizedBox(
+                            width: constraints.maxWidth,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (icon != null) ...[
+                                  Icon(icon, color: foreground, size: 24),
+                                  const SizedBox(width: 8),
+                                ],
+                                Flexible(
+                                  child: Text(
+                                    label,
+                                    textAlign: TextAlign.center,
+                                    style: withWeight(
+                                      theme.textTheme.titleMedium!,
+                                      FontWeight.w600,
+                                    ).copyWith(
+                                      fontSize: 18,
+                                      color: foreground,
+                                      height: 1.25,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
     );
   }
 }

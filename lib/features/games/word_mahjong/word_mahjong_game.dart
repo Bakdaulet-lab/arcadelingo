@@ -6,6 +6,7 @@ import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
+import 'package:arcadelingo/ui/arcade_answer_feedback.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/arcade_round_summary.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
@@ -63,6 +64,8 @@ class _WordMahjongGameState extends State<WordMahjongGame> {
   WordMahjongBoard? _board;
   MahjongTile? _selected;
   MahjongTile? _mismatch;
+  Word? _matched;
+  int _pickCount = 0;
   MahjongPair? _highlight;
   Timer? _advance;
   var _score = 0;
@@ -83,6 +86,7 @@ class _WordMahjongGameState extends State<WordMahjongGame> {
     _board = items.isEmpty ? null : WordMahjongBoard.deal(items, _random);
     _selected = null;
     _mismatch = null;
+    _matched = null;
     _highlight = null;
     _reading.reset();
     if (_board != null) _reading.start();
@@ -106,7 +110,9 @@ class _WordMahjongGameState extends State<WordMahjongGame> {
       unawaited(widget.speech.speak(tile.label));
     }
     setState(() {
+      _pickCount++;
       _mismatch = null;
+      _matched = null;
       if (tile != _highlight?.word && tile != _highlight?.translation) {
         _highlight = null;
       }
@@ -119,6 +125,7 @@ class _WordMahjongGameState extends State<WordMahjongGame> {
         _selected = null;
         _highlight = null;
         _report(tile.item);
+        _matched = tile.item.word;
         widget.sounds.play(GameSound.clawCatch);
         unawaited(HapticFeedback.selectionClick());
       } else {
@@ -175,6 +182,7 @@ class _WordMahjongGameState extends State<WordMahjongGame> {
     if (hint == null) return;
     setState(() {
       _hints.add(hint.word.item);
+      _matched = null;
       _selected = null;
       _mismatch = null;
       _highlight = hint;
@@ -259,17 +267,7 @@ class _WordMahjongGameState extends State<WordMahjongGame> {
               ArcadePanel(
                 padding: const EdgeInsets.all(12),
                 accent: _mismatch != null ? colors.error : null,
-                child: Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    _mismatch != null
-                        ? strings.mahjongMismatch
-                        : _highlight != null
-                        ? strings.mahjongHintShown
-                        : strings.mahjongRules,
-                    style: style.bodyMedium,
-                  ),
-                ),
+                child: Semantics(liveRegion: true, child: _status(context)),
               ),
               const SizedBox(height: 12),
               Align(
@@ -284,6 +282,43 @@ class _WordMahjongGameState extends State<WordMahjongGame> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _status(BuildContext context) {
+    final strings = context.strings;
+    final style = Theme.of(context).textTheme.bodyMedium;
+    final matched = _matched;
+    if (_mismatch == null && matched == null) {
+      return Text(
+        _highlight != null ? strings.mahjongHintShown : strings.mahjongRules,
+        style: style,
+      );
+    }
+    final colors = Theme.of(context).colorScheme;
+    return ArcadeAnswerFeedback(
+      key: ValueKey(_pickCount),
+      correct: matched != null,
+      child: Row(
+        children: [
+          Icon(
+            matched != null
+                ? Icons.check_circle_outline_rounded
+                : Icons.info_outline_rounded,
+            size: 18,
+            color: matched != null ? colors.primary : colors.error,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              matched != null
+                  ? '${matched.text} — ${matched.translation}'
+                  : strings.mahjongMismatch,
+              style: style,
+            ),
+          ),
+        ],
       ),
     );
   }

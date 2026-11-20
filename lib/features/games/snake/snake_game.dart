@@ -6,6 +6,7 @@ import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
+import 'package:arcadelingo/ui/arcade_answer_feedback.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/arcade_round_summary.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
@@ -405,6 +406,10 @@ class _SnakeGameState extends State<SnakeGame>
             : _run.answerCorrect
             ? theme.colorScheme.primary
             : theme.colorScheme.error;
+    final message = Text(
+      status,
+      style: theme.textTheme.bodySmall?.copyWith(color: color),
+    );
     return ArcadePanel(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
       accent: responding ? color : null,
@@ -416,10 +421,13 @@ class _SnakeGameState extends State<SnakeGame>
             Expanded(
               child: Semantics(
                 liveRegion: responding,
-                child: Text(
-                  status,
-                  style: theme.textTheme.bodySmall?.copyWith(color: color),
-                ),
+                child:
+                    responding
+                        ? ArcadeAnswerFeedback(
+                          correct: _run.answerCorrect,
+                          child: message,
+                        )
+                        : message,
               ),
             ),
             if (responding)

@@ -6,8 +6,9 @@ import 'package:arcadelingo/domain/review/review_contract.dart';
 enum BrickPhase { serve, flying, bonus, feedback, finished }
 
 class BrickBall {
-  BrickBall(this.position, this.velocity);
+  BrickBall(this.position, this.velocity) : _previous = position;
 
+  Offset _previous;
   Offset position;
   Offset velocity;
 }
@@ -89,9 +90,20 @@ class BrickBreakerRun {
 
   double get dropY {
     final progress =
-        (_phaseTime - _readingTime).inMicroseconds / _fallTime.inMicroseconds;
+        (_phaseTime + _remainder - _readingTime).inMicroseconds /
+        _fallTime.inMicroseconds;
     return _dropStart + (paddleY - _dropStart) * progress.clamp(0, 1);
   }
+
+  /// Субкадровое положение между двумя уже проверенными физикой точками.
+  Offset displayedBallPosition(BrickBall ball) =>
+      phase == BrickPhase.flying
+          ? Offset.lerp(
+            ball._previous,
+            ball.position,
+            _remainder.inMicroseconds / _step.inMicroseconds,
+          )!
+          : ball.position;
 
   double impactProgress(BrickImpact impact) =>
       (_clock - impact.time).inMicroseconds / impactLifetime.inMicroseconds;
@@ -213,6 +225,7 @@ class BrickBreakerRun {
   void _fly() {
     for (final ball in balls) {
       final previous = ball.position;
+      ball._previous = previous;
       var next = previous + ball.velocity * _seconds;
       if (next.dx < ballRadius || next.dx > width - ballRadius) {
         next = Offset(next.dx.clamp(ballRadius, width - ballRadius), next.dy);

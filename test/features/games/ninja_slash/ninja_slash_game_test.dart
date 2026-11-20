@@ -46,6 +46,7 @@ Future<FakeReviewSession> _pumpGame(
   VoidCallback? onPlayAgain,
   VoidCallback? onExit,
   VoidCallback? onRoundOver,
+  Brightness brightness = Brightness.dark,
   Size size = const Size(1080, 2340),
 }) async {
   final session = FakeReviewSession(items ?? wordItems(3), total: total);
@@ -57,7 +58,7 @@ Future<FakeReviewSession> _pumpGame(
     MaterialApp(
       // Настоящая тема приложения, а не дефолтная синяя: иначе
       // textContrastGuideline проверял бы палитру, которой никто не видит.
-      theme: wordarcadeTheme(),
+      theme: wordarcadeTheme(brightness: brightness),
       home: NinjaSlashGame(
         session: session,
         seed: 1,
@@ -165,6 +166,36 @@ double _pairSpan(WidgetTester tester) {
 }
 
 void main() {
+  for (final brightness in Brightness.values) {
+    for (final correct in [true, false]) {
+      testWidgets('только ведущий палец режет объект, $brightness/$correct', (
+        tester,
+      ) async {
+        final session = await _pumpGame(tester, brightness: brightness);
+        await tester.pump(const Duration(seconds: 1));
+        final center = _objectCenter(
+          tester,
+          correct ? _correctIndex(tester, 1) : _wrongIndex(tester, 1),
+        );
+        final start = center - const Offset(0, 46);
+        final end = center + const Offset(0, 46);
+        final blade = await tester.startGesture(start, pointer: 1);
+        final other = await tester.startGesture(start, pointer: 2);
+        await other.moveTo(end);
+        await other.up();
+        expect(session.reports, isEmpty);
+        await blade.moveTo(end);
+        await blade.up();
+        await tester.pump();
+        expect(session.reports.single.outcome.correct, correct);
+        expect(find.byKey(NinjaKeys.flash), findsOneWidget);
+        expect(
+          find.byKey(correct ? NinjaKeys.scorePop : NinjaKeys.revealAnswer),
+          findsOneWidget,
+        );
+      });
+    }
+  }
   group('Контракт с ядром', () {
     testWidgets('верный рез → один report(correct: true) за прожитое время', (
       tester,

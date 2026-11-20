@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:arcadelingo/ui/app_strings.dart';
+import 'package:arcadelingo/ui/arcade_field_swipe.dart';
 import 'package:flutter/material.dart';
 
 import 'match_three_run.dart';
@@ -12,7 +13,7 @@ abstract final class MatchThreeKeys {
   static Key cell(int index) => ValueKey('match_three.cell.$index');
 }
 
-class MatchThreeField extends StatefulWidget {
+class MatchThreeField extends StatelessWidget {
   const MatchThreeField({
     required this.run,
     required this.motion,
@@ -28,20 +29,7 @@ class MatchThreeField extends StatefulWidget {
   final ValueChanged<int> onTap;
   final void Function(int from, int to) onSwap;
 
-  @override
-  State<MatchThreeField> createState() => _MatchThreeFieldState();
-}
-
-class _MatchThreeFieldState extends State<MatchThreeField> {
-  Offset? _origin;
-  Offset _latest = Offset.zero;
-
-  void _finishSwipe(double step) {
-    final origin = _origin;
-    _origin = null;
-    if (origin == null) return;
-    final delta = _latest - origin;
-    if (max(delta.dx.abs(), delta.dy.abs()) < step * .27) return;
+  void _swipe(Offset origin, Offset delta, double step) {
     final x = (origin.dx / step).floor();
     final y = (origin.dy / step).floor();
     if (x < 0 || x >= MatchThreeRun.size || y < 0 || y >= MatchThreeRun.size) {
@@ -53,14 +41,14 @@ class _MatchThreeFieldState extends State<MatchThreeField> {
             ? delta.dx.sign.toInt()
             : delta.dy.sign.toInt() * MatchThreeRun.size;
     if (MatchThreeRun.adjacent(index, index + direction)) {
-      widget.onSwap(index, index + direction);
+      onSwap(index, index + direction);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final ready = widget.run.phase == MatchThreePhase.ready;
+    final ready = run.phase == MatchThreePhase.ready;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surfaceContainerHighest,
@@ -76,27 +64,28 @@ class _MatchThreeFieldState extends State<MatchThreeField> {
               final step = constraints.maxWidth / MatchThreeRun.size;
               return ClipRRect(
                 borderRadius: BorderRadius.circular(11),
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onPanDown:
-                      ready
-                          ? (details) {
-                            _origin = details.localPosition;
-                            _latest = details.localPosition;
-                          }
-                          : null,
-                  onPanUpdate:
-                      ready
-                          ? (details) => _latest = details.localPosition
-                          : null,
-                  onPanEnd: ready ? (_) => _finishSwipe(step) : null,
-                  onPanCancel: ready ? () => _origin = null : null,
+                child: ArcadeFieldSwipe(
+                  distance: step * .27,
+                  onSwipe:
+                      ready ? (from, delta) => _swipe(from, delta, step) : null,
                   child: RepaintBoundary(
                     child: Stack(
-                      children: List.generate(
-                        widget.run.cells.length,
-                        (index) => _tile(context, index, step, colors, ready),
-                      ),
+                      children: [
+                        for (var i = 0; i < run.cells.length; i++)
+                          _tile(context, i, step, colors, ready),
+                        // Paint moving pieces above every cell background.
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: Stack(
+                              children: [
+                                for (final (index, gem) in run.cells.indexed)
+                                  if (gem != null)
+                                    _sprite(context, index, gem, step),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -115,26 +104,14 @@ class _MatchThreeFieldState extends State<MatchThreeField> {
     ColorScheme colors,
     bool ready,
   ) {
-    final run = widget.run;
     final gem = run.cells[index];
     final row = MatchThreeRun.row(index);
     final column = MatchThreeRun.column(index);
     final guide = run.showGuide;
-    final isSelected = widget.selected == index;
+    final isSelected = selected == index;
     final isStart = guide && index == MatchThreeRun.guideFrom;
     final isTarget = guide && index == MatchThreeRun.guideTo;
     final charged = gem == MatchGem.charged;
-    final offset = run.travel[index];
-    final effects = !MediaQuery.disableAnimationsOf(context);
-    final canMove =
-        effects &&
-        (run.phase == MatchThreePhase.swapping ||
-            run.phase == MatchThreePhase.reverting ||
-            run.phase == MatchThreePhase.falling);
-    final fade =
-        effects &&
-        run.phase == MatchThreePhase.clearing &&
-        run.clearing.contains(index);
     final tint =
         isSelected || isStart || isTarget
             ? colors.primary
@@ -159,7 +136,7 @@ class _MatchThreeFieldState extends State<MatchThreeField> {
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(7),
-            onTap: ready ? () => widget.onTap(index) : null,
+            onTap: ready ? () => onTap(index) : null,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: Color.lerp(
@@ -175,23 +152,6 @@ class _MatchThreeFieldState extends State<MatchThreeField> {
               ),
               child: Stack(
                 children: [
-                  if (gem != null)
-                    Align(
-                      child: FractionallySizedBox(
-                        widthFactor: .72,
-                        heightFactor: .72,
-                        child: _gem(
-                          gem,
-                          canMove && offset != null
-                              ? Offset(
-                                offset.columns * step,
-                                offset.rows * step,
-                              )
-                              : Offset.zero,
-                          fade,
-                        ),
-                      ),
-                    ),
                   if (isStart)
                     Positioned(
                       right: 1,
@@ -211,25 +171,56 @@ class _MatchThreeFieldState extends State<MatchThreeField> {
     );
   }
 
-  Widget _gem(MatchGem gem, Offset distance, bool fade) {
+  Widget _sprite(BuildContext context, int index, MatchGem gem, double step) {
+    final effects = !MediaQuery.disableAnimationsOf(context);
+    final travel = effects ? run.travel[index] : null;
+    final fade =
+        effects &&
+        run.phase == MatchThreePhase.clearing &&
+        run.clearing.contains(index);
+    final size = (step - 3) * .72;
+    final inset = (step - size) / 2;
     final piece = CustomPaint(painter: _GemPainter(gem));
-    if (!fade && distance == Offset.zero) return piece;
-    return AnimatedBuilder(
-      animation: widget.motion,
-      child: piece,
-      builder: (context, child) {
-        final progress = Curves.easeOutCubic.transform(widget.motion.value);
-        if (fade) {
-          return Opacity(
-            opacity: 1 - progress,
-            child: Transform.scale(scale: 1 - .88 * progress, child: child),
-          );
-        }
-        return Transform.translate(
-          offset: distance * (1 - progress),
-          child: child,
-        );
-      },
+    final falling = run.phase == MatchThreePhase.falling;
+    final moving =
+        falling ||
+        run.phase == MatchThreePhase.swapping ||
+        run.phase == MatchThreePhase.reverting;
+    final distance =
+        moving && travel != null
+            ? Offset(travel.columns * step, travel.rows * step)
+            : Offset.zero;
+    return Positioned(
+      left: MatchThreeRun.column(index) * step + inset,
+      top: MatchThreeRun.row(index) * step + inset,
+      width: size,
+      height: size,
+      child:
+          !fade && distance == Offset.zero
+              ? piece
+              : AnimatedBuilder(
+                animation: motion,
+                child: piece,
+                builder: (context, child) {
+                  final progress = motion.value;
+                  if (fade) {
+                    final shrink = Curves.easeOutCubic.transform(progress);
+                    return Opacity(
+                      opacity: 1 - shrink,
+                      child: Transform.scale(
+                        scale: 1 - .88 * shrink,
+                        child: child,
+                      ),
+                    );
+                  }
+                  final curve =
+                      falling ? Curves.easeInQuad : Curves.easeInOutCubic;
+                  return Transform.translate(
+                    offset: distance * (1 - curve.transform(progress)),
+                    child: child,
+                  );
+                },
+              ),
     );
   }
 }
