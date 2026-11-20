@@ -85,6 +85,7 @@ void main() {
     await tester.ensureVisible(play);
     await tester.tap(play);
     await tester.pumpAndSettle();
+    final fieldBeforeBonus = tester.getRect(find.byKey(BrickBreakerKeys.field));
     await tester.tap(find.byKey(BrickBreakerKeys.launch));
     for (var i = 0; i < 80; i++) {
       await tester.pump(const Duration(milliseconds: 16));
@@ -94,6 +95,7 @@ void main() {
     expect(find.text('agua'), findsNothing);
     final answer = find.text('membership fee');
     final field = tester.getRect(find.byKey(BrickBreakerKeys.field));
+    expect(field, fieldBeforeBonus);
     final x = tester.getCenter(answer).dx;
     await tester.dragFrom(
       Offset(field.center.dx, field.bottom - 26),
