@@ -16,6 +16,7 @@ import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_run.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_views.dart'
     as falling;
+import 'package:arcadelingo/features/games/match_three/match_three_game.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_views.dart'
     as ninja;
@@ -92,6 +93,9 @@ Future<void> _beginGame(
   await tester.pump(const Duration(milliseconds: 350));
   if (entry.id == brickBreakerEntry.id) {
     await _openBrickBonus(tester);
+  } else if (entry.id == matchThreeEntry.id) {
+    await _tap(tester, find.byKey(MatchThreeKeys.cell(9)));
+    await _tap(tester, find.byKey(MatchThreeKeys.cell(15)));
   } else {
     await tester.pump(
       entry.id == ninjaSlashEntry.id
@@ -154,11 +158,14 @@ void main() {
   });
 
   for (final entry in wordarcadeGames) {
+    final isMatch = entry.id == matchThreeEntry.id;
     final isBrick = entry.id == brickBreakerEntry.id;
     final isClaw = entry.id == clawMachineEntry.id;
     final isNinja = entry.id == ninjaSlashEntry.id;
     final wordKey =
-        isBrick
+        isMatch
+            ? MatchThreeKeys.word
+            : isBrick
             ? BrickBreakerKeys.word
             : isClaw
             ? ClawKeys.prompt
@@ -166,7 +173,9 @@ void main() {
             ? ninja.NinjaKeys.word
             : falling.FallingWordsKeys.word;
     final summaryKey =
-        isBrick
+        isMatch
+            ? MatchThreeKeys.summary
+            : isBrick
             ? BrickBreakerKeys.summary
             : isClaw
             ? ClawKeys.summary
@@ -182,7 +191,13 @@ void main() {
             for (final cefr in CefrLevel.values)
               ...bundled
                   .where((item) => item.word.level == cefr)
-                  .take(isClaw || isBrick ? 3 : 7),
+                  .take(
+                    isMatch
+                        ? 1
+                        : isClaw || isBrick
+                        ? 3
+                        : 7,
+                  ),
           ];
           final selected =
               subset.where((item) => item.word.level == level).toList();
@@ -231,7 +246,8 @@ void main() {
           // В играх с жизнями делаем три промаха. Автомат доходит
           // до итогов по исчерпании короткой очереди из трёх слов.
           final choices = <String>[];
-          for (var index = 0; index < 3; index++) {
+          final answered = isMatch ? 1 : 3;
+          for (var index = 0; index < answered; index++) {
             final word = selected[index].word;
             expect(
               tester.widget<Text>(find.byKey(wordKey)).data,
@@ -255,6 +271,16 @@ void main() {
               if (index < 2) await _openBrickBonus(tester);
               continue;
             }
+            if (isMatch) {
+              expect(fixture.speech.spoken.last, word.text);
+              final wrong = selected[index].distractors.firstWhere(
+                (label) => find.text(label).evaluate().isNotEmpty,
+              );
+              choices.add(wrong);
+              await _tap(tester, find.text(wrong));
+              expect(fixture.answers.records.last.correct, isFalse);
+              continue;
+            }
             final wrongLabels =
                 isNinja
                     ? tester
@@ -276,7 +302,7 @@ void main() {
             await tester.pump(const Duration(milliseconds: 800));
           }
           expect(find.byKey(summaryKey), findsOneWidget);
-          expect(fixture.answers.records, hasLength(3));
+          expect(fixture.answers.records, hasLength(answered));
           expect(
             fixture.answers.records.every(
               (record) => record.gameId == entry.id,
@@ -285,7 +311,7 @@ void main() {
           );
           expect(
             fixture.answers.records.map((record) => record.wordId),
-            selected.take(3).map((item) => item.word.id),
+            selected.take(answered).map((item) => item.word.id),
           );
           final savesBefore = fixture.cards.saves.length;
           final eventsBefore = fixture.events.events.length;
@@ -295,7 +321,7 @@ void main() {
           );
           expect(
             review.words.map((word) => word.id),
-            selected.take(3).map((item) => item.word.id),
+            selected.take(answered).map((item) => item.word.id),
           );
           expect(review.words.every((word) => word.level == level), isTrue);
           for (var index = 0; index < review.words.length; index++) {
@@ -312,7 +338,7 @@ void main() {
           await _tap(tester, find.byKey(LearningKeys.done));
           expect(find.byKey(summaryKey), findsOneWidget);
           expect(fixture.cards.saves, hasLength(savesBefore));
-          expect(fixture.answers.records, hasLength(3));
+          expect(fixture.answers.records, hasLength(answered));
           expect(fixture.events.events, hasLength(eventsBefore));
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
@@ -367,6 +393,8 @@ void main() {
         await tapClaw(tester, ClawKeys.next);
       } else if (isBrick) {
         await _answerBrick(tester, item.word.translation);
+      } else if (isMatch) {
+        await _tap(tester, find.text(item.word.translation));
       } else {
         await _answer(tester, isNinja, item.word.translation);
         await tester.pump(
@@ -399,6 +427,11 @@ void main() {
           (label) => find.text(label).evaluate().isNotEmpty,
         );
         await _answerBrick(tester, feedback);
+      } else if (isMatch) {
+        feedback = item.distractors.firstWhere(
+          (label) => find.text(label).evaluate().isNotEmpty,
+        );
+        await _tap(tester, find.text(feedback));
       } else {
         await tester.pump(const Duration(seconds: 8));
         await tester.pump(const Duration(milliseconds: 800));
