@@ -1,4 +1,5 @@
 import 'package:arcadelingo/domain/challenges/challenge_session.dart';
+import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:flutter/foundation.dart';
@@ -288,6 +289,53 @@ class AppStrings {
     ru: 'Пары: $count / $total',
     es: 'Parejas: $count / $total',
   );
+
+  String get snake => _text(en: 'Snake', ru: 'Змейка', es: 'Serpiente');
+  String get snakeInstruction => _text(
+    en: 'Catch the apple with the right translation',
+    ru: 'Поймай яблоко с нужным переводом',
+    es: 'Atrapa la manzana con la traducción correcta',
+  );
+  String get snakePrompt => _text(
+    en: 'Find the translation',
+    ru: 'Найди перевод',
+    es: 'Busca la traducción',
+  );
+  String get snakeGuide => _text(
+    en: 'Swipe on the board or use the arrows',
+    ru: 'Свайпни по полю или нажми стрелку',
+    es: 'Desliza el dedo por el tablero o usa las flechas',
+  );
+  String get snakeStart =>
+      _text(en: 'Start moving', ru: 'Начать движение', es: 'Empezar a moverse');
+  String get snakePause => _text(en: 'Pause', ru: 'Пауза', es: 'Pausa');
+  String get snakeResume =>
+      _text(en: 'Resume', ru: 'Продолжить', es: 'Continuar');
+  String get snakeResults =>
+      _text(en: 'Results', ru: 'Итоги', es: 'Resultados');
+  String get snakeTail => _text(
+    en: 'The snake ran into its tail.',
+    ru: 'Змейка коснулась хвоста.',
+    es: 'La serpiente chocó con su cola.',
+  );
+  String get snakeLeft => _text(en: 'Left', ru: 'Влево', es: 'Izquierda');
+  String get snakeUp => _text(en: 'Up', ru: 'Вверх', es: 'Arriba');
+  String get snakeDown => _text(en: 'Down', ru: 'Вниз', es: 'Abajo');
+  String get snakeRight => _text(en: 'Right', ru: 'Вправо', es: 'Derecha');
+  String snakeCount(int count, int total) => _text(
+    en: 'Correct $count/$total',
+    ru: 'Верно $count/$total',
+    es: 'Aciertos $count/$total',
+  );
+  String snakeAnswer(Word word, Word choice, {required bool correct}) {
+    final pair = '${word.text} — ${word.translation}';
+    if (correct) return '${this.correct}! $pair';
+    return _text(
+      en: '${choice.text} — ${choice.translation}. Correct match: $pair.',
+      ru: '${choice.text} — ${choice.translation}. Верная пара: $pair.',
+      es: '${choice.text} — ${choice.translation}. Pareja correcta: $pair.',
+    );
+  }
 
   String get brickInstruction => _text(
     en: 'Break bricks and catch translations',

@@ -79,13 +79,14 @@ void _pass(SnakeRun run, int ticks) {
 
 void main() {
   test('fresh sessions can place the correct answer at any opening apple', () {
+    const vocabulary = [_key, _table, _clock];
     final correctCells = <SnakeCell>{
       for (var seed = 0; seed < 30; seed++)
-        SnakeRun(_BoardSession([_key]), const [
-          _key,
-          _table,
-          _clock,
-        ], Random(seed)).apples.singleWhere((apple) => apple.word == _key).cell,
+        SnakeRun(
+          _BoardSession([_key]),
+          vocabulary,
+          Random(seed),
+        ).apples.singleWhere((apple) => apple.word == _key).cell,
     };
     expect(correctCells, {(x: 3, y: 2), (x: 8, y: 6), (x: 8, y: 9)});
   });
@@ -103,10 +104,8 @@ void main() {
       (x: 2, y: 8),
     ]);
     expect(run.item?.word, _key);
-    expect(run.apples.singleWhere((apple) => apple.word == _key).cell, (
-      x: 8,
-      y: 6,
-    ));
+    final correctApple = run.apples.singleWhere((apple) => apple.word == _key);
+    expect(correctApple.cell, (x: 8, y: 6));
     expect(session.answered, 0);
     _pass(run, 2);
     expect(run.body.first, (x: 5, y: 6));

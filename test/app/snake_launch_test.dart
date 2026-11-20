@@ -262,14 +262,12 @@ void main() {
             for (final deck in decks.values.where((deck) => deck != chosen)) {
               expect((deck.answers as InMemoryAnswerLog).records, isEmpty);
               expect((deck.cards as InMemoryCardStore).saves, isEmpty);
-              expect(
-                records.load((
-                  gameId: 'snake',
-                  courseId: deck.course.id,
-                  level: level,
-                )),
-                isNull,
+              final otherCourse = (
+                gameId: 'snake',
+                courseId: deck.course.id,
+                level: level,
               );
+              expect(records.load(otherCourse), isNull);
             }
             final scoreKey = (
               gameId: 'snake',

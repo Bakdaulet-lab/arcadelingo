@@ -1,0 +1,109 @@
+@Tags(['peek'])
+library;
+
+import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/review/study_course.dart';
+import 'package:arcadelingo/domain/session/leitner_review_session.dart';
+import 'package:arcadelingo/features/games/snake/snake_field.dart';
+import 'package:arcadelingo/features/games/snake/snake_game.dart';
+import 'package:arcadelingo/features/games/snake/snake_run.dart';
+import 'package:arcadelingo/ui/theme.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'peek_harness.dart';
+
+const _pairs = {'llave': 'ключ', 'mesa': 'стол', 'reloj': 'часы'};
+const _longPairs = {
+  'punto de inflexión': 'переломный момент',
+  'planteamiento': 'подход',
+  'responsabilidad': 'ответственность',
+};
+
+Future<void> _pumpSnake(
+  WidgetTester tester,
+  Brightness brightness, {
+  bool largeText = false,
+}) async {
+  final level = largeText ? CefrLevel.c1 : CefrLevel.a1;
+  final vocabulary = [
+    for (final entry in (largeText ? _longPairs : _pairs).entries)
+      Word(
+        id: entry.key,
+        text: entry.key,
+        translation: entry.value,
+        level: level,
+      ),
+  ];
+  tester.view.physicalSize =
+      largeText ? const Size(960, 2340) : peekPhysicalSize;
+  tester.view.devicePixelRatio = peekDevicePixelRatio;
+  tester.platformDispatcher.textScaleFactorTestValue = largeText ? 1.6 : 1;
+  addTearDown(tester.view.reset);
+  addTearDown(tester.platformDispatcher.clearAllTestValues);
+  await tester.pumpWidget(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: wordarcadeTheme(
+        brightness: brightness,
+        platform: TargetPlatform.android,
+      ),
+      home: SnakeGame(
+        session: LeitnerReviewSession.start(
+          cards: {},
+          items: vocabulary.map((word) => ReviewItem(word: word)).toList(),
+          target: vocabulary.length,
+          now: () => DateTime(2026, 11, 21),
+          onCardsChanged: (_) {},
+        ),
+        vocabulary: vocabulary,
+        onPlayAgain: () {},
+        onExit: () {},
+        course: StudyCourse.spanishFromRussian,
+        level: level,
+        seed: 12,
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _catchKey(WidgetTester tester) async {
+  const tick = Duration(milliseconds: 490);
+  final field = find.byKey(SnakeKeys.field);
+  final apple = tester
+      .widget<SnakeField>(field)
+      .run
+      .apples
+      .firstWhere((apple) => apple.word.text == 'llave');
+  final turns = switch (apple.cell) {
+    (x: 3, y: 2) => [(SnakeDirection.up, 4), (SnakeDirection.left, 2)],
+    (x: 8, y: 6) => [(SnakeDirection.right, 3)],
+    (x: 8, y: 9) => [(SnakeDirection.down, 3), (SnakeDirection.right, 3)],
+    _ => throw StateError('Ключ вне стартовой раскладки'),
+  };
+  for (final (index, (direction, steps)) in turns.indexed) {
+    await tester.tap(find.byKey(SnakeKeys.direction(direction)));
+    await tester.pump();
+    for (var step = index == 0 ? 1 : 0; step < steps; step++) {
+      await tester.pump(tick);
+    }
+  }
+  await tester.pumpAndSettle();
+}
+
+void main() {
+  for (final brightness in Brightness.values) {
+    testWidgets('змейка — ${brightness.name}', (tester) async {
+      await _pumpSnake(tester, brightness);
+      await peek(tester, 'snake_${brightness.name}_ready');
+      await _catchKey(tester);
+      await peek(tester, 'snake_${brightness.name}_answer');
+    });
+  }
+
+  testWidgets('змейка — увеличенный текст на узком экране', (tester) async {
+    await _pumpSnake(tester, Brightness.light, largeText: true);
+    await peek(tester, 'snake_light_large_text');
+  });
+}

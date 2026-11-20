@@ -863,6 +863,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       session: session,
                       course: widget.course,
                       level: level,
+                      vocabulary: widget.items
+                          .map((item) => item.word)
+                          .where((word) => word.level == level),
                       summaryFooter: footer,
                       onPlayAgain: () {
                         navigator.pop();
