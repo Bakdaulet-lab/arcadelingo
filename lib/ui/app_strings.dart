@@ -252,6 +252,43 @@ class AppStrings {
     );
   }
 
+  String get wordMahjong => _text(
+    en: 'Word Mahjong',
+    ru: 'Маджонг со словами',
+    es: 'Mahjong de palabras',
+  );
+  String get mahjongInstruction => _text(
+    en: 'Match each word with its translation',
+    ru: 'Снимай пары из слова и его перевода',
+    es: 'Empareja cada palabra con su traducción',
+  );
+  String get mahjongRules => _text(
+    en:
+        'Match a word with its translation. Each tile must be uncovered and have a free side.',
+    ru:
+        'Соедини слово и перевод. Плитка должна быть открыта сверху и свободна хотя бы с одной стороны.',
+    es:
+        'Une una palabra con su traducción. Cada ficha debe estar descubierta y tener un lado libre.',
+  );
+  String get mahjongMismatch => _text(
+    en: 'These tiles do not match. Try again.',
+    ru: 'Эти плитки не совпадают. Попробуй ещё раз.',
+    es: 'Estas fichas no forman pareja. Inténtalo de nuevo.',
+  );
+  String get mahjongHintShown => _text(
+    en: 'Tap both highlighted tiles to remove the pair.',
+    ru: 'Нажми на обе подсвеченные плитки, чтобы снять пару.',
+    es: 'Toca las dos fichas resaltadas para retirar la pareja.',
+  );
+  String get mahjongWord => _text(en: 'word', ru: 'слово', es: 'palabra');
+  String get mahjongTranslation =>
+      _text(en: 'translation', ru: 'перевод', es: 'traducción');
+  String mahjongPairs(int count, int total) => _text(
+    en: 'Pairs: $count / $total',
+    ru: 'Пары: $count / $total',
+    es: 'Parejas: $count / $total',
+  );
+
   String get brickInstruction => _text(
     en: 'Break bricks and catch translations',
     ru: 'Разбивай кирпичи и лови переводы',

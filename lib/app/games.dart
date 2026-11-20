@@ -24,6 +24,7 @@ import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart';
 import 'package:arcadelingo/features/games/match_three/match_three_game.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
+import 'package:arcadelingo/features/games/word_mahjong/word_mahjong_game.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:flutter/material.dart';
 
@@ -129,6 +130,7 @@ class GameEntry {
     'claw_machine' => strings.clawMachine,
     'brick_breaker' => strings.brickBreaker,
     'match_three' => strings.matchThree,
+    'word_mahjong' => strings.wordMahjong,
     _ => title,
   };
 
@@ -138,6 +140,7 @@ class GameEntry {
     'claw_machine' => strings.clawInstruction,
     'brick_breaker' => strings.brickInstruction,
     'match_three' => strings.matchInstruction,
+    'word_mahjong' => strings.mahjongInstruction,
     _ => instruction,
   };
 
@@ -198,6 +201,15 @@ const matchThreeEntry = GameEntry(
   tracksRoundScore: true,
 );
 
+const wordMahjongEntry = GameEntry(
+  id: 'word_mahjong',
+  title: 'Маджонг со словами',
+  build: _buildWordMahjong,
+  artwork: 'assets/images/home/word-mahjong.webp',
+  instruction: 'Снимай пары из слова и его перевода',
+  tracksRoundScore: true,
+);
+
 /// Все игры приложения.
 ///
 /// Порядок значим: первая запись — умолчание домашнего экрана. Выбор другой
@@ -208,6 +220,7 @@ const List<GameEntry> wordarcadeGames = [
   clawMachineEntry,
   brickBreakerEntry,
   matchThreeEntry,
+  wordMahjongEntry,
 ];
 
 Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
@@ -265,6 +278,21 @@ Widget _buildBrickBreaker(GameLaunch launch) => BrickBreakerGame(
 
 Widget _buildMatchThree(GameLaunch launch) => MatchThreeGame(
   session: launch.session,
+  course: launch.course,
+  level: launch.level,
+  speech: launch.speech,
+  sounds: launch.sounds,
+  summaryFooter: launch.summaryFooter,
+  onRoundScore: launch.onRoundScore,
+  onPlayAgain: launch.onPlayAgain,
+  onExit: launch.onExit,
+  onRoundOver: launch.onRoundOver,
+  mistakeCount: launch.mistakeCount,
+  onReviewMistakes: launch.onReviewMistakes,
+);
+
+Widget _buildWordMahjong(GameLaunch launch) => WordMahjongGame(
+  session: launch.session as BoardReviewSession,
   course: launch.course,
   level: launch.level,
   speech: launch.speech,

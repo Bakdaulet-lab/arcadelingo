@@ -9,7 +9,6 @@ import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/features/games/word_mahjong/word_mahjong_field.dart';
-import 'package:arcadelingo/features/games/word_mahjong/word_mahjong_game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -135,30 +134,24 @@ void main() {
       );
       expect(spanishCards.saves.last.keys, unorderedEquals(['beca', 'cuota']));
       expect(baseLog.records, isEmpty);
-      expect(
-        records.load((
-          gameId: 'word_mahjong',
-          courseId: 'en-es',
-          level: CefrLevel.b1,
-        )),
-        125,
+      const scoreKey = (
+        gameId: 'word_mahjong',
+        courseId: 'en-es',
+        level: CefrLevel.b1,
       );
-      expect(
-        records.load((
-          gameId: 'word_mahjong',
-          courseId: 'ru-en',
-          level: CefrLevel.b1,
-        )),
-        isNull,
+      const otherCourse = (
+        gameId: 'word_mahjong',
+        courseId: 'ru-en',
+        level: CefrLevel.b1,
       );
-      expect(
-        records.load((
-          gameId: 'word_mahjong',
-          courseId: 'en-es',
-          level: CefrLevel.a1,
-        )),
-        isNull,
+      const otherLevel = (
+        gameId: 'word_mahjong',
+        courseId: 'en-es',
+        level: CefrLevel.a1,
       );
+      expect(records.load(scoreKey), 125);
+      expect(records.load(otherCourse), isNull);
+      expect(records.load(otherLevel), isNull);
       await _tap(tester, find.byKey(const Key('game.review_mistakes')));
       final review = tester.widget<MistakesReviewScreen>(
         find.byType(MistakesReviewScreen),

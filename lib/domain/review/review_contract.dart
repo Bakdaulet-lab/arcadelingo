@@ -128,3 +128,14 @@ abstract class ReviewSession {
   /// слов. Не меняется до конца сессии.
   int get total;
 }
+
+/// Review for a field showing several items at once.
+abstract interface class BoardReviewSession implements ReviewSession {
+  /// Unplayed items in schedule order. Reading the list makes no reservation.
+  List<ReviewItem> get remainingItems;
+
+  /// Reports one completed pair, in any order, using its item from the list.
+  /// The board gives immediate retries, so this item returns on a later
+  /// session according to its grade.
+  void reportPair(ReviewItem item, ReviewOutcome outcome);
+}
