@@ -157,7 +157,11 @@ void main() {
     bundled = (seed as Ok<List<ReviewItem>>).value;
   });
 
-  for (final entry in wordarcadeGames) {
+  // The board game's two-sided selection and mistakes are exercised in
+  // word_mahjong_launch_test.dart rather than by the single-prompt driver.
+  for (final entry in wordarcadeGames.where(
+    (game) => game.id != 'word_mahjong',
+  )) {
     final isMatch = entry.id == matchThreeEntry.id;
     final isBrick = entry.id == brickBreakerEntry.id;
     final isClaw = entry.id == clawMachineEntry.id;
