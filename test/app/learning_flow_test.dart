@@ -157,10 +157,9 @@ void main() {
     bundled = (seed as Ok<List<ReviewItem>>).value;
   });
 
-  // The board game's two-sided selection and mistakes are exercised in
-  // word_mahjong_launch_test.dart rather than by the single-prompt driver.
+  // The board and movement games have dedicated launch tests.
   for (final entry in wordarcadeGames.where(
-    (game) => game.id != 'word_mahjong',
+    (game) => !const {'word_mahjong', 'snake'}.contains(game.id),
   )) {
     final isMatch = entry.id == matchThreeEntry.id;
     final isBrick = entry.id == brickBreakerEntry.id;
