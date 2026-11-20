@@ -101,4 +101,36 @@ void main() {
     expect(session.reports.single.outcome.selectedAnswer, wrong);
     expect(run.phase, BrickPhase.finished);
   });
+
+  test('в испытании пропуск расходует один из трёх бонусов', () {
+    final session = FakeReviewSession([agua, agua, agua]);
+    final run = BrickBreakerRun(session, Random(11), challenge: true);
+    expect(run.lives, 1);
+    for (var i = 0; i < 3; i++) {
+      final gold = run.bricks.singleWhere((brick) => brick.gold);
+      run.movePaddle(gold.bounds.center.dx);
+      openBonus(run);
+      run.movePaddle(0);
+      run.advance(const Duration(seconds: 6));
+      expect(session.reports, hasLength(i + 1));
+      expect(session.reports.last.outcome.timedOut, isTrue);
+      expect(session.reports.last.outcome.selectedAnswer, isNull);
+    }
+    expect(run.phase, BrickPhase.finished);
+    expect(run.lives, 1);
+    expect(run.correctCount, 0);
+    expect(run.score, 30);
+  });
+
+  test('испытание заканчивается при потере последнего мяча', () {
+    final session = FakeReviewSession([agua, agua, agua]);
+    final run = BrickBreakerRun(session, Random(11), challenge: true);
+    run.movePaddle(40);
+    run.launch();
+    run.movePaddle(BrickBreakerRun.width);
+    run.advance(const Duration(seconds: 6));
+    expect(run.phase, BrickPhase.finished);
+    expect(run.lives, 0);
+    expect(session.reports, isEmpty);
+  });
 }
