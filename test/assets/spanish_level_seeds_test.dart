@@ -21,6 +21,7 @@ void main() {
     (CefrLevel.a2, 300, ['a1']),
     (CefrLevel.b1, 300, ['a1', 'a2']),
     (CefrLevel.b2, 300, ['a1', 'a2', 'b1']),
+    (CefrLevel.c1, 180, ['a1', 'a2', 'b1', 'b2']),
   ]) {
     test(
       'Spanish ${level.name} aligns both courses and has four distinct same-POS options',
