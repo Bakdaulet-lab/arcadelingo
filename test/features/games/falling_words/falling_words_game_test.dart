@@ -49,6 +49,7 @@ Future<FakeReviewSession> _pumpGame(
   String Function()? summaryFooter,
   VoidCallback? onPlayAgain,
   VoidCallback? onExit,
+  Brightness brightness = Brightness.dark,
 }) async {
   final session = FakeReviewSession(items ?? wordItems(3), total: total);
   tester.view.physicalSize = const Size(1080, 2340);
@@ -59,7 +60,7 @@ Future<FakeReviewSession> _pumpGame(
     MaterialApp(
       // Настоящая тема приложения, а не дефолтная синяя: иначе
       // textContrastGuideline ниже проверяет палитру, которой никто не видит.
-      theme: wordarcadeTheme(),
+      theme: wordarcadeTheme(brightness: brightness),
       home: FallingWordsGame(
         session: session,
         seed: 1,
@@ -199,6 +200,47 @@ List<String> _captureHaptics(WidgetTester tester) {
 }
 
 void main() {
+  for (final brightness in Brightness.values) {
+    for (final correct in [true, false]) {
+      testWidgets('вариант реагирует под пальцем, $brightness/$correct', (
+        tester,
+      ) async {
+        final session = await _pumpGame(tester, brightness: brightness);
+        final answer = find.text(
+          correct ? wordTranslation(1) : wordDistractor(1, 1),
+        );
+        double scale() => tester
+            .renderObject<RenderBox>(answer)
+            .getTransformTo(null)
+            .entry(0, 0);
+        final rest = scale();
+        final finger = await tester.startGesture(tester.getCenter(answer));
+        await tester.pump(const Duration(milliseconds: 110));
+        await tester.pump(const Duration(milliseconds: 60));
+        expect(scale(), lessThan(rest));
+        expect(session.reports, isEmpty);
+        await finger.up();
+        await tester.pump();
+        expect(session.reports.single.outcome.correct, correct);
+        expect(find.byIcon(correct ? Icons.check : Icons.close), findsWidgets);
+      });
+    }
+  }
+
+  testWidgets('уменьшение движения сохраняет размер угаданного слова', (
+    tester,
+  ) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    await _pumpGame(tester);
+    final word = find.byKey(FallingWordsKeys.word);
+    double scale() =>
+        tester.renderObject<RenderBox>(word).getTransformTo(null).entry(0, 0);
+    final before = scale();
+    await _tap(tester, wordTranslation(1));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(scale(), closeTo(before, .0001));
+  });
   group('Контракт с ядром', () {
     testWidgets('верный тап → один report(correct: true) за прожитое время', (
       tester,

@@ -5,6 +5,7 @@ import 'package:arcadelingo/features/games/claw_machine/claw_machine_field.dart'
 import 'package:arcadelingo/features/games/claw_machine/claw_machine_game.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/claw_actions.dart';
@@ -26,6 +27,7 @@ Future<void> _show(
   FakeReviewSession session, {
   VoidCallback? finish,
   bool reduceMotion = false,
+  Brightness brightness = Brightness.dark,
   Sounds sounds = const NoopSounds(),
 }) async {
   tester.view.physicalSize = const Size(360, 720);
@@ -33,7 +35,7 @@ Future<void> _show(
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     MaterialApp(
-      theme: wordarcadeTheme(),
+      theme: wordarcadeTheme(brightness: brightness),
       builder:
           (context, child) => MediaQuery(
             data: MediaQuery.of(
@@ -56,6 +58,59 @@ Future<void> _show(
 }
 
 void main() {
+  for (final brightness in Brightness.values) {
+    testWidgets('glass and keys aim without grabbing ($brightness)', (
+      tester,
+    ) async {
+      final session = FakeReviewSession([_fish]);
+      await _show(tester, session, brightness: brightness);
+      final field = find.byType(ClawMachineField);
+      final bounds = tester.getRect(field);
+      await tester.tapAt(bounds.topLeft + const Offset(20, 45));
+      await tester.pump();
+      expect(tester.widget<ClawMachineField>(field).column, 0);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      expect(tester.widget<ClawMachineField>(field).column, 1);
+      expect(session.reports, isEmpty);
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pump();
+      expect(tester.widget<ClawMachineField>(field).capturing, isTrue);
+      await tester.pumpAndSettle();
+      expect(tester.widget<ClawMachineField>(field).capturing, isFalse);
+    });
+
+    testWidgets('wrong capsule and completed word react ($brightness)', (
+      tester,
+    ) async {
+      final session = FakeReviewSession([_fish]);
+      await _show(tester, session, brightness: brightness);
+      final field = tester.widget<ClawMachineField>(
+        find.byType(ClawMachineField),
+      );
+      final wrong = field.stacks
+          .map((stack) => stack.last)
+          .firstWhere((letter) => letter != 'F');
+      Future<void> checkGrab(String letter, Finder label) async {
+        await tester.tap(clawCapsule(letter));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(ClawKeys.grab));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 570));
+        await tester.pump(const Duration(milliseconds: 60));
+        final moving = tester.getRect(label);
+        await tester.pumpAndSettle();
+        expect(tester.getRect(label), isNot(moving));
+      }
+
+      await checkGrab(wrong, find.text('Буква $wrong не подошла'));
+      expect(session.reports, isEmpty);
+      await spellWithClaw(tester, 'fis');
+      await checkGrab('H', find.text('FISH'));
+      expect(session.reports.single.outcome.correct, isFalse);
+      expect(find.byKey(ClawKeys.next), findsOneWidget);
+    });
+  }
   testWidgets('горизонтальный жест на стекле выбирает дорожку', (tester) async {
     final session = FakeReviewSession([_fish]);
     await _show(tester, session);
