@@ -31,6 +31,7 @@ class BrickBreakerGame extends StatefulWidget {
     this.onRoundOver,
     this.summaryFooter,
     this.onRoundScore,
+    this.onChallengeComplete,
     this.mistakeCount,
     this.onReviewMistakes,
     this.sounds = const NoopSounds(),
@@ -45,6 +46,7 @@ class BrickBreakerGame extends StatefulWidget {
   final VoidCallback? onRoundOver;
   final String Function()? summaryFooter;
   final Widget Function(int score)? onRoundScore;
+  final Widget Function(int score)? onChallengeComplete;
   final int Function()? mistakeCount;
   final VoidCallback? onReviewMistakes;
   final Sounds sounds;
@@ -70,7 +72,11 @@ class _BrickBreakerGameState extends State<BrickBreakerGame>
   @override
   void initState() {
     super.initState();
-    _run = BrickBreakerRun(widget.session, Random(widget.seed));
+    _run = BrickBreakerRun(
+      widget.session,
+      Random(widget.seed),
+      challenge: widget.onChallengeComplete != null,
+    );
     _ticker = createTicker(_tick);
     _lifecycle = AppLifecycleListener(onStateChange: _onLifecycle);
     final state = WidgetsBinding.instance.lifecycleState;
@@ -116,7 +122,9 @@ class _BrickBreakerGameState extends State<BrickBreakerGame>
       );
       if (_run.phase == BrickPhase.finished) {
         _footer = widget.summaryFooter?.call();
-        _record = widget.onRoundScore?.call(_run.score);
+        _record = (widget.onChallengeComplete ?? widget.onRoundScore)?.call(
+          _run.score,
+        );
       }
     });
     if (previousPhase == _run.phase) return;
@@ -234,12 +242,14 @@ class _BrickBreakerGameState extends State<BrickBreakerGame>
                         strings.score(_run.score),
                         style: theme.textTheme.titleMedium,
                       ),
-                      Text(
-                        strings.lives(
-                          _run.lives,
-                          BrickBreakerRun.startingLives,
+                      if (_run.challenge)
+                        Text(
+                          strings.wordNumber(
+                            widget.session.answered + (feedback ? 0 : 1),
+                            widget.session.total,
+                          ),
                         ),
-                      ),
+                      Text(strings.lives(_run.lives, _run.lifeLimit)),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -311,6 +321,8 @@ class _BrickBreakerGameState extends State<BrickBreakerGame>
                                       ? strings.brickPaused
                                       : _run.caughtCorrect
                                       ? strings.correct
+                                      : _run.lastAnswer == null
+                                      ? strings.timeUp
                                       : strings.mistake,
                                   style: theme.textTheme.titleLarge,
                                 ),

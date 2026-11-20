@@ -5,7 +5,8 @@ import '../review/review_contract.dart';
 enum ArcadeChallenge {
   sprint(null),
   streak(15),
-  claw(3);
+  claw(3),
+  brick(3);
 
   const ArcadeChallenge(this.wordLimit);
   final int? wordLimit;

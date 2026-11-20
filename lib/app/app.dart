@@ -639,7 +639,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final course = widget.course;
     final items = widget.items;
     final key = (gameId: game.id, courseId: course.id, level: _selectedLevel);
-    final best = records.load(key);
+    final best = records.load(key, mode: game.challengeRecordMode);
     _selectingChallenge = true;
     try {
       final start = await showChallengeDialog(
@@ -689,7 +689,9 @@ class _HomeScreenState extends State<HomeScreen> {
       learning: false,
       replayChallenge: () => _launchChallenge(game, mode, key, items, records),
       onChallengeComplete:
-          (score) => ChallengeRecordLine(best: records.submit(key, score)),
+          (score) => ChallengeRecordLine(
+            best: records.submit(key, score, mode: game.challengeRecordMode),
+          ),
     );
   }
 
@@ -875,7 +877,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       onExit: navigator.pop,
                       onChallengeComplete: onChallengeComplete,
                       onRoundScore:
-                          game.tracksRoundScore && records != null
+                          onChallengeComplete == null &&
+                                  game.tracksRoundScore &&
+                                  records != null
                               ? (score) => ChallengeRecordLine(
                                 best: records.submit(recordKey, score),
                               )

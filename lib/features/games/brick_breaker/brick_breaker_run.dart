@@ -25,7 +25,8 @@ typedef BrickImpact = ({ArcadeBrick brick, Duration time});
 /// Simulates the field in fixed logical coordinates. A bonus retains its
 /// pending review item until a catch, including across a missed drop.
 class BrickBreakerRun {
-  BrickBreakerRun(this.session, this._random) {
+  BrickBreakerRun(this.session, this._random, {this.challenge = false}) {
+    lives = lifeLimit;
     if (session.isFinished) {
       phase = BrickPhase.finished;
     } else {
@@ -58,6 +59,7 @@ class BrickBreakerRun {
 
   final ReviewSession session;
   final Random _random;
+  final bool challenge;
   final bricks = <ArcadeBrick>[];
   final balls = <BrickBall>[];
   final impacts = <BrickImpact>[];
@@ -67,7 +69,7 @@ class BrickBreakerRun {
   bool missedDrop = false;
   BrickPhase phase = BrickPhase.serve;
   double paddle = width / 2;
-  int lives = startingLives;
+  late int lives;
   int score = 0;
   int field = 1;
   int correctCount = 0;
@@ -82,6 +84,8 @@ class BrickBreakerRun {
 
   bool get caughtCorrect =>
       lastAnswer != null && lastAnswer == item?.word.translation;
+
+  int get lifeLimit => challenge ? 1 : startingLives;
 
   double get dropY {
     final progress =
@@ -315,14 +319,15 @@ class BrickBreakerRun {
 
   void _drop() {
     _answerTime += _step;
-    if (_phaseTime < _readingTime + _fallTime) return;
+    final deadline = _readingTime + _fallTime;
+    if (_phaseTime < deadline) return;
     final lane = catchLane;
-    if (lane == null) {
+    if (lane == null && !challenge) {
       missedDrop = true;
       _serve(_parkedBalls);
       return;
     }
-    lastAnswer = choices[lane];
+    lastAnswer = lane == null ? null : choices[lane];
     if (caughtCorrect) {
       score += 100;
       correctCount++;
@@ -333,11 +338,18 @@ class BrickBreakerRun {
     }
     _changePhase(BrickPhase.feedback);
     session.report(
-      ReviewOutcome.untimed(
-        correct: caughtCorrect,
-        responseTime: _answerTime,
-        selectedAnswer: lastAnswer,
-      ),
+      lane == null
+          ? ReviewOutcome(
+            correct: false,
+            responseTime: deadline,
+            timeLimit: deadline,
+            timedOut: true,
+          )
+          : ReviewOutcome.untimed(
+            correct: caughtCorrect,
+            responseTime: _answerTime,
+            selectedAnswer: lastAnswer,
+          ),
     );
   }
 }

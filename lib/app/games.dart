@@ -114,6 +114,9 @@ class GameEntry {
   final ArcadeChallenge? challenge;
   final bool tracksRoundScore;
 
+  ArcadeChallenge? get challengeRecordMode =>
+      tracksRoundScore ? challenge : null;
+
   String titleFor(AppStrings strings) => switch (id) {
     'falling_words' => strings.fallingWords,
     'ninja_slash' => strings.ninjaSlash,
@@ -172,6 +175,7 @@ const brickBreakerEntry = GameEntry(
   id: 'brick_breaker',
   title: 'Арканоид',
   build: _buildBrickBreaker,
+  challenge: ArcadeChallenge.brick,
   artwork: 'assets/images/home/brick-breaker.webp',
   instruction: 'Разбивай кирпичи и лови переводы',
   tracksRoundScore: true,
@@ -230,8 +234,10 @@ Widget _buildBrickBreaker(GameLaunch launch) => BrickBreakerGame(
   session: launch.session,
   sounds: launch.sounds,
   speech: launch.speech,
-  summaryFooter: launch.summaryFooter,
+  summaryFooter:
+      launch.onChallengeComplete == null ? launch.summaryFooter : null,
   onRoundScore: launch.onRoundScore,
+  onChallengeComplete: launch.onChallengeComplete,
   onPlayAgain: launch.onPlayAgain,
   onExit: launch.onExit,
   onRoundOver: launch.onRoundOver,

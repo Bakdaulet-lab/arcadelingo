@@ -16,6 +16,21 @@ const _agua = ReviewItem(
 );
 
 void main() {
+  testWidgets('испытание арканоида', (tester) async {
+    await pumpPeek(
+      tester,
+      BrickBreakerGame(
+        session: FakeReviewSession([_agua, _agua, _agua]),
+        onExit: () {},
+        onPlayAgain: () {},
+        onChallengeComplete: (_) => const SizedBox.shrink(),
+        seed: 19,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await peek(tester, 'brick_three_golden_bricks');
+  });
+
   for (final brightness in Brightness.values) {
     testWidgets('арканоид в теме ${brightness.name}', (tester) async {
       tester.view.physicalSize = peekPhysicalSize;

@@ -43,6 +43,11 @@ class AppStrings {
       ru: 'Три слова, одна подсказка',
       es: 'Tres palabras, una pista',
     ),
+    ArcadeChallenge.brick => _text(
+      en: 'Three Golden Bricks',
+      ru: 'Три золотых кирпича',
+      es: 'Tres bloques dorados',
+    ),
   };
 
   String challengeRules(ArcadeChallenge mode) => switch (mode) {
@@ -69,6 +74,14 @@ class AppStrings {
           'Собери три слова. На весь раунд есть одна подсказка. В рекорд идут слова, собранные без ошибочных захватов.',
       es:
           'Forma tres palabras con una sola pista para toda la ronda. Para el récord cuentan las palabras completadas sin atrapar letras equivocadas.',
+    ),
+    ArcadeChallenge.brick => _text(
+      en:
+          'Break three golden bricks with one life. Each brick earns points. A correct translation gives you three balls. Letting all choices fall spends one chance. Your score counts toward the record.',
+      ru:
+          'Разбей три золотых кирпича за одну жизнь. Кирпичи приносят очки, а верный перевод даёт три мяча. Если все варианты упали, попытка расходуется. В рекорд идёт счёт партии.',
+      es:
+          'Rompe tres bloques dorados con una sola vida. Cada bloque da puntos y cada traducción correcta te da tres bolas. Si dejas caer todas las opciones, gastas un intento. Tu puntuación cuenta para el récord.',
     ),
   };
 
