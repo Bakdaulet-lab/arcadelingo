@@ -1,5 +1,6 @@
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
+import 'package:arcadelingo/ui/arcade_press_feedback.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -90,108 +91,100 @@ class _GameCard extends StatelessWidget {
       ),
     );
 
-    return Semantics(
-      button: true,
+    return _GameCardSurface(
       selected: selected,
-      child: Material(
-        color: colors.surfaceContainerHighest,
-        shape: shape,
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onPressed,
-          customBorder: shape,
-          child: Stack(
-            children: [
-              if (artwork != null)
-                Positioned.fill(
-                  child: ExcludeSemantics(
-                    child: Image.asset(
-                      artwork,
-                      // Иллюстрации входят в пакет приложения. Подмена словаря
-                      // через DefaultAssetBundle не меняет их источник.
-                      bundle: rootBundle,
-                      alignment: Alignment.centerRight,
-                      fit: BoxFit.cover,
-                      cacheWidth: 1200,
-                    ),
-                  ),
-                ),
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF171220),
-                        const Color(
-                          0xFF171220,
-                        ).withValues(alpha: largeText ? .94 : .9),
-                        const Color(
-                          0xFF171220,
-                        ).withValues(alpha: largeText ? .8 : .06),
-                      ],
-                      stops: const [0, .36, 1],
-                    ),
-                  ),
+      color: colors.surfaceContainerHighest,
+      shape: shape,
+      onPressed: onPressed,
+      child: Stack(
+        children: [
+          if (artwork != null)
+            Positioned.fill(
+              child: ExcludeSemantics(
+                child: Image.asset(
+                  artwork,
+                  // Иллюстрации входят в пакет приложения. Подмена словаря
+                  // через DefaultAssetBundle не меняет их источник.
+                  bundle: rootBundle,
+                  alignment: Alignment.centerRight,
+                  fit: BoxFit.cover,
+                  cacheWidth: 1200,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(14),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 80),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        game.titleFor(context.strings),
-                        style: withWeight(
-                          theme.textTheme.titleLarge!,
-                          FontWeight.bold,
-                        ).copyWith(color: colors.onSurface, fontSize: 20),
-                      ),
-                      if (instruction != null) ...[
-                        const SizedBox(height: 6),
-                        FractionallySizedBox(
-                          widthFactor: largeText ? 1 : .64,
-                          child: Text(
-                            instruction,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFFD5C8EC),
-                              height: 1.35,
-                            ),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      ExcludeSemantics(
-                        child: Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            color:
-                                selected
-                                    ? colors.primary
-                                    : colors.surface.withValues(alpha: .65),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: selected ? colors.primary : colors.outline,
-                            ),
-                          ),
-                          child: Icon(
-                            selected ? Icons.check_rounded : Icons.play_arrow,
-                            size: 16,
-                            color:
-                                selected ? colors.onPrimary : colors.onSurface,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+            ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF171220),
+                    const Color(
+                      0xFF171220,
+                    ).withValues(alpha: largeText ? .94 : .9),
+                    const Color(
+                      0xFF171220,
+                    ).withValues(alpha: largeText ? .8 : .06),
+                  ],
+                  stops: const [0, .36, 1],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 80),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    game.titleFor(context.strings),
+                    style: withWeight(
+                      theme.textTheme.titleLarge!,
+                      FontWeight.bold,
+                    ).copyWith(color: colors.onSurface, fontSize: 20),
+                  ),
+                  if (instruction != null) ...[
+                    const SizedBox(height: 6),
+                    FractionallySizedBox(
+                      widthFactor: largeText ? 1 : .64,
+                      child: Text(
+                        instruction,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFFD5C8EC),
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  ExcludeSemantics(
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color:
+                            selected
+                                ? colors.primary
+                                : colors.surface.withValues(alpha: .65),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: selected ? colors.primary : colors.outline,
+                        ),
+                      ),
+                      child: Icon(
+                        selected ? Icons.check_rounded : Icons.play_arrow,
+                        size: 16,
+                        color: selected ? colors.onPrimary : colors.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -230,87 +223,115 @@ class _PaperGameCard extends StatelessWidget {
       ),
     );
 
-    return Semantics(
-      button: true,
+    return _GameCardSurface(
       selected: selected,
-      child: Material(
-        color: tint,
-        shape: shape,
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onPressed,
-          customBorder: shape,
-          child: Stack(
-            alignment: compact ? Alignment.bottomLeft : Alignment.centerLeft,
-            children: [
-              if (artwork != null)
-                Positioned.fill(
-                  child: FractionallySizedBox(
-                    widthFactor: compact ? .87 : .52,
-                    alignment: Alignment.centerRight,
-                    child: ExcludeSemantics(
-                      child: ShaderMask(
-                        shaderCallback:
-                            (rect) => LinearGradient(
-                              begin:
-                                  compact
-                                      ? Alignment.bottomCenter
-                                      : Alignment.centerLeft,
-                              end:
-                                  compact
-                                      ? Alignment.topCenter
-                                      : Alignment.centerRight,
-                              colors: const [Colors.transparent, Colors.white],
-                              stops:
-                                  compact ? const [.14, .95] : const [0, .78],
-                            ).createShader(rect),
-                        blendMode: BlendMode.dstIn,
-                        child: Image.asset(
-                          artwork,
-                          bundle: rootBundle,
-                          alignment: Alignment.centerRight,
-                          fit: BoxFit.cover,
-                          cacheWidth: 1200,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: compact ? 66 : 86),
-                  child: FractionallySizedBox(
-                    widthFactor: compact || artwork == null ? 1 : .66,
-                    alignment: Alignment.centerLeft,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment:
-                          compact
-                              ? MainAxisAlignment.end
-                              : MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          game.titleFor(context.strings),
-                          style: withWeight(
-                            theme.textTheme.titleMedium!,
-                            FontWeight.bold,
-                          ),
-                        ),
-                        if (!compact && instruction != null) ...[
-                          const SizedBox(height: 4),
-                          Text(instruction, style: theme.textTheme.bodySmall),
-                        ],
-                      ],
+      color: tint,
+      shape: shape,
+      onPressed: onPressed,
+      child: Stack(
+        alignment: compact ? Alignment.bottomLeft : Alignment.centerLeft,
+        children: [
+          if (artwork != null)
+            Positioned.fill(
+              child: FractionallySizedBox(
+                widthFactor: compact ? .87 : .52,
+                alignment: Alignment.centerRight,
+                child: ExcludeSemantics(
+                  child: ShaderMask(
+                    shaderCallback:
+                        (rect) => LinearGradient(
+                          begin:
+                              compact
+                                  ? Alignment.bottomCenter
+                                  : Alignment.centerLeft,
+                          end:
+                              compact
+                                  ? Alignment.topCenter
+                                  : Alignment.centerRight,
+                          colors: const [Colors.transparent, Colors.white],
+                          stops: compact ? const [.14, .95] : const [0, .78],
+                        ).createShader(rect),
+                    blendMode: BlendMode.dstIn,
+                    child: Image.asset(
+                      artwork,
+                      bundle: rootBundle,
+                      alignment: Alignment.centerRight,
+                      fit: BoxFit.cover,
+                      cacheWidth: 1200,
                     ),
                   ),
                 ),
               ),
-            ],
+            ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: compact ? 66 : 86),
+              child: FractionallySizedBox(
+                widthFactor: compact || artwork == null ? 1 : .66,
+                alignment: Alignment.centerLeft,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment:
+                      compact
+                          ? MainAxisAlignment.end
+                          : MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      game.titleFor(context.strings),
+                      style: withWeight(
+                        theme.textTheme.titleMedium!,
+                        FontWeight.bold,
+                      ),
+                    ),
+                    if (!compact && instruction != null) ...[
+                      const SizedBox(height: 4),
+                      Text(instruction, style: theme.textTheme.bodySmall),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
+}
+
+class _GameCardSurface extends StatelessWidget {
+  const _GameCardSurface({
+    required this.selected,
+    required this.color,
+    required this.shape,
+    required this.onPressed,
+    required this.child,
+  });
+
+  final bool selected;
+  final Color color;
+  final RoundedRectangleBorder shape;
+  final VoidCallback onPressed;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: selected,
+    child: ArcadePressFeedback(
+      builder:
+          (states) => Material(
+            color: color,
+            shape: shape,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              statesController: states,
+              onTap: onPressed,
+              customBorder: shape,
+              child: child,
+            ),
+          ),
+    ),
+  );
 }

@@ -9,6 +9,7 @@ class ArcadeStatusLayout extends StatelessWidget {
     this.body,
     this.actions,
     this.accent,
+    this.animateResultBadge = false,
     super.key,
   });
 
@@ -17,11 +18,22 @@ class ArcadeStatusLayout extends StatelessWidget {
   final Widget? body;
   final Widget? actions;
   final Color? accent;
+  final bool animateResultBadge;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = accent ?? theme.colorScheme.primary;
+    final badge = Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: color.withValues(alpha: .4)),
+      ),
+      child: Icon(icon, size: 34, color: color),
+    );
     return SafeArea(
       child: LayoutBuilder(
         builder:
@@ -42,18 +54,10 @@ class ArcadeStatusLayout extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Center(
-                          child: Container(
-                            width: 64,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: .12),
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(
-                                color: color.withValues(alpha: .4),
-                              ),
-                            ),
-                            child: Icon(icon, size: 34, color: color),
-                          ),
+                          child:
+                              animateResultBadge
+                                  ? _ResultBadgeMotion(child: badge)
+                                  : badge,
                         ),
                         const SizedBox(height: 14),
                         Text(
@@ -79,6 +83,39 @@ class ArcadeStatusLayout extends StatelessWidget {
               ),
             ),
       ),
+    );
+  }
+}
+
+class _ResultBadgeMotion extends StatefulWidget {
+  const _ResultBadgeMotion({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_ResultBadgeMotion> createState() => _ResultBadgeMotionState();
+}
+
+class _ResultBadgeMotionState extends State<_ResultBadgeMotion> {
+  bool _skipForThisRound = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) _skipForThisRound = true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_skipForThisRound) return widget.child;
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 300),
+      tween: Tween(begin: 0, end: 1),
+      builder: (context, progress, child) {
+        final lift = Curves.easeInOut.transform(1 - (2 * progress - 1).abs());
+        return Transform.translate(offset: Offset(0, -5 * lift), child: child);
+      },
+      child: widget.child,
     );
   }
 }

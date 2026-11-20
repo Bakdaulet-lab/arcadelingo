@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
@@ -114,17 +116,39 @@ class _LearningDeck extends StatefulWidget {
   State<_LearningDeck> createState() => _LearningDeckState();
 }
 
-class _LearningDeckState extends State<_LearningDeck> {
+class _LearningDeckState extends State<_LearningDeck>
+    with SingleTickerProviderStateMixin {
   int _index = 0;
   bool _changingWord = false;
   bool _leaving = false;
   final _scroll = ScrollController();
+  late final AnimationController _cardEntry;
+  double _entryOffset = 0;
 
   bool get _review => widget.onStart == null;
   bool get _last => _index == widget.words.length - 1;
 
   @override
+  void initState() {
+    super.initState();
+    _cardEntry = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 180),
+      value: 1,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context) && _cardEntry.isAnimating) {
+      _cardEntry.value = 1;
+    }
+  }
+
+  @override
   void dispose() {
+    _cardEntry.dispose();
     _scroll.dispose();
     super.dispose();
   }
@@ -135,9 +159,13 @@ class _LearningDeckState extends State<_LearningDeck> {
     await widget.speech.stop();
     if (!mounted || _leaving) return;
     setState(() {
+      _entryOffset = next > _index ? 14 : -14;
       _index = next;
       _changingWord = false;
     });
+    if (!MediaQuery.disableAnimationsOf(context)) {
+      unawaited(_cardEntry.forward(from: 0));
+    }
     if (_scroll.hasClients) _scroll.jumpTo(0);
   }
 
@@ -229,7 +257,21 @@ class _LearningDeckState extends State<_LearningDeck> {
             ],
             if (words.isNotEmpty) ...[
               const SizedBox(height: 24),
-              WordPanel(word: word!, labelCorrectTranslation: outcome != null),
+              AnimatedBuilder(
+                animation: _cardEntry,
+                builder: (context, child) {
+                  final remaining =
+                      1 - Curves.easeOutCubic.transform(_cardEntry.value);
+                  return Transform.translate(
+                    offset: Offset(_entryOffset * remaining, 0),
+                    child: child,
+                  );
+                },
+                child: WordPanel(
+                  word: word!,
+                  labelCorrectTranslation: outcome != null,
+                ),
+              ),
               if (outcome?.selectedAnswer case final answer?) ...[
                 const SizedBox(height: 12),
                 ArcadePanel(

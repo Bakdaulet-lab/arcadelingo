@@ -153,10 +153,14 @@ class _WordarcadeAppState extends State<WordarcadeApp>
             .where((deck) => deck.course.id == _preferences.courseId)
             .firstOrNull;
     final paper = _preferences.theme == AppTheme.light;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return MaterialApp(
       title: 'Arcadelingo',
+      themeAnimationDuration:
+          reduceMotion ? Duration.zero : kThemeAnimationDuration,
       theme: wordarcadeTheme(
         brightness: paper ? Brightness.light : Brightness.dark,
+        reduceMotion: reduceMotion,
       ),
       builder:
           (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
