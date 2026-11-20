@@ -6,6 +6,7 @@ import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
+import 'package:arcadelingo/ui/arcade_answer_feedback.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/arcade_round_summary.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
@@ -379,14 +380,34 @@ class _MatchThreeGameState extends State<MatchThreeGame>
           ),
           if (feedback) ...[
             const SizedBox(height: 7),
-            Semantics(
-              liveRegion: true,
-              child: Text(
-                _run.answerCorrect
-                    ? strings.correct
-                    : '${strings.correctTranslation} — ${word.translation}',
-                style: TextStyle(
-                  color: _run.answerCorrect ? colors.primary : colors.error,
+            ArcadeAnswerFeedback(
+              correct: _run.answerCorrect,
+              child: Semantics(
+                liveRegion: true,
+                child: Row(
+                  children: [
+                    Icon(
+                      _run.answerCorrect
+                          ? Icons.check_circle_outline_rounded
+                          : Icons.info_outline_rounded,
+                      size: 18,
+                      color: _run.answerCorrect ? colors.primary : colors.error,
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        _run.answerCorrect
+                            ? strings.correct
+                            : '${strings.correctTranslation} — ${word.translation}',
+                        style: TextStyle(
+                          color:
+                              _run.answerCorrect
+                                  ? colors.primary
+                                  : colors.error,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

@@ -125,6 +125,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
 
   /// Предыдущая точка жеста; null — жеста нет.
   Offset? _last;
+  int? _bladePointer;
 
   /// Сколько пути прошёл палец с начала жеста.
   double _travelled = 0;
@@ -241,6 +242,8 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     // «моложе нуля» и вернулась бы на экран. Это не дубль стража
     // `slicedIndex` (тот держит след реза), а свой инвариант живого следа.
     _gesture.clear();
+    _bladePointer = null;
+    _last = null;
     // Касание вскользь — один раз на волну: иначе свайп вдоль объекта дал
     // бы очередь откликов.
     _grazeAt = null;
@@ -290,6 +293,13 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
 
   /// Начало жеста. Ничего не режет: до 16 dp пути реза не бывает вовсе.
   void _onPointerDown(PointerDownEvent event) {
+    if (_bladePointer != null ||
+        _paused ||
+        _windingUp ||
+        _run.phase != NinjaPhase.flying) {
+      return;
+    }
+    _bladePointer = event.pointer;
     _last = event.localPosition;
     _travelled = 0;
     _gesture
@@ -304,6 +314,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   /// чем диаметр объекта, и проверка «точка в круге» пропускала бы объект
   /// насквозь.
   void _onPointerMove(PointerMoveEvent event) {
+    if (event.pointer != _bladePointer) return;
     final from = _last;
     if (from == null) return;
     final to = event.localPosition;
@@ -496,7 +507,9 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     return 1 - ((_reveal.value - 0.75).abs() / 0.25).clamp(0.0, 1.0);
   }
 
-  void _onPointerUp(PointerUpEvent event) {
+  void _endPointer(PointerEvent event) {
+    if (event.pointer != _bladePointer) return;
+    _bladePointer = null;
     _last = null;
     _travelled = 0;
   }
@@ -515,6 +528,9 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   void _pause() {
     if (_paused) return;
     _paused = true;
+    _bladePointer = null;
+    _last = null;
+    _gesture.clear();
     _windUp.stop();
     _flight.stop();
     _reveal.stop();
@@ -583,28 +599,24 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   Widget _playfield(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final juicy = !MediaQuery.disableAnimationsOf(context);
+    final revealing = _run.phase == NinjaPhase.reveal;
+    final pulseScore = juicy && revealing && _run.verdict == Verdict.correct;
     return SafeArea(
       child: AnimatedBuilder(
         animation: Listenable.merge([_flight, _reveal]),
-        builder: (context, _) {
-          final revealing = _run.phase == NinjaPhase.reveal;
+        child: pulseScore ? null : _hud(revealing: revealing, pulse: 0),
+        builder: (context, staticHud) {
           final shake = _shake(juicy: juicy, revealing: revealing);
           return Column(
             children: [
               Transform.translate(
                 offset: Offset(shake, 0),
-                child: GameHud(
-                  lives: _run.lives,
-                  maxLives: NinjaRun.startLives,
-                  score: _run.score,
-                  multiplier: _run.scoreMultiplier,
-                  combo: _run.combo,
-                  scorePulse: _pulse(juicy: juicy, revealing: revealing),
-                  // В фазе подсветки ответ уже доложен, и answered его
-                  // считает; в полёте текущее слово ещё впереди счётчика.
-                  current: widget.session.answered + (revealing ? 0 : 1),
-                  total: widget.session.total,
-                ),
+                child:
+                    staticHud ??
+                    _hud(
+                      revealing: true,
+                      pulse: _pulse(juicy: juicy, revealing: revealing),
+                    ),
               ),
               if (_run.streakChallenge)
                 Text(
@@ -627,6 +639,17 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
       ),
     );
   }
+
+  GameHud _hud({required bool revealing, required double pulse}) => GameHud(
+    lives: _run.lives,
+    maxLives: NinjaRun.startLives,
+    score: _run.score,
+    multiplier: _run.scoreMultiplier,
+    combo: _run.combo,
+    scorePulse: pulse,
+    current: widget.session.answered + (revealing ? 0 : 1),
+    total: widget.session.total,
+  );
 
   /// Поле волны вместе с тоном серии и жестом.
   Widget _field(
@@ -681,7 +704,8 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
               behavior: HitTestBehavior.opaque,
               onPointerDown: _onPointerDown,
               onPointerMove: _onPointerMove,
-              onPointerUp: _onPointerUp,
+              onPointerUp: _endPointer,
+              onPointerCancel: _endPointer,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -734,6 +758,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
                       key: NinjaKeys.trail,
                       points: trailSource,
                       now: _trailNow,
+                      tint: missed ? scheme.error : scheme.primary,
                     ),
                   if (flashShown)
                     ImpactRing(

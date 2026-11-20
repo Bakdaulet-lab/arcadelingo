@@ -1,14 +1,14 @@
 import 'dart:math' as math;
 
+import 'package:arcadelingo/ui/arcade_field_swipe.dart';
 import 'package:arcadelingo/ui/theme.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'snake_run.dart';
 
 const _labelPadding = EdgeInsets.symmetric(horizontal: 7, vertical: 3);
 
-class SnakeField extends StatefulWidget {
+class SnakeField extends StatelessWidget {
   const SnakeField({
     required this.run,
     required this.motion,
@@ -20,30 +20,13 @@ class SnakeField extends StatefulWidget {
   final Animation<double> motion;
   final ValueChanged<SnakeDirection>? onTurn;
 
-  @override
-  State<SnakeField> createState() => _SnakeFieldState();
-}
-
-class _SnakeFieldState extends State<SnakeField> {
-  Offset? _horizontalTouch;
-  Offset? _verticalTouch;
-
-  void _dragUpdate(DragUpdateDetails details, {required bool horizontal}) {
-    final from = horizontal ? _horizontalTouch : _verticalTouch;
-    if (from == null) return;
-    final delta = details.localPosition - from;
-    if ((horizontal ? delta.dx : delta.dy).abs() < 16) return;
-    _horizontalTouch = _verticalTouch = null;
+  void _turn(Offset _, Offset delta) {
     final direction =
-        horizontal
+        delta.dx.abs() >= delta.dy.abs()
             ? (delta.dx > 0 ? SnakeDirection.right : SnakeDirection.left)
             : (delta.dy > 0 ? SnakeDirection.down : SnakeDirection.up);
-    widget.onTurn?.call(direction);
+    onTurn?.call(direction);
   }
-
-  void _cancelHorizontal() => _horizontalTouch = null;
-
-  void _cancelVertical() => _verticalTouch = null;
 
   @override
   Widget build(BuildContext context) {
@@ -52,41 +35,21 @@ class _SnakeFieldState extends State<SnakeField> {
         theme.brightness == Brightness.dark
             ? _FieldPalette.night
             : _FieldPalette.paper;
-    final apples = widget.run.apples;
+    final apples = run.apples;
     final labelStyle = withWeight(
       theme.textTheme.labelMedium!,
       FontWeight.w600,
     ).copyWith(color: theme.colorScheme.onSurface, height: 1.1);
     final scaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.4);
     final textDirection = Directionality.of(context);
-    final turnEnabled = widget.onTurn != null;
-    final motion =
+    final fieldMotion =
         MediaQuery.disableAnimationsOf(context)
             ? const AlwaysStoppedAnimation(1.0)
-            : widget.motion;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      dragStartBehavior: DragStartBehavior.down,
-      onHorizontalDragDown:
-          turnEnabled
-              ? (details) => _horizontalTouch = details.localPosition
-              : null,
-      onHorizontalDragUpdate:
-          turnEnabled
-              ? (details) => _dragUpdate(details, horizontal: true)
-              : null,
-      onHorizontalDragEnd: turnEnabled ? (_) => _cancelHorizontal() : null,
-      onHorizontalDragCancel: turnEnabled ? _cancelHorizontal : null,
-      onVerticalDragDown:
-          turnEnabled
-              ? (details) => _verticalTouch = details.localPosition
-              : null,
-      onVerticalDragUpdate:
-          turnEnabled
-              ? (details) => _dragUpdate(details, horizontal: false)
-              : null,
-      onVerticalDragEnd: turnEnabled ? (_) => _cancelVertical() : null,
-      onVerticalDragCancel: turnEnabled ? _cancelVertical : null,
+            : motion;
+    return ArcadeFieldSwipe(
+      distance: 16,
+      continuous: true,
+      onSwipe: onTurn == null ? null : _turn,
       child: AspectRatio(
         aspectRatio: 1,
         child: ClipRRect(
@@ -108,12 +71,12 @@ class _SnakeFieldState extends State<SnakeField> {
                     child: CustomPaint(
                       painter: _SnakePainter(
                         palette: palette,
-                        body: widget.run.body,
-                        previousBody: widget.run.previousBody,
-                        direction: widget.run.direction,
+                        body: run.body,
+                        previousBody: run.previousBody,
+                        direction: run.direction,
                         apples: apples,
                         labels: labels,
-                        motion: motion,
+                        motion: fieldMotion,
                       ),
                     ),
                   ),
@@ -386,15 +349,19 @@ class _SnakePainter extends CustomPainter {
   }
 
   void _drawHead(Canvas canvas, Offset center, double unit) {
-    final angle = switch (direction) {
-      SnakeDirection.right => 0.0,
-      SnakeDirection.down => math.pi / 2,
-      SnakeDirection.left => math.pi,
-      SnakeDirection.up => -math.pi / 2,
-    };
+    final heading = math.atan2(direction.dy, direction.dx);
+    final previousHeading =
+        _shortOffset(
+          _cellCenter(previousBody[0], unit) -
+              _cellCenter(previousBody[1], unit),
+          SnakeRun.size * unit,
+        ).direction;
+    final turn =
+        (heading - previousHeading + math.pi) % (2 * math.pi) - math.pi;
+    final progress = Curves.easeOut.transform((motion.value * 3).clamp(0, 1));
     canvas.save();
     canvas.translate(center.dx, center.dy);
-    canvas.rotate(angle);
+    canvas.rotate(previousHeading + turn * progress);
     final bulb = Rect.fromCenter(
       center: Offset(unit * .055, 0),
       width: unit * .91,

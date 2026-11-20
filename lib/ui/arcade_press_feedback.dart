@@ -3,9 +3,14 @@ import 'package:flutter/material.dart';
 /// Animates the press state of an existing Material control while leaving
 /// gesture recognition, keyboard activation and semantics with that control.
 class ArcadePressFeedback extends StatefulWidget {
-  const ArcadePressFeedback({required this.builder, super.key});
+  const ArcadePressFeedback({
+    required this.builder,
+    this.enabled = true,
+    super.key,
+  });
 
   final Widget Function(WidgetStatesController states) builder;
+  final bool enabled;
 
   @override
   State<ArcadePressFeedback> createState() => _ArcadePressFeedbackState();
@@ -45,12 +50,18 @@ class _ArcadePressFeedbackState extends State<ArcadePressFeedback>
     final pressed = _states.value.contains(WidgetState.pressed);
     if (_held == pressed) return;
     _held = pressed;
-    if (_reducedMotion) return;
+    if (_reducedMotion || !widget.enabled) return;
     if (pressed) {
       _press.forward();
     } else if (_press.isCompleted) {
       _press.reverse();
     }
+  }
+
+  @override
+  void didUpdateWidget(ArcadePressFeedback oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.enabled && !widget.enabled) _press.reset();
   }
 
   void _onStatus(AnimationStatus status) {

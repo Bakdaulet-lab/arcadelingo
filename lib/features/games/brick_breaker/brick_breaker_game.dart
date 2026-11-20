@@ -5,6 +5,7 @@ import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
+import 'package:arcadelingo/ui/arcade_answer_feedback.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/arcade_round_summary.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
@@ -60,6 +61,7 @@ class BrickBreakerGame extends StatefulWidget {
 class _BrickBreakerGameState extends State<BrickBreakerGame>
     with SingleTickerProviderStateMixin {
   late final BrickBreakerRun _run;
+  final _fieldFrame = ValueNotifier<int>(0);
   late final Ticker _ticker;
   late final AppLifecycleListener _lifecycle;
   Duration _previous = Duration.zero;
@@ -88,6 +90,7 @@ class _BrickBreakerGameState extends State<BrickBreakerGame>
     _abandon();
     _lifecycle.dispose();
     _ticker.dispose();
+    _fieldFrame.dispose();
     super.dispose();
   }
 
@@ -112,21 +115,25 @@ class _BrickBreakerGameState extends State<BrickBreakerGame>
 
   void _tick(Duration elapsed) {
     final previousPhase = _run.phase;
+    final previousScore = _run.score;
     final delta = elapsed - _previous;
     _previous = elapsed;
-    setState(() {
-      _run.advance(
-        delta > const Duration(milliseconds: 40)
-            ? const Duration(milliseconds: 40)
-            : delta,
+    _run.advance(
+      delta > const Duration(milliseconds: 40)
+          ? const Duration(milliseconds: 40)
+          : delta,
+    );
+    if (_run.phase == BrickPhase.finished) {
+      _footer = widget.summaryFooter?.call();
+      _record = (widget.onChallengeComplete ?? widget.onRoundScore)?.call(
+        _run.score,
       );
-      if (_run.phase == BrickPhase.finished) {
-        _footer = widget.summaryFooter?.call();
-        _record = (widget.onChallengeComplete ?? widget.onRoundScore)?.call(
-          _run.score,
-        );
-      }
-    });
+    }
+    if (previousPhase != _run.phase || previousScore != _run.score) {
+      setState(() {});
+    } else {
+      _fieldFrame.value++;
+    }
     if (previousPhase == _run.phase) return;
     switch (_run.phase) {
       case BrickPhase.bonus:
@@ -172,7 +179,8 @@ class _BrickBreakerGameState extends State<BrickBreakerGame>
 
   void _move(double position) {
     if (_paused || _leaving || _inBackground) return;
-    setState(() => _run.movePaddle(position));
+    _run.movePaddle(position);
+    _fieldFrame.value++;
   }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
@@ -301,30 +309,34 @@ class _BrickBreakerGameState extends State<BrickBreakerGame>
                           fit: StackFit.passthrough,
                           alignment: Alignment.center,
                           children: [
-                            BrickBreakerField(
-                              key: BrickBreakerKeys.field,
-                              run: _run,
-                              onMove: _move,
+                            ListenableBuilder(
+                              listenable: _fieldFrame,
+                              builder:
+                                  (context, _) => BrickBreakerField(
+                                    key: BrickBreakerKeys.field,
+                                    run: _run,
+                                    onMove: _move,
+                                  ),
                             ),
-                            if (_paused || feedback)
-                              ArcadePanel(
-                                accent:
-                                    feedback && !_run.caughtCorrect
-                                        ? colors.error
-                                        : colors.primary,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 18,
-                                  vertical: 14,
-                                ),
-                                child: Text(
-                                  _paused
-                                      ? strings.brickPaused
-                                      : _run.caughtCorrect
+                            if (_paused)
+                              _notice(
+                                context,
+                                strings.brickPaused,
+                                colors.primary,
+                              )
+                            else if (feedback)
+                              ArcadeAnswerFeedback(
+                                correct: _run.caughtCorrect,
+                                child: _notice(
+                                  context,
+                                  _run.caughtCorrect
                                       ? strings.correct
                                       : _run.lastAnswer == null
                                       ? strings.timeUp
                                       : strings.mistake,
-                                  style: theme.textTheme.titleLarge,
+                                  _run.caughtCorrect
+                                      ? colors.primary
+                                      : colors.error,
                                 ),
                               ),
                           ],
@@ -369,6 +381,13 @@ class _BrickBreakerGameState extends State<BrickBreakerGame>
       ),
     );
   }
+
+  Widget _notice(BuildContext context, String label, Color accent) =>
+      ArcadePanel(
+        accent: accent,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        child: Text(label, style: Theme.of(context).textTheme.titleLarge),
+      );
 
   Widget _end(BuildContext context) {
     final strings = context.strings;

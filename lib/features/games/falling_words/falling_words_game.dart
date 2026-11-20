@@ -362,6 +362,11 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     final scheme = Theme.of(context).colorScheme;
     final juicy = !MediaQuery.disableAnimationsOf(context);
     final revealing = _run.phase == FallingPhase.reveal;
+    // Во время падения меняется только поле. Счётчики строим один раз на слово.
+    final stableHud =
+        !revealing && _run.sprintRemaining == null
+            ? _hud(revealing: false, pulse: 0)
+            : null;
     return SafeArea(
       // Кнопки строятся один раз на перестройку и приезжают в builder
       // готовыми: их содержимое меняется с фазой, а не с кадром, и гонять
@@ -378,24 +383,13 @@ class _FallingWordsGameState extends State<FallingWordsGame>
               Transform.translate(
                 offset: Offset(shake, 0),
                 child:
-                    _run.sprintRemaining != null
+                    stableHud ??
+                    (_run.sprintRemaining != null
                         ? _sprintHud(context, revealing)
-                        : GameHud(
-                          lives: _run.lives,
-                          maxLives: FallingWordsRun.startLives,
-                          score: _run.score,
-                          multiplier: _run.scoreMultiplier,
-                          combo: _run.combo,
-                          scorePulse: _pulse(
-                            juicy: juicy,
-                            revealing: revealing,
-                          ),
-                          // В фазе подсветки ответ уже доложен, и answered его
-                          // считает; в падении текущее слово ещё впереди счётчика.
-                          current:
-                              widget.session.answered + (revealing ? 0 : 1),
-                          total: widget.session.total,
-                        ),
+                        : _hud(
+                          revealing: revealing,
+                          pulse: _pulse(juicy: juicy, revealing: revealing),
+                        )),
               ),
               Expanded(
                 child: _field(scheme, juicy: juicy, revealing: revealing),
@@ -423,6 +417,17 @@ class _FallingWordsGameState extends State<FallingWordsGame>
       ),
     );
   }
+
+  GameHud _hud({required bool revealing, required double pulse}) => GameHud(
+    lives: _run.lives,
+    maxLives: FallingWordsRun.startLives,
+    score: _run.score,
+    multiplier: _run.scoreMultiplier,
+    combo: _run.combo,
+    scorePulse: pulse,
+    current: widget.session.answered + (revealing ? 0 : 1),
+    total: widget.session.total,
+  );
 
   Duration get _revealLived => Duration(
     microseconds: (_run.revealTime.inMicroseconds * _reveal.value).round(),
@@ -492,7 +497,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
                   FallingField(
                     text: _run.item!.word.text,
                     progress: _fall.value,
-                    fadeProgress: revealing ? _reveal.value : 0,
+                    fadeProgress: revealing && juicy ? _reveal.value : 0,
                   ),
                 // Positioned.fill, а не обычный ребёнок: прилёт очков не
                 // должен участвовать в том, какого размера получится поле.

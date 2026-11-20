@@ -115,13 +115,14 @@ class WordMahjongField extends StatelessWidget {
   ) {
     final colors = Theme.of(context).colorScheme;
     final strings = context.strings;
-    final free = board.isFree(tile);
-    final covered = board.isCovered(tile);
     final visible = board.contains(tile);
+    // Keep the face of a removed pair readable throughout its fade.
+    final free = !visible || board.isFree(tile);
+    final covered = board.isCovered(tile);
     final pressed = selected == tile;
     final guided = tile == highlight?.word || tile == highlight?.translation;
     final wrong = mismatch == tile;
-    final canTap = free && enabled;
+    final canTap = visible && free && enabled;
     final accent = tile.isTranslation ? colors.tertiary : colors.primary;
     final border =
         wrong
@@ -156,77 +157,89 @@ class WordMahjongField extends StatelessWidget {
         selected: pressed || guided,
         onTap: canTap ? () => onTap(tile) : null,
         excludeSemantics: true,
-        child: AnimatedScale(
-          scale: visible ? 1 : .84,
-          duration: duration,
-          curve: Curves.easeOutCubic,
-          child: AnimatedOpacity(
-            opacity: visible ? 1 : 0,
-            duration: duration,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: radius,
-                boxShadow: [
-                  BoxShadow(color: border, offset: const Offset(0, 3)),
-                  if (guided)
-                    BoxShadow(
-                      color: accent.withValues(alpha: .5),
-                      blurRadius: 12,
-                    ),
-                ],
+        child: TweenAnimationBuilder<double>(
+          // A selected tile lifts while its tap target stays in its slot.
+          tween: Tween(end: pressed && duration != Duration.zero ? -3.5 : 0),
+          builder:
+              (context, lift, child) => Transform.translate(
+                offset: Offset(0, lift),
+                transformHitTests: false,
+                child: child,
               ),
-              child: Material(
-                color: face,
-                shape: RoundedRectangleBorder(
+          curve: Curves.easeOutCubic,
+          duration: duration,
+          child: AnimatedScale(
+            scale: visible ? 1 : .84,
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            child: AnimatedOpacity(
+              opacity: visible ? 1 : 0,
+              duration: duration,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
                   borderRadius: radius,
-                  side: BorderSide(
-                    color: border,
-                    width: pressed || guided || wrong ? 2 : 1,
-                  ),
+                  boxShadow: [
+                    BoxShadow(color: border, offset: const Offset(0, 3)),
+                    if (guided)
+                      BoxShadow(
+                        color: accent.withValues(alpha: .5),
+                        blurRadius: 12,
+                      ),
+                  ],
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: canTap ? () => onTap(tile) : null,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 7,
+                child: Material(
+                  color: face,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: radius,
+                    side: BorderSide(
+                      color: border,
+                      width: pressed || guided || wrong ? 2 : 1,
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: 4,
-                      children: [
-                        if (!free)
-                          Icon(
-                            Icons.lock_outline_rounded,
-                            color: foreground,
-                            size: 14,
-                          )
-                        else if (language == null)
-                          Icon(
-                            tile.isTranslation
-                                ? Icons.translate_rounded
-                                : Icons.school_outlined,
-                            color: accent,
-                            size: 14,
-                          )
-                        else
-                          Text(
-                            language,
-                            style: TextStyle(
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: canTap ? () => onTap(tile) : null,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 7,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        spacing: 4,
+                        children: [
+                          if (!free)
+                            Icon(
+                              Icons.lock_outline_rounded,
+                              color: foreground,
+                              size: 14,
+                            )
+                          else if (language == null)
+                            Icon(
+                              tile.isTranslation
+                                  ? Icons.translate_rounded
+                                  : Icons.school_outlined,
                               color: accent,
-                              fontSize: 10,
-                              height: 1.2,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: .7,
+                              size: 14,
+                            )
+                          else
+                            Text(
+                              language,
+                              style: TextStyle(
+                                color: accent,
+                                fontSize: 10,
+                                height: 1.2,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: .7,
+                              ),
                             ),
+                          Text(
+                            tile.label,
+                            style: style.copyWith(color: foreground),
+                            textAlign: TextAlign.center,
                           ),
-                        Text(
-                          tile.label,
-                          style: style.copyWith(color: foreground),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

@@ -137,42 +137,60 @@ class ClawMachineField extends StatelessWidget {
                       return Stack(
                         fit: StackFit.expand,
                         children: [
-                          RepaintBoundary(
-                            child: CustomPaint(
-                              painter: _CabinetPainter(paper: paper),
+                          GestureDetector(
+                            excludeFromSemantics: true,
+                            behavior: HitTestBehavior.opaque,
+                            onTapUp:
+                                onAim == null
+                                    ? null
+                                    : (details) =>
+                                        aimAt(details.localPosition.dx),
+                            child: RepaintBoundary(
+                              child: CustomPaint(
+                                painter: _CabinetPainter(paper: paper),
+                              ),
                             ),
                           ),
                           for (final capsule in pile)
                             if (!pose.pickedUp || !capsule.captured)
                               capsule.view,
-                          if (pose.pickedUp && pose.capsuleScale > 0)
-                            _placeCapsule(
-                              center: hinge.translate(0, 33 * scale),
-                              diameter: diameter,
-                              child: Opacity(
-                                opacity: pose.capsuleOpacity,
-                                child: Transform.scale(
-                                  scale: pose.capsuleScale,
-                                  child: _Capsule(
-                                    letter: stacks[column].last,
-                                    lane: column,
-                                    hinted: column == hintedColumn,
-                                  ),
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: RepaintBoundary(
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    if (pose.pickedUp && pose.capsuleScale > 0)
+                                      _placeCapsule(
+                                        center: hinge.translate(0, 33 * scale),
+                                        diameter: diameter,
+                                        child: Opacity(
+                                          opacity: pose.capsuleOpacity,
+                                          child: Transform.scale(
+                                            scale: pose.capsuleScale,
+                                            child: _Capsule(
+                                              letter: stacks[column].last,
+                                              lane: column,
+                                              hinted: column == hintedColumn,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    CustomPaint(
+                                      painter: _ClawPainter(
+                                        paper: paper,
+                                        hinge: hinge,
+                                        scale: scale,
+                                        grip: pose.grip,
+                                        glint: pose.glint,
+                                        guideEnd:
+                                            onAim == null
+                                                ? null
+                                                : pileTop.dy - diameter / 2 - 6,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ),
-                          IgnorePointer(
-                            child: CustomPaint(
-                              painter: _ClawPainter(
-                                paper: paper,
-                                hinge: hinge,
-                                scale: scale,
-                                grip: pose.grip,
-                                glint: pose.glint,
-                                guideEnd:
-                                    onAim == null
-                                        ? null
-                                        : pileTop.dy - diameter / 2 - 6,
                               ),
                             ),
                           ),

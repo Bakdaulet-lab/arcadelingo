@@ -754,7 +754,14 @@ class ScorePop extends StatelessWidget {
 /// сейчас: что старше [trailLife], в след не попадает. Во время полёта
 /// это живой жест, после реза — замороженный, и гаснут они одинаково.
 class BladeTrail extends StatelessWidget {
-  const BladeTrail({required this.points, required this.now, super.key});
+  const BladeTrail({
+    required this.points,
+    required this.now,
+    this.tint,
+    super.key,
+  });
+
+  final Color? tint;
 
   /// Точки жеста в координатах поля.
   final List<TrailPoint> points;
@@ -771,7 +778,7 @@ class BladeTrail extends StatelessWidget {
         size: Size.infinite,
         painter: _BladePainter(
           samples: samples,
-          glow: Theme.of(context).colorScheme.primary,
+          glow: tint ?? Theme.of(context).colorScheme.primary,
         ),
       ),
     );

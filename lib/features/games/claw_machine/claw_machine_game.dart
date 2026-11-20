@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
+import 'package:arcadelingo/ui/arcade_answer_feedback.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -278,33 +279,36 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                 Stack(
                   alignment: Alignment.center,
                   children: [
-                    ClawMachineField(
-                      stacks: _run.stacks,
-                      column: _column,
-                      hintedColumn: _run.hintedColumn,
-                      motion: _motion,
-                      capturing: _capturing,
-                      reducedMotion: _reducedMotion,
-                      refillColumn: _refillColumn,
-                      refillSerial: _refillSerial,
-                      onAim: _canAim ? _aim : null,
+                    CallbackShortcuts(
+                      bindings: {
+                        const SingleActivator(LogicalKeyboardKey.arrowLeft):
+                            () => _aim(_column - 1),
+                        const SingleActivator(LogicalKeyboardKey.arrowRight):
+                            () => _aim(_column + 1),
+                        const SingleActivator(
+                              LogicalKeyboardKey.space,
+                              includeRepeats: false,
+                            ):
+                            _grab,
+                      },
+                      child: Focus(
+                        autofocus: true,
+                        child: ClawMachineField(
+                          stacks: _run.stacks,
+                          column: _column,
+                          hintedColumn: _run.hintedColumn,
+                          motion: _motion,
+                          capturing: _capturing,
+                          reducedMotion: _reducedMotion,
+                          refillColumn: _refillColumn,
+                          refillSerial: _refillSerial,
+                          onAim: _canAim ? _aim : null,
+                        ),
+                      ),
                     ),
                     if (_run.solved)
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(begin: _reducedMotion ? 1 : 0, end: 1),
-                        duration:
-                            _reducedMotion
-                                ? Duration.zero
-                                : const Duration(milliseconds: 195),
-                        curve: Curves.easeOutCubic,
-                        builder:
-                            (context, progress, child) => Opacity(
-                              opacity: progress,
-                              child: Transform.scale(
-                                scale: .94 + progress * .06,
-                                child: child,
-                              ),
-                            ),
+                      ArcadeAnswerFeedback(
+                        correct: true,
                         child: Padding(
                           padding: const EdgeInsets.all(18),
                           child: ArcadePanel(
@@ -392,24 +396,19 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                       ),
                     ),
                   ),
-                  AnimatedSwitcher(
-                    duration:
-                        _reducedMotion
-                            ? Duration.zero
-                            : const Duration(milliseconds: 125),
-                    child:
-                        missed == null
-                            ? const SizedBox.shrink()
-                            : Semantics(
-                              key: ValueKey(missed),
-                              liveRegion: true,
-                              child: Text(
-                                context.strings.letterMiss(missed),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: colors.error),
-                              ),
-                            ),
-                  ),
+                  if (missed != null)
+                    Semantics(
+                      liveRegion: true,
+                      child: ArcadeAnswerFeedback(
+                        key: ValueKey(_refillSerial),
+                        correct: false,
+                        child: Text(
+                          context.strings.letterMiss(missed),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: colors.error),
+                        ),
+                      ),
+                    ),
                 ],
               ],
             ),
