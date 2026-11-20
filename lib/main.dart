@@ -92,7 +92,7 @@ Future<void> main() async {
   );
 }
 
-/// Собирает словарь и хранилища курса русского → испанского A1–B1.
+/// Собирает словарь и хранилища курса русского → испанского A1–B2.
 Future<Result<CourseDeck>> loadSpanishCourse({
   required SharedPreferences prefs,
   required HistoryDatabase history,
@@ -118,7 +118,7 @@ Future<Result<CourseDeck>> loadEnglishA1FromSpanishCourse({
   speech: speech,
 );
 
-/// Собирает словарь и хранилища курса английского → испанского A1–B1.
+/// Собирает словарь и хранилища курса английского → испанского A1–B2.
 Future<Result<CourseDeck>> loadSpanishFromEnglishCourse({
   required SharedPreferences prefs,
   required HistoryDatabase history,

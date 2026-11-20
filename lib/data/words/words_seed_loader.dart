@@ -18,9 +18,11 @@ const String wordsC2AssetPath = 'assets/words_c2.json';
 const String wordsSpanishA1AssetPath = 'assets/words_es_a1.json';
 const String wordsSpanishA2AssetPath = 'assets/words_es_a2.json';
 const String wordsSpanishB1AssetPath = 'assets/words_es_b1.json';
+const String wordsSpanishB2AssetPath = 'assets/words_es_b2.json';
 const String wordsSpanishA1FromEnglishAssetPath = 'assets/words_es_a1_en.json';
 const String wordsSpanishA2FromEnglishAssetPath = 'assets/words_es_a2_en.json';
 const String wordsSpanishB1FromEnglishAssetPath = 'assets/words_es_b1_en.json';
+const String wordsSpanishB2FromEnglishAssetPath = 'assets/words_es_b2_en.json';
 const String wordsEnglishA1FromSpanishAssetPath = 'assets/words_en_a1_es.json';
 
 /// Сид из [bundle] (по умолчанию [rootBundle]) → единицы показа.
@@ -66,6 +68,7 @@ Future<Result<List<ReviewItem>>> loadSpanishSeed({AssetBundle? bundle}) {
     (wordsSpanishA1AssetPath, CefrLevel.a1),
     (wordsSpanishA2AssetPath, CefrLevel.a2),
     (wordsSpanishB1AssetPath, CefrLevel.b1),
+    (wordsSpanishB2AssetPath, CefrLevel.b2),
   ];
   return _loadSpanishSeed(sources, bundle);
 }
@@ -81,6 +84,7 @@ Future<Result<List<ReviewItem>>> loadSpanishFromEnglishSeed({
     (wordsSpanishA1FromEnglishAssetPath, CefrLevel.a1),
     (wordsSpanishA2FromEnglishAssetPath, CefrLevel.a2),
     (wordsSpanishB1FromEnglishAssetPath, CefrLevel.b1),
+    (wordsSpanishB2FromEnglishAssetPath, CefrLevel.b2),
   ];
   return _loadSpanishSeed(sources, bundle);
 }
