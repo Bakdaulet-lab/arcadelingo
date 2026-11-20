@@ -111,29 +111,23 @@ void main() {
     expect(otherCards.saves, isEmpty);
     expect(cards.saves, hasLength(1));
     await prefs.reload();
-    expect(
-      scores.load((
-        gameId: 'brick_breaker',
-        courseId: 'en-es',
-        level: CefrLevel.b1,
-      )),
-      110,
+    const selected = (
+      gameId: 'brick_breaker',
+      courseId: 'en-es',
+      level: CefrLevel.b1,
     );
-    expect(
-      scores.load((
-        gameId: 'brick_breaker',
-        courseId: 'en-es',
-        level: CefrLevel.a1,
-      )),
-      isNull,
+    const otherLevel = (
+      gameId: 'brick_breaker',
+      courseId: 'en-es',
+      level: CefrLevel.a1,
     );
-    expect(
-      scores.load((
-        gameId: 'brick_breaker',
-        courseId: 'ru-en',
-        level: CefrLevel.b1,
-      )),
-      isNull,
+    const otherCourse = (
+      gameId: 'brick_breaker',
+      courseId: 'ru-en',
+      level: CefrLevel.b1,
     );
+    expect(scores.load(selected), 110);
+    expect(scores.load(otherLevel), isNull);
+    expect(scores.load(otherCourse), isNull);
   });
 }

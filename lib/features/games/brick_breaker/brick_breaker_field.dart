@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
@@ -19,6 +21,7 @@ class BrickBreakerField extends StatelessWidget {
         builder: (context, constraints) {
           final scale = constraints.maxWidth / BrickBreakerRun.width;
           final laneWidth = run.laneSpacing * scale;
+          final catchLane = run.catchLane;
           return Listener(
             behavior: HitTestBehavior.opaque,
             onPointerDown: (e) => onMove(e.localPosition.dx / scale),
@@ -33,6 +36,7 @@ class BrickBreakerField extends StatelessWidget {
                       run,
                       colors,
                       paper: theme.brightness == Brightness.light,
+                      effects: !MediaQuery.disableAnimationsOf(context),
                     ),
                   ),
                   if (run.phase == BrickPhase.bonus)
@@ -48,7 +52,12 @@ class BrickBreakerField extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: colors.surface,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: colors.tertiary),
+                              border: Border.all(
+                                color:
+                                    index == catchLane
+                                        ? colors.primary
+                                        : colors.tertiary,
+                              ),
                               boxShadow: [
                                 BoxShadow(
                                   color: colors.tertiary.withValues(alpha: .25),
@@ -92,11 +101,17 @@ class BrickBreakerField extends StatelessWidget {
 }
 
 class _FieldPainter extends CustomPainter {
-  _FieldPainter(this.run, this.colors, {required this.paper});
+  _FieldPainter(
+    this.run,
+    this.colors, {
+    required this.paper,
+    required this.effects,
+  });
 
   final BrickBreakerRun run;
   final ColorScheme colors;
   final bool paper;
+  final bool effects;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -180,6 +195,37 @@ class _FieldPainter extends CustomPainter {
       }
     }
 
+    if (effects) {
+      for (final impact in run.impacts) {
+        final progress = run.impactProgress(impact).clamp(0.0, 1.0);
+        final tint =
+            impact.brick.gold ? colors.tertiary : palette[impact.brick.row];
+        paint.color = tint.withValues(alpha: (1 - progress) * .9);
+        final center = impact.brick.bounds.center;
+        final count = impact.brick.gold ? 9 : 5;
+        for (var i = 0; i < count; i++) {
+          final angle = i * 2 * pi / count + .43;
+          final reach = 8 + progress * (i.isEven ? 24 : 16);
+          final point = center + Offset(cos(angle), sin(angle)) * reach;
+          canvas.drawCircle(point, 1.4 + (1 - progress) * 1.5, paint);
+        }
+      }
+    }
+
+    if (run.phase == BrickPhase.bonus) {
+      for (var i = 0; i < run.choices.length; i++) {
+        final x = run.laneCenter(i);
+        final selected = i == run.catchLane;
+        _rounded(
+          canvas,
+          paint,
+          Rect.fromLTWH(x - 10, BrickBreakerRun.paddleY + 16, 20, 3),
+          selected ? colors.primary : colors.outline,
+          2,
+        );
+      }
+    }
+
     const half = BrickBreakerRun.paddleHalfWidth;
     final paddle = Rect.fromLTWH(
       run.paddle - half,
@@ -207,7 +253,7 @@ class _FieldPainter extends CustomPainter {
     }
     for (final ball in run.balls) {
       final position = ball.position;
-      if (run.phase == BrickPhase.flying) {
+      if (effects && run.phase == BrickPhase.flying) {
         paint
           ..color = colors.primary.withValues(alpha: .25)
           ..strokeWidth = 5

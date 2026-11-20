@@ -39,7 +39,13 @@ void main() {
       await tester.pumpAndSettle();
       await peek(tester, 'brick_${brightness.name}_ready');
       await tester.tap(find.byKey(BrickBreakerKeys.launch));
-      for (var i = 0; i < 140; i++) {
+      for (var i = 0; i < 65; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      if (brightness == Brightness.dark) {
+        await peek(tester, 'brick_dark_impact');
+      }
+      for (var i = 65; i < 140; i++) {
         await tester.pump(const Duration(milliseconds: 16));
       }
       await peek(tester, 'brick_${brightness.name}_bonus');

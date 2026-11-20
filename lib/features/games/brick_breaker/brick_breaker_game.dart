@@ -234,7 +234,6 @@ class _BrickBreakerGameState extends State<BrickBreakerGame>
                         strings.score(_run.score),
                         style: theme.textTheme.titleMedium,
                       ),
-                      Text(strings.brickField(_run.field)),
                       Text(
                         strings.lives(
                           _run.lives,
@@ -249,28 +248,45 @@ class _BrickBreakerGameState extends State<BrickBreakerGame>
                     accent: bonus ? colors.tertiary : colors.primary,
                     child: Column(
                       children: [
-                        if (bonus && word != null)
-                          Row(
+                        SizedBox(
+                          height: 52,
+                          child: Stack(
+                            alignment: Alignment.center,
                             children: [
-                              Expanded(
-                                child: Text(
-                                  word.text,
-                                  key: BrickBreakerKeys.word,
-                                  textAlign: TextAlign.center,
-                                  style: withWeight(
-                                    theme.textTheme.headlineSmall!,
-                                    FontWeight.bold,
+                              if (bonus && word != null)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 48,
                                   ),
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      word.text,
+                                      key: BrickBreakerKeys.word,
+                                      style: withWeight(
+                                        theme.textTheme.headlineSmall!,
+                                        FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              else
+                                Text(
+                                  strings.brickField(_run.field),
+                                  style: theme.textTheme.titleMedium,
                                 ),
-                              ),
-                              if (widget.speech is! NoopWordSpeech)
-                                IconButton(
-                                  onPressed: _paused ? null : _speak,
-                                  tooltip: strings.listen,
-                                  icon: const Icon(Icons.volume_up_outlined),
+                              if (bonus && widget.speech is! NoopWordSpeech)
+                                Align(
+                                  alignment: AlignmentDirectional.centerEnd,
+                                  child: IconButton(
+                                    onPressed: _paused ? null : _speak,
+                                    tooltip: strings.listen,
+                                    icon: const Icon(Icons.volume_up_outlined),
+                                  ),
                                 ),
                             ],
                           ),
+                        ),
                         Stack(
                           fit: StackFit.passthrough,
                           alignment: Alignment.center,

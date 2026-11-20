@@ -20,6 +20,8 @@ class ArcadeBrick {
   bool gold = false;
 }
 
+typedef BrickImpact = ({ArcadeBrick brick, Duration time});
+
 /// Simulates the field in fixed logical coordinates. A bonus retains its
 /// pending review item until a catch, including across a missed drop.
 class BrickBreakerRun {
@@ -38,9 +40,10 @@ class BrickBreakerRun {
   static const paddleHalfWidth = 38.0;
   static const ballRadius = 5.0;
   static const startingLives = 3;
+  static const impactLifetime = Duration(milliseconds: 320);
   static const _step = Duration(microseconds: 8333);
   static const _seconds = 0.008333;
-  static const _readingTime = Duration(milliseconds: 850);
+  static const _baseReadingTime = Duration(milliseconds: 850);
   static const _fallTime = Duration(milliseconds: 2600);
   static const _feedbackTime = Duration(milliseconds: 850);
   static const _dropStart = 138.0;
@@ -48,12 +51,16 @@ class BrickBreakerRun {
     ['.######.', '########', '########', '.##..##.', '...##...'],
     ['########', '..####..', '###..###', '.##..##.', '...##...'],
     ['##....##', '.##..##.', '..####..', '.######.', '#..##..#'],
+    ['########', '##....##', '#.####.#', '#.#..#.#', '##....##'],
+    ['..####..', '.##..##.', '##....##', '.##..##.', '..####..'],
+    ['##..##..', '.##..##.', '..##..##', '.##..##.', '##..##..'],
   ];
 
   final ReviewSession session;
   final Random _random;
   final bricks = <ArcadeBrick>[];
   final balls = <BrickBall>[];
+  final impacts = <BrickImpact>[];
   List<String> choices = const [];
   ReviewItem? item;
   String? lastAnswer;
@@ -70,6 +77,8 @@ class BrickBreakerRun {
   Duration _phaseTime = Duration.zero;
   Duration _answerTime = Duration.zero;
   Duration _remainder = Duration.zero;
+  Duration _clock = Duration.zero;
+  Duration _readingTime = _baseReadingTime;
 
   bool get caughtCorrect =>
       lastAnswer != null && lastAnswer == item?.word.translation;
@@ -80,10 +89,22 @@ class BrickBreakerRun {
     return _dropStart + (paddleY - _dropStart) * progress.clamp(0, 1);
   }
 
+  double impactProgress(BrickImpact impact) =>
+      (_clock - impact.time).inMicroseconds / impactLifetime.inMicroseconds;
+
   double get laneSpacing => min(96.0, width / max(1, choices.length));
 
   double laneCenter(int index) =>
       width / 2 + (index - (choices.length - 1) / 2) * laneSpacing;
+
+  int? get catchLane {
+    if (choices.isEmpty) return null;
+    final index = ((paddle - laneCenter(0)) / laneSpacing).round().clamp(
+      0,
+      choices.length - 1,
+    );
+    return (laneCenter(index) - paddle).abs() <= paddleHalfWidth ? index : null;
+  }
 
   void movePaddle(double x) {
     paddle = x.clamp(paddleHalfWidth, width - paddleHalfWidth);
@@ -100,6 +121,7 @@ class BrickBreakerRun {
     while (_remainder >= _step && _isMoving) {
       _remainder -= _step;
       _phaseTime += _step;
+      _clock += _step;
       switch (phase) {
         case BrickPhase.flying:
           _fly();
@@ -120,6 +142,7 @@ class BrickBreakerRun {
       }
     }
     if (!_isMoving) _remainder = Duration.zero;
+    impacts.removeWhere((hit) => _clock - hit.time >= impactLifetime);
   }
 
   bool get _isMoving => switch (phase) {
@@ -166,7 +189,6 @@ class BrickBreakerRun {
       _buildField();
     }
     _parkedBalls = count;
-    paddle = width / 2;
     _parkBalls();
     _changePhase(BrickPhase.serve);
   }
@@ -201,7 +223,12 @@ class BrickBreakerRun {
           next.dy >= paddleY - ballRadius &&
           (next.dx - paddle).abs() <= paddleHalfWidth + ballRadius) {
         final aim = ((next.dx - paddle) / paddleHalfWidth).clamp(-1, 1);
-        final horizontal = aim.toDouble() * 225;
+        final aimedSpeed = aim.toDouble() * 225;
+        // Даже точный удар центром немного уводит мяч из пустого столбца.
+        final horizontal =
+            aimedSpeed.abs() < 34
+                ? (aimedSpeed < 0 ? -34.0 : 34.0)
+                : aimedSpeed;
         ball.velocity = Offset(
           horizontal,
           -sqrt(280 * 280 - horizontal * horizontal),
@@ -219,9 +246,10 @@ class BrickBreakerRun {
                 : Offset(ball.velocity.dx, -ball.velocity.dy);
         ball.position = previous;
         bricks.removeAt(i);
+        impacts.add((brick: brick, time: _clock));
         score += 10;
         if (brick.gold) {
-          if (bricks.isNotEmpty) bricks.last.gold = true;
+          _markNextGold(brick.bounds.center.dx);
           _openBonus();
           return;
         }
@@ -236,6 +264,22 @@ class BrickBreakerRun {
     } else {
       _serve();
     }
+  }
+
+  void _markNextGold(double previousX) {
+    if (bricks.isEmpty) return;
+    // Кирпичи хранятся строками сверху вниз. Последний в каждом столбце
+    // открыт со стороны платформы.
+    final exposed =
+        {
+          for (final brick in bricks) brick.bounds.center.dx: brick,
+        }.values.toList();
+    final distant =
+        exposed
+            .where((brick) => (brick.bounds.center.dx - previousX).abs() >= 84)
+            .toList();
+    final options = distant.isEmpty ? exposed : distant;
+    options[_random.nextInt(options.length)].gold = true;
   }
 
   void _openBonus() {
@@ -257,6 +301,13 @@ class BrickBreakerRun {
             .toList()
           ..shuffle(_random);
     choices = [correct, ...distractors.take(2)]..shuffle(_random);
+    final longestLabel = [
+      current.word.text,
+      ...choices,
+    ].map((text) => text.runes.length).reduce(max);
+    _readingTime =
+        _baseReadingTime +
+        Duration(milliseconds: ((longestLabel - 19) * 45).clamp(0, 1100));
     lastAnswer = null;
     missedDrop = false;
     _changePhase(BrickPhase.bonus);
@@ -265,11 +316,8 @@ class BrickBreakerRun {
   void _drop() {
     _answerTime += _step;
     if (_phaseTime < _readingTime + _fallTime) return;
-    final lane = ((paddle - laneCenter(0)) / laneSpacing).round().clamp(
-      0,
-      choices.length - 1,
-    );
-    if ((laneCenter(lane) - paddle).abs() > paddleHalfWidth) {
+    final lane = catchLane;
+    if (lane == null) {
       missedDrop = true;
       _serve(_parkedBalls);
       return;
