@@ -89,6 +89,33 @@ void main() {
         'рецензия',
         'written review',
       ),
+      (
+        CefrLevel.b2,
+        'falling_words',
+        'Falling Words',
+        'es_matiz',
+        'matiz',
+        'оттенок смысла',
+        'nuance',
+      ),
+      (
+        CefrLevel.b2,
+        'ninja_slash',
+        'Ninja Slash',
+        'es_sesgo',
+        'sesgo',
+        'предвзятость',
+        'bias',
+      ),
+      (
+        CefrLevel.b2,
+        'claw_machine',
+        'Claw Machine',
+        'es_desempeno',
+        'desempeño',
+        'результативность работы',
+        'job performance',
+      ),
     ]) {
       final levelLabel = level.name.toUpperCase();
       testWidgets(
@@ -132,10 +159,14 @@ void main() {
                   .where(
                     (item) =>
                         item.word.level != level &&
-                        ['es_nino', 'es_buzon'].contains(item.word.id),
+                        const [
+                          'es_nino',
+                          'es_buzon',
+                          'es_cuota',
+                        ].contains(item.word.id),
                   )
                   .toList();
-          expect(dueOutsideLevel, hasLength(level == CefrLevel.b1 ? 2 : 1));
+          expect(dueOutsideLevel, hasLength(level == CefrLevel.b2 ? 3 : 2));
           expect(target.word.level, level);
           expect(target.word.text, spanish);
           expect(target.word.translation, translation);
