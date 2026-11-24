@@ -8,6 +8,7 @@ import 'package:arcadelingo/features/games/snake/snake_run.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _words = [
@@ -54,6 +55,59 @@ Future<LeitnerReviewSession> _open(
 void main() {
   final field = find.byKey(SnakeKeys.field);
   for (final brightness in Brightness.values) {
+    testWidgets('a short swipe steers before release ($brightness)', (
+      tester,
+    ) async {
+      await _open(tester, brightness);
+      final run = tester.widget<SnakeField>(field).run;
+      final finger = await tester.startGesture(tester.getCenter(field));
+      await finger.moveBy(const Offset(2, -3));
+      await tester.pump();
+      expect(run.phase, SnakePhase.ready);
+      await finger.moveBy(const Offset(0, -7));
+      await tester.pump();
+      expect(run.phase, SnakePhase.moving);
+      expect(run.direction, SnakeDirection.up);
+      await finger.up();
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('the board offers accessible turn actions ($brightness)', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      addTearDown(handle.dispose);
+      await _open(tester, brightness);
+      final strings = tester.element(field).strings;
+      final node = tester.getSemantics(field);
+      final ids = node.getSemanticsData().customSemanticsActionIds;
+      expect(ids, hasLength(4));
+      final directions = {
+        for (final id in ids!) CustomSemanticsAction.getAction(id)!.label: id,
+      };
+      expect(
+        directions.keys,
+        unorderedEquals([
+          strings.snakeLeft,
+          strings.snakeRight,
+          strings.snakeUp,
+          strings.snakeDown,
+        ]),
+      );
+      tester.binding.pipelineOwner.semanticsOwner!.performAction(
+        node.id,
+        SemanticsAction.customAction,
+        directions[strings.snakeDown],
+      );
+      await tester.pump();
+      expect(
+        tester.widget<SnakeField>(field).run.direction,
+        SnakeDirection.down,
+      );
+      expect(find.byType(OutlinedButton), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    });
+
     testWidgets('one continuous swipe turns around a corner ($brightness)', (
       tester,
     ) async {
@@ -84,7 +138,7 @@ void main() {
             .element(field)
             .strings
             .snakeAnswer(_words.first, eaten, correct: correct);
-        await tester.tap(find.byKey(SnakeKeys.direction(SnakeDirection.right)));
+        await tester.drag(field, const Offset(24, 0));
         await tester.pump();
         await tester.pump(SnakeRun.stepTime);
         await tester.pump(SnakeRun.stepTime);
