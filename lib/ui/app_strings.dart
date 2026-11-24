@@ -2,6 +2,7 @@ import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
+import 'package:arcadelingo/domain/stories/situation_story.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
@@ -27,6 +28,78 @@ class AppStrings {
 
   String get challenge =>
       _text(en: 'Challenge', ru: 'Испытание', es: 'Desafío');
+
+  String get situationStories => _text(
+    en: 'On the way home',
+    ru: 'Пока ехал домой',
+    es: 'De camino a casa',
+  );
+
+  String get storyHomeHint => _text(
+    en: 'Two short games and a real-life task',
+    ru: 'Две короткие игры и задача из жизни',
+    es: 'Dos juegos cortos y una tarea de la vida diaria',
+  );
+
+  String get chooseSituation => _text(
+    en: 'Choose a situation',
+    ru: 'Выбери ситуацию',
+    es: 'Elige una situación',
+  );
+
+  String storyTitle(StorySituation situation) => switch (situation) {
+    StorySituation.breakfast => _text(
+      en: 'Order breakfast',
+      ru: 'Заказать завтрак',
+      es: 'Pedir el desayuno',
+    ),
+    StorySituation.hotel => _text(
+      en: 'Check in at a hotel',
+      ru: 'Заселиться в отель',
+      es: 'Registrarse en un hotel',
+    ),
+    StorySituation.station => _text(
+      en: 'Find your train',
+      ru: 'Найти свой поезд',
+      es: 'Encontrar tu tren',
+    ),
+  };
+
+  String storyRound(int round) => _text(
+    en: 'Game $round of 2',
+    ru: 'Игра $round из 2',
+    es: 'Juego $round de 2',
+  );
+
+  String get startStoryRound =>
+      _text(en: 'Start game', ru: 'Начать игру', es: 'Empezar el juego');
+
+  String get storyRoundInterrupted => _text(
+    en: 'Finish this round to continue.',
+    ru: 'Чтобы продолжить, доиграй этот раунд.',
+    es: 'Termina esta ronda para continuar.',
+  );
+
+  String get storyFinal =>
+      _text(en: 'Final task', ru: 'Финальное задание', es: 'Tarea final');
+
+  String get tryStoryAnswerAgain => _text(
+    en: 'Read the message again and try another answer.',
+    ru: 'Прочитай фразу ещё раз и выбери другой ответ.',
+    es: 'Vuelve a leer el mensaje y prueba con otra respuesta.',
+  );
+
+  String get storyComplete => _text(
+    en: 'Situation complete',
+    ru: 'Ситуация пройдена',
+    es: 'Situación completada',
+  );
+
+  String get backToSituations => _text(
+    en: 'Back to situations',
+    ru: 'К ситуациям',
+    es: 'Volver a las situaciones',
+  );
 
   String challengeName(ArcadeChallenge mode) => switch (mode) {
     ArcadeChallenge.sprint => _text(

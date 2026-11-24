@@ -23,9 +23,9 @@ void main() {
           tester.view.physicalSize = const Size(320, 640);
           tester.view.devicePixelRatio = 1;
           addTearDown(tester.view.reset);
-          final story = SituationStory(
+          const story = SituationStory(
             situation: StorySituation.station,
-            firstRound: const [
+            firstRound: [
               ReviewItem(
                 word: Word(
                   id: 'billete',
@@ -34,14 +34,14 @@ void main() {
                 ),
               ),
             ],
-            secondRound: const [
+            secondRound: [
               ReviewItem(
                 word: Word(id: 'andén', text: 'andén', translation: 'platform'),
               ),
             ],
             clue: 'El tren sale del andén cuatro.',
             question: 'Which platform should you go to?',
-            choices: const ['Platform two', 'Platform four', 'Platform eight'],
+            choices: ['Platform two', 'Platform four', 'Platform eight'],
             correctIndex: 1,
             explanation: 'The train leaves from platform four.',
           );
