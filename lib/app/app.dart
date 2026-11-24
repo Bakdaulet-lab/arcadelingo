@@ -29,6 +29,7 @@ import 'package:arcadelingo/app/settings_view.dart';
 import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
+import 'package:arcadelingo/domain/learning/custom_review_items.dart';
 import 'package:arcadelingo/domain/learning/learning_plan.dart';
 import 'package:arcadelingo/domain/learning/mistake_review_observer.dart';
 import 'package:arcadelingo/domain/ports/challenge_records.dart';
@@ -258,7 +259,33 @@ class _HomeScreenState extends State<HomeScreen> {
   void _selectGame(String id) => setState(() => _selectedGameId = id);
 
   bool get _hasWordsForLevel =>
-      widget.items.any((item) => item.word.level == _selectedLevel);
+      widget.items.any((item) => item.word.level == _selectedLevel) ||
+      (widget.ports.customWords?.load(_selectedLevel).isNotEmpty ?? false);
+
+  List<ReviewItem> _customItems(CefrLevel level) {
+    final words = widget.ports.customWords?.load(level);
+    if (words == null || words.isEmpty) return const [];
+    return buildCustomReviewItems(
+      words: words,
+      courseItems: widget.items,
+      level: level,
+    );
+  }
+
+  List<ReviewItem> _levelItems(CefrLevel level, List<ReviewItem> personal) {
+    (String, String) pairOf(Word word) => (
+      word.text.toLowerCase(),
+      word.translation.toLowerCase(),
+    );
+    final personalPairs = {for (final item in personal) pairOf(item.word)};
+    return [
+      ...personal,
+      for (final item in widget.items)
+        if (item.word.level == level &&
+            !personalPairs.contains(pairOf(item.word)))
+          item,
+    ];
+  }
 
   void _selectLevel(CefrLevel level) => setState(() => _selectedLevel = level);
 
@@ -380,6 +407,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                     (context) => DictionaryScreen(
                                       items: widget.items,
                                       level: _selectedLevel,
+                                      course: widget.course,
+                                      customWords: widget.ports.customWords,
+                                      onCustomWordsChanged:
+                                          () => setState(() {}),
+                                      onPlayCustom:
+                                          widget.games.isEmpty
+                                              ? null
+                                              : _chooseCustomGame,
                                       answers: widget.ports.answers,
                                       favorites: favorites,
                                       speech: widget.ports.speech,
@@ -400,6 +435,31 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _chooseCustomGame() async {
+    final strings = context.strings;
+    final game = await showArcadeChoice<GameEntry>(
+      context,
+      title: strings.chooseGame,
+      choices: widget.games,
+      selected: _selectedGame,
+      label: (game) => game.titleFor(strings),
+      optionKey: (game) => ValueKey('custom-game.${game.id}'),
+    );
+    if (game != null && mounted) {
+      final level = _selectedLevel;
+      var replay = false;
+      do {
+        replay = false;
+        await _startRound(
+          learning: false,
+          game: game,
+          level: level,
+          replayPersonal: () => replay = true,
+        );
+      } while (mounted && replay);
+    }
   }
 
   /// Тап «Настройки»: единственная настройка — напоминание.
@@ -641,7 +701,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mode == null || records == null) return;
 
     final course = widget.course;
-    final items = widget.items;
+    final items = _levelItems(_selectedLevel, _customItems(_selectedLevel));
     final key = (gameId: game.id, courseId: course.id, level: _selectedLevel);
     final best = records.load(key, mode: game.challengeRecordMode);
     _selectingChallenge = true;
@@ -684,18 +744,20 @@ class _HomeScreenState extends State<HomeScreen> {
       sessionId: now.toIso8601String(),
     );
     _record(AppEventKind.roundStart, sessionId: session.sessionId);
-    _play(
-      game,
-      session,
-      () => '',
-      mistakes: mistakes,
-      level: key.level,
-      learning: false,
-      replayChallenge: () => _launchChallenge(game, mode, key, items, records),
-      onChallengeComplete:
-          (score) => ChallengeRecordLine(
-            best: records.submit(key, score, mode: game.challengeRecordMode),
-          ),
+    unawaited(
+      _play(
+        game,
+        session,
+        () => '',
+        vocabulary: items,
+        mistakes: mistakes,
+        level: key.level,
+        onReplay: () => _launchChallenge(game, mode, key, items, records),
+        onChallengeComplete:
+            (score) => ChallengeRecordLine(
+              best: records.submit(key, score, mode: game.challengeRecordMode),
+            ),
+      ),
     );
   }
 
@@ -731,11 +793,16 @@ class _HomeScreenState extends State<HomeScreen> {
     required bool learning,
     required GameEntry game,
     required CefrLevel level,
+    VoidCallback? replayPersonal,
   }) async {
     // Последнее состояние, приехавшее из сессии: по нему считается строка
     // итогов. До первого ответа это то, что прочитано из хранилища.
     var latest = <String, LeitnerCard>{};
-    var roundItems = widget.items;
+    final customOnly = replayPersonal != null;
+    final personal = _customItems(level);
+    if (customOnly && personal.isEmpty) return;
+    final vocabulary = _levelItems(level, personal);
+    var roundItems = customOnly ? personal : vocabulary;
     if (learning) {
       switch (widget.ports.cards.load()) {
         case Err(:final failure):
@@ -744,7 +811,7 @@ class _HomeScreenState extends State<HomeScreen> {
         case Ok(:final value):
           latest = value;
           final plan = LearningPlan.build(
-            items: widget.items,
+            items: roundItems,
             cards: value,
             level: level,
             now: widget.now(),
@@ -781,6 +848,7 @@ class _HomeScreenState extends State<HomeScreen> {
     )(
       items: roundItems,
       level: level,
+      practiceAll: customOnly,
       gameId: game.id,
       onCardsChanged: (changed) => latest = changed,
       observers: [mistakes],
@@ -794,13 +862,20 @@ class _HomeScreenState extends State<HomeScreen> {
           AppEventKind.roundStart,
           sessionId: value is ObservedSession ? value.sessionId : null,
         );
-        _play(
+        await _play(
           game,
           value,
-          () => _footer(latest, level),
+          () => customOnly ? '' : _footer(latest, vocabulary),
+          vocabulary: vocabulary,
           mistakes: mistakes,
           level: level,
-          learning: learning,
+          onReplay:
+              replayPersonal ??
+              () => _start(
+                learning: learning,
+                chosenGame: game,
+                chosenLevel: level,
+              ),
         );
       case Err(:final failure):
         setState(() => _stateFailure = failure);
@@ -821,16 +896,16 @@ class _HomeScreenState extends State<HomeScreen> {
     _start();
   }
 
-  void _play(
+  Future<void> _play(
     GameEntry game,
     ReviewSession session,
     String Function() footer, {
     required MistakeReviewObserver mistakes,
     required CefrLevel level,
-    required bool learning,
-    VoidCallback? replayChallenge,
+    required VoidCallback onReplay,
+    required List<ReviewItem> vocabulary,
     Widget Function(int score)? onChallengeComplete,
-  }) {
+  }) async {
     final navigator = Navigator.of(context);
     final settings = switch (widget.ports.settings?.load()) {
       Ok(value: final it) => it,
@@ -857,88 +932,68 @@ class _HomeScreenState extends State<HomeScreen> {
       _finishRound(sessionId);
     }
 
-    unawaited(
-      navigator
-          .push(
-            MaterialPageRoute<void>(
-              builder:
-                  (context) => game.build(
-                    GameLaunch(
-                      session: session,
-                      course: widget.course,
-                      level: level,
-                      vocabulary: widget.items
-                          .map((item) => item.word)
-                          .where((word) => word.level == level),
-                      summaryFooter: footer,
-                      onPlayAgain: () {
-                        navigator.pop();
-                        if (replayChallenge != null) {
-                          replayChallenge();
-                          return;
-                        }
-                        _start(
-                          learning: learning,
-                          chosenGame: game,
-                          chosenLevel: level,
-                        );
-                      },
-                      onExit: navigator.pop,
-                      onChallengeComplete: onChallengeComplete,
-                      onRoundScore:
-                          onChallengeComplete == null &&
-                                  game.tracksRoundScore &&
-                                  records != null
-                              ? (score) => ChallengeRecordLine(
-                                best: records.submit(recordKey, score),
-                              )
-                              : null,
-                      mistakeCount: () => mistakes.mistakes.length,
-                      onReviewMistakes: () {
-                        unawaited(
-                          navigator.push(
-                            MaterialPageRoute<void>(
-                              builder:
-                                  (context) => MistakesReviewScreen(
-                                    words: mistakes.mistakes,
-                                    outcomes: mistakes.outcomes,
-                                    level: level,
-                                    speech: widget.ports.speech,
-                                    studyLanguage: widget.course.studyLanguage,
-                                  ),
+    await navigator.push(
+      MaterialPageRoute<void>(
+        builder:
+            (context) => game.build(
+              GameLaunch(
+                session: session,
+                course: widget.course,
+                level: level,
+                vocabulary: vocabulary.map((item) => item.word),
+                summaryFooter: footer,
+                onPlayAgain: () {
+                  navigator.pop();
+                  onReplay();
+                },
+                onExit: navigator.pop,
+                onChallengeComplete: onChallengeComplete,
+                onRoundScore:
+                    onChallengeComplete == null &&
+                            game.tracksRoundScore &&
+                            records != null
+                        ? (score) => ChallengeRecordLine(
+                          best: records.submit(recordKey, score),
+                        )
+                        : null,
+                mistakeCount: () => mistakes.mistakes.length,
+                onReviewMistakes: () {
+                  unawaited(
+                    navigator.push(
+                      MaterialPageRoute<void>(
+                        builder:
+                            (context) => MistakesReviewScreen(
+                              words: mistakes.mistakes,
+                              outcomes: mistakes.outcomes,
+                              level: level,
+                              speech: widget.ports.speech,
+                              studyLanguage: widget.course.studyLanguage,
                             ),
-                          ),
-                        );
-                      },
-                      onRoundOver: () {
-                        finished = true;
-                        _finishRound(sessionId);
-                      },
-                      // Выключённый звук приходит в игру нулевым объектом,
-                      // а не флагом: «выключено» тогда значит «никто не
-                      // зовёт», а не «зовут и молчат». Настройка читается в
-                      // момент запуска партии — ровно как очередь слов.
-                      sounds:
-                          settings.soundOn
-                              ? widget.ports.sounds
-                              : const NoopSounds(),
-                      speech:
-                          settings.soundOn
-                              ? widget.ports.speech
-                              : const NoopWordSpeech(),
+                      ),
                     ),
-                  ),
+                  );
+                },
+                onRoundOver: () {
+                  finished = true;
+                  _finishRound(sessionId);
+                },
+                // Выключённый звук приходит в игру нулевым объектом,
+                // а не флагом: «выключено» тогда значит «никто не
+                // зовёт», а не «зовут и молчат». Настройка читается в
+                // момент запуска партии — ровно как очередь слов.
+                sounds:
+                    settings.soundOn ? widget.ports.sounds : const NoopSounds(),
+                speech:
+                    settings.soundOn
+                        ? widget.ports.speech
+                        : const NoopWordSpeech(),
+              ),
             ),
-          )
-          .then((_) {
-            if (!mounted) return;
-            if (!finished) {
-              _record(AppEventKind.roundAbandon, sessionId: sessionId);
-            }
-            // Вернулись с партии: серия могла продлиться.
-            _refreshRitual();
-          }),
+      ),
     );
+    if (!mounted) return;
+    if (!finished) _record(AppEventKind.roundAbandon, sessionId: sessionId);
+    _refreshRitual();
   }
 
   /// Что писать под статистикой итогов.
@@ -950,11 +1005,10 @@ class _HomeScreenState extends State<HomeScreen> {
   /// «Возвращайся завтра» было бы ложью ровно наоборот. Верные ответы
   /// уходят в коробку 2 и выше, со сроком от суток, и из «готовых»
   /// выпадают сами.
-  String _footer(Map<String, LeitnerCard> cards, CefrLevel level) {
+  String _footer(Map<String, LeitnerCard> cards, List<ReviewItem> vocabulary) {
     final now = widget.now();
     var fresh = false;
-    for (final item in widget.items) {
-      if (item.word.level != level) continue;
+    for (final item in vocabulary) {
       final card = cards[item.word.id];
       if (card == null) {
         fresh = true;
