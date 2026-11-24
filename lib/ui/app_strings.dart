@@ -458,6 +458,55 @@ class AppStrings {
   );
   String get personalDictionary =>
       _text(en: 'My Word List', ru: 'Личный словарь', es: 'Mi diccionario');
+  String get customWords =>
+      _text(en: 'My words', ru: 'Свои слова', es: 'Mis palabras');
+  String get addWord =>
+      _text(en: 'Add a word', ru: 'Добавить слово', es: 'Añadir palabra');
+  String get playCustomWords => _text(
+    en: 'Play with my words',
+    ru: 'Играть со своими словами',
+    es: 'Jugar con mis palabras',
+  );
+  String get noCustomWords => _text(
+    en: 'Add a word or phrase to practise it in games.',
+    ru: 'Добавь слово или фразу, чтобы потренироваться в играх.',
+    es: 'Añade una palabra o frase para practicarla en los juegos.',
+  );
+  String customWordLabel(String tag) => _text(
+    en: 'Word or phrase (${languageName(tag)})',
+    ru: 'Слово или фраза (${languageName(tag).toLowerCase()})',
+    es: 'Palabra o frase (${languageName(tag).toLowerCase()})',
+  );
+  String customTranslationLabel(String tag) => _text(
+    en: 'Translation (${languageName(tag)})',
+    ru: 'Перевод (${languageName(tag).toLowerCase()})',
+    es: 'Traducción (${languageName(tag).toLowerCase()})',
+  );
+  String get enterWord => _text(
+    en: 'Enter a word or phrase.',
+    ru: 'Введи слово или фразу.',
+    es: 'Escribe una palabra o frase.',
+  );
+  String get enterTranslation => _text(
+    en: 'Enter a translation.',
+    ru: 'Введи перевод.',
+    es: 'Escribe una traducción.',
+  );
+  String get customWordNeedsLetter => _text(
+    en: 'The word or phrase needs at least one letter.',
+    ru: 'В слове или фразе должна быть хотя бы одна буква.',
+    es: 'La palabra o frase debe contener al menos una letra.',
+  );
+  String get duplicateCustomWord => _text(
+    en: 'You already have this word at this level.',
+    ru: 'Это слово уже есть среди твоих слов на этом уровне.',
+    es: 'Esta palabra ya está en tu lista de este nivel.',
+  );
+  String get customWordSaveFailed => _text(
+    en: 'Couldn’t save this word. Try again.',
+    ru: 'Не удалось сохранить слово. Попробуй ещё раз.',
+    es: 'No se pudo guardar la palabra. Vuelve a intentarlo.',
+  );
   String get firstRoundProgress => _text(
     en: 'Play your first round to see your progress here',
     ru: 'Сыграй первую партию, и здесь появится, сколько пройдено',
