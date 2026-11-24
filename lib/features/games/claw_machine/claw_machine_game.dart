@@ -271,7 +271,8 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                 const SizedBox(height: 14),
                 _AnswerSlots(
                   key: ValueKey(_boardNumber),
-                  answer: _run.answer,
+                  slots: _run.slots,
+                  separators: _run.separators,
                   collected: _run.collected,
                   reducedMotion: _reducedMotion,
                 ),
@@ -473,13 +474,15 @@ class _ClawMachineGameState extends State<ClawMachineGame>
 
 class _AnswerSlots extends StatelessWidget {
   const _AnswerSlots({
-    required this.answer,
+    required this.slots,
+    required this.separators,
     required this.collected,
     required this.reducedMotion,
     super.key,
   });
 
-  final String answer;
+  final List<String> slots;
+  final Set<int> separators;
   final int collected;
   final bool reducedMotion;
 
@@ -488,7 +491,10 @@ class _AnswerSlots extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     return Semantics(
-      label: context.strings.lettersCollected(collected, answer.length),
+      label: context.strings.lettersCollected(
+        collected - separators.where((i) => i < collected).length,
+        slots.length - separators.length,
+      ),
       liveRegion: true,
       child: Wrap(
         key: ClawKeys.slots,
@@ -496,68 +502,79 @@ class _AnswerSlots extends StatelessWidget {
         spacing: 5,
         runSpacing: 5,
         children: [
-          for (var i = 0; i < answer.length; i++)
-            TweenAnimationBuilder<double>(
-              key: ValueKey((i, i < collected)),
-              tween: Tween(
-                begin: !reducedMotion && i == collected - 1 ? 0 : 1,
-                end: 1,
-              ),
-              duration:
-                  reducedMotion
-                      ? Duration.zero
-                      : const Duration(milliseconds: 210),
-              builder: (context, t, child) {
-                final pulse = 1 - t;
-                return Transform.scale(
-                  scale: 1 + .12 * sin(pi * t),
-                  child: Container(
-                    constraints: const BoxConstraints(
-                      minWidth: 38,
-                      minHeight: 40,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          i < collected
-                              ? Color.lerp(
-                                colors.surfaceContainerHighest,
-                                colors.primary,
-                                .24 * pulse,
-                              )
-                              : colors.surface,
-                      border: Border.all(
-                        color:
-                            i == collected
-                                ? colors.primary
-                                : Color.lerp(
-                                  colors.outline,
-                                  colors.primary,
-                                  pulse,
-                                )!,
+          for (var i = 0; i < slots.length; i++)
+            if (separators.contains(i))
+              Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: Text(slots[i], style: theme.textTheme.titleLarge),
+              )
+            else
+              TweenAnimationBuilder<double>(
+                key: ValueKey((i, i < collected)),
+                tween: Tween(
+                  begin: !reducedMotion && i == collected - 1 ? 0 : 1,
+                  end: 1,
+                ),
+                duration:
+                    reducedMotion
+                        ? Duration.zero
+                        : const Duration(milliseconds: 210),
+                builder: (context, t, child) {
+                  final pulse = 1 - t;
+                  return Transform.scale(
+                    scale: 1 + .12 * sin(pi * t),
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        minWidth: 38,
+                        minHeight: 40,
                       ),
-                      borderRadius: BorderRadius.circular(9),
-                      boxShadow: [
-                        if (pulse > 0)
-                          BoxShadow(
-                            color: colors.primary.withValues(alpha: .5 * pulse),
-                            blurRadius: 12 * pulse,
-                          ),
-                      ],
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            i < collected
+                                ? Color.lerp(
+                                  colors.surfaceContainerHighest,
+                                  colors.primary,
+                                  .24 * pulse,
+                                )
+                                : colors.surface,
+                        border: Border.all(
+                          color:
+                              i == collected
+                                  ? colors.primary
+                                  : Color.lerp(
+                                    colors.outline,
+                                    colors.primary,
+                                    pulse,
+                                  )!,
+                        ),
+                        borderRadius: BorderRadius.circular(9),
+                        boxShadow: [
+                          if (pulse > 0)
+                            BoxShadow(
+                              color: colors.primary.withValues(
+                                alpha: .5 * pulse,
+                              ),
+                              blurRadius: 12 * pulse,
+                            ),
+                        ],
+                      ),
+                      child: child,
                     ),
-                    child: child,
+                  );
+                },
+                child: Text(
+                  i < collected ? slots[i] : ' ',
+                  textAlign: TextAlign.center,
+                  style: withWeight(
+                    theme.textTheme.titleLarge!,
+                    FontWeight.bold,
                   ),
-                );
-              },
-              child: Text(
-                i < collected ? answer[i] : ' ',
-                textAlign: TextAlign.center,
-                style: withWeight(theme.textTheme.titleLarge!, FontWeight.bold),
+                ),
               ),
-            ),
         ],
       ),
     );

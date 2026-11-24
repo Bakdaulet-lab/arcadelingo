@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/review/word_labels.dart';
 
 enum SnakeDirection {
   up(0, -1),
@@ -44,8 +45,6 @@ class SnakeRun {
     (x: 2, y: 8),
   ];
   static const _openingCells = [(x: 3, y: 2), (x: 8, y: 6), (x: 8, y: 9)];
-  static final _spaces = RegExp(r'\s+');
-  static final _translationSeparators = RegExp(r'\s*[,;/]\s*');
 
   final BoardReviewSession _session;
   final List<Word> _vocabulary;
@@ -213,19 +212,24 @@ class SnakeRun {
 
   Iterable<Word> _chooseDistractors(ReviewItem question) sync* {
     final word = question.word;
-    final translations = _translationParts(word.translation);
-    final labels = {_normalize(word.text)};
-    final curated = question.distractors.map(_normalize).toSet();
+    final translations = translationMeanings(word.translation);
+    final labels = {normalizedWordLabel(word.text)};
+    final curated = question.distractors.map(normalizedWordLabel).toSet();
     final preferred = <Word>[];
     final matchingPartOfSpeech = <Word>[];
     final others = <Word>[];
 
     for (final candidate in _vocabulary) {
-      if (candidate.level != word.level ||
-          _translationParts(candidate.translation).any(translations.contains)) {
+      if (candidate.level != word.level) continue;
+      if (translationMeanings(
+        candidate.translation,
+      ).any(translations.contains)) {
+        // The apple only shows the spelling, even if another personal or
+        // course card records a different meaning for the same spelling.
+        labels.add(normalizedWordLabel(candidate.text));
         continue;
       }
-      final normalizedTranslation = _normalize(candidate.translation);
+      final normalizedTranslation = normalizedWordLabel(candidate.translation);
       if (curated.contains(normalizedTranslation)) {
         preferred.add(candidate);
       } else if (word.partOfSpeech != null &&
@@ -239,14 +243,8 @@ class SnakeRun {
     for (final pool in [preferred, matchingPartOfSpeech, others]) {
       pool.shuffle(_random);
       for (final candidate in pool) {
-        if (labels.add(_normalize(candidate.text))) yield candidate;
+        if (labels.add(normalizedWordLabel(candidate.text))) yield candidate;
       }
     }
   }
-
-  static String _normalize(String value) =>
-      value.trim().toLowerCase().replaceAll(_spaces, ' ');
-
-  static Set<String> _translationParts(String value) =>
-      _normalize(value).split(_translationSeparators).toSet();
 }

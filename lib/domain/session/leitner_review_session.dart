@@ -49,6 +49,8 @@ class LeitnerReviewSession implements BoardReviewSession {
   /// новые — остаются нетронутыми до следующей сессии; вторая сессия в тот же
   /// день возьмёт их первыми. Новое слово получает карточку только в [report]:
   /// выданное и не отвеченное следов в состоянии не оставляет.
+  /// При [practiceAll] оставшиеся места занимают слова с ближайшей будущей
+  /// датой повтора. Ответ обновляет уже имеющуюся карточку.
   ///
   /// Карта копируется: сессия владеет своим состоянием, и что хост делает с
   /// исходной после старта — его дело. Карточки без слова в сиде в очередь не
@@ -61,6 +63,7 @@ class LeitnerReviewSession implements BoardReviewSession {
     required Map<String, LeitnerCard> cards,
     required List<ReviewItem> items,
     required int target,
+    bool practiceAll = false,
     required DateTime Function() now,
     required void Function(Map<String, LeitnerCard> cards) onCardsChanged,
   }) {
@@ -69,6 +72,7 @@ class LeitnerReviewSession implements BoardReviewSession {
     }
     final startedAt = now();
     final ready = <_Ready>[];
+    final upcoming = <_Ready>[];
     final fresh = <ReviewItem>[];
     for (final (index, item) in items.indexed) {
       final card = cards[item.word.id];
@@ -76,14 +80,22 @@ class LeitnerReviewSession implements BoardReviewSession {
         fresh.add(item);
       } else if (!card.due.isAfter(startedAt)) {
         ready.add((item: item, due: card.due, index: index));
+      } else if (practiceAll) {
+        upcoming.add((item: item, due: card.due, index: index));
       }
     }
-    ready.sort((a, b) {
+    int bySchedule(_Ready a, _Ready b) {
       final byDue = a.due.compareTo(b.due);
       return byDue != 0 ? byDue : a.index.compareTo(b.index);
-    });
+    }
+
+    ready.sort(bySchedule);
     final queue = [for (final r in ready.take(target)) r.item];
     queue.addAll(fresh.take(target - queue.length));
+    if (queue.length < target && upcoming.isNotEmpty) {
+      upcoming.sort(bySchedule);
+      queue.addAll(upcoming.take(target - queue.length).map((r) => r.item));
+    }
     return LeitnerReviewSession._(
       cards: Map.of(cards),
       queue: queue,

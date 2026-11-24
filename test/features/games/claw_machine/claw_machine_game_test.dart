@@ -298,4 +298,35 @@ void main() {
     expect(find.text(word.toUpperCase()), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('узкий экран: фраза с составными буквами и пунктуацией', (
+    tester,
+  ) async {
+    const phrase =
+        '¿Tu\u0301 podri\u0301as dejar el cafe\u0301 en mi mesa antes de salir?';
+    const translation = 'Ты можешь оставить кофе у меня на столе перед уходом?';
+    final session = FakeReviewSession(const [
+      ReviewItem(
+        word: Word(id: 'custom:phrase', text: phrase, translation: translation),
+      ),
+    ]);
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await _show(tester, session, reduceMotion: true);
+    tester.view.physicalSize = const Size(320, 640);
+    await tester.pump();
+    expect(find.text(translation), findsOneWidget);
+    final slots = tester.getRect(find.byKey(ClawKeys.slots));
+    expect(slots.left, greaterThanOrEqualTo(0));
+    expect(slots.right, lessThanOrEqualTo(320));
+    for (final letter in phrase.toUpperCase().characters.where(
+      (unit) => RegExp(r'\p{L}', unicode: true).hasMatch(unit),
+    )) {
+      await catchClawLetter(tester, letter);
+    }
+    expect(find.text(phrase.toUpperCase()), findsOneWidget);
+    expect(session.reports.single.outcome.correct, isTrue);
+    await tapClaw(tester, ClawKeys.next);
+    expect(tester.takeException(), isNull);
+  });
 }

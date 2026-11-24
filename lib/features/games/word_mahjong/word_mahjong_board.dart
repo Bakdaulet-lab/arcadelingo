@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/review/word_labels.dart';
 
 typedef _Slot = ({int row, int column, int layer});
 typedef MahjongPair = ({MahjongTile word, MahjongTile translation});
@@ -32,11 +33,11 @@ class WordMahjongBoard {
     final translations = <String>{};
     final pairs = <ReviewItem>[];
     for (final item in items) {
-      final word = item.word.text.trim().toLowerCase();
-      final translation = item.word.translation.trim().toLowerCase();
-      if (words.contains(word) || translations.contains(translation)) continue;
+      final word = normalizedWordLabel(item.word.text);
+      final meanings = translationMeanings(item.word.translation);
+      if (words.contains(word) || meanings.any(translations.contains)) continue;
       words.add(word);
-      translations.add(translation);
+      translations.addAll(meanings);
       pairs.add(item);
       if (pairs.length == _maxPairs) break;
     }
