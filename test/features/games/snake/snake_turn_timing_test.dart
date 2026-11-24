@@ -14,6 +14,47 @@ void main() {
     Word(id: 'cat', text: 'cat', translation: 'кот'),
   ];
 
+  testWidgets('background time does not skip the final glide onto an apple', (
+    tester,
+  ) async {
+    final session = LeitnerReviewSession.start(
+      items: [ReviewItem(word: words.first)],
+      cards: {},
+      target: 1,
+      now: () => DateTime(2026, 11, 24),
+      onCardsChanged: (_) {},
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SnakeGame(
+          session: session,
+          vocabulary: words,
+          seed: 3,
+          onPlayAgain: () {},
+          onExit: () {},
+        ),
+      ),
+    );
+    final field = tester.widget<SnakeField>(find.byKey(SnakeKeys.field));
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    await tester.pump(SnakeRun.stepTime);
+    await tester.pump(SnakeRun.stepTime);
+    await tester.pump(const Duration(milliseconds: 80));
+    expect(field.run.phase, SnakePhase.feedback);
+    final atBackground = field.motion.value;
+    expect(atBackground, inExclusiveRange(.05, .9));
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    // Simulate the gap between the last platform frame and the first resumed one.
+    await tester.pump(const Duration(seconds: 3));
+    expect(field.motion.value, closeTo(atBackground, .001));
+    await tester.pump(const Duration(milliseconds: 32));
+    expect(field.motion.value, inExclusiveRange(atBackground, 1.0));
+    expect(session.answered, 1);
+  });
+
   for (final theme in Brightness.values) {
     testWidgets('rapid turns and pause keep continuous motion ($theme)', (
       tester,
