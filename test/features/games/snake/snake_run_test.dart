@@ -78,6 +78,28 @@ void _pass(SnakeRun run, int ticks) {
 }
 
 void main() {
+  test('an alternate meaning cannot hide a valid answer on a wrong apple', () {
+    const personal = Word(id: 'custom:1', text: 'lift', translation: 'поднять');
+    const otherSense = Word(
+      id: 'custom:2',
+      text: 'raise',
+      translation: 'собрать',
+    );
+    const alsoCorrect = Word(
+      id: 'raise',
+      text: ' RAISE ',
+      translation: 'поднять / возвысить',
+    );
+    final run = _newRun(
+      _BoardSession([personal]),
+      vocabulary: [personal, otherSense, alsoCorrect, _door],
+    );
+    expect(
+      run.apples.map((apple) => apple.word),
+      unorderedEquals([personal, _door]),
+    );
+  });
+
   test('fresh sessions can place the correct answer at any opening apple', () {
     const vocabulary = [_key, _table, _clock];
     final correctCells = <SnakeCell>{
