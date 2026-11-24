@@ -184,27 +184,52 @@ void main() {
     expect(session.remainingItems.map((item) => item.word), [_key, _table]);
   });
 
-  test('opposite and double turns are ignored until the next tick', () {
+  test('two turns use successive cells and reject reversals and repeats', () {
     final session = _BoardSession([_key]);
     final run = _newRun(session);
     run.start();
     expect(run.steer(SnakeDirection.left), isFalse);
     expect(run.steer(SnakeDirection.up), isTrue);
-    expect(run.steer(SnakeDirection.left), isFalse);
+    expect(run.steer(SnakeDirection.up), isFalse);
+    expect(run.steer(SnakeDirection.down), isFalse);
+    expect(run.steer(SnakeDirection.left), isTrue);
+    expect(run.steer(SnakeDirection.down), isFalse);
     _pass(run, 1);
     expect(run.direction, SnakeDirection.up);
     expect(run.body.first, (x: 5, y: 5));
-    _pass(run, 6);
-    expect(run.body.first, (x: 5, y: 11));
+    _pass(run, 1);
+    expect(run.body.first, (x: 4, y: 5));
+    _pass(run, 5);
+    expect(run.body.first, (x: 11, y: 5));
     expect(run.phase, SnakePhase.moving);
     expect(session.answered, 0);
+    expect(run.steer(SnakeDirection.up), isTrue);
     run.pause();
+    expect(run.steer(SnakeDirection.down), isFalse);
     _pass(run, 7);
     expect(run.phase, SnakePhase.paused);
-    expect(run.body.first, (x: 5, y: 11));
+    expect(run.body.first, (x: 11, y: 5));
     expect(run.start(), isTrue);
     _pass(run, 1);
-    expect(run.body.first, (x: 5, y: 10));
+    expect(run.body.first, (x: 10, y: 5));
+  });
+
+  test('a buffered turn before an apple does not carry to the next word', () {
+    final run = _newRun(_BoardSession([_key, _table]));
+    run.start();
+    _pass(run, 2);
+    run.steer(SnakeDirection.up);
+    _pass(run, 1);
+    run.steer(SnakeDirection.right);
+    _pass(run, 1);
+    run.steer(SnakeDirection.down);
+    run.steer(SnakeDirection.right);
+    _pass(run, 1);
+    expect(run.phase, SnakePhase.feedback);
+    run.next();
+    run.start();
+    _pass(run, 1);
+    expect(run.body.first, (x: 8, y: 7));
   });
 
   test(
