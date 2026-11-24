@@ -69,26 +69,26 @@ Future<void> _pumpSnake(
 }
 
 Future<void> _catchKey(WidgetTester tester) async {
-  const tick = Duration(milliseconds: 490);
   final field = find.byKey(SnakeKeys.field);
-  final apple = tester
-      .widget<SnakeField>(field)
-      .run
-      .apples
-      .firstWhere((apple) => apple.word.text == 'llave');
-  final turns = switch (apple.cell) {
-    (x: 3, y: 2) => [(SnakeDirection.up, 4), (SnakeDirection.left, 2)],
-    (x: 8, y: 6) => [(SnakeDirection.right, 3)],
-    (x: 8, y: 9) => [(SnakeDirection.down, 3), (SnakeDirection.right, 3)],
-    _ => throw StateError('Ключ вне стартовой раскладки'),
-  };
-  for (final (index, (direction, steps)) in turns.indexed) {
-    await tester.tap(find.byKey(SnakeKeys.direction(direction)));
-    await tester.pump();
-    for (var step = index == 0 ? 1 : 0; step < steps; step++) {
-      await tester.pump(tick);
+  final run = tester.widget<SnakeField>(field).run;
+  final target = run.apples.firstWhere((a) => a.word.text == 'llave').cell;
+  final start = run.body.first;
+  final finger = await tester.startGesture(tester.getCenter(field));
+  for (final (direction, end) in [
+    if (target.y != start.y)
+      (
+        target.y < start.y ? SnakeDirection.up : SnakeDirection.down,
+        (x: start.x, y: target.y),
+      ),
+    (target.x < start.x ? SnakeDirection.left : SnakeDirection.right, target),
+  ]) {
+    await finger.moveBy(Offset(direction.dx * 24.0, direction.dy * 24.0));
+    for (var frame = 0; run.body.first != end && frame < 180; frame++) {
+      await tester.pump(const Duration(milliseconds: 20));
     }
   }
+  await finger.up();
+  if (run.phase != SnakePhase.feedback) throw StateError('Ключ не пойман');
   await tester.pumpAndSettle();
 }
 

@@ -302,9 +302,17 @@ class AppStrings {
     es: 'Busca la traducción',
   );
   String get snakeGuide => _text(
-    en: 'Swipe on the board or use the arrows',
-    ru: 'Свайпни по полю или нажми стрелку',
-    es: 'Desliza el dedo por el tablero o usa las flechas',
+    en:
+        'Swipe anywhere on the board to steer. Keep your finger down to turn again.',
+    ru:
+        'Веди пальцем по полю. Чтобы повернуть ещё раз, просто смени направление.',
+    es:
+        'Desliza el dedo por el tablero. Para volver a girar, cambia de dirección sin levantarlo.',
+  );
+  String get snakeBoard => _text(
+    en: 'Snake board',
+    ru: 'Поле змейки',
+    es: 'Tablero de la serpiente',
   );
   String get snakeStart =>
       _text(en: 'Start moving', ru: 'Начать движение', es: 'Empezar a moverse');

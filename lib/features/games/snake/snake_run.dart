@@ -54,7 +54,7 @@ class SnakeRun {
   List<SnakeCell> _body = _initialBody;
   List<SnakeCell> _previousBody = _initialBody;
   SnakeDirection _direction = SnakeDirection.right;
-  SnakeDirection? _queuedDirection;
+  final _turns = <SnakeDirection>[];
   SnakePhase _phase = SnakePhase.ready;
   ReviewItem? _item;
   List<SnakeApple> _apples = const [];
@@ -68,6 +68,7 @@ class SnakeRun {
   List<SnakeCell> get body => _body;
   List<SnakeCell> get previousBody => _previousBody;
   SnakeDirection get direction => _direction;
+  bool get hasQueuedTurn => _turns.isNotEmpty;
   SnakePhase get phase => _phase;
   ReviewItem? get item => _item;
   List<SnakeApple> get apples => _apples;
@@ -86,25 +87,25 @@ class SnakeRun {
   }
 
   void pause() {
-    if (_phase == SnakePhase.moving) _phase = SnakePhase.paused;
+    if (_phase != SnakePhase.moving) return;
+    _turns.clear();
+    _phase = SnakePhase.paused;
   }
 
   bool steer(SnakeDirection turn) {
-    if (_phase == SnakePhase.feedback ||
-        _phase == SnakePhase.finished ||
-        _queuedDirection != null) {
+    if (_phase != SnakePhase.ready && _phase != SnakePhase.moving) return false;
+    final last = _turns.lastOrNull ?? _direction;
+    if (turn == last) return _phase == SnakePhase.ready && _turns.isEmpty;
+    if (_turns.length == 2 || (turn.dx == -last.dx && turn.dy == -last.dy)) {
       return false;
     }
-    if (turn == _direction) return _phase != SnakePhase.moving;
-    if (turn.dx == -_direction.dx && turn.dy == -_direction.dy) return false;
-    _queuedDirection = turn;
+    _turns.add(turn);
     return true;
   }
 
   void step(Duration elapsed) {
     if (_phase != SnakePhase.moving) return;
-    final heading = _queuedDirection ?? _direction;
-    _queuedDirection = null;
+    final heading = hasQueuedTurn ? _turns.removeAt(0) : _direction;
     final head = _body.first;
     final nextCell = (
       x: (head.x + heading.dx) % size,
@@ -129,6 +130,7 @@ class SnakeRun {
   }
 
   void _eat(SnakeApple apple, Duration elapsed) {
+    _turns.clear();
     final question = _item!;
     _selectedAnswer = apple.word;
     _apples = List.unmodifiable(_apples.where((entry) => entry != apple));

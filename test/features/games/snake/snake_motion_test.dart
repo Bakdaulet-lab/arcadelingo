@@ -75,8 +75,6 @@ void main() {
     testWidgets('the board offers accessible turn actions ($brightness)', (
       tester,
     ) async {
-      final handle = tester.ensureSemantics();
-      addTearDown(handle.dispose);
       await _open(tester, brightness);
       final strings = tester.element(field).strings;
       final node = tester.getSemantics(field);
@@ -94,7 +92,7 @@ void main() {
           strings.snakeDown,
         ]),
       );
-      tester.binding.pipelineOwner.semanticsOwner!.performAction(
+      node.owner!.performAction(
         node.id,
         SemanticsAction.customAction,
         directions[strings.snakeDown],
