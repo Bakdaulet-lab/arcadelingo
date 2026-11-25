@@ -56,6 +56,7 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(_channel, voice.handle);
   }
+
   tearDown(() {
     unawaited(speech.stop());
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
