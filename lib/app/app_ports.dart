@@ -27,6 +27,7 @@ import 'package:arcadelingo/domain/ports/settings_store.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/ports/streak_store.dart';
 import 'package:arcadelingo/domain/ports/word_speech.dart';
+import 'package:arcadelingo/domain/ports/word_sets_store.dart';
 
 /// Умолчание для спроса разрешения на уведомления: платформы, у которой
 /// нечего спрашивать, для теста не существует.
@@ -40,6 +41,7 @@ class AppPorts {
     this.events = const NoopEventLog(),
     this.favorites,
     this.customWords,
+    this.wordSets,
     this.reminders = const NoopReminders(),
     this.sounds = const NoopSounds(),
     this.speech = const NoopWordSpeech(),
@@ -53,6 +55,7 @@ class AppPorts {
     answers: deck.answers,
     favorites: deck.favorites,
     customWords: deck.customWords,
+    wordSets: deck.wordSets,
     speech: deck.speech,
     streaks: deck.streaks,
     events: deck.events,
@@ -79,6 +82,7 @@ class AppPorts {
 
   final FavoritesStore? favorites;
   final CustomWordsStore? customWords;
+  final WordSetsStore? wordSets;
 
   /// Напоминания.
   final Reminders reminders;

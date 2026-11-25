@@ -11,6 +11,7 @@ import 'package:arcadelingo/app/courses.dart';
 import 'package:arcadelingo/data/challenges/challenge_prefs_store.dart';
 import 'package:arcadelingo/data/dictionary/custom_words_prefs_store.dart';
 import 'package:arcadelingo/data/dictionary/favorites_prefs_store.dart';
+import 'package:arcadelingo/data/dictionary/word_sets_prefs_store.dart';
 import 'package:arcadelingo/data/log/drift_answer_log.dart';
 import 'package:arcadelingo/data/log/drift_event_log.dart';
 import 'package:arcadelingo/data/log/history_database.dart';
@@ -78,6 +79,10 @@ Future<void> main() async {
         // старта, и ждать его здесь незачем.
         answers: DriftAnswerLog(history),
         favorites: FavoritesPrefsStore(prefs),
+        wordSets: WordSetsPrefsStore(
+          prefs,
+          courseId: StudyCourse.englishFromRussian.id,
+        ),
         customWords: CustomWordsPrefsStore(
           prefs,
           courseId: StudyCourse.englishFromRussian.id,
@@ -152,6 +157,7 @@ Result<CourseDeck> _buildCourseDeck(
       answers: DriftAnswerLog(history),
       events: DriftEventLog(history),
       favorites: FavoritesPrefsStore(prefs, courseId: course.id),
+      wordSets: WordSetsPrefsStore(prefs, courseId: course.id),
       customWords: CustomWordsPrefsStore(prefs, courseId: course.id),
       speech: speech.forLanguage(course.studyLanguage),
     ),
