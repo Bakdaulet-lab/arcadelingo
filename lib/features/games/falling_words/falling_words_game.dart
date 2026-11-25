@@ -134,6 +134,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
   bool _windingUp = false;
 
   late bool _listening = widget.listeningMode;
+  bool _leaving = false;
   bool _speaking = false;
   bool _heard = false;
   SpeechResult? _audioProblem;
@@ -244,7 +245,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
         _audioProblem = result;
       }
     });
-    if (_audioProblem == null) _fall.forward();
+    if (_audioProblem == null) unawaited(_fall.forward());
   }
 
   void _useText() {
@@ -311,8 +312,9 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     // при `_paused == true` игра поехала бы дальше, а ядру ушёл бы
     // таймаут по слову, которого никто не видел.
     if (_paused ||
-        (_listening && (_speaking || !_heard || _audioProblem != null)))
+        (_listening && (_speaking || !_heard || _audioProblem != null))) {
       return;
+    }
     // 700 мс взвода даны на то, чтобы найти кнопки, а не ответить: тап в
     // этом окне — рефлекс, а не ответ (`SPEC.md`).
     if (_windingUp) return;
@@ -349,6 +351,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
   }
 
   void _onLifecycle(AppLifecycleState state) {
+    if (_leaving) return;
     if (state == AppLifecycleState.resumed) {
       _resume();
     } else {
@@ -411,7 +414,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     // Масштаб текста зажат сверху: при системном увеличении втрое четыре
     // кнопки по две строки и HUD на телефонный экран уже не помещаются, и
     // выбор стоит между обрезанным текстом и уменьшенным. Здесь — второе.
-    return MediaQuery.withClampedTextScaling(
+    final page = MediaQuery.withClampedTextScaling(
       maxScaleFactor: 2,
       child: Scaffold(
         body: switch (_run.phase) {
@@ -434,6 +437,16 @@ class _FallingWordsGameState extends State<FallingWordsGame>
           FallingPhase.falling || FallingPhase.reveal => _playfield(context),
         },
       ),
+    );
+    if (!widget.listeningMode) return page;
+    return PopScope<void>(
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) return;
+        _leaving = true;
+        _pause();
+        _speaking = false;
+      },
+      child: page,
     );
   }
 
@@ -620,6 +633,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     return ListeningField(
       progress: _fall.value,
       speaking: _speaking,
+      initialPlayback: !_heard,
       onReplay: _speaking || _paused ? null : _speakWord,
     );
   }
