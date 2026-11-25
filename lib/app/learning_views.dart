@@ -59,6 +59,7 @@ class MistakesReviewScreen extends StatelessWidget {
     required this.level,
     required this.speech,
     Map<String, ReviewOutcome> outcomes = const {},
+    this.onConfusions,
     this.studyLanguage = 'en',
     super.key,
   }) : words = _validatedWords(words, level, allowEmpty: true),
@@ -76,9 +77,11 @@ class MistakesReviewScreen extends StatelessWidget {
     speech: speech,
     studyLanguage: studyLanguage,
     outcomes: outcomes,
+    onConfusions: onConfusions,
   );
 
   final Map<String, ReviewOutcome> outcomes;
+  final Future<void> Function()? onConfusions;
 }
 
 List<Word> _validatedWords(
@@ -103,6 +106,7 @@ class _LearningDeck extends StatefulWidget {
     required this.studyLanguage,
     this.onStart,
     this.outcomes = const {},
+    this.onConfusions,
   });
 
   final List<Word> words;
@@ -110,6 +114,7 @@ class _LearningDeck extends StatefulWidget {
   final WordSpeech speech;
   final String studyLanguage;
   final VoidCallback? onStart;
+  final Future<void> Function()? onConfusions;
   final Map<String, ReviewOutcome> outcomes;
 
   @override
@@ -373,6 +378,21 @@ class _LearningDeckState extends State<_LearningDeck>
                   ),
                 ),
               ),
+              if (widget.onConfusions != null && words.isNotEmpty)
+                TextButton.icon(
+                  icon: const Icon(Icons.swap_horiz_rounded),
+                  label: Text(context.strings.confusedWords),
+                  onPressed:
+                      enabled
+                          ? () async {
+                            await widget.speech.stop();
+                            if (context.mounted &&
+                                ModalRoute.of(context)?.isCurrent == true) {
+                              await widget.onConfusions!();
+                            }
+                          }
+                          : null,
+                ),
             ] else ...[
               const SizedBox(height: 8),
               TextButton(

@@ -38,6 +38,65 @@ class AppStrings {
   String get activeRecall =>
       _text(en: 'Recall it', ru: 'Вспомни сам', es: 'Recuerda la palabra');
 
+  String get confusedWords => _text(
+    en: 'Words I mix up',
+    ru: 'Слова, которые я путаю',
+    es: 'Palabras que confundo',
+  );
+  String get noConfusedPairs => _text(
+    en: 'No repeated mix-ups yet',
+    ru: 'Пока нет повторяющихся пар',
+    es: 'Aún no hay confusiones repetidas',
+  );
+  String get confusionThreshold => _text(
+    en:
+        'A pair appears here when you choose one word instead of the other twice.',
+    ru:
+        'Пара появится здесь, когда ты дважды выберешь одно слово вместо другого.',
+    es:
+        'Aquí aparecerá una pareja cuando elijas dos veces una palabra en lugar de la otra.',
+  );
+  String confusionCount(int count) => _text(
+    en: 'Mix-ups: $count',
+    ru: 'Ошибок с этой парой — $count',
+    es: 'Confusiones: $count',
+  );
+  String get practisePair => _text(
+    en: 'Practise this pair',
+    ru: 'Разобрать пару',
+    es: 'Practicar esta pareja',
+  );
+  String get completeSentence => _text(
+    en: 'Complete the sentence',
+    ru: 'Дополни фразу',
+    es: 'Completa la frase',
+  );
+  String get pickByMeaning => _text(
+    en: 'Choose the matching word',
+    ru: 'Выбери слово по значению',
+    es: 'Elige la palabra que corresponde',
+  );
+  String get tryOtherWord => _text(
+    en: 'Try the other word',
+    ru: 'Попробуй другое слово',
+    es: 'Prueba con la otra palabra',
+  );
+  String get pairComplete => _text(
+    en: 'Pair practised',
+    ru: 'Пара разобрана',
+    es: 'Práctica completada',
+  );
+  String confusionScore(int score, int total) => _text(
+    en: 'Correct on the first try: $score of $total',
+    ru: 'С первой попытки — $score из $total',
+    es: 'A la primera: $score de $total',
+  );
+  String get backToPairs => _text(
+    en: 'Back to word pairs',
+    ru: 'К парам слов',
+    es: 'Volver a las parejas',
+  );
+
   String get recallHomeHint => _text(
     en: 'Recall the word, then spell it with letters',
     ru: 'Вспомни слово и собери его из букв',

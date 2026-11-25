@@ -20,6 +20,7 @@ import 'dart:math';
 import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution_view.dart';
+import 'package:arcadelingo/app/confused_words_view.dart';
 import 'package:arcadelingo/app/courses.dart';
 import 'package:arcadelingo/app/dictionary_view.dart';
 import 'package:arcadelingo/app/games.dart';
@@ -301,6 +302,23 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> _openConfusedWords(CefrLevel level) =>
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder:
+              (_) => ConfusedWordsScreen(
+                course: widget.course,
+                level: level,
+                answers: widget.ports.answers,
+                vocabulary: [
+                  for (final item in widget.items)
+                    if (item.word.level == level) item.word,
+                  ...?widget.ports.customWords?.load(level),
+                ],
+              ),
+        ),
+      );
+
   void _loadStories() {
     _stories = buildSituationStories(
       course: widget.course,
@@ -519,6 +537,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               MaterialPageRoute<void>(
                                 builder:
                                     (context) => DictionaryScreen(
+                                      onConfusions:
+                                          () => _openConfusedWords(
+                                            _selectedLevel,
+                                          ),
                                       items: widget.items,
                                       level: _selectedLevel,
                                       course: widget.course,
@@ -1082,6 +1104,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       MaterialPageRoute<void>(
                         builder:
                             (context) => MistakesReviewScreen(
+                              onConfusions: () => _openConfusedWords(level),
                               words: mistakes.mistakes,
                               outcomes: mistakes.outcomes,
                               level: level,

@@ -52,6 +52,7 @@ class DictionaryScreen extends StatefulWidget {
     this.customWords,
     this.onCustomWordsChanged,
     this.onPlayCustom,
+    this.onConfusions,
     super.key,
   });
 
@@ -65,6 +66,7 @@ class DictionaryScreen extends StatefulWidget {
   final CustomWordsStore? customWords;
   final VoidCallback? onCustomWordsChanged;
   final FutureOr<void> Function()? onPlayCustom;
+  final VoidCallback? onConfusions;
   final Map<String, String> gameTitles;
 
   @override
@@ -236,6 +238,14 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                           onPressed: _playCustom,
                           icon: const Icon(Icons.play_arrow_rounded),
                           label: Text(context.strings.playCustomWords),
+                        ),
+                      ],
+                      if (widget.onConfusions != null) ...[
+                        const SizedBox(height: 8),
+                        TextButton.icon(
+                          icon: const Icon(Icons.swap_horiz_rounded),
+                          label: Text(context.strings.confusedWords),
+                          onPressed: widget.onConfusions,
                         ),
                       ],
                     ],
