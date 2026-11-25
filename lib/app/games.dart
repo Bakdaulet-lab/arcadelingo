@@ -26,6 +26,7 @@ import 'package:arcadelingo/features/games/match_three/match_three_game.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
 import 'package:arcadelingo/features/games/snake/snake_game.dart';
 import 'package:arcadelingo/features/games/word_mahjong/word_mahjong_game.dart';
+import 'package:arcadelingo/features/games/word_maze/word_maze_game.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:flutter/material.dart';
 
@@ -137,6 +138,7 @@ class GameEntry {
     'match_three' => strings.matchThree,
     'word_mahjong' => strings.wordMahjong,
     'snake' => strings.snake,
+    'word_maze' => strings.wordMaze,
     _ => title,
   };
 
@@ -148,6 +150,7 @@ class GameEntry {
     'match_three' => strings.matchInstruction,
     'word_mahjong' => strings.mahjongInstruction,
     'snake' => strings.snakeInstruction,
+    'word_maze' => strings.mazeInstruction,
     _ => instruction,
   };
 
@@ -226,6 +229,15 @@ const snakeEntry = GameEntry(
   tracksRoundScore: true,
 );
 
+const wordMazeEntry = GameEntry(
+  id: 'word_maze',
+  title: 'Лабиринт',
+  build: _buildWordMaze,
+  artwork: 'assets/images/home/word-maze.webp',
+  instruction: 'Проведи курьера к воротам с нужным словом',
+  tracksRoundScore: true,
+);
+
 /// Все игры приложения.
 ///
 /// Порядок значим: первая запись — умолчание домашнего экрана. Выбор другой
@@ -238,6 +250,7 @@ const List<GameEntry> wordarcadeGames = [
   matchThreeEntry,
   wordMahjongEntry,
   snakeEntry,
+  wordMazeEntry,
 ];
 
 Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
@@ -328,6 +341,22 @@ Widget _buildWordMahjong(GameLaunch launch) => WordMahjongGame(
 
 Widget _buildSnake(GameLaunch launch) => SnakeGame(
   session: launch.session as BoardReviewSession,
+  vocabulary: launch.vocabulary.toList(growable: false),
+  course: launch.course,
+  level: launch.level,
+  speech: launch.speech,
+  sounds: launch.sounds,
+  summaryFooter: launch.summaryFooter,
+  onRoundScore: launch.onRoundScore,
+  onPlayAgain: launch.onPlayAgain,
+  onExit: launch.onExit,
+  onRoundOver: launch.onRoundOver,
+  mistakeCount: launch.mistakeCount,
+  onReviewMistakes: launch.onReviewMistakes,
+);
+
+Widget _buildWordMaze(GameLaunch launch) => WordMazeGame(
+  session: launch.session,
   vocabulary: launch.vocabulary.toList(growable: false),
   course: launch.course,
   level: launch.level,

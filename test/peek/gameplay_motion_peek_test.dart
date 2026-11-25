@@ -13,6 +13,7 @@ import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_views.dart';
 import 'package:arcadelingo/features/games/snake/snake_game.dart';
 import 'package:arcadelingo/features/games/word_mahjong/word_mahjong_field.dart';
+import 'package:arcadelingo/features/games/word_maze/word_maze_game.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -85,6 +86,12 @@ void main() {
         final frames = game == snakeEntry ? 41 : 21;
         for (var frame = 0; frame < frames; frame++) {
           if (frame == 2) {
+            if (game == wordMazeEntry) {
+              await tester.drag(
+                find.byKey(MazeKeys.field),
+                const Offset(0, -48),
+              );
+            }
             if (game == snakeEntry) {
               final field = find.byKey(SnakeKeys.field);
               snakeGesture = await tester.startGesture(tester.getCenter(field));
@@ -125,6 +132,9 @@ void main() {
                 WordMahjongKeys.tile(field.board.hint!.translation.index),
               );
             }
+          }
+          if (game == wordMazeEntry && frame == 12) {
+            await tester.drag(find.byKey(MazeKeys.field), const Offset(48, 0));
           }
           if (game == snakeEntry && frame == 19) {
             await snakeGesture!.moveBy(const Offset(24, 0));

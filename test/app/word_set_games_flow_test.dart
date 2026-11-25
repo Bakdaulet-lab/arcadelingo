@@ -25,7 +25,7 @@ Future<void> _tap(WidgetTester tester, Finder target) async {
 }
 
 void main() {
-  testWidgets('all seven games and replay launch from the selected saved set', (
+  testWidgets('all games and replay launch from the selected saved set', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(360, 780);
@@ -186,7 +186,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump();
       expect(launches.last, game.id);
-      if (game.id == 'snake') {
+      if (game.id == 'snake' || game.id == 'word_maze') {
         current.onPlayAgain();
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 400));
