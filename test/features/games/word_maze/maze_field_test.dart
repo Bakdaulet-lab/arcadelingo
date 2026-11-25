@@ -3,7 +3,6 @@ import 'package:arcadelingo/features/games/word_maze/maze_run.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
