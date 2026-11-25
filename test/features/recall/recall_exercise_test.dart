@@ -133,6 +133,18 @@ void main() {
     },
   );
 
+  test('visually identical accented tiles work in either position', () {
+    const word = Word(
+      id: 'coffee',
+      text: 'café, cafe\u0301',
+      translation: 'кофе, кофе',
+    );
+    final exercise = _exercise(word);
+    _spell(exercise, ['c', 'a', 'f', 'e\u0301', 'c', 'a', 'f', 'é']);
+    expect(exercise.complete, isTrue);
+    expect(exercise.correct, isTrue);
+  });
+
   test('handles one-symbol and repeated-symbol spellings and empty pools', () {
     for (final term in ['a', 'll', '…']) {
       final word = Word(id: term, text: term, translation: 'перевод');
