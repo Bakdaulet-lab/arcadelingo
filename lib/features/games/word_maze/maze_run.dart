@@ -93,7 +93,8 @@ class MazeRun {
   static const rows = 11;
   static const spawn = (x: 6, y: 7);
   static const playerSpeed = 3.6;
-  static const _graceSeconds = 2.25;
+  static const _graceSeconds = 2.6;
+  static const _lateTurnDistance = .16;
   static const _contactRadius = .51;
   static const _patrol = [
     (x: 4, y: 7),
@@ -169,6 +170,13 @@ class MazeRun {
       _player.reverse();
       _facing = direction;
       _requested = null;
+    } else if (_player.progress <= _lateTurnDistance &&
+        _player.heading != direction &&
+        _player.lastHeading == _player.heading &&
+        _open(direction.from(_player.cell))) {
+      // Return the last few pixels to a just-missed junction along the lane.
+      // The direction remains buffered until the player reaches its centre.
+      _player.reverse();
     }
   }
 
@@ -191,29 +199,26 @@ class MazeRun {
     }
     var remaining = dtSeconds;
     while (remaining > _epsilon) {
-      final enemiesMoving = !protected;
+      final shielded = protected;
       var step = math.min(remaining, _player.secondsToCentre);
-      if (enemiesMoving) {
-        for (var i = 0; i < _ghosts.length; i++) {
-          final ghost = _ghosts[i];
-          ghost.heading ??= _ghostTurn(ghost, i);
-          step = math.min(step, ghost.secondsToCentre);
-        }
-      } else {
+      for (var i = 0; i < _ghosts.length; i++) {
+        final ghost = _ghosts[i];
+        ghost.heading ??= _ghostTurn(ghost, i);
+        step = math.min(step, ghost.secondsToCentre);
+      }
+      if (shielded) {
         step = math.min(step, _graceSeconds - _elapsed);
       }
       var contact = double.infinity;
-      if (enemiesMoving) {
+      if (!shielded) {
         for (final ghost in _ghosts) {
           contact = math.min(contact, _timeToContact(ghost));
         }
       }
       step = math.min(step, contact);
       final arrival = _player.travel(step);
-      if (enemiesMoving) {
-        for (final ghost in _ghosts) {
-          ghost.travel(step);
-        }
+      for (final ghost in _ghosts) {
+        ghost.travel(step);
       }
       _elapsed += step;
       remaining -= step;
