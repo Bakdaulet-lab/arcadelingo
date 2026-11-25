@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
@@ -30,10 +32,11 @@ class _CountingLog extends InMemoryAnswerLog {
 class _Speech implements WordSpeech {
   final spoken = <String>[];
   int stops = 0;
+  Completer<SpeechResult>? pending;
   @override
   Future<SpeechResult> speak(String text) async {
     spoken.add(text);
-    return SpeechResult.completed;
+    return await pending?.future ?? SpeechResult.completed;
   }
 
   @override
@@ -120,11 +123,13 @@ void main() {
       RegExp(r'(madre.*padre|padre.*madre)'),
     );
     expect(suggestion, findsOneWidget);
+    speech.pending = Completer<SpeechResult>();
     await _tap(tester, find.byKey(LearningKeys.speak));
     expect(speech.spoken.last, 'madre');
     final stopsBeforePractice = speech.stops;
     await _tap(tester, suggestion);
     expect(speech.stops, greaterThan(stopsBeforePractice));
+    speech.pending!.complete(SpeechResult.cancelled);
     for (var i = 0; i < 2; i++) {
       final asksMother =
           find
@@ -138,6 +143,13 @@ void main() {
     }
     await _tap(tester, find.text('Разбор ошибок'));
     expect(find.byKey(LearningKeys.mistakes), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(LearningKeys.speak),
+        matching: find.byIcon(Icons.volume_up_rounded),
+      ),
+      findsOneWidget,
+    );
     await _tap(tester, find.byKey(LearningKeys.next));
     expect(suggestion, findsOneWidget);
     await _tap(tester, find.text('Слова, которые я путаю'));
