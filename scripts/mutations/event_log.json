@@ -14,8 +14,8 @@
   {
     "name": "версия схемы не поднята",
     "file": "lib/data/log/history_database.dart",
-    "old": "  int get schemaVersion => 2;",
-    "new": "  int get schemaVersion => 1;"
+    "old": "  int get schemaVersion => 3;",
+    "new": "  int get schemaVersion => 2;"
   },
   {
     "name": "момент события теряет доли секунды",
