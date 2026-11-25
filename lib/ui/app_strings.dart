@@ -35,6 +35,55 @@ class AppStrings {
     es: 'De camino a casa',
   );
 
+  String get activeRecall =>
+      _text(en: 'Recall it', ru: 'Вспомни сам', es: 'Recuerda la palabra');
+
+  String get recallHomeHint => _text(
+    en: 'Recall the word, then spell it with letters',
+    ru: 'Вспомни слово и собери его из букв',
+    es: 'Recuerda la palabra y fórmala con letras',
+  );
+
+  String recallPrompt(String tag) => _text(
+    en: 'How do you say this in ${languageName(tag)}?',
+    ru: switch (tag) {
+      'en' => 'Как это сказать по-английски?',
+      'es' => 'Как это сказать по-испански?',
+      _ => 'Как это сказать на изучаемом языке?',
+    },
+    es: '¿Cómo se dice en ${languageName(tag).toLowerCase()}?',
+  );
+
+  String get recallSpell =>
+      _text(en: 'Spell the word', ru: 'Собрать слово', es: 'Formar la palabra');
+  String get recallOptions =>
+      _text(en: 'Show choices', ru: 'Показать варианты', es: 'Ver opciones');
+  String get recallCheck =>
+      _text(en: 'Check', ru: 'Проверить', es: 'Comprobar');
+  String get recallUndo => _text(
+    en: 'Remove last letter',
+    ru: 'Убрать последнюю букву',
+    es: 'Quitar la última letra',
+  );
+  String get recallChoicesPrompt =>
+      _text(en: 'Choose the word', ru: 'Выбери слово', es: 'Elige la palabra');
+  String get recallRightWord => _text(
+    en: 'The word to remember',
+    ru: 'Слово для повторения',
+    es: 'La palabra para repasar',
+  );
+  String get recallIndependent =>
+      _text(en: 'Recalled unaided', ru: 'Без подсказки', es: 'Sin ayuda');
+  String get recallWithHelp => _text(
+    en: 'Recognised from choices',
+    ru: 'С подсказкой',
+    es: 'Con opciones',
+  );
+  String get recallMistakes =>
+      _text(en: 'To practise again', ru: 'На повторение', es: 'Para repasar');
+  String get recallResults =>
+      _text(en: 'See results', ru: 'Посмотреть итоги', es: 'Ver resultados');
+
   String get storyHomeHint => _text(
     en: 'Two short games and a real-life task',
     ru: 'Две короткие игры и задача из жизни',
