@@ -41,7 +41,10 @@ class FallingWordsRun {
     required ReviewSession session,
     required Random random,
     bool sprint = false,
+    bool previewBeforeAnswer = false,
   }) : _session = session,
+       _previewQueue =
+           previewBeforeAnswer ? session as BoardReviewSession : null,
        _random = random,
        _sprintRemaining = sprint ? const Duration(seconds: 60) : null;
 
@@ -79,6 +82,7 @@ class FallingWordsRun {
   static const int pointsPerCombo = 10;
 
   final ReviewSession _session;
+  final BoardReviewSession? _previewQueue;
   final Random _random;
   Duration? _sprintRemaining;
 
@@ -176,7 +180,7 @@ class FallingWordsRun {
 
   /// Берёт первое слово. Пустая сессия → [FallingPhase.nothingToday].
   void start() {
-    final first = _session.nextItem();
+    final first = _nextWord();
     if (first != null) _show(first);
   }
 
@@ -211,7 +215,7 @@ class FallingWordsRun {
       _phase = FallingPhase.over;
       return;
     }
-    final next = _session.nextItem();
+    final next = _nextWord();
     if (next == null) {
       _item = null;
       _phase = FallingPhase.over;
@@ -219,6 +223,13 @@ class FallingWordsRun {
     }
     _show(next);
   }
+
+  // Previewing the next word lets audio fail, retry or stop without
+  // reserving a question the player hasn't heard. Normal rounds reserve now.
+  ReviewItem? _nextWord() =>
+      _previewQueue == null
+          ? _session.nextItem()
+          : _previewQueue.remainingItems.firstOrNull;
 
   /// Игрок вышел из игры с невыданным ответом: докладывает неответ за
   /// [elapsed]. Вне фазы падения не делает ничего.
@@ -316,6 +327,10 @@ class FallingWordsRun {
     int? selectedIndex,
     bool timedOut = false,
   }) {
+    if (_previewQueue != null &&
+        _session.nextItem()?.word.id != _item!.word.id) {
+      throw StateError('The listening preview changed before its answer.');
+    }
     _session.report(
       ReviewOutcome(
         correct: correct,
