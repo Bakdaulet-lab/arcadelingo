@@ -77,6 +77,31 @@ void _pass(SnakeRun run, int ticks) {
   }
 }
 
+List<SnakeDirection> _routeTo(SnakeRun run, SnakeCell target) {
+  final head = run.body.first;
+  final seen = {
+    ...run.rocks,
+    ...run.body,
+    for (final apple in run.apples)
+      if (apple.cell != target) apple.cell,
+  };
+  final visits = [(cell: head, path: <SnakeDirection>[])];
+  for (var at = 0; at < visits.length; at++) {
+    final visit = visits[at];
+    for (final dir in SnakeDirection.values) {
+      final cell = (
+        x: (visit.cell.x + dir.dx) % SnakeRun.size,
+        y: (visit.cell.y + dir.dy) % SnakeRun.size,
+      );
+      if (!seen.add(cell)) continue;
+      final path = [...visit.path, dir];
+      if (cell == target) return path;
+      visits.add((cell: cell, path: path));
+    }
+  }
+  throw StateError('No route from $head to $target');
+}
+
 void main() {
   test('an alternate meaning cannot hide a valid answer on a wrong apple', () {
     const personal = Word(id: 'custom:1', text: 'lift', translation: 'поднять');
@@ -222,7 +247,7 @@ void main() {
     _pass(run, 1);
     expect(run.body.first, (x: 4, y: 5));
     _pass(run, 5);
-    expect(run.body.first, (x: 11, y: 5));
+    expect(run.body.first, (x: SnakeRun.size - 1, y: 5));
     expect(run.phase, SnakePhase.moving);
     expect(session.answered, 0);
     expect(run.steer(SnakeDirection.up), isTrue);
@@ -230,10 +255,10 @@ void main() {
     expect(run.steer(SnakeDirection.down), isFalse);
     _pass(run, 7);
     expect(run.phase, SnakePhase.paused);
-    expect(run.body.first, (x: 11, y: 5));
+    expect(run.body.first, (x: SnakeRun.size - 1, y: 5));
     expect(run.start(), isTrue);
     _pass(run, 1);
-    expect(run.body.first, (x: 10, y: 5));
+    expect(run.body.first, (x: SnakeRun.size - 2, y: 5));
   });
 
   test('a buffered turn before an apple does not carry to the next word', () {
@@ -294,4 +319,89 @@ void main() {
       expect(run.start(), isFalse);
     },
   );
+
+  test('rocks end the run without grading the pending word', () {
+    expect(SnakeRun.size, greaterThanOrEqualTo(16));
+    final session = _BoardSession([_key, _table]);
+    final run = _newRun(session);
+    run.steer(SnakeDirection.down);
+    run.start();
+    _pass(run, 6);
+    expect(run.body.first, (x: 5, y: 12));
+    run.steer(SnakeDirection.right);
+    _pass(run, 1);
+    expect(run.hitObstacle, isTrue);
+    expect(run.phase, SnakePhase.finished);
+    expect(session.outcomes, isEmpty);
+  });
+
+  test(
+    'continuous fruit replaces the prompt and preserves a buffered turn',
+    () {
+      final session = _BoardSession([_key, _table]);
+      final run = SnakeRun(
+        session,
+        [_key, _table, _clock],
+        _OpeningRandom(),
+        continuous: true,
+      );
+      run.start();
+      _pass(run, 2);
+      run.steer(SnakeDirection.up);
+      _pass(run, 1);
+      run.steer(SnakeDirection.right);
+      _pass(run, 1);
+      run.steer(SnakeDirection.down);
+      run.steer(SnakeDirection.right);
+      _pass(run, 1);
+      expect(session.reportedWords, [_key]);
+      expect(run.body.first, (x: 8, y: 6));
+      expect(run.previousBody.first, (x: 8, y: 5));
+      expect(run.item?.word, _table);
+      expect(run.answerCorrect, isTrue);
+      expect(run.phase, SnakePhase.moving);
+      _pass(run, 1);
+      expect(run.body.first, (x: 9, y: 6));
+      expect(session.answered, 1);
+      run.pause();
+      run.finish();
+      expect(run.phase, SnakePhase.finished);
+      expect(session.remainingItems.single.word, _table);
+    },
+  );
+
+  test('obstacles and pace progress without spawning under the snake', () {
+    const words = [_key, _table, _clock, _door];
+    final session = _BoardSession(List.generate(13, (i) => words[i % 4]));
+    final run = SnakeRun(session, words, Random(6), continuous: true);
+    final openingRocks = run.rocks;
+    final openingPace = run.pace;
+    run.start();
+    for (var i = 0; i < 12; i++) {
+      final goal = run.apples.singleWhere((a) => a.word == run.item!.word);
+      final oldRocks = run.rocks;
+      for (final dir in _routeTo(run, goal.cell)) {
+        if (dir != run.direction) expect(run.steer(dir), isTrue);
+        _pass(run, 1);
+      }
+      expect(run.phase, SnakePhase.moving);
+      expect(run.correctCount, i + 1);
+      expect(run.rocks.intersection(run.body.toSet()), isEmpty);
+      final head = run.body.first;
+      final newRocks = run.rocks.difference(oldRocks);
+      final targets = run.apples.map((a) => a.cell);
+      expect(targets, hasLength(3));
+      for (final cell in [...newRocks, ...targets]) {
+        final dx = (cell.x - head.x).abs();
+        final dy = (cell.y - head.y).abs();
+        expect(
+          min(dx, SnakeRun.size - dx) + min(dy, SnakeRun.size - dy),
+          greaterThanOrEqualTo(5),
+        );
+      }
+      expect(targets.any(run.rocks.contains), isFalse);
+    }
+    expect(run.pace, lessThan(openingPace));
+    expect(run.rocks.length, greaterThan(openingRocks.length));
+  });
 }

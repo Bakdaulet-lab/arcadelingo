@@ -296,6 +296,7 @@ class AppStrings {
   );
 
   String challengeName(ArcadeChallenge mode) => switch (mode) {
+    ArcadeChallenge.continuous => continuousMode,
     ArcadeChallenge.sprint => _text(
       en: '60-second sprint',
       ru: '60 секунд',
@@ -319,6 +320,14 @@ class AppStrings {
   };
 
   String challengeRules(ArcadeChallenge mode) => switch (mode) {
+    ArcadeChallenge.continuous => _text(
+      en:
+          'A new word appears after every answer. Keep playing for a high score, or pause to finish your run.',
+      ru:
+          'После каждого ответа сразу появляется новое слово. Набирай очки, пока хочется играть. Завершить партию можно на паузе.',
+      es:
+          'Después de cada respuesta aparece otra palabra. Sigue sumando puntos o pausa el juego para terminar la partida.',
+    ),
     ArcadeChallenge.sprint => _text(
       en:
           'Score as many points as you can in 60 seconds. A wrong or missed answer costs 5 seconds.',
@@ -590,6 +599,25 @@ class AppStrings {
   );
 
   String get snake => _text(en: 'Snake', ru: 'Змейка', es: 'Serpiente');
+  String get continuousMode =>
+      _text(en: 'Endless play', ru: 'Непрерывная игра', es: 'Juego sin fin');
+  String continuousProgress(int number) =>
+      _text(en: 'Word $number', ru: 'Слово $number', es: 'Palabra $number');
+  String get finishRun =>
+      _text(en: 'Finish run', ru: 'Завершить партию', es: 'Terminar partida');
+  String get snakeObstacle => _text(
+    en: 'The snake hit a rock.',
+    ru: 'Змейка врезалась в камень.',
+    es: 'La serpiente chocó con una roca.',
+  );
+  String get snakeContinuousGuide => _text(
+    en:
+        'Swipe to steer around rocks. The snake gets faster as you collect words.',
+    ru:
+        'Обводи камни свайпом. Чем больше слов поймаешь, тем быстрее ползёт змейка.',
+    es:
+        'Desliza el dedo para esquivar las rocas. La serpiente acelera a medida que recoges palabras.',
+  );
   String get wordMaze =>
       _text(en: 'Word maze', ru: 'Лабиринт', es: 'Laberinto de palabras');
   String get mazeInstruction => _text(
@@ -647,12 +675,11 @@ class AppStrings {
     es: 'Busca la traducción',
   );
   String get snakeGuide => _text(
-    en:
-        'Swipe anywhere on the board to steer. Keep your finger down to turn again.',
+    en: 'Swipe to steer around rocks. Keep your finger down to turn again.',
     ru:
-        'Веди пальцем по полю. Чтобы повернуть ещё раз, просто смени направление.',
+        'Обходи камни. Чтобы повернуть ещё раз, смени направление, не отрывая пальца.',
     es:
-        'Desliza el dedo por el tablero. Para volver a girar, cambia de dirección sin levantarlo.',
+        'Esquiva las rocas deslizando el dedo. Para volver a girar, cambia de dirección sin levantarlo.',
   );
   String get snakeBoard => _text(
     en: 'Snake board',

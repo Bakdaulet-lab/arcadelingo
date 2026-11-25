@@ -62,6 +62,7 @@ class SnakeField extends StatelessWidget {
               final side = constraints.maxWidth;
               final labels = _placeLabels(
                 apples,
+                run.rocks,
                 side,
                 labelStyle,
                 scaler,
@@ -71,7 +72,9 @@ class SnakeField extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   RepaintBoundary(
-                    child: CustomPaint(painter: _BoardPainter(palette)),
+                    child: CustomPaint(
+                      painter: _BoardPainter(palette, run.rocks),
+                    ),
                   ),
                   RepaintBoundary(
                     child: CustomPaint(
@@ -152,6 +155,7 @@ Offset _cellCenter(SnakeCell cell, double unit) =>
 
 List<Rect> _placeLabels(
   List<SnakeApple> apples,
+  Set<SnakeCell> rocks,
   double side,
   TextStyle style,
   TextScaler scaler,
@@ -162,6 +166,14 @@ List<Rect> _placeLabels(
   final reserved = [
     for (final center in centers)
       Rect.fromCenter(center: center, width: unit * .94, height: unit),
+  ];
+  final rockRects = [
+    for (final rock in rocks)
+      Rect.fromCenter(
+        center: _cellCenter(rock, unit),
+        width: unit * .82,
+        height: unit * .82,
+      ),
   ];
   final result = <Rect>[];
   for (var i = 0; i < apples.length; i++) {
@@ -205,6 +217,10 @@ List<Rect> _placeLabels(
         final clipped = rect.intersect(obstacle);
         if (!clipped.isEmpty) overlap += clipped.width * clipped.height;
       }
+      for (final rock in rockRects) {
+        final clipped = rect.intersect(rock);
+        if (!clipped.isEmpty) overlap += clipped.width * clipped.height * .2;
+      }
       if (overlap < leastOverlap) {
         best = rect;
         leastOverlap = overlap;
@@ -218,9 +234,10 @@ List<Rect> _placeLabels(
 }
 
 class _BoardPainter extends CustomPainter {
-  const _BoardPainter(this.palette);
+  const _BoardPainter(this.palette, this.rocks);
 
   final _FieldPalette palette;
+  final Set<SnakeCell> rocks;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -244,6 +261,36 @@ class _BoardPainter extends CustomPainter {
       canvas.drawLine(Offset(0, line), Offset(size.width, line), grid);
     }
     _drawEdgeGuides(canvas, size.width, unit);
+    final fill = Paint()..color = palette.rock;
+    final bevel = Paint()..color = palette.rockBevel;
+    final cutStone =
+        Path()
+          ..moveTo(.14, .21)
+          ..lineTo(.32, .07)
+          ..lineTo(.77, .07)
+          ..lineTo(.93, .28)
+          ..lineTo(.90, .78)
+          ..lineTo(.70, .93)
+          ..lineTo(.22, .91)
+          ..lineTo(.07, .72)
+          ..close();
+    final facet =
+        Path()
+          ..moveTo(.14, .21)
+          ..lineTo(.32, .07)
+          ..lineTo(.77, .07)
+          ..lineTo(.62, .28)
+          ..lineTo(.31, .33)
+          ..lineTo(.07, .72)
+          ..close();
+    for (final rock in rocks) {
+      canvas.save();
+      canvas.translate(rock.x * unit, rock.y * unit);
+      canvas.scale(unit);
+      canvas.drawPath(cutStone, fill);
+      canvas.drawPath(facet, bevel);
+      canvas.restore();
+    }
   }
 
   void _drawEdgeGuides(Canvas canvas, double side, double unit) {
@@ -270,7 +317,7 @@ class _BoardPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_BoardPainter oldDelegate) =>
-      palette != oldDelegate.palette;
+      palette != oldDelegate.palette || rocks != oldDelegate.rocks;
 }
 
 class _SnakePainter extends CustomPainter {
@@ -528,6 +575,8 @@ class _FieldPalette {
     required this.stem,
     required this.label,
     required this.labelBorder,
+    required this.rock,
+    required this.rockBevel,
   });
 
   static const night = _FieldPalette(
@@ -545,6 +594,8 @@ class _FieldPalette {
     stem: Color(0xFFDCA65C),
     label: Color(0xFF2C223A),
     labelBorder: Color(0xFF665472),
+    rock: Color(0xFF715767),
+    rockBevel: Color(0xFFAB8993),
   );
 
   static const paper = _FieldPalette(
@@ -562,6 +613,8 @@ class _FieldPalette {
     stem: Color(0xFF754412),
     label: Color(0xFFFFFCF4),
     labelBorder: Color(0xFFC6AA8D),
+    rock: Color(0xFF9A7966),
+    rockBevel: Color(0xFFC4A58A),
   );
 
   final Color field;
@@ -578,4 +631,6 @@ class _FieldPalette {
   final Color stem;
   final Color label;
   final Color labelBorder;
+  final Color rock;
+  final Color rockBevel;
 }

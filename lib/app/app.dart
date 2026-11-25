@@ -482,9 +482,10 @@ class _HomeScreenState extends State<HomeScreen> {
           onChallenge:
               _hasWordsForLevel &&
                       !_preparingLearning &&
-                      widget.ports.challengeRecords != null &&
                       widget.games.isNotEmpty &&
-                      _selectedGame.challenge != null
+                      _selectedGame.challenge != null &&
+                      (widget.ports.challengeRecords != null ||
+                          _selectedGame.challenge == ArcadeChallenge.continuous)
                   ? _openChallenge
                   : null,
           onProgress: _openProgress,
@@ -943,15 +944,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final game = _selectedGame;
     final mode = game.challenge;
     final records = widget.ports.challengeRecords;
-    if (mode == null || records == null) return;
+    if (mode == null) return;
 
     final course = widget.course;
-    final items = _levelItems(_selectedLevel, _customItems(_selectedLevel));
     final key = (gameId: game.id, courseId: course.id, level: _selectedLevel);
-    final best = records.load(key, mode: game.challengeRecordMode);
+    final best = records?.load(key, mode: game.challengeRecordMode);
+    bool? start;
     _selectingChallenge = true;
     try {
-      final start = await showChallengeDialog(
+      start = await showChallengeDialog(
         context,
         game: game,
         mode: mode,
@@ -959,11 +960,15 @@ class _HomeScreenState extends State<HomeScreen> {
         level: key.level,
         best: best,
       );
-      if (start == true && mounted) {
-        _launchChallenge(game, mode, key, items, records);
-      }
     } finally {
       _selectingChallenge = false;
+    }
+    if (start != true || !mounted) return;
+    if (mode == ArcadeChallenge.continuous) {
+      _start(chosenGame: game, chosenLevel: key.level, continuous: true);
+    } else if (records != null) {
+      final items = _levelItems(key.level, _customItems(key.level));
+      _launchChallenge(game, mode, key, items, records);
     }
   }
 
@@ -1014,6 +1019,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _start({
     bool learning = false,
     bool listeningMode = false,
+    bool continuous = false,
     GameEntry? chosenGame,
     CefrLevel? chosenLevel,
   }) {
@@ -1033,6 +1039,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _startRound(
         learning: learning,
         listeningMode: listeningMode,
+        continuous: continuous,
         practiceAll: listeningMode,
         game: game,
         level: level,
@@ -1042,6 +1049,7 @@ class _HomeScreenState extends State<HomeScreen> {
             () => _start(
               learning: learning,
               listeningMode: listeningMode,
+              continuous: continuous,
               chosenGame: game,
               chosenLevel: level,
             ),
@@ -1058,6 +1066,7 @@ class _HomeScreenState extends State<HomeScreen> {
     bool learning = false,
     bool practiceAll = false,
     bool listeningMode = false,
+    bool continuous = false,
   }) async {
     // Последнее состояние, приехавшее из сессии: по нему считается строка
     // итогов. До первого ответа это то, что прочитано из хранилища.
@@ -1109,6 +1118,8 @@ class _HomeScreenState extends State<HomeScreen> {
       items: roundItems,
       level: level,
       practiceAll: practiceAll,
+      continuousShuffle:
+          continuous ? Random(widget.now().microsecondsSinceEpoch) : null,
       gameId: game.id,
       onCardsChanged: (changed) => latest = changed,
       observers: [mistakes],
@@ -1125,12 +1136,13 @@ class _HomeScreenState extends State<HomeScreen> {
         await _play(
           game,
           value,
-          () => practiceAll ? '' : _footer(latest, vocabulary),
+          () => practiceAll || continuous ? '' : _footer(latest, vocabulary),
           vocabulary: vocabulary,
           mistakes: mistakes,
           level: level,
           onReplay: onReplay,
           listeningMode: listeningMode,
+          continuous: continuous,
         );
       case Err(:final failure):
         setState(() => _stateFailure = failure);
@@ -1160,6 +1172,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required VoidCallback onReplay,
     required List<ReviewItem> vocabulary,
     bool listeningMode = false,
+    bool continuous = false,
     Widget Function(int score)? onChallengeComplete,
   }) async {
     final navigator = Navigator.of(context);
@@ -1195,6 +1208,7 @@ class _HomeScreenState extends State<HomeScreen> {
               GameLaunch(
                 session: session,
                 listeningMode: listeningMode,
+                continuous: continuous,
                 course: widget.course,
                 level: level,
                 vocabulary: vocabulary.map((item) => item.word),
@@ -1210,7 +1224,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             game.tracksRoundScore &&
                             records != null
                         ? (score) => ChallengeRecordLine(
-                          best: records.submit(recordKey, score),
+                          best: records.submit(
+                            recordKey,
+                            score,
+                            mode:
+                                continuous ? ArcadeChallenge.continuous : null,
+                          ),
                         )
                         : null,
                 mistakeCount: () => mistakes.mistakes.length,

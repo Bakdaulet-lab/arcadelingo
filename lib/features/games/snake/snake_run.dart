@@ -29,12 +29,16 @@ class SnakeApple {
 /// Runs the field one cell at a time. An apple is the only event that
 /// submits a review outcome; movement and collisions leave the word pending.
 class SnakeRun {
-  SnakeRun(this._session, List<Word> vocabulary, this._random)
-    : _vocabulary = List.unmodifiable(vocabulary) {
+  SnakeRun(
+    this._session,
+    List<Word> vocabulary,
+    this._random, {
+    this.continuous = false,
+  }) : _vocabulary = List.unmodifiable(vocabulary) {
     _loadQuestion(opening: true);
   }
 
-  static const size = 12;
+  static const size = 16;
   static const stepTime = Duration(milliseconds: 490);
   static const _initialBody = [
     (x: 5, y: 6),
@@ -45,10 +49,45 @@ class SnakeRun {
     (x: 2, y: 8),
   ];
   static const _openingCells = [(x: 3, y: 2), (x: 8, y: 6), (x: 8, y: 9)];
+  static const _continuousOpening = [
+    (x: 3, y: 2),
+    (x: 8, y: 6),
+    (x: 12, y: 12),
+  ];
+  static const _initialRocks = {
+    (x: 7, y: 3),
+    (x: 8, y: 3),
+    (x: 8, y: 4),
+    (x: 11, y: 2),
+    (x: 12, y: 2),
+    (x: 13, y: 2),
+    (x: 11, y: 3),
+    (x: 10, y: 7),
+    (x: 11, y: 7),
+    (x: 12, y: 7),
+    (x: 12, y: 8),
+    (x: 6, y: 12),
+    (x: 7, y: 12),
+    (x: 8, y: 12),
+    (x: 8, y: 13),
+    (x: 1, y: 11),
+    (x: 1, y: 12),
+    (x: 2, y: 12),
+  };
+  static const _formations = [
+    [(x: 2, y: 3), (x: 2, y: 4), (x: 3, y: 4)],
+    [(x: 9, y: 10), (x: 10, y: 10), (x: 10, y: 11)],
+    [(x: 13, y: 11), (x: 13, y: 12), (x: 13, y: 13)],
+    [(x: 4, y: 8), (x: 4, y: 9), (x: 3, y: 9)],
+    [(x: 5, y: 14), (x: 4, y: 14), (x: 3, y: 14)],
+  ];
 
   final BoardReviewSession _session;
   final List<Word> _vocabulary;
   final Random _random;
+  final bool continuous;
+  Set<SnakeCell> _rocks = _initialRocks;
+  int _formationsAdded = 0;
 
   List<SnakeCell> _body = _initialBody;
   List<SnakeCell> _previousBody = _initialBody;
@@ -58,7 +97,9 @@ class SnakeRun {
   ReviewItem? _item;
   List<SnakeApple> _apples = const [];
   Word? _selectedAnswer;
+  Word? _answeredWord;
   bool _hitTail = false;
+  bool _hitObstacle = false;
   int _score = 0;
   int _correctCount = 0;
   int _combo = 0;
@@ -72,9 +113,21 @@ class SnakeRun {
   ReviewItem? get item => _item;
   List<SnakeApple> get apples => _apples;
   Word? get selectedAnswer => _selectedAnswer;
+  Word? get answeredWord => _answeredWord;
   bool get answerCorrect =>
-      _selectedAnswer != null && _selectedAnswer == _item?.word;
+      _selectedAnswer != null && _selectedAnswer == _answeredWord;
   bool get hitTail => _hitTail;
+  bool get hitObstacle => _hitObstacle;
+  Set<SnakeCell> get rocks => _rocks;
+  Duration get pace {
+    final tier = min(8, _correctCount ~/ 3);
+    return Duration(
+      milliseconds:
+          (continuous ? 340 : stepTime.inMilliseconds) -
+          (continuous ? 20 : 24) * tier,
+    );
+  }
+
   int get score => _score;
   int get correctCount => _correctCount;
   int get bestCombo => _bestCombo;
@@ -89,6 +142,11 @@ class SnakeRun {
     if (_phase != SnakePhase.moving) return;
     _turns.clear();
     _phase = SnakePhase.paused;
+  }
+
+  void finish() {
+    _turns.clear();
+    _phase = SnakePhase.finished;
   }
 
   bool steer(SnakeDirection turn) {
@@ -114,10 +172,11 @@ class SnakeRun {
     final grows = apple != null && apple.word == _item?.word;
     // On an ordinary move the last cell is freed by the same step.
     final occupied = grows ? _body : _body.take(_body.length - 1);
-    if (occupied.contains(nextCell)) {
+    if (_rocks.contains(nextCell) || occupied.contains(nextCell)) {
       _previousBody = _body;
-      _hitTail = true;
-      _phase = SnakePhase.finished;
+      _hitObstacle = _rocks.contains(nextCell);
+      _hitTail = !_hitObstacle;
+      finish();
       return;
     }
 
@@ -129,11 +188,9 @@ class SnakeRun {
   }
 
   void _eat(SnakeApple apple, Duration elapsed) {
-    _turns.clear();
     final question = _item!;
+    _answeredWord = question.word;
     _selectedAnswer = apple.word;
-    _apples = List.unmodifiable(_apples.where((entry) => entry != apple));
-    _phase = SnakePhase.feedback;
     if (answerCorrect) {
       _score += 100;
       _correctCount++;
@@ -154,18 +211,30 @@ class SnakeRun {
                 : '${apple.word.text} — ${apple.word.translation}',
       ),
     );
+    if (continuous) {
+      _loadQuestion();
+    } else {
+      _turns.clear();
+      _apples = List.unmodifiable(_apples.where((entry) => entry != apple));
+      _phase = SnakePhase.feedback;
+    }
   }
 
   void next() {
     if (_phase != SnakePhase.feedback) return;
     _previousBody = _body;
+    _selectedAnswer = null;
+    _answeredWord = null;
     _loadQuestion();
   }
 
   void _loadQuestion({bool opening = false}) {
     final question = _session.remainingItems.firstOrNull;
-    _selectedAnswer = null;
-    final available = opening ? List.of(_openingCells) : _spreadCells();
+    if (question != null && !opening) _addFormation();
+    final available =
+        opening
+            ? List.of(continuous ? _continuousOpening : _openingCells)
+            : _spreadCells();
     if (question == null || available.isEmpty) {
       _item = null;
       _apples = const [];
@@ -185,30 +254,60 @@ class SnakeRun {
       for (final (index, word) in distractors.indexed)
         SnakeApple(cell: available[index], word: word),
     ]);
-    _phase = SnakePhase.ready;
+    _phase = continuous && !opening ? SnakePhase.moving : SnakePhase.ready;
+  }
+
+  int _distance(SnakeCell a, SnakeCell b) {
+    final dx = (a.x - b.x).abs();
+    final dy = (a.y - b.y).abs();
+    return min(dx, size - dx) + min(dy, size - dy);
+  }
+
+  void _addFormation() {
+    if (_formationsAdded >= min(_correctCount ~/ 3, _formations.length)) return;
+    final safe =
+        _formations
+            .where(
+              (formation) => formation.every(
+                (cell) =>
+                    !_rocks.contains(cell) &&
+                    !_body.contains(cell) &&
+                    _distance(cell, _body.first) >= 5,
+              ),
+            )
+            .toList();
+    if (safe.isEmpty) return;
+    _rocks = Set.unmodifiable({
+      ..._rocks,
+      ...safe[_random.nextInt(safe.length)],
+    });
+    _formationsAdded++;
   }
 
   List<SnakeCell> _spreadCells() {
-    final occupied = _body.toSet();
-    final rows = [2, 4, 7, 9]..shuffle(_random);
-    final positions = <SnakeCell>[];
-    for (final y in rows) {
-      final row = [
-        for (var x = 2; x <= size - 3; x++)
+    final occupied = {..._body, ..._rocks};
+    final free = [
+      for (var y = 0; y < size; y++)
+        for (var x = 0; x < size; x++)
           if (!occupied.contains((x: x, y: y))) (x: x, y: y),
-      ];
-      if (row.isNotEmpty) positions.add(row[_random.nextInt(row.length)]);
+    ]..shuffle(_random);
+    final positions = <SnakeCell>[];
+    // Leave steering and reading room, including around wrap-around edges.
+    for (final cell in free) {
+      if (cell.x == 0 ||
+          cell.y == 0 ||
+          cell.x == size - 1 ||
+          cell.y == size - 1 ||
+          _distance(cell, _body.first) < 5 ||
+          positions.any((other) => _distance(cell, other) < 5)) {
+        continue;
+      }
+      positions.add(cell);
       if (positions.length == 3) return positions;
     }
-    // A long tail can cover a whole preferred row. Keep away from corners
-    // where a word label needs room, using the nearest free interior rows.
-    for (final y in [1, 3, 5, 6, 8, 10]) {
-      for (var x = 2; x <= size - 3; x++) {
-        final cell = (x: x, y: y);
-        if (occupied.contains(cell)) continue;
-        positions.add(cell);
-        break;
-      }
+    // A nearly full board may leave fewer than three well-separated cells.
+    for (final cell in free) {
+      if (!positions.contains(cell)) positions.add(cell);
       if (positions.length == 3) break;
     }
     return positions;

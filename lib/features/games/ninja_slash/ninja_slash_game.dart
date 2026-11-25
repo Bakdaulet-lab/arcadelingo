@@ -332,20 +332,29 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     if (!swipeCounts(_travelled)) return;
     final size = _fieldSize;
     if (size == null) return;
+    final widths = [for (final label in _run.options) targetWidth(label, size)];
+    final wide = widths.any((width) => width > objectRadius * 2);
     final centers = wavePositions(
       count: _run.options.length,
       t: _flight.value,
       width: size.width,
       height: size.height,
+      wide: wide,
     );
     final target = sliceTarget(
       from: from,
       to: to,
       centers: centers,
       radius: objectRadius,
+      widths: widths,
     );
     if (target == null) {
-      _maybeGraze(from: from, to: to, centers: centers);
+      _maybeGraze(
+        from: from,
+        to: to,
+        centers: centers,
+        width: widths[_run.correctIndex],
+      );
       return;
     }
     if (!_run.slice(target, _elapsed)) return;
@@ -362,6 +371,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
       width: size.width,
       height: size.height,
       duration: _run.timeLimit,
+      wide: wide,
     );
     // Точка реза, а не центр объекта: касательный рез виден именно краем, и
     // искры из центра при нём читались бы как посторонний взрыв. Считает её
@@ -433,10 +443,17 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     required Offset from,
     required Offset to,
     required List<Offset> centers,
+    required double width,
   }) {
     if (_grazeAt != null) return;
     final centre = centers[_run.correctIndex];
-    if (!grazed(from: from, to: to, centre: centre, radius: objectRadius)) {
+    if (!grazed(
+      from: from,
+      to: to,
+      centre: centre,
+      radius: objectRadius,
+      width: width,
+    )) {
       return;
     }
     _grazeAt = _elapsed;

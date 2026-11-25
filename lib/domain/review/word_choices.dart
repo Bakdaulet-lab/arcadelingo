@@ -3,6 +3,20 @@ import 'dart:math';
 import 'review_contract.dart';
 import 'word_labels.dart';
 
+/// Each pass through the deck starts on a different card from the last answer.
+void shuffleWordCycle(
+  List<ReviewItem> items,
+  Random random, {
+  ReviewItem? previous,
+}) {
+  items.shuffle(random);
+  if (items.length > 1 && identical(items.first, previous)) {
+    final other = 1 + random.nextInt(items.length - 1);
+    items[0] = items[other];
+    items[other] = previous!;
+  }
+}
+
 /// Distinct spellings from the target's level for a translation-to-word task.
 /// Prefer the card's curated alternatives and exclude alternate correct senses.
 Iterable<Word> wordDistractors(

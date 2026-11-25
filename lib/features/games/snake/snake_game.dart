@@ -23,6 +23,7 @@ abstract final class SnakeKeys {
   static const word = Key('snake.word');
   static const pause = Key('snake.pause');
   static const resume = Key('snake.resume');
+  static const finish = Key('snake.finish');
   static const next = Key('snake.next');
   static const summary = Key('snake.summary');
 }
@@ -33,6 +34,7 @@ class SnakeGame extends StatefulWidget {
     required this.vocabulary,
     required this.onPlayAgain,
     required this.onExit,
+    this.continuous = false,
     this.onRoundOver,
     this.onRoundScore,
     this.summaryFooter,
@@ -50,6 +52,7 @@ class SnakeGame extends StatefulWidget {
   final List<Word> vocabulary;
   final VoidCallback onPlayAgain;
   final VoidCallback onExit;
+  final bool continuous;
   final VoidCallback? onRoundOver;
   final Widget Function(int score)? onRoundScore;
   final String Function()? summaryFooter;
@@ -85,7 +88,12 @@ class _SnakeGameState extends State<SnakeGame>
   @override
   void initState() {
     super.initState();
-    _run = SnakeRun(widget.session, widget.vocabulary, Random(widget.seed));
+    _run = SnakeRun(
+      widget.session,
+      widget.vocabulary,
+      Random(widget.seed),
+      continuous: widget.continuous,
+    );
     _ticker = createTicker(_onFrame);
     WidgetsBinding.instance.addObserver(this);
   }
@@ -149,7 +157,7 @@ class _SnakeGameState extends State<SnakeGame>
     if (_run.phase != SnakePhase.moving) return;
     _run.pause();
     _stop();
-    _cellMicros = SnakeRun.stepTime.inMicroseconds.toDouble();
+    _cellMicros = _run.pace.inMicroseconds.toDouble();
     setState(() {});
   }
 
@@ -185,21 +193,35 @@ class _SnakeGameState extends State<SnakeGame>
   }
 
   void _advanceCell() {
+    final answered = widget.session.answered;
     _run.step(_reading.elapsed);
     _motion.value = 0;
-    _cellMicros = SnakeRun.stepTime.inMicroseconds.toDouble();
+    _cellMicros = _run.pace.inMicroseconds.toDouble();
     if (_run.hasQueuedTurn) _approachCorner();
-    if (_run.phase == SnakePhase.feedback) {
-      _reading.stop();
+    if (widget.session.answered != answered) {
+      if (widget.continuous) {
+        _reading.reset();
+      } else {
+        _reading.stop();
+      }
       final answer = _run.selectedAnswer!;
       widget.sounds.play(
         _run.answerCorrect ? GameSound.clawCatch : GameSound.miss,
       );
       unawaited(widget.speech.speak(answer.text));
-    } else if (_run.phase == SnakePhase.finished) {
+    }
+    if (_run.phase == SnakePhase.finished) {
       _stop();
       _finish();
     }
+    setState(() {});
+  }
+
+  void _endRun() {
+    _stop();
+    unawaited(widget.speech.stop());
+    _run.finish();
+    _finish();
     setState(() {});
   }
 
@@ -229,6 +251,10 @@ class _SnakeGameState extends State<SnakeGame>
     final phase = _run.phase;
     final moving = phase == SnakePhase.moving;
     final iconEnabled = phase == SnakePhase.ready || moving;
+    final finishBeforeExit =
+        widget.continuous &&
+        phase != SnakePhase.finished &&
+        phase != SnakePhase.ready;
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.arrowLeft):
@@ -243,12 +269,19 @@ class _SnakeGameState extends State<SnakeGame>
       child: Focus(
         autofocus: true,
         child: PopScope<void>(
+          canPop: !finishBeforeExit,
           onPopInvokedWithResult: (didPop, _) {
-            if (didPop) _stop();
+            if (didPop) {
+              _stop();
+            } else if (finishBeforeExit) {
+              _endRun();
+            }
           },
           child: Scaffold(
             appBar: AppBar(
-              leading: BackButton(onPressed: _exit),
+              leading: BackButton(
+                onPressed: finishBeforeExit ? _endRun : _exit,
+              ),
               title: Text(strings.snake),
               actions: [
                 if (phase != SnakePhase.finished)
@@ -384,7 +417,12 @@ class _SnakeGameState extends State<SnakeGame>
             children: [
               Text(strings.score(_run.score), textAlign: TextAlign.end),
               Text(
-                strings.snakeCount(_run.correctCount, widget.session.total),
+                widget.continuous
+                    ? strings.continuousProgress(widget.session.answered + 1)
+                    : strings.snakeCount(
+                      _run.correctCount,
+                      widget.session.total,
+                    ),
                 textAlign: TextAlign.end,
                 style: secondary,
               ),
@@ -399,14 +437,16 @@ class _SnakeGameState extends State<SnakeGame>
     final strings = context.strings;
     final theme = Theme.of(context);
     final answer = _run.selectedAnswer;
-    final responding = _run.phase == SnakePhase.feedback;
+    final responding = answer != null;
     final status =
-        responding && answer != null
+        answer != null
             ? strings.snakeAnswer(
-              _run.item!.word,
+              _run.answeredWord!,
               answer,
               correct: _run.answerCorrect,
             )
+            : widget.continuous
+            ? strings.snakeContinuousGuide
             : strings.snakeGuide;
     final color =
         !responding
@@ -432,13 +472,14 @@ class _SnakeGameState extends State<SnakeGame>
                 child:
                     responding
                         ? ArcadeAnswerFeedback(
+                          key: ValueKey(widget.session.answered),
                           correct: _run.answerCorrect,
                           child: message,
                         )
                         : message,
               ),
             ),
-            if (responding)
+            if (_run.phase == SnakePhase.feedback)
               TextButton(
                 key: SnakeKeys.next,
                 onPressed: _next,
@@ -482,7 +523,14 @@ class _SnakeGameState extends State<SnakeGame>
                     onPressed: _start,
                     child: Text(strings.snakeResume),
                   ),
-                  TextButton(onPressed: _exit, child: Text(strings.exit)),
+                  if (widget.continuous)
+                    TextButton(
+                      key: SnakeKeys.finish,
+                      onPressed: _endRun,
+                      child: Text(strings.finishRun),
+                    )
+                  else
+                    TextButton(onPressed: _exit, child: Text(strings.exit)),
                 ],
               ),
             ),
@@ -505,6 +553,7 @@ class _SnakeGameState extends State<SnakeGame>
     final mistakes = widget.mistakeCount?.call() ?? 0;
     final reason = [
       if (_run.hitTail) strings.snakeTail,
+      if (_run.hitObstacle) strings.snakeObstacle,
       if (_footer case final footer?) footer,
     ];
     return ArcadeRoundSummary(

@@ -9,6 +9,7 @@
 /// Числа — `SPEC.md`, раздел «Ниндзя-слэш» → «Волна» и «Траектория».
 library;
 
+import 'dart:math';
 import 'dart:ui';
 
 /// Доли ширины поля, на которых стоят три дорожки.
@@ -26,6 +27,27 @@ const double driftFraction = 0.06;
 
 /// Радиус объекта в логических пикселях.
 const double objectRadius = 34;
+
+final _spaces = RegExp(r'\s+');
+
+const _laneClearance = objectRadius * 2 + 10;
+const _threeTierHeight = 350;
+
+/// Ширина мишени с запасом на целое слово или несколько строк фразы.
+/// На низком поле две боковые мишени должны помещаться рядом.
+double targetWidth(String label, Size field) {
+  final words = label.split(_spaces);
+  final longest = words.fold(0, (n, word) => max(n, word.runes.length));
+  final columns = max(longest, (label.runes.length / 2.3).ceil());
+  if (columns <= 7) return objectRadius * 2;
+  return (22.0 + columns * 8).clamp(
+    objectRadius * 2,
+    max(
+      objectRadius * 2,
+      min(236.0, field.width * (field.height >= _threeTierHeight ? .70 : .475)),
+    ),
+  );
+}
 
 /// Параметры полёта одного объекта в единицах поля.
 class NinjaFlight {
@@ -71,12 +93,29 @@ NinjaFlight flightForSlot(
   int slot, {
   required double width,
   required double height,
+  bool wide = false,
 }) {
   if (slot < 0 || slot >= laneFractions.length) {
     throw ArgumentError.value(
       slot,
       'slot',
       'дорожки 0..${laneFractions.length - 1}',
+    );
+  }
+  if (wide && slot != 1) {
+    // Широкие мишени летят на разных высотах. Если высоты мало, две
+    // боковые вдвое уже поля и могут лететь рядом под центральной.
+    final tall = height >= _threeTierHeight;
+    final clearance = _launchOffset(slot, height);
+    final separation =
+        tall
+            ? max(_laneClearance, height * .14) * (slot == 0 ? 1 : 2)
+            : max(clearance, height * (slot == 0 ? .20 : .12));
+    final inset = tall ? .36 : .245;
+    return NinjaFlight(
+      lane: (slot == 0 ? inset : 1 - inset) * width,
+      drift: (slot == 0 ? 1 : -1) * (tall ? .018 : .005) * width,
+      apex: height * apexFractions[1] + clearance - separation,
     );
   }
   return NinjaFlight(
@@ -91,18 +130,41 @@ NinjaFlight flightForSlot(
 /// Нижняя кромка полёта: объект стартует и садится под ней, а не на ней.
 double flightBottom(double height) => height + objectRadius;
 
+double _launchOffset(int slot, double height) => switch (slot) {
+  1 => 0,
+  2 when height >= _threeTierHeight => _laneClearance * 2,
+  _ => _laneClearance,
+};
+
+/// Ход времени замедляется у вершины. Производная нужна половинкам,
+/// чтобы их скорость при разрезе совпала с видимой скоростью мишени.
+({double time, double rate}) _flightClock(double t) {
+  const span = .2;
+  const strength = .46;
+  final offset = t - .5;
+  final u = offset / span;
+  if (u.abs() >= 1) return (time: t, rate: 1);
+  final q = 1 - u * u;
+  return (
+    time: t - strength * offset * q * q * q,
+    rate: 1 - strength * q * q * (1 - 7 * u * u),
+  );
+}
+
 /// Где объект в долю полёта [t].
 ///
-/// `y = bottom − apex · 4t(1 − t)`: множитель `4t(1 − t)` — парабола,
-/// нормированная на единицу в вершине, поэтому [apex] и есть высота
-/// подъёма, а не вчетверо меньшая. Вершина ровно при `t = 0.5`.
+/// Горизонтальный дрейф и парабола используют общие часы полёта.
+/// Вершина остаётся на середине времени, даже с замедлением.
 Offset trajectory({
   required double t,
   required double lane,
   required double drift,
   required double apex,
   required double bottom,
-}) => Offset(lane + drift * t, bottom - apex * 4 * t * (1 - t));
+}) {
+  final time = _flightClock(t).time;
+  return Offset(lane + drift * time, bottom - apex * 4 * time * (1 - time));
+}
 
 /// Где стоят объекты волны из [count] штук в долю полёта [t] на поле
 /// [width] × [height].
@@ -116,11 +178,19 @@ List<Offset> wavePositions({
   required double t,
   required double width,
   required double height,
+  bool wide = false,
 }) {
   final bottom = flightBottom(height);
   return [
     for (final slot in laneSlotsFor(count))
-      _positionOnSlot(slot, t: t, width: width, height: height, bottom: bottom),
+      _positionOnSlot(
+        slot,
+        t: t,
+        width: width,
+        height: height,
+        bottom: bottom,
+        wide: wide,
+      ),
   ];
 }
 
@@ -131,25 +201,23 @@ Offset _positionOnSlot(
   required double width,
   required double height,
   required double bottom,
+  required bool wide,
 }) {
-  final flight = flightForSlot(slot, width: width, height: height);
+  final flight = flightForSlot(slot, width: width, height: height, wide: wide);
   return trajectory(
     t: t,
     lane: flight.lane,
     drift: flight.drift,
     apex: flight.apex,
-    bottom: bottom,
+    bottom: bottom + (wide ? _launchOffset(slot, height) : 0),
   );
 }
 
 /// Скорость объекта [index] волны из [count] в долю полёта [t], в
 /// пикселях поля в секунду, при полёте длиной [duration].
 ///
-/// Производная [trajectory] по времени: `dx/dt = drift`,
-/// `dy/dt = −apex · 4(1 − 2t)`, обе делённые на длину полёта. Нужна
-/// половинкам разрезанного объекта — они наследуют её в момент реза. Здесь,
-/// а не в украшениях, потому что это производная той же параболы, и две
-/// копии формулы разошлись бы молча.
+/// Производная [trajectory] с учётом хода часов у вершины.
+/// Её наследуют половинки мишени в момент реза.
 Offset waveVelocity({
   required int count,
   required int index,
@@ -157,9 +225,12 @@ Offset waveVelocity({
   required double width,
   required double height,
   required Duration duration,
+  bool wide = false,
 }) {
   final slot = laneSlotsFor(count)[index];
-  final flight = flightForSlot(slot, width: width, height: height);
+  final flight = flightForSlot(slot, width: width, height: height, wide: wide);
+  final clock = _flightClock(t);
   final seconds = duration.inMicroseconds / Duration.microsecondsPerSecond;
-  return Offset(flight.drift, -flight.apex * 4 * (1 - 2 * t)) / seconds;
+  return Offset(flight.drift, -flight.apex * 4 * (1 - 2 * clock.time)) *
+      (clock.rate / seconds);
 }

@@ -461,15 +461,22 @@ class _HomeActions extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final paper = theme.brightness == Brightness.light;
+    final continuous = game?.challenge == ArcadeChallenge.continuous;
     final challenge =
         onChallenge == null
             ? null
             : TextButton.icon(
               key: AppKeys.challenge,
               onPressed: onChallenge,
-              icon: const Icon(Icons.emoji_events_outlined),
+              icon: Icon(
+                continuous
+                    ? Icons.all_inclusive_rounded
+                    : Icons.emoji_events_outlined,
+              ),
               label: Text(
-                context.strings.challenge,
+                continuous
+                    ? context.strings.continuousMode
+                    : context.strings.challenge,
                 textAlign: TextAlign.center,
               ),
               style: TextButton.styleFrom(

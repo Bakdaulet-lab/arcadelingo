@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/features/games/word_maze/maze_field.dart';
@@ -9,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_review_session.dart';
+import '../../../support/maze_actions.dart';
 
 const target = Word(id: 'key', text: 'llave', translation: 'ключ');
 const candle = Word(id: 'candle', text: 'vela', translation: 'свеча');
@@ -22,6 +25,7 @@ Future<void> mountGame(
   VoidCallback? onOver,
   VoidCallback? onReplay,
   VoidCallback? onExit,
+  bool continuous = false,
   int seed = 1,
 }) async {
   await tester.pumpWidget(
@@ -35,6 +39,7 @@ Future<void> mountGame(
         session: session,
         vocabulary: vocabulary,
         seed: seed,
+        continuous: continuous,
         course: StudyCourse.spanishFromRussian,
         level: CefrLevel.a1,
         onRoundOver: onOver,
@@ -63,6 +68,44 @@ Future<void> waitForAnswer(WidgetTester tester) async {
 }
 
 void main() {
+  for (final correct in [true, false]) {
+    testWidgets(
+      'continuous gate ($correct) changes word and carries motion into the next frame',
+      (tester) async {
+        final session = FakeReviewSession(const [
+          ReviewItem(word: target),
+          ReviewItem(word: candle),
+        ]);
+        final vocabulary = correct ? [target] : [target, candle, table];
+        await mountGame(tester, session, vocabulary, continuous: true);
+        final field = find.byKey(MazeKeys.field);
+        final run = tester.widget<MazeField>(field).run;
+        final answers = mazeGateWords(tester);
+        final index = answers.indexWhere(
+          (label) => (label == target.text) == correct,
+        );
+        await enterMazeGate(tester, index);
+        expect(session.reports.single.outcome.correct, correct);
+        expect(find.byKey(MazeKeys.next), findsNothing);
+        expect(
+          tester.widget<Text>(find.byKey(MazeKeys.word)).data,
+          candle.translation,
+        );
+        expect(tester.widget<MazeField>(field).run, same(run));
+        expect(run.collected, greaterThan(0));
+        final before = run.player;
+        await tester.pump(const Duration(milliseconds: 32));
+        expect(run.player, isNot(before));
+        await tester.tap(find.byKey(MazeKeys.pause));
+        await tester.pump();
+        await tester.tap(find.byKey(MazeKeys.finish));
+        await tester.pumpAndSettle();
+        expect(find.byKey(MazeKeys.summary), findsOneWidget);
+        expect(session.reports, hasLength(1));
+      },
+    );
+  }
+
   testWidgets(
     'a fresh swipe after success goes straight into the next chase; a held finger cannot',
     (tester) async {
@@ -168,6 +211,63 @@ void main() {
     expect(tester.getRect(field), frame);
     expect(tester.getTopLeft(prompt), label);
   });
+
+  for (final started in [false, true]) {
+    testWidgets(
+      'Android back in continuous play with started=$started reports only completed words',
+      (tester) async {
+        final session = FakeReviewSession(const [
+          ReviewItem(word: target),
+          ReviewItem(word: candle),
+        ]);
+        final navigator = GlobalKey<NavigatorState>();
+        var finished = 0;
+        final scores = <int>[];
+        await tester.pumpWidget(
+          MaterialApp(
+            navigatorKey: navigator,
+            home: const Scaffold(body: Text('lobby')),
+          ),
+        );
+        await tester.pump();
+        unawaited(
+          navigator.currentState!.push(
+            MaterialPageRoute<void>(
+              builder:
+                  (context) => WordMazeGame(
+                    session: session,
+                    vocabulary: const [target],
+                    continuous: true,
+                    onPlayAgain: () {},
+                    onExit: () => Navigator.pop(context),
+                    onRoundOver: () => finished++,
+                    onRoundScore: (score) {
+                      scores.add(score);
+                      return const SizedBox.shrink();
+                    },
+                  ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        if (started) await enterMazeGate(tester, 0);
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        if (started) {
+          expect(find.byKey(MazeKeys.summary), findsOneWidget);
+          expect(scores.single, greaterThanOrEqualTo(100));
+          expect(finished, 1);
+          expect(session.reports, hasLength(1));
+          await tester.binding.handlePopRoute();
+          await tester.pumpAndSettle();
+        }
+        expect(find.text('lobby'), findsOneWidget);
+        expect(finished, started ? 1 : 0);
+        expect(scores.length, started ? 1 : 0);
+        expect(session.reports.length, started ? 1 : 0);
+      },
+    );
+  }
 
   testWidgets(
     'system back closes the pending review once without inventing a selected gate',

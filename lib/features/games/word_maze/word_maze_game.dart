@@ -23,6 +23,7 @@ abstract final class MazeKeys {
   static const pause = Key('maze.pause');
   static const resume = Key('maze.resume');
   static const respawn = Key('maze.respawn');
+  static const finish = Key('maze.finish');
   static const feedback = Key('maze.feedback');
   static const next = Key('maze.next');
   static const summary = Key('maze.summary');
@@ -35,6 +36,7 @@ class WordMazeGame extends StatefulWidget {
     required this.vocabulary,
     required this.onPlayAgain,
     required this.onExit,
+    this.continuous = false,
     this.course,
     this.level,
     this.sounds = const NoopSounds(),
@@ -48,6 +50,7 @@ class WordMazeGame extends StatefulWidget {
     super.key,
   });
 
+  final bool continuous;
   final ReviewSession session;
   final List<Word> vocabulary;
   final VoidCallback onPlayAgain;
@@ -80,15 +83,20 @@ class _WordMazeGameState extends State<WordMazeGame>
   late List<Word> _choices;
   ReviewItem? _item;
   Word? _selected;
+  ({Word target, Word choice})? _lastAnswer;
   _Stage _stage = _Stage.ready;
   Duration _last = Duration.zero;
   int _correct = 0;
   int _combo = 0;
   int _bestCombo = 0;
+  bool _startedRun = false;
   bool _active = true;
   bool _leaving = false;
   String? _footer;
   Widget? _record;
+
+  bool get _finishBeforeExit =>
+      widget.continuous && _startedRun && _stage != _Stage.finished;
 
   bool get _canContinueFromGate =>
       _stage == _Stage.feedback &&
@@ -104,7 +112,7 @@ class _WordMazeGameState extends State<WordMazeGame>
     _loadQuestion();
   }
 
-  void _loadQuestion() {
+  void _loadQuestion({bool carry = false}) {
     _selected = null;
     _item = widget.session.nextItem();
     final question = _item;
@@ -116,18 +124,30 @@ class _WordMazeGameState extends State<WordMazeGame>
       question.word,
       ...wordDistractors(question, widget.vocabulary, _random).take(2),
     ]..shuffle(_random);
-    _run = MazeRun(seed: _random.nextInt(1 << 30), gateCount: _choices.length);
+    if (carry) {
+      _run.nextGates(gateCount: _choices.length, correctAnswers: _correct);
+    } else {
+      _run = MazeRun(
+        seed: _random.nextInt(1 << 30),
+        gateCount: _choices.length,
+        correctAnswers: _correct,
+        wave: widget.session.answered,
+      );
+    }
     _reading
       ..reset()
       ..start();
-    _stage = _Stage.ready;
+    _stage = carry ? _Stage.moving : _Stage.ready;
   }
 
   void _turn(MazeDirection direction) {
     if (!_active || (_stage != _Stage.ready && _stage != _Stage.moving)) return;
     _run.steer(direction);
     if (_stage == _Stage.ready && _run.moving) {
-      setState(() => _stage = _Stage.moving);
+      setState(() {
+        _startedRun = true;
+        _stage = _Stage.moving;
+      });
       _startTicker();
     }
   }
@@ -155,10 +175,11 @@ class _WordMazeGameState extends State<WordMazeGame>
     _frames.value++;
     if (_run.collected > before) _score.value += (_run.collected - before) * 5;
     if (event == null) return;
-    _ticker.stop();
     _reading.stop();
     switch (event) {
       case MazeEvent.caught:
+        _ticker.stop();
+        _combo = 0;
         widget.sounds.play(GameSound.miss);
         setState(() => _stage = _Stage.caught);
       case MazeEvent.gate:
@@ -181,6 +202,13 @@ class _WordMazeGameState extends State<WordMazeGame>
         }
         widget.sounds.play(correct ? GameSound.clawCatch : GameSound.miss);
         unawaited(widget.speech.speak(target.text));
+        if (widget.continuous) {
+          _lastAnswer = (target: target, choice: choice);
+          setState(() => _loadQuestion(carry: true));
+          if (_stage == _Stage.finished) _complete();
+          return;
+        }
+        _ticker.stop();
         setState(() {
           _selected = choice;
           _stage = _Stage.feedback;
@@ -214,12 +242,28 @@ class _WordMazeGameState extends State<WordMazeGame>
     if (_leaving || _stage != _Stage.feedback) return;
     unawaited(widget.speech.stop());
     setState(_loadQuestion);
-    if (_stage == _Stage.finished) {
-      _footer = widget.summaryFooter?.call();
+    if (_stage == _Stage.finished) _complete();
+  }
+
+  void _finishRun() {
+    if (!_finishBeforeExit) return;
+    unawaited(widget.speech.stop());
+    setState(() {
+      _item = null;
+      _stage = _Stage.finished;
+    });
+    _complete();
+  }
+
+  void _complete() {
+    _ticker.stop();
+    _reading.stop();
+    _footer = widget.summaryFooter?.call();
+    if (widget.session.answered > 0) {
       _record = widget.onRoundScore?.call(_score.value);
-      widget.sounds.play(GameSound.roundEnd);
-      widget.onRoundOver?.call();
     }
+    widget.sounds.play(GameSound.roundEnd);
+    widget.onRoundOver?.call();
   }
 
   void _exit() {
@@ -233,7 +277,7 @@ class _WordMazeGameState extends State<WordMazeGame>
     _active = false;
     _ticker.stop();
     _reading.stop();
-    if (_item != null && _selected == null) {
+    if (!widget.continuous && _item != null && _selected == null) {
       widget.session.report(
         ReviewOutcome.untimed(correct: false, responseTime: _reading.elapsed),
       );
@@ -271,12 +315,19 @@ class _WordMazeGameState extends State<WordMazeGame>
   Widget build(BuildContext context) {
     final strings = context.strings;
     return PopScope<void>(
+      canPop: !_finishBeforeExit,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) _leave();
+        if (didPop) {
+          _leave();
+        } else if (_finishBeforeExit) {
+          _finishRun();
+        }
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: BackButton(onPressed: _exit),
+          leading: BackButton(
+            onPressed: _finishBeforeExit ? _finishRun : _exit,
+          ),
           title: Text(strings.wordMaze),
           actions: [
             if (_stage != _Stage.finished)
@@ -297,7 +348,7 @@ class _WordMazeGameState extends State<WordMazeGame>
 
   Widget _summary(BuildContext context) {
     final strings = context.strings;
-    if (widget.session.answered == 0) {
+    if (!widget.continuous && widget.session.answered == 0) {
       return ArcadeStatusLayout(
         icon: Icons.nightlight_round,
         title: strings.nothingToday,
@@ -344,9 +395,9 @@ class _WordMazeGameState extends State<WordMazeGame>
       alignment: Alignment.center,
       children: [
         AspectRatio(
-          // Discard the old pointer at a gate. Keep the new recognizer alive
-          // when its first swipe starts the next word so the finger can steer.
-          key: ValueKey(widget.session.answered),
+          // In classic play a gate waits for a fresh swipe. Continuous play
+          // keeps the same pointer and the same board across answers.
+          key: ValueKey(widget.continuous ? -1 : widget.session.answered),
           aspectRatio: MazeRun.columns / MazeRun.rows,
           child: MazeField(
             key: MazeKeys.field,
@@ -378,7 +429,9 @@ class _WordMazeGameState extends State<WordMazeGame>
             children: [
               Expanded(
                 child: Text(
-                  strings.mazeProgress(number, widget.session.total),
+                  widget.continuous
+                      ? strings.continuousProgress(number)
+                      : strings.mazeProgress(number, widget.session.total),
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -448,26 +501,40 @@ class _WordMazeGameState extends State<WordMazeGame>
           ),
       ],
     );
-    final guidance = Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          Icons.swipe_outlined,
-          color: theme.colorScheme.onSurfaceVariant,
-          size: 17,
-        ),
-        const SizedBox(width: 7),
-        Expanded(
-          child: Text(
-            _stage == _Stage.ready
-                ? strings.mazeReadyGuide
-                : strings.mazeSteering,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+    final last = _lastAnswer;
+    final lastCorrect = last == null ? null : last.target.id == last.choice.id;
+    final (guideIcon, guideColor) = switch (lastCorrect) {
+      true => (Icons.check_circle_outline_rounded, theme.colorScheme.primary),
+      false => (Icons.info_outline_rounded, theme.colorScheme.error),
+      null => (Icons.swipe_outlined, theme.colorScheme.onSurfaceVariant),
+    };
+    final guideText =
+        last != null
+            ? strings.snakeAnswer(
+              last.target,
+              last.choice,
+              correct: lastCorrect!,
+            )
+            : _stage == _Stage.ready
+            ? strings.mazeReadyGuide
+            : strings.mazeSteering;
+    final guidance = Semantics(
+      liveRegion: last != null,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(guideIcon, color: guideColor, size: 17),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              guideText,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
     final foot = AnimatedSwitcher(
       duration:
@@ -647,6 +714,12 @@ class _WordMazeGameState extends State<WordMazeGame>
                         caught ? strings.mazeTryAgain : strings.snakeResume,
                       ),
                     ),
+                    if (widget.continuous)
+                      TextButton(
+                        key: MazeKeys.finish,
+                        onPressed: _finishRun,
+                        child: Text(strings.finishRun),
+                      ),
                   ],
                 ),
               ),

@@ -117,10 +117,11 @@ class _SceneryPainter extends CustomPainter {
     required this.dark,
     required this.labels,
     required this.textScale,
-  });
+  }) : gateWave = run.gateWave;
   final MazeRun run;
   final bool dark;
   final List<String> labels;
+  final int gateWave;
   final double textScale;
 
   @override
@@ -151,13 +152,20 @@ class _SceneryPainter extends CustomPainter {
       final cell = run.gates[i];
       final center = Offset(cell.x + .5, cell.y + .5);
       final ink = _gateInk(i, dark);
-      if (i < labels.length) _label(canvas, labels[i], center, ink);
+      // The top rail has room for short signs. Inner gates use just the
+      // matching seal so a leader line never hides a route across the board.
+      if (i < labels.length &&
+          (cell.y == 1 ||
+              (cell.y == 3 &&
+                  (cell.x <= 2 || cell.x >= MazeRun.columns - 3)))) {
+        _label(canvas, labels[i], center, ink);
+      }
       canvas.drawCircle(
         center,
         .48,
         _fill(ink.fill.withValues(alpha: dark ? .2 : .12)),
       );
-      _drawSeal(canvas, i, dark, center, .38);
+      _drawSeal(canvas, i, dark, center, .44);
     }
     final frameColor = dark ? const Color(0xFF536073) : const Color(0xFF9B8062);
     canvas.drawRRect(
@@ -253,6 +261,7 @@ class _SceneryPainter extends CustomPainter {
   @override
   bool shouldRepaint(_SceneryPainter old) =>
       run != old.run ||
+      gateWave != old.gateWave ||
       dark != old.dark ||
       textScale != old.textScale ||
       !listEquals(labels, old.labels);
@@ -412,7 +421,11 @@ class _RunnerPainter extends CustomPainter {
   void _sentinel(Canvas canvas, Offset position, int index) {
     final bob =
         reduced ? 0.0 : math.sin(run.elapsedSeconds * 4.3 + index * 1.7) * .038;
-    final body = dark ? const Color(0xFFFC81A4) : const Color(0xFFA93E52);
+    final body = switch (index) {
+      0 => dark ? const Color(0xFFFC81A4) : const Color(0xFFA93E52),
+      1 => dark ? const Color(0xFFFFAA6C) : const Color(0xFFAB5A27),
+      _ => dark ? const Color(0xFFB894ED) : const Color(0xFF775899),
+    };
     final rim = dark ? const Color(0xFF6D314B) : const Color(0xFF713648);
     final glass = dark ? const Color(0xFF391C39) : const Color(0xFF552C3C);
     canvas.save();

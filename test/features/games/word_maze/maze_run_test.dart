@@ -1,6 +1,8 @@
 import 'package:arcadelingo/features/games/word_maze/maze_run.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../../support/maze_route.dart';
+
 Set<MazeCell> _reachable(MazeRun run, {Set<MazeCell> blocked = const {}}) {
   final queue = [MazeRun.spawn];
   final visited = {MazeRun.spawn};
@@ -45,7 +47,8 @@ void main() {
           layouts.add(floor.join(','));
         }
       }
-      expect(layouts.length, greaterThan(1));
+      expect(layouts.length, greaterThanOrEqualTo(5));
+      expect(MazeRun.columns * MazeRun.rows, greaterThanOrEqualTo(250));
     },
   );
 
@@ -54,12 +57,12 @@ void main() {
     () {
       final run = MazeRun();
       expect(run.advance(20), isNull);
-      expect(run.player, (x: 6.0, y: 7.0));
+      expect(run.player, (x: 8.0, y: 9.0));
       expect(run.moving, isFalse);
       expect(run.collected, 0);
       run.steer(MazeDirection.left);
       run.advance(.014);
-      expect(run.player.x, closeTo(6 - MazeRun.playerSpeed * .014, 1e-8));
+      expect(run.player.x, closeTo(8 - MazeRun.playerSpeed * .014, 1e-8));
       run.advance(1.25 / MazeRun.playerSpeed - .014);
       expect(run.collected, 1);
       final before = run.player;
@@ -69,7 +72,7 @@ void main() {
       run.advance(.5 / MazeRun.playerSpeed);
       expect(run.player.x, closeTo(before.x + .5, 1e-8));
       expect(run.collected, 1);
-      expect(run.pellets, isNot(contains((x: 5, y: 7))));
+      expect(run.pellets, isNot(contains((x: 7, y: 9))));
     },
   );
 
@@ -78,12 +81,12 @@ void main() {
     run.advance(.2 / MazeRun.playerSpeed);
     run.steer(MazeDirection.up);
     run.advance(1.3 / MazeRun.playerSpeed);
-    expect(run.player.x, closeTo(4.5, 1e-8));
-    expect(run.player.y, 7);
+    expect(run.player.x, closeTo(6.5, 1e-8));
+    expect(run.player.y, 9);
     run.advance(1.1 / MazeRun.playerSpeed);
     expect(run.facing, MazeDirection.up);
-    expect(run.player.x, 4);
-    expect(run.player.y, closeTo(6.4, 1e-8));
+    expect(run.player.x, 6);
+    expect(run.player.y, closeTo(8.4, 1e-8));
     expect(run.collected, 2);
   });
 
@@ -92,20 +95,15 @@ void main() {
       for (var count = 1; count <= 3; count++) {
         for (var i = 0; i < count; i++) {
           final run = MazeRun(seed: seed, gateCount: count);
-          final gate = run.gates[i];
-          if (gate.x != MazeRun.spawn.x) {
-            run.steer(
-              gate.x < MazeRun.spawn.x
-                  ? MazeDirection.left
-                  : MazeDirection.right,
-            );
-            run.advance(4.7 / MazeRun.playerSpeed);
+          final route = mazeRoute(run, i);
+          for (final step in route.take(route.length - 1)) {
+            run.steer(step);
+            expect(run.advance(1 / MazeRun.playerSpeed), isNull);
           }
-          run.steer(MazeDirection.up);
-          final distance = gate.x == MazeRun.spawn.x ? 6.0 : 4.3;
-          expect(run.advance((distance - .1) / MazeRun.playerSpeed), isNull);
+          run.steer(route.last);
+          expect(run.advance(.92 / MazeRun.playerSpeed), isNull);
           expect(run.selectedGate, isNull);
-          expect(run.advance(.2 / MazeRun.playerSpeed), MazeEvent.gate);
+          expect(run.advance(.10 / MazeRun.playerSpeed), MazeEvent.gate);
           expect(run.selectedGate, i);
           final position = run.player;
           run.steer(MazeDirection.down);
@@ -120,23 +118,48 @@ void main() {
     'ghost contact respects grace, locks once, and a retry keeps pellets',
     () {
       final run = MazeRun()..steer(MazeDirection.right);
-      expect(run.advance(1.5), isNull);
+      expect(run.advance(1.7), isNull);
       expect(run.protected, isTrue);
-      expect(run.player.x, 11);
-      expect(run.player.y, 7);
+      expect(run.player.x, 15);
+      expect(run.player.y, 9);
       expect(run.moving, isFalse);
       expect(run.advance(15), MazeEvent.caught);
       expect(run.selectedGate, isNull);
       final score = run.collected;
-      expect(score, 5);
+      expect(score, 7);
       expect(run.advance(1), isNull);
       run.respawn();
-      expect(run.player, (x: 6.0, y: 7.0));
+      expect(run.player, (x: 8.0, y: 9.0));
       expect(run.protected, isTrue);
       expect(run.collected, score);
       run.steer(MazeDirection.right);
       expect(run.advance(1.25 / MazeRun.playerSpeed), isNull);
       expect(run.collected, score);
+    },
+  );
+
+  test(
+    'a new gate wave keeps actors and dots, moves gates away and ramps pursuit',
+    () {
+      for (var seed = 0; seed < 6; seed++) {
+        final run = MazeRun(seed: seed)..steer(MazeDirection.up);
+        expect(run.advance(8 / MazeRun.playerSpeed), MazeEvent.gate);
+        final gate = run.player;
+        final dots = run.collected;
+        final guards = run.ghosts;
+        run.nextGates(gateCount: 3, correctAnswers: 6);
+        expect(run.player, gate);
+        expect(run.collected, dots);
+        expect(run.ghosts.take(2).toList(), guards);
+        expect(run.ghosts, hasLength(3));
+        expect(run.selectedGate, isNull);
+        expect(run.moving, isTrue);
+        for (var i = 0; i < run.gates.length; i++) {
+          expect(mazeRoute(run, i).length, greaterThanOrEqualTo(5));
+        }
+        expect(run.advance(.05), isNull);
+        expect(run.player, isNot(gate));
+      }
     },
   );
 
@@ -194,8 +217,8 @@ void main() {
       expect(run.player.x, closeTo(before.x, 1e-8));
       expect(run.player.y, before.y);
       run.advance(.4 / MazeRun.playerSpeed);
-      expect(run.player.x, closeTo(4, 1e-8));
-      expect(run.player.y, closeTo(6.72, 1e-8));
+      expect(run.player.x, closeTo(6, 1e-8));
+      expect(run.player.y, closeTo(8.72, 1e-8));
     },
   );
 

@@ -6,6 +6,7 @@
 /// Числа — `SPEC.md`, раздел «Ниндзя-слэш» → «Рез».
 library;
 
+import 'dart:math';
 import 'dart:ui';
 
 /// Сколько пути должен пройти палец, чтобы движение стало резом.
@@ -28,7 +29,15 @@ bool sliceHit({
   required Offset to,
   required Offset center,
   required double radius,
-}) => _distanceToSegment(from: from, to: to, point: center) <= radius;
+  double? width,
+}) =>
+    _distanceToSpine(
+      from,
+      to,
+      center,
+      width == null ? 0 : width / 2 - radius,
+    ) <=
+    radius;
 
 /// Ближайшая к [point] точка отрезка [from] → [to].
 ///
@@ -60,11 +69,18 @@ int? sliceTarget({
   required Offset to,
   required List<Offset> centers,
   required double radius,
+  List<double>? widths,
 }) {
   int? nearest;
   var best = double.infinity;
   for (var i = 0; i < centers.length; i++) {
-    if (!sliceHit(from: from, to: to, center: centers[i], radius: radius)) {
+    if (!sliceHit(
+      from: from,
+      to: to,
+      center: centers[i],
+      radius: radius,
+      width: widths?[i],
+    )) {
       continue;
     }
     // Квадрат расстояния: корень порядок не меняет, а считается на каждом
@@ -90,6 +106,33 @@ double _distanceToSegment({
 }) =>
     (point - closestPointOnSegment(from: from, to: to, point: point)).distance;
 
+/// Зона реза капсулы — все точки в пределах радиуса от её осевого отрезка.
+/// Минимальное расстояние между непересекающимися отрезками достигается
+/// на одном из их концов.
+double _distanceToSpine(
+  Offset from,
+  Offset to,
+  Offset center,
+  double halfSpine,
+) {
+  double toBlade(Offset point) =>
+      _distanceToSegment(from: from, to: to, point: point);
+  if (halfSpine <= 0) return toBlade(center);
+  final left = center.dx - halfSpine;
+  final right = center.dx + halfSpine;
+  if (to.dy != from.dy) {
+    final t = (center.dy - from.dy) / (to.dy - from.dy);
+    final x = from.dx + t * (to.dx - from.dx);
+    if (t >= 0 && t <= 1 && x >= left && x <= right) return 0;
+  }
+  double toSpine(Offset p) =>
+      (p - Offset(p.dx.clamp(left, right), center.dy)).distance;
+  return min(
+    min(toSpine(from), toSpine(to)),
+    min(toBlade(Offset(left, center.dy)), toBlade(Offset(right, center.dy))),
+  );
+}
+
 /// Насколько дальше радиуса объекта жест ещё считается касанием вскользь.
 ///
 /// Две трети радиуса. Больше — отклик начнёт приходить на свайпы, которые
@@ -108,9 +151,13 @@ bool grazed({
   required Offset to,
   required Offset centre,
   required double radius,
+  double? width,
 }) {
-  final distance =
-      (centre - closestPointOnSegment(from: from, to: to, point: centre))
-          .distance;
+  final distance = _distanceToSpine(
+    from,
+    to,
+    centre,
+    width == null ? 0 : width / 2 - radius,
+  );
   return distance > radius && distance <= radius + grazeMargin;
 }

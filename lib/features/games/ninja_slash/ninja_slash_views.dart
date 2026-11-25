@@ -259,10 +259,16 @@ class GameHud extends StatelessWidget {
 
 /// Один объект волны — круг с переводом внутри.
 class FlyingObject extends StatelessWidget {
-  const FlyingObject({required this.label, required this.state, super.key});
+  const FlyingObject({
+    required this.label,
+    required this.state,
+    this.width = objectRadius * 2,
+    super.key,
+  });
 
   final String label;
   final ObjectState state;
+  final double width;
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +307,7 @@ class FlyingObject extends StatelessWidget {
     return Opacity(
       opacity: state == ObjectState.dimmed ? 0.5 : 1,
       child: Container(
-        width: objectRadius * 2,
+        width: width,
         height: objectRadius * 2,
         alignment: Alignment.center,
         decoration: BoxDecoration(
@@ -311,7 +317,7 @@ class FlyingObject extends StatelessWidget {
             radius: 1.1,
             colors: [Color.lerp(background, foreground, .1)!, background],
           ),
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(objectRadius),
           border: Border.all(color: rim, width: icon == null ? 2 : 3),
           boxShadow: [
             BoxShadow(
@@ -321,33 +327,106 @@ class FlyingObject extends StatelessWidget {
           ],
         ),
         // Полная подпись подгоняется внутри мишени с запасом до обода.
-        // Размер нарисованного круга совпадает с геометрией реза.
+        // Контур совпадает с зоной реза и для круглой, и для широкой мишени.
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: FittedBox(
             fit: BoxFit.scaleDown,
-            child: SizedBox(
-              width: objectRadius * 2 - 16,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) Icon(icon, color: foreground, size: 18),
-                  Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    style: withWeight(
-                      Theme.of(context).textTheme.bodyMedium!,
-                      FontWeight.bold,
-                    ).copyWith(color: foreground),
-                  ),
-                ],
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) Icon(icon, color: foreground, size: 18),
+                _WholeWordLabel(
+                  label: label,
+                  availableWidth: width - 20,
+                  style: withWeight(
+                    Theme.of(context).textTheme.bodyMedium!,
+                    FontWeight.bold,
+                  ).copyWith(color: foreground, height: 1.15),
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
   }
+}
+
+/// Абзац получает достаточно ширины для самого длинного слова.
+/// Родительский FittedBox затем подгоняет целый абзац по размеру мишени.
+class _WholeWordLabel extends StatefulWidget {
+  const _WholeWordLabel({
+    required this.label,
+    required this.availableWidth,
+    required this.style,
+  });
+
+  final String label;
+  final double availableWidth;
+  final TextStyle style;
+
+  @override
+  State<_WholeWordLabel> createState() => _WholeWordLabelState();
+}
+
+class _WholeWordLabelState extends State<_WholeWordLabel> {
+  static final _tokens = RegExp(r'\S+');
+  double? _lineWidth;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _lineWidth = null;
+  }
+
+  @override
+  void didUpdateWidget(_WholeWordLabel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.label != oldWidget.label ||
+        widget.style != oldWidget.style ||
+        widget.availableWidth != oldWidget.availableWidth) {
+      _lineWidth = null;
+    }
+  }
+
+  double _measure() {
+    final tokens = _tokens.allMatches(widget.label).toList();
+    final painter = TextPainter(
+      text: TextSpan(
+        text: tokens.map((token) => token.group(0)).join('\n'),
+        style: widget.style,
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      locale: Localizations.maybeLocaleOf(context),
+    )..layout();
+    try {
+      final width = max(widget.availableWidth, painter.width.ceilToDouble());
+      if (tokens.length <= 1) return width;
+      painter.text = TextSpan(text: widget.label, style: widget.style);
+      painter.layout(maxWidth: width);
+      // Дефис или косая черта могут разрешать перенос внутри слова,
+      // даже если отдельно слово помещается. Дадим такой фразе одну строку.
+      for (final token in tokens) {
+        final boxes = painter.getBoxesForSelection(
+          TextSelection(baseOffset: token.start, extentOffset: token.end),
+        );
+        if (boxes.isNotEmpty && boxes.last.top != boxes.first.top) {
+          return painter.maxIntrinsicWidth.ceilToDouble();
+        }
+      }
+      return width;
+    } finally {
+      painter.dispose();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: _lineWidth ??= _measure(),
+    child: Text(widget.label, textAlign: TextAlign.center, style: widget.style),
+  );
 }
 
 /// Поле волны: слово наверху, объекты на параболах.
@@ -411,11 +490,15 @@ class NinjaField extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (context, constraints) {
+        final widths = [
+          for (final o in objects) targetWidth(o.label, constraints.biggest),
+        ];
         final positions = wavePositions(
           count: objects.length,
           t: progress,
           width: constraints.maxWidth,
           height: constraints.maxHeight,
+          wide: widths.any((w) => w > objectRadius * 2),
         );
         return Stack(
           children: [
@@ -448,13 +531,16 @@ class NinjaField extends StatelessWidget {
                   children: [
                     for (var i = 0; i < objects.length; i++)
                       Positioned(
-                        left: positions[i].dx - objectRadius,
+                        left: positions[i].dx - widths[i] / 2,
                         top: positions[i].dy - objectRadius,
                         // Поворот и масштаб — вокруг центра объекта, поэтому
                         // центр, по которому считается рез, не двигается:
                         // украшение не трогает геометрию.
                         child: Transform.rotate(
-                          angle: i < tilts.length ? tilts[i] : 0,
+                          angle:
+                              widths[i] == objectRadius * 2 && i < tilts.length
+                                  ? tilts[i]
+                                  : 0,
                           child: Transform.scale(
                             scale: scale,
                             child:
@@ -462,6 +548,7 @@ class NinjaField extends StatelessWidget {
                                     ? SlicedObject(
                                       key: NinjaKeys.objectAt(i),
                                       label: objects[i].label,
+                                      width: widths[i],
                                       state: objects[i].state,
                                       angle: sliceAngle,
                                       velocity: sliceVelocity,
@@ -470,6 +557,7 @@ class NinjaField extends StatelessWidget {
                                     : FlyingObject(
                                       key: NinjaKeys.objectAt(i),
                                       label: objects[i].label,
+                                      width: widths[i],
                                       state: objects[i].state,
                                     ),
                           ),
@@ -850,11 +938,13 @@ class SlicedObject extends StatelessWidget {
     required this.angle,
     required this.progress,
     this.velocity = Offset.zero,
+    this.width = objectRadius * 2,
     super.key,
   });
 
   final String label;
   final ObjectState state;
+  final double width;
 
   /// Направление реза в радианах: по нему делится круг.
   final double angle;
@@ -867,7 +957,7 @@ class SlicedObject extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-    width: objectRadius * 2,
+    width: width,
     height: objectRadius * 2,
     // Без обрезки: половинки разлетаются за пределы круга, в котором жил
     // объект, — в том и смысл.
@@ -891,7 +981,7 @@ class SlicedObject extends StatelessWidget {
           opacity: motion.alpha,
           child: ClipPath(
             clipper: _HalfClipper(angle: angle, side: side),
-            child: FlyingObject(label: label, state: state),
+            child: FlyingObject(label: label, state: state, width: width),
           ),
         ),
       ),

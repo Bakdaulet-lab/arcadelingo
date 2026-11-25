@@ -21,63 +21,86 @@ enum MazeDirection {
 enum MazeEvent { gate, caught }
 
 const _epsilon = 1e-9;
-const _gateLeft = (x: 1, y: 3);
-const _gateTop = (x: 6, y: 1);
-const _gateRight = (x: 11, y: 3);
+const _gateGroups = [
+  [(x: 2, y: 3), (x: 8, y: 1), (x: 14, y: 3)],
+  [(x: 1, y: 11), (x: 8, y: 5), (x: 15, y: 11)],
+  [(x: 4, y: 9), (x: 8, y: 13), (x: 12, y: 9)],
+  [(x: 2, y: 13), (x: 8, y: 3), (x: 14, y: 13)],
+  [(x: 2, y: 7), (x: 8, y: 11), (x: 14, y: 7)],
+  [(x: 4, y: 1), (x: 8, y: 7), (x: 12, y: 1)],
+];
 const _layouts = [
   [
-    '#############',
-    '#...........#',
-    '#.##.#.#.##.#',
-    '#....#.#....#',
-    '#.##.....##.#',
-    '#....#.#....#',
-    '#.##.#.#.##.#',
-    '#...........#',
-    '#.##.#.#.##.#',
-    '#...........#',
-    '#############',
+    '#################',
+    '#...............#',
+    '#.##.##..##.###.#',
+    '#....#.....#....#',
+    '#.##.#.#.#.#.##.#',
+    '#....#.#.#......#',
+    '###.##.#.##.###.#',
+    '#......#........#',
+    '#.##.#.#.#.####.#',
+    '#...............#',
+    '#.##.#.#.#.#.##.#',
+    '#....#...#.#....#',
+    '#.##.###.###.##.#',
+    '#...............#',
+    '#################',
   ],
   [
-    '#############',
-    '#....#.#....#',
-    '#.##.....##.#',
-    '#....#.#....#',
-    '#.##.#.#.##.#',
-    '#...........#',
-    '#.##.#.#.##.#',
-    '#...........#',
-    '#.##.#.#.##.#',
-    '#....#.#....#',
-    '#############',
+    '#################',
+    '#....#.....#....#',
+    '#.##.#.#.#.#.##.#',
+    '#......#.#......#',
+    '#.##.#.#.#.#.##.#',
+    '#..#.#.....#.#..#',
+    '#..#.###.###.#..#',
+    '#...............#',
+    '###.##.#.##.#.###',
+    '#...............#',
+    '#.##.###.###.##.#',
+    '#....#.....#....#',
+    '#.##.#.#.#.#.##.#',
+    '#...............#',
+    '#################',
   ],
   [
-    '#############',
-    '#...........#',
-    '#.#.##.##.#.#',
-    '#....#.#....#',
-    '#.##.....##.#',
-    '#..#.#.#.#..#',
-    '#..#.....#..#',
-    '#...........#',
-    '#.##.#.#.##.#',
-    '#...........#',
-    '#############',
+    '#################',
+    '#...............#',
+    '#.###.##.##.###.#',
+    '#...#.......#...#',
+    '#.#.#.##.##.#.#.#',
+    '#.#....#....#.#.#',
+    '#.####.#.##.#.#.#',
+    '#......#........#',
+    '#.##.#.#.#.##.#.#',
+    '#...............#',
+    '#.##.#.#.#.#.##.#',
+    '#..#...#...#....#',
+    '#..#.###.###.##.#',
+    '#...............#',
+    '#################',
   ],
 ];
 
 /// Coordinates denote tile centres: (0, 0) is the centre of the top-left tile.
 /// A submitted gate or contact stops this run at the exact point of the event.
 class MazeRun {
-  MazeRun({int seed = 0, int gateCount = 3})
-    : layoutIndex = seed % _layouts.length,
-      gates = switch (gateCount) {
-        1 => const [_gateTop],
-        2 => const [_gateLeft, _gateRight],
-        3 => const [_gateLeft, _gateTop, _gateRight],
-        _ => throw RangeError.range(gateCount, 1, 3, 'gateCount'),
-      },
-      _chaserOnRight = seed.isEven {
+  MazeRun({
+    int seed = 0,
+    int gateCount = 3,
+    int correctAnswers = 0,
+    int wave = 0,
+  }) : layoutIndex = seed % (_layouts.length * 2),
+       _gateRandom = math.Random(seed),
+       _upperChaseStart = wave.isOdd,
+       _chaserOnRight = seed.isEven {
+    _difficulty = (correctAnswers ~/ 3).clamp(0, 4);
+    _shieldEnds = wave == 0 ? _graceSeconds : 1.8 - .16 * _difficulty;
+    _setGates(
+      gateCount,
+      wave == 0 ? 0 : 1 + _gateRandom.nextInt(_gateGroups.length - 1),
+    );
     for (var y = 1; y < rows - 1; y++) {
       for (var x = 1; x < columns - 1; x++) {
         final cell = (x: x, y: y);
@@ -89,25 +112,38 @@ class MazeRun {
     _placeActors();
   }
 
-  static const columns = 13;
-  static const rows = 11;
-  static const spawn = (x: 6, y: 7);
-  static const playerSpeed = 3.6;
-  static const _graceSeconds = 2.6;
+  static const columns = 17;
+  static const rows = 15;
+  static const spawn = (x: 8, y: 9);
+  static const playerSpeed = 4.6;
+  static const _graceSeconds = 3.0;
   static const _lateTurnDistance = .16;
   static const _contactRadius = .51;
   static const _patrol = [
-    (x: 4, y: 7),
-    (x: 8, y: 7),
-    (x: 11, y: 5),
+    (x: 4, y: 9),
+    (x: 12, y: 9),
+    (x: 15, y: 7),
     (x: 8, y: 3),
-    (x: 4, y: 3),
-    (x: 1, y: 5),
+    (x: 1, y: 7),
+    (x: 8, y: 13),
+  ];
+  static const _guardCorners = [
+    (x: 1, y: 1),
+    (x: 15, y: 1),
+    (x: 1, y: 13),
+    (x: 15, y: 13),
   ];
 
   final int layoutIndex;
-  final List<MazeCell> gates;
+  final math.Random _gateRandom;
+  late List<MazeCell> _gates;
+  List<MazeCell> get gates => _gates;
+  late int _difficulty;
+  int _gateWave = 0;
+  int get gateWave => _gateWave;
+  double _shieldEnds = _graceSeconds;
   final bool _chaserOnRight;
+  final bool _upperChaseStart;
   final _pellets = <MazeCell>{};
   late final Iterable<MazeCell> pellets = UnmodifiableSetView(_pellets);
   late _Walker _player;
@@ -127,7 +163,7 @@ class MazeRun {
   ];
   MazeDirection get facing => _facing;
   bool get moving => _event == null && _player.heading != null;
-  bool get protected => _elapsed < _graceSeconds - _epsilon;
+  bool get protected => _elapsed < _shieldEnds - _epsilon;
   double get elapsedSeconds => _elapsed;
   int get collected => _collected;
   int? get selectedGate => _selected;
@@ -137,17 +173,86 @@ class MazeRun {
       y < 0 ||
       x >= columns ||
       y >= rows ||
-      _layouts[layoutIndex][y].codeUnitAt(x) == 35;
+      _layouts[layoutIndex % _layouts.length][y].codeUnitAt(
+            layoutIndex < _layouts.length ? x : columns - 1 - x,
+          ) ==
+          35;
 
   bool _open(MazeCell cell) => !isWall(cell.x, cell.y);
 
   void _placeActors() {
     _player = _Walker(spawn, playerSpeed);
+    final chaserStart = (
+      x: _chaserOnRight ? 15 : 1,
+      y: _upperChaseStart ? 1 : 13,
+    );
     _ghosts = [
-      _Walker((x: _chaserOnRight ? 11 : 1, y: 9), 2.05),
-      _Walker((x: _chaserOnRight ? 1 : 11, y: 9), 1.75),
+      _Walker(chaserStart, _chaseSpeed),
+      _Walker((x: _chaserOnRight ? 1 : 15, y: 13), _patrolSpeed),
     ];
+    if (_difficulty >= 2) _addFlanker();
     _patrolIndex = _chaserOnRight ? 0 : 1;
+  }
+
+  double get _chaseSpeed => 2.65 + .28 * _difficulty;
+  double get _patrolSpeed => 2.35 + .22 * _difficulty;
+
+  int _distance(MazeCell a, MazeCell b) =>
+      (a.x - b.x).abs() + (a.y - b.y).abs();
+
+  void _addFlanker() {
+    // Bring in the third guard at a distant corner, never on top of the runner.
+    final occupied = [_player.cell, for (final guard in _ghosts) guard.cell];
+    int clearance(MazeCell cell) =>
+        occupied.map((p) => _distance(cell, p)).reduce(math.min);
+    final corner = _guardCorners.reduce(
+      (a, b) => clearance(a) >= clearance(b) ? a : b,
+    );
+    _ghosts.add(_Walker(corner, _patrolSpeed));
+  }
+
+  void _setGates(int count, int group) {
+    final sites = _gateGroups[group];
+    _gates = switch (count) {
+      1 => [sites[1]],
+      2 => [sites[0], sites[2]],
+      3 => sites,
+      _ => throw RangeError.range(count, 1, 3, 'gateCount'),
+    };
+    _pellets.removeAll(_gates);
+  }
+
+  /// Changes the answers while leaving the runner, guards and pickups in place.
+  void nextGates({required int gateCount, required int correctAnswers}) {
+    if (_event != MazeEvent.gate) return;
+    final origin = _player.cell;
+    final groups = [
+      for (var i = 0; i < _gateGroups.length; i++)
+        if (_gateGroups[i].every((site) => _distance(origin, site) >= 5)) i,
+    ];
+    _setGates(gateCount, groups[_gateRandom.nextInt(groups.length)]);
+    _gateWave++;
+    _difficulty = (correctAnswers ~/ 3).clamp(0, 4);
+    _ghosts.first.speed = _chaseSpeed;
+    for (final guard in _ghosts.skip(1)) {
+      guard.speed = _patrolSpeed;
+    }
+    if (_difficulty >= 2 && _ghosts.length == 2) _addFlanker();
+    _selected = null;
+    _event = null;
+    _shieldEnds = math.max(_shieldEnds, _elapsed + 1.2);
+    _chooseTurn();
+    if (!moving) {
+      // A side gate can lie at the end of a lane. Follow its corner until
+      // the next swipe instead of leaving the runner facing a wall.
+      final options = MazeDirection.values.where((d) => _open(d.from(origin)));
+      steer(
+        options.firstWhere(
+          (d) => d != facing.opposite,
+          orElse: () => options.first,
+        ),
+      );
+    }
   }
 
   /// A caught player gets another approach to the same gates and pickups.
@@ -156,6 +261,7 @@ class MazeRun {
     _event = null;
     _started = false;
     _elapsed = 0;
+    _shieldEnds = _graceSeconds;
     _facing = MazeDirection.up;
     _requested = null;
     _placeActors();
@@ -207,7 +313,7 @@ class MazeRun {
         step = math.min(step, ghost.secondsToCentre);
       }
       if (shielded) {
-        step = math.min(step, _graceSeconds - _elapsed);
+        step = math.min(step, _shieldEnds - _elapsed);
       }
       var contact = double.infinity;
       if (!shielded) {
@@ -237,12 +343,12 @@ class MazeRun {
   }
 
   MazeDirection _ghostTurn(_Walker ghost, int index) {
-    if (index != 0 && ghost.cell == _patrol[_patrolIndex]) {
+    if (index == 1 && ghost.cell == _patrol[_patrolIndex]) {
       _patrolIndex = (_patrolIndex + 1) % _patrol.length;
     }
     final options = [
       for (final direction in MazeDirection.values)
-        if (_ghostCanEnter(direction.from(ghost.cell))) direction,
+        if (_open(direction.from(ghost.cell))) direction,
     ];
     if (options.length > 1) options.remove(ghost.lastHeading?.opposite);
     if (options.length == 1) return options.first;
@@ -250,8 +356,16 @@ class MazeRun {
     if (index == 0) {
       final position = player;
       target = (x: position.x.round(), y: position.y.round());
-    } else {
+    } else if (index == 1) {
       target = _patrol[_patrolIndex];
+    } else {
+      var ahead = _player.cell;
+      for (var step = 0; step < 3; step++) {
+        final next = facing.from(ahead);
+        if (!_open(next)) break;
+        ahead = next;
+      }
+      target = ahead;
     }
     final distances = _distancesFrom(target);
     int distance(MazeDirection direction) {
@@ -261,8 +375,6 @@ class MazeRun {
 
     return options.reduce((a, b) => distance(b) < distance(a) ? b : a);
   }
-
-  bool _ghostCanEnter(MazeCell cell) => _open(cell) && !gates.contains(cell);
 
   /// Breadth-first distances are only needed when a pursuer has a choice.
   List<int> _distancesFrom(MazeCell target) {
@@ -275,7 +387,7 @@ class MazeRun {
       final nextDistance = distances[cell.y * columns + cell.x] + 1;
       for (final direction in MazeDirection.values) {
         final next = direction.from(cell);
-        if (!_ghostCanEnter(next)) continue;
+        if (!_open(next)) continue;
         final address = next.y * columns + next.x;
         if (distances[address] != unreachable) continue;
         distances[address] = nextDistance;
@@ -308,7 +420,7 @@ class _Walker {
   _Walker(this.cell, this.speed);
 
   MazeCell cell;
-  final double speed;
+  double speed;
   MazeDirection? heading;
   MazeDirection? lastHeading;
   double progress = 0;

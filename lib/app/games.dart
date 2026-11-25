@@ -49,6 +49,7 @@ class GameLaunch {
     this.onRoundScore,
     this.speech = const NoopWordSpeech(),
     this.listeningMode = false,
+    this.continuous = false,
     this.course,
     this.level,
     this.vocabulary = const [],
@@ -78,6 +79,7 @@ class GameLaunch {
   final Widget Function(int score)? onRoundScore;
   final WordSpeech speech;
   final bool listeningMode;
+  final bool continuous;
 
   /// Партия дошла до конца: игра показала экран итогов или «жизни кончились».
   ///
@@ -224,6 +226,7 @@ const snakeEntry = GameEntry(
   id: 'snake',
   title: 'Змейка',
   build: _buildSnake,
+  challenge: ArcadeChallenge.continuous,
   artwork: 'assets/images/home/snake.webp',
   instruction: 'Поймай яблоко с нужным переводом',
   tracksRoundScore: true,
@@ -233,6 +236,7 @@ const wordMazeEntry = GameEntry(
   id: 'word_maze',
   title: 'Лабиринт',
   build: _buildWordMaze,
+  challenge: ArcadeChallenge.continuous,
   artwork: 'assets/images/home/word-maze.webp',
   instruction: 'Проведи курьера к воротам с нужным словом',
   tracksRoundScore: true,
@@ -340,6 +344,7 @@ Widget _buildWordMahjong(GameLaunch launch) => WordMahjongGame(
 );
 
 Widget _buildSnake(GameLaunch launch) => SnakeGame(
+  continuous: launch.continuous,
   session: launch.session as BoardReviewSession,
   vocabulary: launch.vocabulary.toList(growable: false),
   course: launch.course,
@@ -356,6 +361,7 @@ Widget _buildSnake(GameLaunch launch) => SnakeGame(
 );
 
 Widget _buildWordMaze(GameLaunch launch) => WordMazeGame(
+  continuous: launch.continuous,
   session: launch.session,
   vocabulary: launch.vocabulary.toList(growable: false),
   course: launch.course,
