@@ -11,11 +11,15 @@ library;
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/ritual_labels.dart';
+import 'package:arcadelingo/ui/streak_campfire.dart';
 import 'package:arcadelingo/ui/streak_flame.dart';
 import 'package:arcadelingo/ui/streak_label.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter/material.dart';
+
+export 'package:arcadelingo/ui/campfire_painter.dart'
+    show FlamePainter, flamePath;
 
 /// Диаметр кружка дня, dp.
 const double weekDotSize = 30;
@@ -120,15 +124,15 @@ class _Flame extends StatelessWidget {
     return SizedBox(
       height: boxHeight,
       width: boxHeight,
-      child: CustomPaint(
-        painter: FlamePainter(tier: tier, mood: mood, scheme: scheme),
+      child: StreakCampfire(
+        days: days,
+        tier: tier,
+        mood: mood,
         child:
             digitSize == null
                 ? null
                 : Align(
-                  // Ядро пламени — в нижней трети (SPEC: центр градиента на
-                  // 0.72 высоты). Число сидит там же: оно вырезано из
-                  // пламени, а не положено сверху.
+                  // Число сидит у основания пламени, над поленьями.
                   alignment: const Alignment(0, 0.44),
                   child: Text(
                     '$days',
@@ -146,107 +150,6 @@ class _Flame extends StatelessWidget {
 
 /// Ключ числа дней внутри пламени.
 const Key flameDigitKey = Key('app.flame_digit');
-
-/// Кисть пламени. Публичная ради голденов и виджет-тестов: они проверяют,
-/// что размер и настроение доехали до краски.
-class FlamePainter extends CustomPainter {
-  const FlamePainter({
-    required this.tier,
-    required this.mood,
-    required this.scheme,
-  });
-
-  final FlameTier tier;
-  final FlameMood mood;
-  final ColorScheme scheme;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final height = flameHeights[tier]!;
-    final width = height * flameAspect;
-    final left = (size.width - width) / 2;
-    final top = (size.height - height) / 2;
-    final rect = Rect.fromLTWH(left, top, width, height);
-
-    if (tier == FlameTier.inferno) {
-      final centre = Offset(size.width / 2, top + height * 0.72);
-      final radius = height * flameHaloRadius / 2;
-      canvas.drawCircle(
-        centre,
-        radius,
-        Paint()
-          ..shader = RadialGradient(
-            colors: [
-              scheme.tertiary.withValues(alpha: flameHaloAlpha),
-              scheme.tertiary.withValues(alpha: 0),
-            ],
-          ).createShader(Rect.fromCircle(center: centre, radius: radius)),
-      );
-    }
-
-    final path = flamePath(rect);
-    if (mood == FlameMood.unlit) {
-      canvas.drawPath(
-        path,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..color = scheme.outline,
-      );
-      return;
-    }
-    canvas.drawPath(
-      path,
-      Paint()
-        ..shader = RadialGradient(
-          center: const Alignment(0, 0.44),
-          radius: 0.75,
-          colors: [
-            scheme.primary,
-            scheme.tertiary,
-            flameEdgeColor(scheme, mood),
-          ],
-          stops: const [0, 0.55, 1],
-        ).createShader(rect),
-    );
-  }
-
-  @override
-  bool shouldRepaint(FlamePainter old) =>
-      old.tier != tier || old.mood != mood || old.scheme != scheme;
-}
-
-/// Контур пламени в прямоугольнике [rect].
-///
-/// Отдельной функцией, потому что форма — тоже решение: узкий кончик,
-/// раздутые бока и круглое основание отличают пламя от листа.
-Path flamePath(Rect rect) {
-  final w = rect.width;
-  final h = rect.height;
-  final cx = rect.left + w / 2;
-  return Path()
-    ..moveTo(cx, rect.top)
-    ..quadraticBezierTo(
-      rect.left + w * 0.98,
-      rect.top + h * 0.42,
-      rect.left + w * 0.80,
-      rect.top + h * 0.74,
-    )
-    ..quadraticBezierTo(
-      rect.left + w * 0.70,
-      rect.top + h * 0.98,
-      cx,
-      rect.top + h,
-    )
-    ..quadraticBezierTo(
-      rect.left + w * 0.30,
-      rect.top + h * 0.98,
-      rect.left + w * 0.20,
-      rect.top + h * 0.74,
-    )
-    ..quadraticBezierTo(rect.left + w * 0.02, rect.top + h * 0.42, cx, rect.top)
-    ..close();
-}
 
 class _WeekStrip extends StatelessWidget {
   const _WeekStrip({required this.days});

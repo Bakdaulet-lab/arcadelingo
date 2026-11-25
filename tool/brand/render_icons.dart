@@ -1,5 +1,4 @@
-/// Генератор иконок лаунчера: рисует три варианта и, по команде, ставит
-/// выбранный в `android/` и `ios/`.
+/// Генератор иконок лаунчера для Android, iOS, macOS, Windows и Web.
 ///
 /// Запускается через `flutter test`, а не `dart run`, и это не причуда:
 /// рисунок использует `dart:ui` и настоящий Rubik из ассетов приложения.
@@ -9,7 +8,7 @@
 /// не должен переписывать файлы репозитория на каждом прогоне гейта.
 ///
 ///   Показать варианты:  flutter test tool/brand/render_icons.dart
-///   Поставить выбранный: BRAND_ICON=trail flutter test tool/brand/render_icons.dart
+///   Поставить «Словомат»: BRAND_ICON=cabinet flutter test tool/brand/render_icons.dart
 ///
 /// Без `BRAND_ICON` в репозиторий не пишется ничего: превью уходят в
 /// `tool/out/icons/`, который не под гитом. Установка требует назвать вариант
@@ -21,6 +20,7 @@
 library;
 
 import 'dart:io';
+import 'dart:typed_data' show BytesBuilder, Endian;
 import 'dart:ui' as ui;
 
 import 'package:arcadelingo/ui/theme.dart';
@@ -154,8 +154,8 @@ Future<void> _writePreviews(GlyphInk ink) async {
 /// разваливается.
 Future<void> _writeContactSheet(GlyphInk ink) async {
   const width = 1192;
-  const height = 1064;
-  const sheet = Rect.fromLTWH(0, 0, 1192, 1064);
+  final height = 134 + 310 * BrandIcon.values.length;
+  final sheet = Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble());
   const board = Color(0xFF8F8F99);
   const label = Color(0xFF15131A);
 
@@ -241,7 +241,7 @@ void _masked(
       RRect.fromRectAndRadius(rect, Radius.circular(size * 0.22)),
     );
   }
-  canvas.drawRect(rect, Paint()..color = brandSurface);
+  canvas.drawRect(rect, Paint()..color = launcherBackground(variant));
   // 108/72: внешние 18 dp с каждой стороны маска съедает — превью обязано
   // съедать их тоже, иначе рисунок на листе выглядит просторнее, чем на
   // телефоне.
@@ -274,6 +274,12 @@ void _text(Canvas canvas, String text, Offset at, double size, Color color) {
 // ── установка ─────────────────────────────────────────────────────────────
 
 Future<void> _install(BrandIcon variant, GlyphInk ink) async {
+  final background =
+      launcherBackground(variant).toARGB32().toRadixString(16).toUpperCase();
+  File('$_androidRes/values/launcher_background.xml').writeAsStringSync(
+    '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n'
+    '    <color name="launcher_background">#$background</color>\n</resources>\n',
+  );
   for (final entry in _legacyDensities.entries) {
     await _write(
       '$_androidRes/mipmap-${entry.key}/ic_launcher.png',
@@ -308,6 +314,33 @@ Future<void> _install(BrandIcon variant, GlyphInk ink) async {
       ink,
     );
   }
+  for (final size in const [16, 32, 64, 128, 256, 512, 1024]) {
+    await _write(
+      'macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_$size.png',
+      size,
+      variant,
+      IconLayer.desktop,
+      ink,
+    );
+  }
+  await _write('web/favicon.png', 16, variant, IconLayer.desktop, ink);
+  for (final size in const [192, 512]) {
+    await _write(
+      'web/icons/Icon-$size.png',
+      size,
+      variant,
+      IconLayer.desktop,
+      ink,
+    );
+    await _write(
+      'web/icons/Icon-maskable-$size.png',
+      size,
+      variant,
+      IconLayer.legacy,
+      ink,
+    );
+  }
+  await _writeWindowsIcon(variant, ink);
   // Иконка магазина в репозиторий не едет: её место — форма загрузки, а не
   // сборка. Лежит рядом с превью, чтобы не рисовать её отдельно перед сдачей.
   await _write(
@@ -317,6 +350,36 @@ Future<void> _install(BrandIcon variant, GlyphInk ink) async {
     IconLayer.legacy,
     ink,
   );
+}
+
+/// PNG-backed ICO with one frame at each size used by the Windows runner.
+Future<void> _writeWindowsIcon(BrandIcon variant, GlyphInk ink) async {
+  const sizes = [16, 32, 48, 256];
+  final directory = ByteData(6 + 16 * sizes.length);
+  directory.setUint16(2, 1, Endian.little);
+  directory.setUint16(4, sizes.length, Endian.little);
+  final frames = <Uint8List>[];
+  var offset = directory.lengthInBytes;
+  for (final (i, size) in sizes.indexed) {
+    final rgba = await rasterize(size, variant, IconLayer.desktop, ink);
+    final png = encodePng(size, size, rgba, opaque: false);
+    final entry = 6 + 16 * i;
+    directory.setUint8(entry, size % 256);
+    directory.setUint8(entry + 1, size % 256);
+    directory.setUint16(entry + 4, 1, Endian.little);
+    directory.setUint16(entry + 6, 32, Endian.little);
+    directory.setUint32(entry + 8, png.length, Endian.little);
+    directory.setUint32(entry + 12, offset, Endian.little);
+    frames.add(png);
+    offset += png.length;
+  }
+  final out = BytesBuilder(copy: false)..add(directory.buffer.asUint8List());
+  for (final frame in frames) {
+    out.add(frame);
+  }
+  File(
+    'windows/runner/resources/app_icon.ico',
+  ).writeAsBytesSync(out.takeBytes());
 }
 
 Future<void> _write(

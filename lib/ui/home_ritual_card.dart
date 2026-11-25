@@ -1,6 +1,7 @@
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/ritual_labels.dart';
+import 'package:arcadelingo/ui/streak_campfire.dart';
 import 'package:arcadelingo/ui/streak_card.dart';
 import 'package:arcadelingo/ui/streak_flame.dart';
 import 'package:arcadelingo/ui/streak_label.dart';
@@ -56,18 +57,19 @@ class HomeRitualCard extends StatelessWidget {
                 '${ritualTodayLabel(ritual, strings: context.strings)}',
             excludeSemantics: true,
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: compact ? 28 : 36,
-                  height: compact ? 28 : 36,
-                  child: FittedBox(
-                    fit: BoxFit.contain,
-                    child: CustomPaint(
-                      size: Size.square(flameExtent),
-                      painter: FlamePainter(
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: SizedBox.square(
+                    dimension: compact ? 28 : 36,
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child: StreakCampfire(
+                        size: Size.square(flameExtent),
+                        days: ritual.days,
                         tier: tier,
                         mood: mood,
-                        scheme: scheme,
                       ),
                     ),
                   ),

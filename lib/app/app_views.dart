@@ -248,7 +248,11 @@ class PlayView extends StatelessWidget {
                   ],
                   if (ritual case final view?) ...[
                     SizedBox(height: paper ? 10 : 16),
-                    HomeRitualCard(ritual: view, week: week),
+                    HomeRitualCard(
+                      key: ValueKey(course?.id),
+                      ritual: view,
+                      week: week,
+                    ),
                   ],
                   if (course case final selected?) ...[
                     SizedBox(height: paper ? 10 : 14),
