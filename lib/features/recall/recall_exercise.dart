@@ -53,7 +53,8 @@ class RecallExercise {
   }
 
   bool get complete => tiles.isNotEmpty && _selected.length == tiles.length;
-  bool get correct => complete && slots.join() == item.word.text;
+  bool get correct =>
+      complete && _courseLabel(slots.join()) == _courseLabel(item.word.text);
 
   void selectTile(int index) {
     if (index >= 0 && index < tiles.length && !_selected.contains(index)) {
