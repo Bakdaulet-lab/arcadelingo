@@ -177,6 +177,23 @@ void main() {
     },
   );
 
+  test(
+    'keeps the authored spelling in a sentence for a capitalized personal entry',
+    () {
+      final a = card('TRAER', 'Приносить');
+      final b = card('Tomar', 'Брать');
+      final qs = practice(a, b, StudyCourse.spanishFromRussian);
+      for (final q in qs) {
+        expect(q.choices, unorderedEquals([a, b]));
+        expect(q.kind, ConfusionPromptKind.sentence);
+        expect(
+          q.completedSentence,
+          q.prompt.replaceFirst('___', q.target.text.toLowerCase()),
+        );
+      }
+    },
+  );
+
   test('ambiguous duplicates and mixed levels cannot start a practice', () {
     final a = card('bring', 'приносить');
     for (final b in [
