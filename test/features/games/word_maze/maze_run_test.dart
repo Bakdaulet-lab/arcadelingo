@@ -165,12 +165,13 @@ void main() {
         }
       }
       expect(event, MazeEvent.caught);
-      result.add((
+      final snapshot = (
         player: run.player,
         ghosts: run.ghosts,
         time: run.elapsedSeconds,
         score: run.collected,
-      ));
+      );
+      result.add(snapshot);
     }
     for (final r in result.skip(1)) {
       expect(r.player, result.first.player);
@@ -182,4 +183,38 @@ void main() {
       }
     }
   });
+
+  test(
+    'a slightly late turn crosses the junction smoothly without jumping',
+    () {
+      final run = MazeRun()..steer(MazeDirection.left);
+      run.advance(2.12 / MazeRun.playerSpeed);
+      final before = run.player;
+      run.steer(MazeDirection.up);
+      expect(run.player.x, closeTo(before.x, 1e-8));
+      expect(run.player.y, before.y);
+      run.advance(.4 / MazeRun.playerSpeed);
+      expect(run.player.x, closeTo(4, 1e-8));
+      expect(run.player.y, closeTo(6.72, 1e-8));
+    },
+  );
+
+  test(
+    'guards begin moving with the first input, even while the player is protected',
+    () {
+      for (var seed = 0; seed < 6; seed++) {
+        final run = MazeRun(seed: seed);
+        final start = run.ghosts;
+        expect(run.advance(.5), isNull);
+        expect(run.ghosts, start);
+        run.steer(MazeDirection.up);
+        expect(run.advance(.18), isNull);
+        expect(run.protected, isTrue);
+        for (var i = 0; i < start.length; i++) {
+          expect(run.ghosts[i], isNot(start[i]));
+        }
+        expect(run.selectedGate, isNull);
+      }
+    },
+  );
 }
