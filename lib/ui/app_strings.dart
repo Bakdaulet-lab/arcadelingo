@@ -29,6 +29,92 @@ class AppStrings {
   String get challenge =>
       _text(en: 'Challenge', ru: 'Испытание', es: 'Desafío');
 
+  String get dailyWord =>
+      _text(en: 'Word of the day', ru: 'Слово дня', es: 'Palabra del día');
+  String get dailyWordHomeHint => _text(
+    en: 'Guess today’s word in six tries.',
+    ru: 'Угадай сегодняшнее слово за шесть попыток.',
+    es: 'Adivina la palabra de hoy en seis intentos.',
+  );
+  String get dailyWordUnavailable => _text(
+    en: 'Today’s word is unavailable for this course and level.',
+    ru: 'Слово дня недоступно для этого курса и уровня.',
+    es: 'La palabra de hoy no está disponible para este curso y nivel.',
+  );
+  String get dailyWordCopied => _text(
+    en: 'Result copied to clipboard.',
+    ru: 'Результат скопирован в буфер обмена.',
+    es: 'Resultado copiado al portapapeles.',
+  );
+  String get dailyWordShareFailed => _text(
+    en: 'Couldn’t share the result. Try again.',
+    ru: 'Не удалось поделиться результатом. Попробуй ещё раз.',
+    es: 'No se ha podido compartir el resultado. Inténtalo de nuevo.',
+  );
+  String get dailyWordClue =>
+      _text(en: 'Translation', ru: 'Перевод', es: 'Traducción');
+  String dailyWordAttempt(int n, int total) => _text(
+    en: 'Try $n of $total',
+    ru: 'Попытка $n из $total',
+    es: 'Intento $n de $total',
+  );
+  String get dailyWordExact =>
+      _text(en: 'Right spot', ru: 'На месте', es: 'En su lugar');
+  String get dailyWordPresent =>
+      _text(en: 'Different spot', ru: 'В другом месте', es: 'En otro lugar');
+  String get dailyWordAbsent =>
+      _text(en: 'Absent', ru: 'Нет в слове', es: 'No aparece');
+  String dailyWordEntry(int length) => _text(
+    en: 'Enter a $length-letter word',
+    ru: 'Введи слово из $length букв',
+    es: 'Escribe una palabra de $length letras',
+  );
+  String dailyWordWrongLength(int length) => _text(
+    en: 'Use exactly $length letters.',
+    ru: 'Нужная длина слова — $length.',
+    es: 'La palabra debe tener $length letras.',
+  );
+  String get dailyWordInvalidLetters => _text(
+    en: 'Use letters from the language you’re learning.',
+    ru: 'Используй буквы языка, который изучаешь.',
+    es: 'Usa letras del idioma que estás aprendiendo.',
+  );
+  String get dailyWordUnknown => _text(
+    en: 'Try a word from this course’s dictionary.',
+    ru: 'Попробуй слово из словаря этого курса.',
+    es: 'Prueba con una palabra del diccionario de este curso.',
+  );
+  String get dailyWordRepeated => _text(
+    en: 'You’ve already tried that word.',
+    ru: 'Это слово уже было.',
+    es: 'Ya has probado esa palabra.',
+  );
+  String get dailyWordSaveFailed => _text(
+    en: 'Couldn’t save your guess. Try again.',
+    ru: 'Не удалось сохранить попытку. Попробуй ещё раз.',
+    es: 'No se ha podido guardar tu intento. Inténtalo de nuevo.',
+  );
+  String get dailyWordUpdated => _text(
+    en: 'Another guess was saved. The board is up to date.',
+    ru: 'За это время сохранился другой ход. Поле обновлено.',
+    es: 'Se ha guardado otro intento. El tablero está actualizado.',
+  );
+  String get dailyWordWon => _text(
+    en: 'You found it!',
+    ru: 'Слово угадано!',
+    es: '¡Lo has adivinado!',
+  );
+  String get dailyWordLost => _text(
+    en: 'Out of guesses',
+    ru: 'Попытки закончились',
+    es: 'Se acabaron los intentos',
+  );
+  String get dailyWordShare => _text(
+    en: 'Share result',
+    ru: 'Поделиться результатом',
+    es: 'Compartir resultado',
+  );
+
   String get situationStories => _text(
     en: 'On the way home',
     ru: 'Пока ехал домой',
