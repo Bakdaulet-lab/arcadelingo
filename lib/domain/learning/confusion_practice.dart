@@ -86,7 +86,8 @@ ConfusionQuestion _question(
     'en' => _englishSentences,
     _ => null,
   };
-  final entry = entries?[_normalized(target.text)];
+  final headword = _normalized(target.text);
+  final entry = entries?[headword];
   final aliases = switch (course.translationLanguage) {
     'ru' => entry?.russian,
     'en' when course.studyLanguage == 'es' => entry?.other,
@@ -103,7 +104,7 @@ ConfusionQuestion _question(
       kind: ConfusionPromptKind.sentence,
       prompt: entry.gap,
       cue: target.translation,
-      completedSentence: entry.gap.replaceFirst('___', target.text.trim()),
+      completedSentence: entry.gap.replaceFirst('___', headword),
     );
   }
 
