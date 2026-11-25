@@ -1,6 +1,7 @@
 import 'package:arcadelingo/domain/ports/answer_log.dart';
 import 'package:arcadelingo/domain/ports/card_store.dart';
 import 'package:arcadelingo/domain/ports/custom_words_store.dart';
+import 'package:arcadelingo/domain/ports/daily_word_store.dart';
 import 'package:arcadelingo/domain/ports/event_log.dart';
 import 'package:arcadelingo/domain/ports/favorites_store.dart';
 import 'package:arcadelingo/domain/ports/streak_store.dart';
@@ -21,6 +22,7 @@ class CourseDeck {
     this.favorites,
     this.customWords,
     this.wordSets,
+    this.dailyWord,
     this.speech = const NoopWordSpeech(),
   });
 
@@ -33,5 +35,6 @@ class CourseDeck {
   final FavoritesStore? favorites;
   final CustomWordsStore? customWords;
   final WordSetsStore? wordSets;
+  final DailyWordStore? dailyWord;
   final WordSpeech speech;
 }
