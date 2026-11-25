@@ -74,7 +74,7 @@ void main() {
     expect(ball.position.dy, closeTo(bottom + 260 * .008333 - .2, .001));
     expect(ball.velocity.dy, 260);
 
-    final top = BrickBreakerRun.paddleY - BrickBreakerRun.ballRadius;
+    const top = BrickBreakerRun.paddleY - BrickBreakerRun.ballRadius;
     ball.position = Offset(run.paddle + 16, top - .2);
     ball.velocity = const Offset(0, 260);
     run.advance(step);

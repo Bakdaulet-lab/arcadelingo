@@ -74,9 +74,17 @@ void main() {
               greaterThanOrEqualTo(14 * scale - .1),
               reason: 'printed font size of $answer',
             );
-            final boxes = p.getBoxesForSelection(
-              TextSelection(baseOffset: 0, extentOffset: answer.length),
-            );
+            // Flutter retains invisible trailing spaces beyond a wrapped line.
+            // Check every printed character, including punctuation and accents.
+            final boxes = [
+              for (final token in RegExp(r'\S+').allMatches(answer))
+                ...p.getBoxesForSelection(
+                  TextSelection(
+                    baseOffset: token.start,
+                    extentOffset: token.end,
+                  ),
+                ),
+            ];
             expect(boxes, isNotEmpty);
             for (final box in boxes) {
               for (final corner in [
@@ -150,6 +158,13 @@ void main() {
           choice,
           reason: 'tap lands in the lane of the full-width phrase',
         );
+        final fieldAtCatch = tester.getRect(find.byType(BrickBreakerField));
+        while (run.phase == BrickPhase.bonus) {
+          run.advance(const Duration(milliseconds: 8));
+        }
+        expect(run.phase, BrickPhase.feedback);
+        await display();
+        expect(tester.getRect(find.byType(BrickBreakerField)), fieldAtCatch);
         expect(tester.takeException(), isNull);
       });
     }

@@ -781,6 +781,11 @@ class AppStrings {
     ru: 'Веди пальцем влево или вправо',
     es: 'Desliza el dedo a los lados para mover la pala',
   );
+  String get brickTapToAim => _text(
+    en: 'Tap a card to move the paddle under it',
+    ru: 'Коснись карточки, чтобы подвести под неё платформу',
+    es: 'Toca una tarjeta para colocar la pala debajo',
+  );
   String get brickLaunch =>
       _text(en: 'Launch', ru: 'Пустить мяч', es: 'Lanzar');
   String get brickPause => _text(en: 'Pause', ru: 'Пауза', es: 'Pausar');
