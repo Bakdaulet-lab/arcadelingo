@@ -15,6 +15,41 @@ List<ReviewItem> buildCustomReviewItems({
     for (final item in courseItems)
       if (item.word.level == level) item.word,
   ];
+  return _buildItems(
+    targets: personal,
+    alternatives: vocabulary,
+    vocabulary: vocabulary,
+  );
+}
+
+/// Resolve the saved IDs against the current course. Rebuild the choices
+/// from the set because a bundled card's distractors can name other words.
+List<ReviewItem> buildWordSetReviewItems({
+  required Iterable<Word> vocabulary,
+  required Iterable<String> wordIds,
+  required CefrLevel level,
+}) {
+  final byId = {
+    for (final word in vocabulary)
+      if (word.level == level) word.id: word,
+  };
+  final selected = [
+    for (final id in wordIds.toSet())
+      if (byId[id] case final word?) word,
+  ];
+  if (selected.isEmpty) return [];
+  return _buildItems(
+    targets: selected,
+    alternatives: selected,
+    vocabulary: byId.values,
+  );
+}
+
+List<ReviewItem> _buildItems({
+  required List<Word> targets,
+  required List<Word> alternatives,
+  required Iterable<Word> vocabulary,
+}) {
   final meaningsBySpelling = <String, Set<String>>{};
   for (final word in vocabulary) {
     meaningsBySpelling
@@ -22,10 +57,10 @@ List<ReviewItem> buildCustomReviewItems({
         .addAll(translationMeanings(word.translation));
   }
   return [
-    for (final word in personal)
+    for (final word in targets)
       ReviewItem(
         word: word,
-        distractors: _choices(word, vocabulary, meaningsBySpelling),
+        distractors: _choices(word, alternatives, meaningsBySpelling),
       ),
   ];
 }
