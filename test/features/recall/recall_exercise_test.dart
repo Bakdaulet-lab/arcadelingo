@@ -112,6 +112,27 @@ void main() {
     );
   });
 
+  test(
+    'equivalent accents in a spelling or its meaning never make a decoy',
+    () {
+      const word = Word(
+        id: 'dream',
+        text: 'suen\u0303o',
+        translation: 'сон / грёза',
+      );
+      final exercise = _exercise(
+        word,
+        vocabulary: const [
+          Word(id: 'same', text: 'SUEÑO', translation: 'сонливость'),
+          Word(id: 'synonym', text: 'ensueño', translation: 'гре\u0308за'),
+          Word(id: 'distinct', text: 'sueno', translation: 'я звучу'),
+          Word(id: 'week', text: 'semana', translation: 'неделя'),
+        ],
+      );
+      expect(exercise.choices, unorderedEquals([word.text, 'sueno', 'semana']));
+    },
+  );
+
   test('handles one-symbol and repeated-symbol spellings and empty pools', () {
     for (final term in ['a', 'll', '…']) {
       final word = Word(id: term, text: term, translation: 'перевод');
