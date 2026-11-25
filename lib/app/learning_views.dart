@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:arcadelingo/domain/learning/confused_words.dart';
 import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
@@ -60,6 +61,8 @@ class MistakesReviewScreen extends StatelessWidget {
     required this.speech,
     Map<String, ReviewOutcome> outcomes = const {},
     this.onConfusions,
+    this.confusionPairs,
+    this.onPractisePair,
     this.studyLanguage = 'en',
     super.key,
   }) : words = _validatedWords(words, level, allowEmpty: true),
@@ -78,10 +81,14 @@ class MistakesReviewScreen extends StatelessWidget {
     studyLanguage: studyLanguage,
     outcomes: outcomes,
     onConfusions: onConfusions,
+    confusionPairs: confusionPairs,
+    onPractisePair: onPractisePair,
   );
 
   final Map<String, ReviewOutcome> outcomes;
   final Future<void> Function()? onConfusions;
+  final Future<List<ConfusedWordPair>>? confusionPairs;
+  final Future<void> Function(ConfusedWordPair)? onPractisePair;
 }
 
 List<Word> _validatedWords(
@@ -107,6 +114,8 @@ class _LearningDeck extends StatefulWidget {
     this.onStart,
     this.outcomes = const {},
     this.onConfusions,
+    this.confusionPairs,
+    this.onPractisePair,
   });
 
   final List<Word> words;
@@ -115,6 +124,8 @@ class _LearningDeck extends StatefulWidget {
   final String studyLanguage;
   final VoidCallback? onStart;
   final Future<void> Function()? onConfusions;
+  final Future<List<ConfusedWordPair>>? confusionPairs;
+  final Future<void> Function(ConfusedWordPair)? onPractisePair;
   final Map<String, ReviewOutcome> outcomes;
 
   @override
@@ -184,6 +195,17 @@ class _LearningDeckState extends State<_LearningDeck>
       Navigator.of(context).pop();
     } else {
       start();
+    }
+  }
+
+  Future<void> _openFromReview(Future<void> Function() open) async {
+    if (_leaving || _changingWord) return;
+    setState(() => _leaving = true);
+    try {
+      await widget.speech.stop();
+      if (mounted && ModalRoute.of(context)?.isCurrent == true) await open();
+    } finally {
+      if (mounted) setState(() => _leaving = false);
     }
   }
 
@@ -315,6 +337,40 @@ class _LearningDeckState extends State<_LearningDeck>
                 studyLanguage: widget.studyLanguage,
                 enabled: enabled,
               ),
+              if (widget.confusionPairs != null &&
+                  widget.onPractisePair != null)
+                FutureBuilder<List<ConfusedWordPair>>(
+                  future: widget.confusionPairs,
+                  builder: (context, snapshot) {
+                    final pair =
+                        snapshot.data
+                            ?.where(
+                              (p) =>
+                                  p.first.id == word.id ||
+                                  p.second.id == word.id,
+                            )
+                            .firstOrNull;
+                    if (pair == null) return const SizedBox.shrink();
+                    final other =
+                        pair.first.id == word.id ? pair.second : pair.first;
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: FilledButton.tonalIcon(
+                        icon: const Icon(Icons.swap_horiz_rounded),
+                        label: Text(
+                          '${context.strings.practisePair}\n${word.text} · ${other.text}',
+                          textAlign: TextAlign.center,
+                        ),
+                        onPressed:
+                            enabled
+                                ? () => _openFromReview(
+                                  () => widget.onPractisePair!(pair),
+                                )
+                                : null,
+                      ),
+                    );
+                  },
+                ),
               const SizedBox(height: 16),
               Text(
                 _review
@@ -384,13 +440,7 @@ class _LearningDeckState extends State<_LearningDeck>
                   label: Text(context.strings.confusedWords),
                   onPressed:
                       enabled
-                          ? () async {
-                            await widget.speech.stop();
-                            if (context.mounted &&
-                                ModalRoute.of(context)?.isCurrent == true) {
-                              await widget.onConfusions!();
-                            }
-                          }
+                          ? () => _openFromReview(widget.onConfusions!)
                           : null,
                 ),
             ] else ...[

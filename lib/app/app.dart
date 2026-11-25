@@ -32,6 +32,7 @@ import 'package:arcadelingo/app/story_views.dart';
 import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
+import 'package:arcadelingo/domain/learning/confused_words.dart';
 import 'package:arcadelingo/domain/learning/custom_review_items.dart';
 import 'package:arcadelingo/domain/learning/learning_plan.dart';
 import 'package:arcadelingo/domain/learning/mistake_review_observer.dart';
@@ -302,22 +303,27 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _openConfusedWords(CefrLevel level) =>
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder:
-              (_) => ConfusedWordsScreen(
-                course: widget.course,
-                level: level,
-                answers: widget.ports.answers,
-                vocabulary: [
-                  for (final item in widget.items)
-                    if (item.word.level == level) item.word,
-                  ...?widget.ports.customWords?.load(level),
-                ],
-              ),
-        ),
-      );
+  List<Word> _confusionVocabulary(CefrLevel level) => [
+    for (final item in widget.items)
+      if (item.word.level == level) item.word,
+    ...?widget.ports.customWords?.load(level),
+  ];
+
+  Future<void> _openConfusedWords(
+    CefrLevel level, {
+    Future<List<ConfusedWordPair>>? initialPairs,
+  }) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder:
+          (_) => ConfusedWordsScreen(
+            course: widget.course,
+            level: level,
+            answers: widget.ports.answers,
+            vocabulary: _confusionVocabulary(level),
+            initialPairs: initialPairs,
+          ),
+    ),
+  );
 
   void _loadStories() {
     _stories = buildSituationStories(
@@ -1099,12 +1105,30 @@ class _HomeScreenState extends State<HomeScreen> {
                         : null,
                 mistakeCount: () => mistakes.mistakes.length,
                 onReviewMistakes: () {
+                  late final pairs = loadConfusedWordPairs(
+                    answers: widget.ports.answers,
+                    vocabulary: _confusionVocabulary(level),
+                    level: level,
+                  );
                   unawaited(
                     navigator.push(
                       MaterialPageRoute<void>(
                         builder:
                             (context) => MistakesReviewScreen(
-                              onConfusions: () => _openConfusedWords(level),
+                              confusionPairs:
+                                  mistakes.mistakes.isEmpty ? null : pairs,
+                              onConfusions:
+                                  () => _openConfusedWords(
+                                    level,
+                                    initialPairs: pairs,
+                                  ),
+                              onPractisePair:
+                                  (pair) => openConfusionPractice(
+                                    context,
+                                    pair,
+                                    course: widget.course,
+                                    returnLabel: context.strings.reviewMistakes,
+                                  ),
                               words: mistakes.mistakes,
                               outcomes: mistakes.outcomes,
                               level: level,

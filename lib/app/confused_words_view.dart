@@ -10,12 +10,47 @@ import 'package:arcadelingo/ui/arcade_page.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:flutter/material.dart';
 
+Future<List<ConfusedWordPair>> loadConfusedWordPairs({
+  required AnswerLog answers,
+  required Iterable<Word> vocabulary,
+  required CefrLevel level,
+}) async => findConfusedWords(
+  answers: await answers.all(),
+  vocabulary: vocabulary,
+  level: level,
+);
+
+Future<void> openConfusionPractice(
+  BuildContext context,
+  ConfusedWordPair pair, {
+  required StudyCourse course,
+  required String returnLabel,
+}) async {
+  final questions = buildConfusionPractice(
+    first: pair.first,
+    second: pair.second,
+    course: course,
+    random: Random(),
+  );
+  if (questions.isEmpty) return;
+  await Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder:
+          (_) => _PairPracticeScreen(
+            questions: questions,
+            returnLabel: returnLabel,
+          ),
+    ),
+  );
+}
+
 class ConfusedWordsScreen extends StatefulWidget {
   const ConfusedWordsScreen({
     required this.course,
     required this.level,
     required this.answers,
     required this.vocabulary,
+    this.initialPairs,
     super.key,
   });
 
@@ -23,35 +58,20 @@ class ConfusedWordsScreen extends StatefulWidget {
   final CefrLevel level;
   final AnswerLog answers;
   final List<Word> vocabulary;
+  final Future<List<ConfusedWordPair>>? initialPairs;
 
   @override
   State<ConfusedWordsScreen> createState() => _ConfusedWordsScreenState();
 }
 
 class _ConfusedWordsScreenState extends State<ConfusedWordsScreen> {
-  late Future<List<ConfusedWordPair>> _pairs = _load();
-  final _random = Random();
+  late Future<List<ConfusedWordPair>> _pairs = widget.initialPairs ?? _load();
 
-  Future<List<ConfusedWordPair>> _load() async => findConfusedWords(
+  Future<List<ConfusedWordPair>> _load() => loadConfusedWordPairs(
+    answers: widget.answers,
     vocabulary: widget.vocabulary,
     level: widget.level,
-    answers: await widget.answers.all(),
   );
-
-  void _practise(ConfusedWordPair pair) {
-    final questions = buildConfusionPractice(
-      first: pair.first,
-      second: pair.second,
-      course: widget.course,
-      random: _random,
-    );
-    if (questions.isEmpty) return;
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => _PairPracticeScreen(questions: questions),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,12 +125,12 @@ class _ConfusedWordsScreenState extends State<ConfusedWordsScreen> {
                         strings.noConfusedPairs,
                         style: theme.textTheme.headlineSmall,
                       ),
+                      const SizedBox(height: 8),
+                      Text(
+                        strings.confusionThreshold,
+                        style: theme.textTheme.bodyLarge,
+                      ),
                     ],
-                    const SizedBox(height: 8),
-                    Text(
-                      strings.confusionThreshold,
-                      style: theme.textTheme.bodyLarge,
-                    ),
                   ],
                 );
               }
@@ -129,7 +149,13 @@ class _ConfusedWordsScreenState extends State<ConfusedWordsScreen> {
                     ),
                     const SizedBox(height: 10),
                     FilledButton.tonalIcon(
-                      onPressed: () => _practise(pair),
+                      onPressed:
+                          () => openConfusionPractice(
+                            context,
+                            pair,
+                            course: widget.course,
+                            returnLabel: strings.backToPairs,
+                          ),
                       icon: const Icon(Icons.swap_horiz_rounded),
                       label: Text(strings.practisePair),
                     ),
@@ -167,8 +193,12 @@ class _WordMeaning extends StatelessWidget {
 }
 
 class _PairPracticeScreen extends StatefulWidget {
-  const _PairPracticeScreen({required this.questions});
+  const _PairPracticeScreen({
+    required this.questions,
+    required this.returnLabel,
+  });
   final List<ConfusionQuestion> questions;
+  final String returnLabel;
 
   @override
   State<_PairPracticeScreen> createState() => _PairPracticeScreenState();
@@ -243,7 +273,7 @@ class _PairPracticeScreenState extends State<_PairPracticeScreen> {
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: Text(strings.backToPairs),
+                child: Text(widget.returnLabel),
               ),
             ] else ...[
               Text(
