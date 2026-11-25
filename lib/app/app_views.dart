@@ -41,6 +41,7 @@ abstract final class AppKeys {
 
   static const Key learn = Key('app.learn');
   static const Key listening = Key('app.listening');
+  static const Key dailyWord = Key('app.daily-word');
 
   static const Key gameSelector = Key('app.game_selector');
 
@@ -107,6 +108,7 @@ class PlayView extends StatelessWidget {
     this.onStories,
     this.onRecall,
     this.onListening,
+    this.onDailyWord,
     this.ritual,
     this.week,
     this.games = const [],
@@ -153,6 +155,7 @@ class PlayView extends StatelessWidget {
   final VoidCallback? onStories;
   final VoidCallback? onRecall;
   final VoidCallback? onListening;
+  final VoidCallback? onDailyWord;
 
   /// Вход на «Источники».
   ///
@@ -311,6 +314,16 @@ class PlayView extends StatelessWidget {
                           ),
                         ),
                       ),
+                  ],
+                  if (onDailyWord != null) ...[
+                    SizedBox(height: paper ? 10 : 14),
+                    _StudyModeTile(
+                      key: AppKeys.dailyWord,
+                      icon: Icons.calendar_month_outlined,
+                      title: context.strings.dailyWord,
+                      hint: context.strings.dailyWordHomeHint,
+                      onTap: onDailyWord!,
+                    ),
                   ],
                   if (onStories != null) ...[
                     SizedBox(height: paper ? 10 : 14),

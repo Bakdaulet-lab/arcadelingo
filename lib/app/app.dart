@@ -22,6 +22,7 @@ import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution_view.dart';
 import 'package:arcadelingo/app/confused_words_view.dart';
 import 'package:arcadelingo/app/courses.dart';
+import 'package:arcadelingo/app/daily_word_route.dart';
 import 'package:arcadelingo/app/dictionary_view.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/app/learning_views.dart';
@@ -336,6 +337,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _openDailyWord() {
+    final route = DailyWordRoute(
+      course: widget.course,
+      level: _selectedLevel,
+      vocabulary: [for (final item in widget.items) item.word],
+      store: widget.ports.dailyWord!,
+      now: widget.now,
+    );
+    return Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute<void>(builder: (_) => route));
+  }
+
   Future<void> _openStories() async {
     final course = widget.course;
     final level = _selectedLevel;
@@ -476,6 +490,13 @@ class _HomeScreenState extends State<HomeScreen> {
           onProgress: _openProgress,
           onStories: _stories.isEmpty ? null : _openStories,
           onRecall: _hasWordsForLevel ? _openRecall : null,
+          onDailyWord:
+              widget.ports.dailyWord != null &&
+                      widget.items.any(
+                        (item) => item.word.level == _selectedLevel,
+                      )
+                  ? _openDailyWord
+                  : null,
           onListening:
               _hasWordsForLevel && fallingWords != null
                   ? () => _start(chosenGame: fallingWords, listeningMode: true)
