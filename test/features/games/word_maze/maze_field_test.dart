@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:arcadelingo/features/games/word_maze/maze_field.dart';
 import 'package:arcadelingo/features/games/word_maze/maze_run.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -7,6 +9,50 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets(
+    'respawn resets the displayed heading with the simulation clock',
+    (tester) async {
+      final frames = ValueNotifier<int>(0);
+      addTearDown(frames.dispose);
+      final run = _Pose();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Center(
+            child: SizedBox(
+              width: 320,
+              child: MazeField(
+                run: run,
+                frames: frames,
+                onTurn: run.steer,
+                boardLabel: 'Maze',
+              ),
+            ),
+          ),
+        ),
+      );
+      final layer =
+          tester
+              .renderObjectList<RenderCustomPaint>(
+                find.descendant(
+                  of: find.byType(MazeField),
+                  matching: find.byType(CustomPaint),
+                ),
+              )
+              .last;
+      void draw(Canvas canvas) => layer.painter!.paint(canvas, layer.size);
+      expect(draw, paints..rotate(angle: 0));
+      run
+        ..direction = MazeDirection.up
+        ..seconds = 3;
+      frames.value++;
+      await tester.pump();
+      run.seconds = 3.12;
+      expect(draw, paints..rotate(angle: -math.pi / 2));
+      // Respawning in MazeRun resets its elapsed time and keeps this board.
+      run.seconds = 0;
+      expect(draw, paints..rotate(angle: -math.pi / 2));
+    },
+  );
   for (final brightness in Brightness.values) {
     testWidgets(
       'continuous swipes, keys and accessible directions in $brightness',
@@ -114,4 +160,13 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+}
+
+class _Pose extends MazeRun {
+  MazeDirection direction = MazeDirection.right;
+  double seconds = 2;
+  @override
+  MazeDirection get facing => direction;
+  @override
+  double get elapsedSeconds => seconds;
 }
