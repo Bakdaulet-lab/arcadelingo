@@ -158,7 +158,9 @@ void main() {
           expect(result.wordId, target.id);
           expect(result.gameId, 'word_maze');
           expect(result.correct, !learn);
-          expect(result.selectedAnswer, gates[pick]);
+          // The history keeps the wrong spelling for mistake review.
+          // A correct gate is already identified by the target word ID.
+          expect(result.selectedAnswer, learn ? gates[pick] : null);
           await _tap(tester, find.byKey(MazeKeys.next));
           expect(find.byKey(MazeKeys.summary), findsOneWidget);
           if (learn) {
