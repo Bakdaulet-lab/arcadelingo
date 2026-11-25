@@ -454,6 +454,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final failure = _stateFailure;
+    final fallingWords =
+        widget.games
+            .where((game) => game.id == fallingWordsEntry.id)
+            .firstOrNull;
     return failure == null
         ? PlayView(
           onPlay: _hasWordsForLevel ? _start : null,
@@ -472,6 +476,10 @@ class _HomeScreenState extends State<HomeScreen> {
           onProgress: _openProgress,
           onStories: _stories.isEmpty ? null : _openStories,
           onRecall: _hasWordsForLevel ? _openRecall : null,
+          onListening:
+              _hasWordsForLevel && fallingWords != null
+                  ? () => _start(chosenGame: fallingWords, listeningMode: true)
+                  : null,
           onSettings: _openSettings,
           onSources: _openSources,
           ritual: _ritual,
@@ -638,24 +646,37 @@ class _HomeScreenState extends State<HomeScreen> {
   }) async {
     if (items.isEmpty || widget.games.isEmpty) return;
     final strings = context.strings;
-    final game = await showArcadeChoice<GameEntry>(
+    final choice = await showArcadeChoice<({GameEntry game, bool listening})>(
       context,
       title: strings.chooseGame,
-      choices: widget.games,
-      selected: _selectedGame,
-      label: (game) => game.titleFor(strings),
-      optionKey: (game) => ValueKey('$optionKeyPrefix.${game.id}'),
+      choices: [
+        for (final game in widget.games) ...[
+          (game: game, listening: false),
+          if (game.id == fallingWordsEntry.id) (game: game, listening: true),
+        ],
+      ],
+      selected: (game: _selectedGame, listening: false),
+      label:
+          (choice) =>
+              choice.listening
+                  ? '${choice.game.titleFor(strings)} · ${strings.listeningMode}'
+                  : choice.game.titleFor(strings),
+      optionKey:
+          (choice) => ValueKey(
+            '$optionKeyPrefix.${choice.game.id}${choice.listening ? '.listening' : ''}',
+          ),
     );
-    if (game != null && mounted) {
+    if (choice != null && mounted) {
       var replay = false;
       do {
         replay = false;
         await _startRound(
-          game: game,
+          game: choice.game,
           level: level,
           items: items,
           vocabulary: vocabulary,
           practiceAll: true,
+          listeningMode: choice.listening,
           onReplay: () => replay = true,
         );
       } while (mounted && replay);
@@ -971,6 +992,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// проверяется без дерева виджетов.
   void _start({
     bool learning = false,
+    bool listeningMode = false,
     GameEntry? chosenGame,
     CefrLevel? chosenLevel,
   }) {
@@ -989,6 +1011,8 @@ class _HomeScreenState extends State<HomeScreen> {
     unawaited(
       _startRound(
         learning: learning,
+        listeningMode: listeningMode,
+        practiceAll: listeningMode,
         game: game,
         level: level,
         items: items,
@@ -996,6 +1020,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onReplay:
             () => _start(
               learning: learning,
+              listeningMode: listeningMode,
               chosenGame: game,
               chosenLevel: level,
             ),
@@ -1011,6 +1036,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required VoidCallback onReplay,
     bool learning = false,
     bool practiceAll = false,
+    bool listeningMode = false,
   }) async {
     // Последнее состояние, приехавшее из сессии: по нему считается строка
     // итогов. До первого ответа это то, что прочитано из хранилища.
@@ -1083,6 +1109,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mistakes: mistakes,
           level: level,
           onReplay: onReplay,
+          listeningMode: listeningMode,
         );
       case Err(:final failure):
         setState(() => _stateFailure = failure);
@@ -1111,6 +1138,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required CefrLevel level,
     required VoidCallback onReplay,
     required List<ReviewItem> vocabulary,
+    bool listeningMode = false,
     Widget Function(int score)? onChallengeComplete,
   }) async {
     final navigator = Navigator.of(context);
@@ -1145,6 +1173,7 @@ class _HomeScreenState extends State<HomeScreen> {
             (context) => game.build(
               GameLaunch(
                 session: session,
+                listeningMode: listeningMode,
                 course: widget.course,
                 level: level,
                 vocabulary: vocabulary.map((item) => item.word),
@@ -1203,14 +1232,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   finished = true;
                   _finishRound(sessionId);
                 },
-                // Выключённый звук приходит в игру нулевым объектом,
-                // а не флагом: «выключено» тогда значит «никто не
-                // зовёт», а не «зовут и молчат». Настройка читается в
-                // момент запуска партии — ровно как очередь слов.
+                // Вход «На слух» — явный запрос на произношение, как в словаре.
+                // Звуковые эффекты подчиняются настройке во всех режимах.
                 sounds:
                     settings.soundOn ? widget.ports.sounds : const NoopSounds(),
                 speech:
-                    settings.soundOn
+                    listeningMode || settings.soundOn
                         ? widget.ports.speech
                         : const NoopWordSpeech(),
               ),

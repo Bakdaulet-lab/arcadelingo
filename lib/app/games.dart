@@ -47,6 +47,7 @@ class GameLaunch {
     this.onChallengeComplete,
     this.onRoundScore,
     this.speech = const NoopWordSpeech(),
+    this.listeningMode = false,
     this.course,
     this.level,
     this.vocabulary = const [],
@@ -75,6 +76,7 @@ class GameLaunch {
   final Widget Function(int score)? onChallengeComplete;
   final Widget Function(int score)? onRoundScore;
   final WordSpeech speech;
+  final bool listeningMode;
 
   /// Партия дошла до конца: игра показала экран итогов или «жизни кончились».
   ///
@@ -240,6 +242,9 @@ const List<GameEntry> wordarcadeGames = [
 
 Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
   session: launch.session,
+  listeningMode: launch.listeningMode,
+  speech: launch.speech,
+  studyLanguage: launch.course?.studyLanguage ?? 'en',
   summaryFooter:
       launch.onChallengeComplete == null ? launch.summaryFooter : null,
   onChallengeComplete: launch.onChallengeComplete,

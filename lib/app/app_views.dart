@@ -40,6 +40,7 @@ abstract final class AppKeys {
   static const Key recall = Key('app.recall');
 
   static const Key learn = Key('app.learn');
+  static const Key listening = Key('app.listening');
 
   static const Key gameSelector = Key('app.game_selector');
 
@@ -105,6 +106,7 @@ class PlayView extends StatelessWidget {
     this.onChallenge,
     this.onStories,
     this.onRecall,
+    this.onListening,
     this.ritual,
     this.week,
     this.games = const [],
@@ -150,6 +152,7 @@ class PlayView extends StatelessWidget {
   final VoidCallback? onChallenge;
   final VoidCallback? onStories;
   final VoidCallback? onRecall;
+  final VoidCallback? onListening;
 
   /// Вход на «Источники».
   ///
@@ -327,6 +330,16 @@ class PlayView extends StatelessWidget {
                       title: context.strings.activeRecall,
                       hint: context.strings.recallHomeHint,
                       onTap: onRecall!,
+                    ),
+                  ],
+                  if (onListening != null) ...[
+                    SizedBox(height: paper ? 8 : 10),
+                    _StudyModeTile(
+                      key: AppKeys.listening,
+                      icon: Icons.headphones_rounded,
+                      title: context.strings.listeningMode,
+                      hint: context.strings.listeningModeHint,
+                      onTap: onListening!,
                     ),
                   ],
                   if (games.length > 1) ...[
