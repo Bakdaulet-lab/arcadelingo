@@ -21,7 +21,7 @@ void main() {
   test(
     'a set keeps its identity through renaming, editing, reload and deletion',
     () async {
-      final personalId = 'custom:ru-es:a1:mi%20casa';
+      const personalId = 'custom:ru-es:a1:mi%20casa';
       expect(store.load(level), isEmpty);
       expect(
         await store.save(level: level, name: ' В   отпуск ', wordIds: {}),

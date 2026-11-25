@@ -4,8 +4,8 @@ import 'package:arcadelingo/domain/ports/custom_words_store.dart';
 import 'package:arcadelingo/domain/ports/event_log.dart';
 import 'package:arcadelingo/domain/ports/favorites_store.dart';
 import 'package:arcadelingo/domain/ports/streak_store.dart';
-import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/ports/word_sets_store.dart';
+import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 

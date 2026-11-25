@@ -26,8 +26,8 @@ import 'package:arcadelingo/domain/ports/reminders.dart';
 import 'package:arcadelingo/domain/ports/settings_store.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/ports/streak_store.dart';
-import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/ports/word_sets_store.dart';
+import 'package:arcadelingo/domain/ports/word_speech.dart';
 
 /// Умолчание для спроса разрешения на уведомления: платформы, у которой
 /// нечего спрашивать, для теста не существует.
