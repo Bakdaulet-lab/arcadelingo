@@ -25,10 +25,13 @@ List<DictionaryEntry> buildPersonalDictionary({
   required Iterable<ReviewItem> items,
   required CefrLevel level,
   required List<AnswerRecord> answers,
+  Iterable<Word> customWords = const [],
 }) {
+  final personal = customWords.where((word) => word.level == level).toList();
   final words = {
     for (final item in items)
       if (item.word.level == level) item.word.id: item.word,
+    for (final word in personal) word.id: word,
   };
   final history = <String, List<AnswerRecord>>{};
   for (final answer in answers.reversed) {
@@ -39,5 +42,7 @@ List<DictionaryEntry> buildPersonalDictionary({
   return List.unmodifiable([
     for (final entry in history.entries)
       DictionaryEntry._(words[entry.key]!, entry.value),
+    for (final word in personal)
+      if (!history.containsKey(word.id)) DictionaryEntry._(word, const []),
   ]);
 }

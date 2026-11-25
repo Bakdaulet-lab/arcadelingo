@@ -1,8 +1,11 @@
 import 'dart:math' as math;
 
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_field_swipe.dart';
 import 'package:arcadelingo/ui/theme.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
 import 'snake_run.dart';
 
@@ -17,7 +20,7 @@ class SnakeField extends StatelessWidget {
   });
 
   final SnakeRun run;
-  final Animation<double> motion;
+  final ValueListenable<double> motion;
   final ValueChanged<SnakeDirection>? onTurn;
 
   void _turn(Offset _, Offset delta) {
@@ -46,8 +49,8 @@ class SnakeField extends StatelessWidget {
         MediaQuery.disableAnimationsOf(context)
             ? const AlwaysStoppedAnimation(1.0)
             : motion;
-    return ArcadeFieldSwipe(
-      distance: 16,
+    final board = ArcadeFieldSwipe(
+      distance: 8,
       continuous: true,
       onSwipe: onTurn == null ? null : _turn,
       child: AspectRatio(
@@ -68,16 +71,22 @@ class SnakeField extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   RepaintBoundary(
+                    child: CustomPaint(painter: _BoardPainter(palette)),
+                  ),
+                  RepaintBoundary(
                     child: CustomPaint(
                       painter: _SnakePainter(
                         palette: palette,
                         body: run.body,
                         previousBody: run.previousBody,
                         direction: run.direction,
-                        apples: apples,
-                        labels: labels,
                         motion: fieldMotion,
                       ),
+                    ),
+                  ),
+                  RepaintBoundary(
+                    child: CustomPaint(
+                      painter: _ApplePainter(palette, apples, labels),
                     ),
                   ),
                   for (var i = 0; i < apples.length; i++)
@@ -113,6 +122,27 @@ class SnakeField extends StatelessWidget {
           ),
         ),
       ),
+    );
+    final strings = context.strings;
+    final turn = onTurn;
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      label: strings.snakeBoard,
+      customSemanticsActions:
+          turn == null
+              ? null
+              : {
+                CustomSemanticsAction(label: strings.snakeUp):
+                    () => turn(SnakeDirection.up),
+                CustomSemanticsAction(label: strings.snakeRight):
+                    () => turn(SnakeDirection.right),
+                CustomSemanticsAction(label: strings.snakeDown):
+                    () => turn(SnakeDirection.down),
+                CustomSemanticsAction(label: strings.snakeLeft):
+                    () => turn(SnakeDirection.left),
+              },
+      child: board,
     );
   }
 }
@@ -187,24 +217,10 @@ List<Rect> _placeLabels(
   return result;
 }
 
-class _SnakePainter extends CustomPainter {
-  _SnakePainter({
-    required this.palette,
-    required this.body,
-    required this.previousBody,
-    required this.direction,
-    required this.apples,
-    required this.labels,
-    required this.motion,
-  }) : super(repaint: motion);
+class _BoardPainter extends CustomPainter {
+  const _BoardPainter(this.palette);
 
   final _FieldPalette palette;
-  final List<SnakeCell> body;
-  final List<SnakeCell> previousBody;
-  final SnakeDirection direction;
-  final List<SnakeApple> apples;
-  final List<Rect> labels;
-  final Animation<double> motion;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -228,18 +244,6 @@ class _SnakePainter extends CustomPainter {
       canvas.drawLine(Offset(0, line), Offset(size.width, line), grid);
     }
     _drawEdgeGuides(canvas, size.width, unit);
-    _drawSnake(canvas, size.width, unit);
-    for (var i = 0; i < apples.length; i++) {
-      final center = _cellCenter(apples[i].cell, unit);
-      canvas.drawLine(
-        center,
-        labels[i].center,
-        Paint()
-          ..color = palette.labelBorder
-          ..strokeWidth = 1.3,
-      );
-      _drawApple(canvas, center, unit);
-    }
   }
 
   void _drawEdgeGuides(Canvas canvas, double side, double unit) {
@@ -262,6 +266,32 @@ class _SnakePainter extends CustomPainter {
       Offset(side - 1, mid + margin),
       gate,
     );
+  }
+
+  @override
+  bool shouldRepaint(_BoardPainter oldDelegate) =>
+      palette != oldDelegate.palette;
+}
+
+class _SnakePainter extends CustomPainter {
+  _SnakePainter({
+    required this.palette,
+    required this.body,
+    required this.previousBody,
+    required this.direction,
+    required this.motion,
+  }) : super(repaint: motion);
+
+  final _FieldPalette palette;
+  final List<SnakeCell> body;
+  final List<SnakeCell> previousBody;
+  final SnakeDirection direction;
+  final ValueListenable<double> motion;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    _drawSnake(canvas, size.width, size.width / SnakeRun.size);
   }
 
   void _drawSnake(Canvas canvas, double side, double unit) {
@@ -388,6 +418,44 @@ class _SnakePainter extends CustomPainter {
     canvas.restore();
   }
 
+  Offset _shortOffset(Offset offset, double side) {
+    double wrap(double value) => (value + side / 2) % side - side / 2;
+    return Offset(wrap(offset.dx), wrap(offset.dy));
+  }
+
+  @override
+  bool shouldRepaint(_SnakePainter oldDelegate) =>
+      palette != oldDelegate.palette ||
+      body != oldDelegate.body ||
+      previousBody != oldDelegate.previousBody ||
+      direction != oldDelegate.direction ||
+      motion != oldDelegate.motion;
+}
+
+class _ApplePainter extends CustomPainter {
+  const _ApplePainter(this.palette, this.apples, this.labels);
+
+  final _FieldPalette palette;
+  final List<SnakeApple> apples;
+  final List<Rect> labels;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final unit = size.width / SnakeRun.size;
+    for (var i = 0; i < apples.length; i++) {
+      final center = _cellCenter(apples[i].cell, unit);
+      canvas.drawLine(
+        center,
+        labels[i].center,
+        Paint()
+          ..color = palette.labelBorder
+          ..strokeWidth = 1.3,
+      );
+      _drawApple(canvas, center, unit);
+    }
+  }
+
   void _drawApple(Canvas canvas, Offset center, double unit) {
     canvas.save();
     canvas.translate(center.dx, center.dy);
@@ -437,20 +505,11 @@ class _SnakePainter extends CustomPainter {
     canvas.restore();
   }
 
-  Offset _shortOffset(Offset offset, double side) {
-    double wrap(double value) => (value + side / 2) % side - side / 2;
-    return Offset(wrap(offset.dx), wrap(offset.dy));
-  }
-
   @override
-  bool shouldRepaint(_SnakePainter oldDelegate) =>
+  bool shouldRepaint(_ApplePainter oldDelegate) =>
       palette != oldDelegate.palette ||
-      body != oldDelegate.body ||
-      previousBody != oldDelegate.previousBody ||
-      direction != oldDelegate.direction ||
       apples != oldDelegate.apples ||
-      labels != oldDelegate.labels ||
-      motion != oldDelegate.motion;
+      !listEquals(labels, oldDelegate.labels);
 }
 
 class _FieldPalette {

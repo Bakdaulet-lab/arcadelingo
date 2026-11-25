@@ -13,6 +13,22 @@ ReviewItem _item(int index, {String? translation}) => ReviewItem(
 );
 
 void main() {
+  test(
+    'personal synonyms that share one meaning appear on separate boards',
+    () {
+      final items = [
+        _item(0, translation: 'лифт / подъёмник'),
+        _item(1, translation: ' ПОДЪЁМНИК '),
+        _item(2, translation: 'шкаф'),
+      ];
+      final board = WordMahjongBoard.deal(items, Random(0));
+      expect(board.tiles.map((tile) => tile.item).toSet(), {
+        items[0],
+        items[2],
+      });
+    },
+  );
+
   test('all sizes stay solvable through any sequence of available matches', () {
     for (var count = 1; count <= 6; count++) {
       for (var seed = 0; seed < 80; seed++) {

@@ -19,6 +19,7 @@ import 'package:arcadelingo/app/courses.dart';
 import 'package:arcadelingo/domain/ports/answer_log.dart';
 import 'package:arcadelingo/domain/ports/card_store.dart';
 import 'package:arcadelingo/domain/ports/challenge_records.dart';
+import 'package:arcadelingo/domain/ports/custom_words_store.dart';
 import 'package:arcadelingo/domain/ports/event_log.dart';
 import 'package:arcadelingo/domain/ports/favorites_store.dart';
 import 'package:arcadelingo/domain/ports/reminders.dart';
@@ -38,6 +39,7 @@ class AppPorts {
     this.answers = const NoopAnswerLog(),
     this.events = const NoopEventLog(),
     this.favorites,
+    this.customWords,
     this.reminders = const NoopReminders(),
     this.sounds = const NoopSounds(),
     this.speech = const NoopWordSpeech(),
@@ -50,6 +52,7 @@ class AppPorts {
     cards: deck.cards,
     answers: deck.answers,
     favorites: deck.favorites,
+    customWords: deck.customWords,
     speech: deck.speech,
     streaks: deck.streaks,
     events: deck.events,
@@ -75,6 +78,7 @@ class AppPorts {
   final EventLog events;
 
   final FavoritesStore? favorites;
+  final CustomWordsStore? customWords;
 
   /// Напоминания.
   final Reminders reminders;

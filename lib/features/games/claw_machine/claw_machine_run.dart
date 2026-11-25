@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:flutter/widgets.dart' show StringCharacters;
 
 /// Партия хранит только раскладку и попытку по выданному слову.
 class ClawMachineRun {
@@ -9,6 +10,7 @@ class ClawMachineRun {
 
   static const columnCount = 5;
   static const _alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  static final _letterOrDigit = RegExp(r'[\p{L}\p{N}]', unicode: true);
 
   final ReviewSession session;
   final Random random;
@@ -17,6 +19,8 @@ class ClawMachineRun {
 
   ReviewItem? item;
   String answer = '';
+  List<String> slots = const [];
+  Set<int> separators = const {};
   int collected = 0;
   int? hintedColumn;
   String? missedLetter;
@@ -33,7 +37,15 @@ class ClawMachineRun {
     final word = item?.word;
     if (word == null) return;
     answer = word.text.toUpperCase();
+    slots = answer.characters.toList(growable: false);
+    separators = {
+      for (final (i, slot) in slots.indexed)
+        if (!_letterOrDigit.hasMatch(slot)) i,
+    };
+    // Symbol-only legacy words can still be played as written.
+    if (separators.length == slots.length) separators = {};
     collected = 0;
+    _skipSeparators();
     solved = false;
     missedLetter = null;
     hintedColumn = null;
@@ -41,7 +53,12 @@ class ClawMachineRun {
     _hintedAtPosition = false;
     _firstWrong = null;
 
-    final letters = answer.split('').toSet().toList()..shuffle(random);
+    final letters =
+        {
+            for (final (i, slot) in slots.indexed)
+              if (!separators.contains(i)) slot,
+          }.toList()
+          ..shuffle(random);
     final pool = [...letters, ..._alphabet.split('')]..shuffle(random);
     stacks
       ..clear()
@@ -54,13 +71,19 @@ class ClawMachineRun {
       );
     }
     if (_targetColumn == -1) {
-      stacks[random.nextInt(columnCount)][1] = answer[0];
+      stacks[random.nextInt(columnCount)][1] = slots[collected];
     }
   }
 
   int get _targetColumn => stacks.indexWhere(
-    (stack) => stack.isNotEmpty && stack.last == answer[collected],
+    (stack) => stack.isNotEmpty && stack.last == slots[collected],
   );
+
+  void _skipSeparators() {
+    while (separators.contains(collected)) {
+      collected++;
+    }
+  }
 
   int? hint() {
     final remaining = _hintsRemaining;
@@ -79,10 +102,11 @@ class ClawMachineRun {
     missedLetter = null;
     hintedColumn = null;
 
-    if (letter == answer[collected]) {
+    if (letter == slots[collected]) {
       collected++;
+      _skipSeparators();
       _hintedAtPosition = false;
-      if (collected == answer.length) {
+      if (collected == slots.length) {
         solved = true;
         final clean = _firstWrong == null;
         if (clean) correctCount++;
@@ -91,13 +115,13 @@ class ClawMachineRun {
       }
     } else {
       missedLetter = letter;
-      _firstWrong ??= answer.substring(0, collected) + letter;
+      _firstWrong ??= slots.take(collected).join() + letter;
     }
 
     // Если нужной буквы нет сверху, новая капсула падает в открывшееся
     // место. Иначе достаточно открыть нижнюю капсулу или пополнить пустую стопку.
     if (_targetColumn == -1) {
-      stack.add(answer[collected]);
+      stack.add(slots[collected]);
     } else if (stack.isEmpty) {
       stack.add(_alphabet[random.nextInt(_alphabet.length)]);
     }

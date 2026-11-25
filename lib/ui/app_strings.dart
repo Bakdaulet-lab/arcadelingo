@@ -2,6 +2,7 @@ import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
+import 'package:arcadelingo/domain/stories/situation_story.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
@@ -27,6 +28,127 @@ class AppStrings {
 
   String get challenge =>
       _text(en: 'Challenge', ru: 'Испытание', es: 'Desafío');
+
+  String get situationStories => _text(
+    en: 'On the way home',
+    ru: 'Пока ехал домой',
+    es: 'De camino a casa',
+  );
+
+  String get activeRecall =>
+      _text(en: 'Recall it', ru: 'Вспомни сам', es: 'Recuerda la palabra');
+
+  String get recallHomeHint => _text(
+    en: 'Recall the word, then spell it with letters',
+    ru: 'Вспомни слово и собери его из букв',
+    es: 'Recuerda la palabra y fórmala con letras',
+  );
+
+  String recallPrompt(String tag) => _text(
+    en: 'How do you say this in ${languageName(tag)}?',
+    ru: switch (tag) {
+      'en' => 'Как это сказать по-английски?',
+      'es' => 'Как это сказать по-испански?',
+      _ => 'Как это сказать на изучаемом языке?',
+    },
+    es: '¿Cómo se dice en ${languageName(tag).toLowerCase()}?',
+  );
+
+  String get recallSpell =>
+      _text(en: 'Spell the word', ru: 'Собрать слово', es: 'Formar la palabra');
+  String get recallOptions =>
+      _text(en: 'Show choices', ru: 'Показать варианты', es: 'Ver opciones');
+  String get recallCheck =>
+      _text(en: 'Check', ru: 'Проверить', es: 'Comprobar');
+  String get recallUndo => _text(
+    en: 'Remove last letter',
+    ru: 'Убрать последнюю букву',
+    es: 'Quitar la última letra',
+  );
+  String get recallChoicesPrompt =>
+      _text(en: 'Choose the word', ru: 'Выбери слово', es: 'Elige la palabra');
+  String get recallRightWord => _text(
+    en: 'The word to remember',
+    ru: 'Слово для повторения',
+    es: 'La palabra para repasar',
+  );
+  String get recallIndependent =>
+      _text(en: 'Recalled unaided', ru: 'Без подсказки', es: 'Sin ayuda');
+  String get recallWithHelp => _text(
+    en: 'Recognised from choices',
+    ru: 'С подсказкой',
+    es: 'Con opciones',
+  );
+  String get recallMistakes =>
+      _text(en: 'To practise again', ru: 'На повторение', es: 'Para repasar');
+  String get recallResults =>
+      _text(en: 'See results', ru: 'Посмотреть итоги', es: 'Ver resultados');
+
+  String get storyHomeHint => _text(
+    en: 'Two short games and a real-life task',
+    ru: 'Две короткие игры и задача из жизни',
+    es: 'Dos juegos cortos y una tarea de la vida diaria',
+  );
+
+  String get chooseSituation => _text(
+    en: 'Choose a situation',
+    ru: 'Выбери ситуацию',
+    es: 'Elige una situación',
+  );
+
+  String storyTitle(StorySituation situation) => switch (situation) {
+    StorySituation.breakfast => _text(
+      en: 'Order breakfast',
+      ru: 'Заказать завтрак',
+      es: 'Pedir el desayuno',
+    ),
+    StorySituation.hotel => _text(
+      en: 'Check in at a hotel',
+      ru: 'Заселиться в отель',
+      es: 'Registrarse en un hotel',
+    ),
+    StorySituation.station => _text(
+      en: 'Find your train',
+      ru: 'Найти свой поезд',
+      es: 'Encontrar tu tren',
+    ),
+  };
+
+  String storyRound(int round) => _text(
+    en: 'Game $round of 2',
+    ru: 'Игра $round из 2',
+    es: 'Juego $round de 2',
+  );
+
+  String get startStoryRound =>
+      _text(en: 'Start game', ru: 'Начать игру', es: 'Empezar el juego');
+
+  String get storyRoundInterrupted => _text(
+    en: 'Finish this round to continue.',
+    ru: 'Чтобы продолжить, доиграй этот раунд.',
+    es: 'Termina esta ronda para continuar.',
+  );
+
+  String get storyFinal =>
+      _text(en: 'Final task', ru: 'Финальное задание', es: 'Tarea final');
+
+  String get tryStoryAnswerAgain => _text(
+    en: 'Read the message again and try another answer.',
+    ru: 'Прочитай фразу ещё раз и выбери другой ответ.',
+    es: 'Vuelve a leer el mensaje y prueba con otra respuesta.',
+  );
+
+  String get storyComplete => _text(
+    en: 'Situation complete',
+    ru: 'Ситуация пройдена',
+    es: 'Situación completada',
+  );
+
+  String get backToSituations => _text(
+    en: 'Back to situations',
+    ru: 'К ситуациям',
+    es: 'Volver a las situaciones',
+  );
 
   String challengeName(ArcadeChallenge mode) => switch (mode) {
     ArcadeChallenge.sprint => _text(
@@ -302,9 +424,17 @@ class AppStrings {
     es: 'Busca la traducción',
   );
   String get snakeGuide => _text(
-    en: 'Swipe on the board or use the arrows',
-    ru: 'Свайпни по полю или нажми стрелку',
-    es: 'Desliza el dedo por el tablero o usa las flechas',
+    en:
+        'Swipe anywhere on the board to steer. Keep your finger down to turn again.',
+    ru:
+        'Веди пальцем по полю. Чтобы повернуть ещё раз, просто смени направление.',
+    es:
+        'Desliza el dedo por el tablero. Para volver a girar, cambia de dirección sin levantarlo.',
+  );
+  String get snakeBoard => _text(
+    en: 'Snake board',
+    ru: 'Поле змейки',
+    es: 'Tablero de la serpiente',
   );
   String get snakeStart =>
       _text(en: 'Start moving', ru: 'Начать движение', es: 'Empezar a moverse');
@@ -450,6 +580,55 @@ class AppStrings {
   );
   String get personalDictionary =>
       _text(en: 'My Word List', ru: 'Личный словарь', es: 'Mi diccionario');
+  String get customWords =>
+      _text(en: 'My words', ru: 'Свои слова', es: 'Mis palabras');
+  String get addWord =>
+      _text(en: 'Add a word', ru: 'Добавить слово', es: 'Añadir palabra');
+  String get playCustomWords => _text(
+    en: 'Play with my words',
+    ru: 'Играть со своими словами',
+    es: 'Jugar con mis palabras',
+  );
+  String get noCustomWords => _text(
+    en: 'Add a word or phrase to practise it in games.',
+    ru: 'Добавь слово или фразу, чтобы потренироваться в играх.',
+    es: 'Añade una palabra o frase para practicarla en los juegos.',
+  );
+  String customWordLabel(String tag) => _text(
+    en: 'Word or phrase (${languageName(tag)})',
+    ru: 'Слово или фраза (${languageName(tag).toLowerCase()})',
+    es: 'Palabra o frase (${languageName(tag).toLowerCase()})',
+  );
+  String customTranslationLabel(String tag) => _text(
+    en: 'Translation (${languageName(tag)})',
+    ru: 'Перевод (${languageName(tag).toLowerCase()})',
+    es: 'Traducción (${languageName(tag).toLowerCase()})',
+  );
+  String get enterWord => _text(
+    en: 'Enter a word or phrase.',
+    ru: 'Введи слово или фразу.',
+    es: 'Escribe una palabra o frase.',
+  );
+  String get enterTranslation => _text(
+    en: 'Enter a translation.',
+    ru: 'Введи перевод.',
+    es: 'Escribe una traducción.',
+  );
+  String get customWordNeedsLetter => _text(
+    en: 'The word or phrase needs at least one letter.',
+    ru: 'В слове или фразе должна быть хотя бы одна буква.',
+    es: 'La palabra o frase debe contener al menos una letra.',
+  );
+  String get duplicateCustomWord => _text(
+    en: 'You already have this word at this level.',
+    ru: 'Это слово уже есть среди твоих слов на этом уровне.',
+    es: 'Esta palabra ya está en tu lista de este nivel.',
+  );
+  String get customWordSaveFailed => _text(
+    en: 'Couldn’t save this word. Try again.',
+    ru: 'Не удалось сохранить слово. Попробуй ещё раз.',
+    es: 'No se pudo guardar la palabra. Vuelve a intentarlo.',
+  );
   String get firstRoundProgress => _text(
     en: 'Play your first round to see your progress here',
     ru: 'Сыграй первую партию, и здесь появится, сколько пройдено',

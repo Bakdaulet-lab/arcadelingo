@@ -3,10 +3,12 @@ library;
 
 import 'package:arcadelingo/app/dictionary_view.dart';
 import 'package:arcadelingo/app/learning_views.dart';
+import 'package:arcadelingo/data/dictionary/custom_words_prefs_store.dart';
 import 'package:arcadelingo/data/dictionary/favorites_prefs_store.dart';
 import 'package:arcadelingo/domain/log/answer_record.dart';
 import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/domain/srs/review_grade.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:flutter/material.dart';
@@ -84,6 +86,50 @@ Future<void> _openPage(WidgetTester tester, Widget page) async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(loadBundledFonts);
+
+  testWidgets('свои слова в испанском курсе', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    const course = StudyCourse.spanishFromRussian;
+    final custom = CustomWordsPrefsStore(prefs, courseId: course.id);
+    for (final (text, translation) in [
+      ('la cuenta', 'счёт в ресторане'),
+      ('la salida', 'выход'),
+    ]) {
+      await custom.add(
+        level: CefrLevel.a1,
+        text: text,
+        translation: translation,
+      );
+    }
+    await _openPage(
+      tester,
+      DictionaryScreen(
+        items: const [],
+        level: CefrLevel.a1,
+        course: course,
+        answers: InMemoryAnswerLog(),
+        favorites: FavoritesPrefsStore(prefs),
+        customWords: custom,
+        speech: const NoopWordSpeech(),
+        gameTitles: const {},
+        onPlayCustom: () {},
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('dictionary.add-word')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('customWord.text')),
+      'sin cebolla',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('customWord.translation')),
+      'без лука',
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    await peek(tester, 'custom_words_dictionary');
+  });
 
   testWidgets('личный словарь и история слова', (tester) async {
     SharedPreferences.setMockInitialValues({});

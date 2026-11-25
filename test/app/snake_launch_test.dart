@@ -14,6 +14,7 @@ import 'package:arcadelingo/features/games/snake/snake_field.dart';
 import 'package:arcadelingo/features/games/snake/snake_game.dart';
 import 'package:arcadelingo/features/games/snake/snake_run.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,7 +22,7 @@ import '../support/in_memory_answer_log.dart';
 import '../support/in_memory_stores.dart';
 
 final _now = DateTime(2026, 11, 21);
-const _tick = Duration(milliseconds: 490);
+const _tick = SnakeRun.stepTime;
 
 const _levels = {
   StudyCourse.englishFromRussian: CefrLevel.values,
@@ -65,10 +66,13 @@ Future<void> _steer(
     await tester.pump();
     await tester.drag(field, offset);
   } else {
-    final button = find.byKey(SnakeKeys.direction(direction));
-    await tester.ensureVisible(button);
-    await tester.pump();
-    await tester.tap(button);
+    final key = switch (direction) {
+      SnakeDirection.up => LogicalKeyboardKey.arrowUp,
+      SnakeDirection.right => LogicalKeyboardKey.arrowRight,
+      SnakeDirection.down => LogicalKeyboardKey.arrowDown,
+      SnakeDirection.left => LogicalKeyboardKey.arrowLeft,
+    };
+    await tester.sendKeyEvent(key);
   }
   await tester.pump();
 }

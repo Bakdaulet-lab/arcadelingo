@@ -12,6 +12,7 @@ import 'package:arcadelingo/ui/arcade_round_summary.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
 import 'snake_field.dart';
@@ -24,9 +25,6 @@ abstract final class SnakeKeys {
   static const resume = Key('snake.resume');
   static const next = Key('snake.next');
   static const summary = Key('snake.summary');
-
-  static Key direction(SnakeDirection direction) =>
-      ValueKey('snake.direction.${direction.name}');
 }
 
 class SnakeGame extends StatefulWidget {
@@ -69,17 +67,13 @@ class SnakeGame extends StatefulWidget {
 
 class _SnakeGameState extends State<SnakeGame>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  static const _arrows = [
-    SnakeDirection.left,
-    SnakeDirection.up,
-    SnakeDirection.down,
-    SnakeDirection.right,
-  ];
-
   late final SnakeRun _run;
-  late final AnimationController _motion;
+  static const _turnWindow = Duration(milliseconds: 85);
+  final _motion = ValueNotifier(1.0);
+  late final Ticker _ticker;
+  Duration _lastFrame = Duration.zero;
+  double _cellMicros = SnakeRun.stepTime.inMicroseconds.toDouble();
   final _reading = Stopwatch();
-  Timer? _timer;
   bool _active = true;
   bool _roundComplete = false;
   String? _footer;
@@ -92,11 +86,7 @@ class _SnakeGameState extends State<SnakeGame>
   void initState() {
     super.initState();
     _run = SnakeRun(widget.session, widget.vocabulary, Random(widget.seed));
-    _motion = AnimationController(
-      vsync: this,
-      duration: SnakeRun.stepTime,
-      value: 1,
-    );
+    _ticker = createTicker(_onFrame);
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -105,14 +95,20 @@ class _SnakeGameState extends State<SnakeGame>
     _active = state == AppLifecycleState.resumed;
     if (!_active) {
       _pause();
+      _ticker.stop();
       unawaited(widget.speech.stop());
+    } else if (_run.phase == SnakePhase.feedback &&
+        _motion.value < 1 &&
+        !_ticker.isActive) {
+      _lastFrame = Duration.zero;
+      _ticker.start();
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _timer?.cancel();
+    _ticker.dispose();
     _reading.stop();
     _motion.dispose();
     unawaited(widget.speech.stop());
@@ -121,29 +117,44 @@ class _SnakeGameState extends State<SnakeGame>
 
   void _turn(SnakeDirection direction) {
     if (!_active || !_canSteer || !_run.steer(direction)) return;
-    if (_run.phase == SnakePhase.ready) _start();
+    if (_run.phase == SnakePhase.ready) {
+      _start();
+    } else {
+      _approachCorner();
+    }
+  }
+
+  // Reach the next legal corner promptly without jumping along the board.
+  void _approachCorner() {
+    final remaining = 1 - _motion.value;
+    if (remaining > 0) {
+      _cellMicros = min(_cellMicros, _turnWindow.inMicroseconds / remaining);
+    }
   }
 
   void _start() {
+    final resuming = _run.phase == SnakePhase.paused;
     if (!_active || !_run.start()) return;
     _reading.start();
-    _tick();
-    if (_run.phase == SnakePhase.moving) {
-      _timer = Timer.periodic(SnakeRun.stepTime, (_) => _tick());
+    _lastFrame = Duration.zero;
+    if (resuming) {
+      setState(() {});
+    } else {
+      _advanceCell();
     }
+    if (_run.phase != SnakePhase.finished) _ticker.start();
   }
 
   void _pause() {
     if (_run.phase != SnakePhase.moving) return;
     _run.pause();
     _stop();
-    _motion.value = 1;
+    _cellMicros = SnakeRun.stepTime.inMicroseconds.toDouble();
     setState(() {});
   }
 
   void _stop() {
-    _timer?.cancel();
-    _timer = null;
+    _ticker.stop();
     _reading.stop();
   }
 
@@ -153,16 +164,33 @@ class _SnakeGameState extends State<SnakeGame>
     widget.onExit();
   }
 
-  void _tick() {
-    if (!_active || _run.phase != SnakePhase.moving) return;
-    _run.step(_reading.elapsed);
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _motion.value = 1;
-    } else {
-      _motion.forward(from: 0);
+  void _onFrame(Duration elapsed) {
+    final delta = (elapsed - _lastFrame).inMicroseconds;
+    _lastFrame = elapsed;
+    if (!_active || delta == 0) return;
+    final remaining = (1 - _motion.value) * _cellMicros;
+    if (delta < remaining) {
+      _motion.value += delta / _cellMicros;
+      return;
     }
+    if (_run.phase != SnakePhase.moving) {
+      _motion.value = 1;
+      _ticker.stop();
+      return;
+    }
+    _advanceCell();
+    // Carry frame overshoot forward. A stalled frame must not play multiple
+    // unseen moves or consume a second buffered corner before drawing it.
+    _motion.value = ((delta - remaining) / _cellMicros).clamp(0, 1);
+  }
+
+  void _advanceCell() {
+    _run.step(_reading.elapsed);
+    _motion.value = 0;
+    _cellMicros = SnakeRun.stepTime.inMicroseconds.toDouble();
+    if (_run.hasQueuedTurn) _approachCorner();
     if (_run.phase == SnakePhase.feedback) {
-      _stop();
+      _reading.stop();
       final answer = _run.selectedAnswer!;
       widget.sounds.play(
         _run.answerCorrect ? GameSound.clawCatch : GameSound.miss,
@@ -177,6 +205,7 @@ class _SnakeGameState extends State<SnakeGame>
 
   void _next() {
     if (_run.phase != SnakePhase.feedback) return;
+    _ticker.stop();
     unawaited(widget.speech.stop());
     _reading.reset();
     _motion.value = 1;
@@ -314,27 +343,6 @@ class _SnakeGameState extends State<SnakeGame>
               ),
               const SizedBox(height: 10),
               _feedback(context),
-              const SizedBox(height: 8),
-              Row(
-                spacing: 6,
-                children: [
-                  for (final direction in _arrows)
-                    Expanded(
-                      child: OutlinedButton(
-                        key: SnakeKeys.direction(direction),
-                        onPressed: _canSteer ? () => _turn(direction) : null,
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(0, 48),
-                          padding: EdgeInsets.zero,
-                        ),
-                        child: Tooltip(
-                          message: _directionName(strings, direction),
-                          child: Icon(_directionIcon(direction), size: 22),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
             ],
           ),
         ),
@@ -526,20 +534,4 @@ class _SnakeGameState extends State<SnakeGame>
       ),
     );
   }
-
-  static String _directionName(AppStrings strings, SnakeDirection direction) =>
-      switch (direction) {
-        SnakeDirection.left => strings.snakeLeft,
-        SnakeDirection.up => strings.snakeUp,
-        SnakeDirection.down => strings.snakeDown,
-        SnakeDirection.right => strings.snakeRight,
-      };
-
-  static IconData _directionIcon(SnakeDirection direction) =>
-      switch (direction) {
-        SnakeDirection.left => Icons.arrow_back_rounded,
-        SnakeDirection.up => Icons.arrow_upward_rounded,
-        SnakeDirection.down => Icons.arrow_downward_rounded,
-        SnakeDirection.right => Icons.arrow_forward_rounded,
-      };
 }

@@ -23,6 +23,7 @@
   в `android/` и `ios/`. Не `dart run`: рисунку нужны `dart:ui` и Rubik из ассетов
 - Кодоген: `dart run build_runner build --delete-conflicting-outputs`
 - Запуск на устройстве: `flutter run --release` (в debug анимации тормозят, судить о «фане» нельзя)
+- APK для телефона собирается по явной просьбе владельца, когда он готов подключить устройство.
 
 ## Архитектурный закон
 

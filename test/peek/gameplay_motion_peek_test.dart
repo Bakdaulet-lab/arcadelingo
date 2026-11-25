@@ -12,7 +12,6 @@ import 'package:arcadelingo/features/games/match_three/match_three_field.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_views.dart';
 import 'package:arcadelingo/features/games/snake/snake_game.dart';
-import 'package:arcadelingo/features/games/snake/snake_run.dart';
 import 'package:arcadelingo/features/games/word_mahjong/word_mahjong_field.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -82,10 +81,14 @@ void main() {
           await tester.pump(const Duration(milliseconds: 850));
         }
         Future<void> tap(Key key) => tester.tap(find.byKey(key));
-        for (var frame = 0; frame < 21; frame++) {
+        TestGesture? snakeGesture;
+        final frames = game == snakeEntry ? 41 : 21;
+        for (var frame = 0; frame < frames; frame++) {
           if (frame == 2) {
             if (game == snakeEntry) {
-              await tap(SnakeKeys.direction(SnakeDirection.right));
+              final field = find.byKey(SnakeKeys.field);
+              snakeGesture = await tester.startGesture(tester.getCenter(field));
+              await snakeGesture.moveBy(const Offset(24, 0));
             }
             if (game == matchThreeEntry) await tap(MatchThreeKeys.cell(9));
             if (game == brickBreakerEntry) await tap(BrickBreakerKeys.launch);
@@ -111,7 +114,7 @@ void main() {
             }
             if (game == clawMachineEntry) await tap(ClawKeys.grab);
             if (game == snakeEntry) {
-              await tap(SnakeKeys.direction(SnakeDirection.up));
+              await snakeGesture!.moveBy(const Offset(0, -24));
             }
             if (game == matchThreeEntry) await tap(MatchThreeKeys.cell(15));
             if (game == wordMahjongEntry) {
@@ -123,9 +126,13 @@ void main() {
               );
             }
           }
+          if (game == snakeEntry && frame == 19) {
+            await snakeGesture!.moveBy(const Offset(24, 0));
+          }
           await tester.pump(const Duration(milliseconds: 40));
           await peek(tester, '${game.id}_${brightness.name}_$frame');
         }
+        await snakeGesture?.up();
         await tester.pumpWidget(const SizedBox());
       });
     }

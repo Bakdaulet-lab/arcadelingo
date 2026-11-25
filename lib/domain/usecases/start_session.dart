@@ -55,6 +55,7 @@ class StartSession {
   ///
   /// [level] ограничивает новые слова и повторы одним уровнем. Без него
   /// сессия использует весь список. Карта прогресса остаётся полной.
+  /// [practiceAll] разрешает явно выбранную тренировку до даты повтора.
   ///
   /// [onCardsChanged] — для хоста: сохранение в порт usecase берёт на себя,
   /// а колбэк остаётся тому, кому нужна свежая карта (строка итогов).
@@ -62,6 +63,7 @@ class StartSession {
     required List<ReviewItem> items,
     required String gameId,
     CefrLevel? level,
+    bool practiceAll = false,
     void Function(Map<String, LeitnerCard> cards)? onCardsChanged,
     List<ReviewObserver> observers = const [],
   }) {
@@ -91,6 +93,7 @@ class StartSession {
               ? items
               : items.where((item) => item.word.level == level).toList(),
       target: _target,
+      practiceAll: practiceAll,
       now: _now,
       onCardsChanged: (changed) {
         // Ответ уже принят, ждать записи некому: report() не async, а

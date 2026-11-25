@@ -36,6 +36,8 @@ abstract final class AppKeys {
   static const Key play = Key('app.play');
 
   static const Key challenge = Key('app.challenge');
+  static const Key stories = Key('app.stories');
+  static const Key recall = Key('app.recall');
 
   static const Key learn = Key('app.learn');
 
@@ -101,6 +103,8 @@ class PlayView extends StatelessWidget {
     super.key,
     this.onLearn,
     this.onChallenge,
+    this.onStories,
+    this.onRecall,
     this.ritual,
     this.week,
     this.games = const [],
@@ -144,6 +148,8 @@ class PlayView extends StatelessWidget {
 
   final VoidCallback? onLearn;
   final VoidCallback? onChallenge;
+  final VoidCallback? onStories;
+  final VoidCallback? onRecall;
 
   /// Вход на «Источники».
   ///
@@ -303,6 +309,26 @@ class PlayView extends StatelessWidget {
                         ),
                       ),
                   ],
+                  if (onStories != null) ...[
+                    SizedBox(height: paper ? 10 : 14),
+                    _StudyModeTile(
+                      key: AppKeys.stories,
+                      icon: Icons.route_outlined,
+                      title: context.strings.situationStories,
+                      hint: context.strings.storyHomeHint,
+                      onTap: onStories!,
+                    ),
+                  ],
+                  if (onRecall != null) ...[
+                    SizedBox(height: paper ? 8 : 10),
+                    _StudyModeTile(
+                      key: AppKeys.recall,
+                      icon: Icons.psychology_outlined,
+                      title: context.strings.activeRecall,
+                      hint: context.strings.recallHomeHint,
+                      onTap: onRecall!,
+                    ),
+                  ],
                   if (games.length > 1) ...[
                     SizedBox(height: paper ? 10 : 20),
                     Text(
@@ -344,6 +370,41 @@ class PlayView extends StatelessWidget {
                   ),
                 ),
               ),
+    );
+  }
+}
+
+class _StudyModeTile extends StatelessWidget {
+  const _StudyModeTile({
+    required this.icon,
+    required this.title,
+    required this.hint,
+    required this.onTap,
+    super.key,
+  });
+
+  final IconData icon;
+  final String title;
+  final String hint;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return ArcadePanel(
+      padding: EdgeInsets.zero,
+      child: ListTile(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            colors.brightness == Brightness.light ? 12 : 24,
+          ),
+        ),
+        leading: Icon(icon, color: colors.primary),
+        title: Text(title),
+        subtitle: Text(hint),
+        trailing: const Icon(Icons.chevron_right_rounded),
+        onTap: onTap,
+      ),
     );
   }
 }
