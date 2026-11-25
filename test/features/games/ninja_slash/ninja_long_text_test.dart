@@ -1,3 +1,6 @@
+import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
+import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_views.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/bundled_fonts.dart';
+import '../../../support/fake_review_session.dart';
 
 const _options = [
   'профессионально-технический',
@@ -15,6 +19,47 @@ const _options = [
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(loadBundledFonts);
+  testWidgets('the compact layout waits for a readable answer', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 380);
+    addTearDown(tester.view.reset);
+    final session = FakeReviewSession([
+      ReviewItem(
+        word: Word(
+          id: 'pertinent',
+          text: 'declare a state of emergency',
+          translation: _options[1],
+        ),
+        distractors: [_options[0], _options[2]],
+      ),
+    ]);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: wordarcadeTheme(),
+        home: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: NinjaSlashGame(
+            session: session,
+            seed: 3,
+            onExit: () {},
+            onPlayAgain: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump(NinjaRun.windUpTime);
+    await tester.pump(const Duration(seconds: 12));
+    expect(session.reports, isEmpty);
+    final answer = find.text(_options[1]);
+    await tester.ensureVisible(answer);
+    await tester.pumpAndSettle();
+    await tester.tap(answer);
+    await tester.pump();
+    expect(session.reports.single.outcome.correct, isTrue);
+    expect(session.reports.single.outcome.selectedAnswer, _options[1]);
+    expect(session.reports.single.outcome.timeLimit, Duration.zero);
+    expect(tester.takeException(), isNull);
+  });
   for (final appearance in Brightness.values) {
     testWidgets(
       'full translations remain readable at the apex in $appearance',
