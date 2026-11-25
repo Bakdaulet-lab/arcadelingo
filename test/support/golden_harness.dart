@@ -31,6 +31,7 @@ import 'package:arcadelingo/ui/week_strip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'campfire_artwork.dart';
 import 'fake_review_session.dart';
 import 'review_items.dart';
 
@@ -150,6 +151,12 @@ Future<void> pumpRitualGolden(
   );
   // Кадр снимается после декодирования тех же изображений, которые рисует
   // карточка. Скорость файлового ввода не определяет содержимое эталона.
+  await warmCampfire(
+    tester,
+    tester.element(find.byType(PlayView)),
+    ritual.days,
+    Brightness.dark,
+  );
   await tester.runAsync(() async {
     final context = tester.element(find.byType(PlayView));
     await Future.wait([

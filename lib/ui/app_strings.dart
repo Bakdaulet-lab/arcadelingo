@@ -3,6 +3,7 @@ import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/domain/stories/situation_story.dart';
+import 'package:arcadelingo/ui/campfire_stage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
@@ -1179,6 +1180,125 @@ class AppStrings {
   String get listen => _text(en: 'Listen', ru: 'Послушать', es: 'Escuchar');
   String get listenAgain =>
       _text(en: 'Listen again', ru: 'Ещё раз', es: 'Escuchar de nuevo');
+  String get openCampfire => _text(
+    en: 'View the campfire',
+    ru: 'Посмотреть костёр',
+    es: 'Ver la hoguera',
+  );
+  String get replayCampfire => _text(
+    en: 'Replay the campfire animation',
+    ru: 'Повторить анимацию костра',
+    es: 'Volver a ver la animación de la hoguera',
+  );
+
+  String campfireStageName(CampfireStage stage) => switch (stage) {
+    CampfireStage.smoke => _text(
+      en: 'A wisp of smoke',
+      ru: 'Дымок',
+      es: 'Hilo de humo',
+    ),
+    CampfireStage.ember => _text(
+      en: 'Glowing ember',
+      ru: 'Розжиг',
+      es: 'Brasa encendida',
+    ),
+    CampfireStage.spark => _text(
+      en: 'First spark',
+      ru: 'Первая искра',
+      es: 'Primera chispa',
+    ),
+    CampfireStage.firstFlame => _text(
+      en: 'First flame',
+      ru: 'Первый огонёк',
+      es: 'Primera llama',
+    ),
+    CampfireStage.kindling => _text(
+      en: 'The kindling catches',
+      ru: 'Занялась растопка',
+      es: 'La yesca prende',
+    ),
+    CampfireStage.campfire => _text(
+      en: 'Campfire',
+      ru: 'Походный костёр',
+      es: 'Fogata',
+    ),
+    CampfireStage.hotCoals => _text(
+      en: 'Glowing coals',
+      ru: 'Жаркие угли',
+      es: 'Brasas vivas',
+    ),
+    CampfireStage.flyingSparks => _text(
+      en: 'Sparks from the fire',
+      ru: 'Костёр с искрами',
+      es: 'Hoguera con chispas',
+    ),
+    CampfireStage.kneeHighFlames => _text(
+      en: 'Knee-high flames',
+      ru: 'По колено',
+      es: 'Llamas hasta las rodillas',
+    ),
+    CampfireStage.tallFlame => _text(
+      en: 'Towering flame',
+      ru: 'Высокое пламя',
+      es: 'Llama alta',
+    ),
+    CampfireStage.fireWhirl => _text(
+      en: 'Fire whirl',
+      ru: 'Огненный вихрь',
+      es: 'Remolino de fuego',
+    ),
+    CampfireStage.forestEdge => _text(
+      en: 'Firelight at the forest’s edge',
+      ru: 'Жар у опушки',
+      es: 'Resplandor al borde del bosque',
+    ),
+    CampfireStage.burningBranches => _text(
+      en: 'Burning branches',
+      ru: 'Огненные ветви',
+      es: 'Ramas en llamas',
+    ),
+    CampfireStage.blazingTree => _text(
+      en: 'Blazing tree',
+      ru: 'Пылающее дерево',
+      es: 'Árbol en llamas',
+    ),
+    CampfireStage.burningTreetops => _text(
+      en: 'Blazing treetops',
+      ru: 'Огненные кроны',
+      es: 'Copas en llamas',
+    ),
+    CampfireStage.ragingForest => _text(
+      en: 'Forest ablaze',
+      ru: 'Бушующий лес',
+      es: 'Bosque en llamas',
+    ),
+    CampfireStage.goldenRiver => _text(
+      en: 'Golden river',
+      ru: 'Золотая река',
+      es: 'Río dorado',
+    ),
+    CampfireStage.horizonLights => _text(
+      en: 'Lights on the horizon',
+      ru: 'Огни на горизонте',
+      es: 'Luces en el horizonte',
+    ),
+    CampfireStage.firefall => _text(
+      en: 'Waterfall of fire',
+      ru: 'Огненный водопад',
+      es: 'Cascada de fuego',
+    ),
+    CampfireStage.flameCrown => _text(
+      en: 'Crown of flame',
+      ru: 'Корона пламени',
+      es: 'Corona de fuego',
+    ),
+    CampfireStage.forestHeart => _text(
+      en: 'Heart of the fiery forest',
+      ru: 'Сердце огненного леса',
+      es: 'Corazón del bosque de fuego',
+    ),
+  };
+
   String get noStreak => _text(
     en: 'No streak yet',
     ru: 'Серии нет',

@@ -1,5 +1,6 @@
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
+import 'package:arcadelingo/ui/campfire_stage.dart';
 import 'package:arcadelingo/ui/ritual_labels.dart';
 import 'package:arcadelingo/ui/streak_campfire.dart';
 import 'package:arcadelingo/ui/streak_card.dart';
@@ -11,16 +12,91 @@ import 'package:flutter/material.dart';
 
 const Key homeTodayKey = Key('app.today');
 const Key homeFreezeKey = Key('app.freeze');
+const Key homeCampfireBadgeKey = Key('app.campfire_badge');
+const Key homeCampfireOpenKey = Key('app.campfire_open');
+const Key homeCampfireLandscapeKey = Key('app.campfire_landscape');
+const Key homeCampfireStageKey = Key('app.campfire_stage');
+const Key homeCampfireReplayKey = Key('app.campfire_replay');
 
 /// Компактная серия с настоящими состояниями календарной недели.
-class HomeRitualCard extends StatelessWidget {
+class HomeRitualCard extends StatefulWidget {
   const HomeRitualCard({required this.ritual, super.key, this.week});
 
   final StreakView ritual;
   final List<WeekDay>? week;
 
   @override
+  State<HomeRitualCard> createState() => _HomeRitualCardState();
+}
+
+class _HomeRitualCardState extends State<HomeRitualCard> {
+  ModalRoute<void>? _sheet;
+  bool _opening = false;
+
+  @override
+  void didUpdateWidget(HomeRitualCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.ritual.days != oldWidget.ritual.days ||
+        flameMood(widget.ritual) != flameMood(oldWidget.ritual)) {
+      _dismissSheet();
+    }
+  }
+
+  void _dismissSheet() {
+    final route = _sheet;
+    if (route == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (route.isCurrent) route.navigator?.pop();
+    });
+  }
+
+  @override
+  void dispose() {
+    _dismissSheet();
+    super.dispose();
+  }
+
+  Future<void> _open(CampfireStage stage) async {
+    if (_opening) return;
+    _opening = true;
+    final ritual = widget.ritual;
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        useSafeArea: true,
+        isScrollControlled: true,
+        showDragHandle: true,
+        constraints: const BoxConstraints(maxWidth: 560),
+        sheetAnimationStyle:
+            MediaQuery.disableAnimationsOf(context)
+                ? AnimationStyle.noAnimation
+                : null,
+        builder: (context) {
+          _sheet = ModalRoute.of<void>(context);
+          if (!mounted ||
+              widget.ritual.days != ritual.days ||
+              flameMood(widget.ritual) != flameMood(ritual)) {
+            _dismissSheet();
+            return const SizedBox.shrink();
+          }
+          return _HomeCampfireLandscape(
+            days: ritual.days,
+            stageName: context.strings.campfireStageName(stage),
+            tier: flameTier(ritual.days),
+            mood: flameMood(ritual),
+          );
+        },
+      );
+    } finally {
+      _sheet = null;
+      _opening = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final ritual = widget.ritual;
+    final week = widget.week;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final paper = theme.brightness == Brightness.light;
@@ -28,10 +104,10 @@ class HomeRitualCard extends StatelessWidget {
     final freeze = ritualFreezeLabel(ritual, strings: context.strings);
     final tier = flameTier(ritual.days);
     final mood = flameMood(ritual);
-    final flameExtent =
-        flameHeights[tier]! * (tier == FlameTier.inferno ? flameHaloRadius : 1);
+    final stage = CampfireStage.forDays(ritual.days);
 
-    return Container(
+    final radius = BorderRadius.circular(paper ? 12 : 20);
+    final card = Container(
       key: streakCardKey,
       padding: EdgeInsets.all(paper ? 8 : 12),
       decoration: BoxDecoration(
@@ -44,7 +120,7 @@ class HomeRitualCard extends StatelessWidget {
           ],
         ),
         border: Border.all(color: scheme.outline.withValues(alpha: 0.6)),
-        borderRadius: BorderRadius.circular(paper ? 12 : 20),
+        borderRadius: radius,
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -61,17 +137,12 @@ class HomeRitualCard extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: SizedBox.square(
-                    dimension: compact ? 28 : 36,
-                    child: FittedBox(
-                      fit: BoxFit.contain,
-                      child: StreakCampfire(
-                        size: Size.square(flameExtent),
-                        days: ritual.days,
-                        tier: tier,
-                        mood: mood,
-                      ),
-                    ),
+                  child: StreakCampfire(
+                    key: homeCampfireBadgeKey,
+                    size: Size.square(compact && stage == null ? 28 : 36),
+                    days: ritual.days,
+                    tier: tier,
+                    mood: mood,
                   ),
                 ),
                 SizedBox(width: compact ? 8 : 12),
@@ -141,7 +212,7 @@ class HomeRitualCard extends StatelessWidget {
                     : Row(
                       key: weekStripKey,
                       children: [
-                        for (final day in week!)
+                        for (final day in week)
                           Expanded(
                             child: _HomeWeekDay(day: day, compact: compact),
                           ),
@@ -165,20 +236,158 @@ class HomeRitualCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 weekStrip,
               ],
-              if (freeze != null) ...[
+              if (stage != null || freeze != null) ...[
                 const SizedBox(height: 8),
-                Text(
-                  freeze,
-                  key: homeFreezeKey,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontSize: compact ? 11.5 : null,
-                    color: scheme.onSurfaceVariant,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 3,
+                        alignment:
+                            stage == null
+                                ? WrapAlignment.center
+                                : WrapAlignment.start,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          if (stage != null)
+                            Text(
+                              context.strings.campfireStageName(stage),
+                              key: homeCampfireStageKey,
+                              style: withWeight(
+                                theme.textTheme.labelMedium!,
+                                FontWeight.w600,
+                              ),
+                            ),
+                          if (freeze != null)
+                            Text(
+                              freeze,
+                              key: homeFreezeKey,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontSize: compact ? 11.5 : null,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (stage != null)
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                  ],
                 ),
               ],
             ],
           );
         },
+      ),
+    );
+    return Semantics(
+      hint: stage == null ? null : context.strings.openCampfire,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          key: stage == null ? null : homeCampfireOpenKey,
+          borderRadius: radius,
+          onTap: stage == null ? null : () => _open(stage),
+          child: card,
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeCampfireLandscape extends StatefulWidget {
+  const _HomeCampfireLandscape({
+    required this.days,
+    required this.stageName,
+    required this.tier,
+    required this.mood,
+  });
+
+  final int days;
+  final String stageName;
+  final FlameTier tier;
+  final FlameMood mood;
+
+  @override
+  State<_HomeCampfireLandscape> createState() => _HomeCampfireLandscapeState();
+}
+
+class _HomeCampfireLandscapeState extends State<_HomeCampfireLandscape> {
+  int _replayToken = 0;
+
+  void _replay() => setState(() => ++_replayToken);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final canReplay = !MediaQuery.disableAnimationsOf(context);
+    return SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        streakLabel(widget.days, strings: context.strings),
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      Text(
+                        widget.stageName,
+                        style: withWeight(
+                          theme.textTheme.titleLarge!,
+                          FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const CloseButton(),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: AspectRatio(
+                aspectRatio: 12 / 5,
+                child: StreakCampfire(
+                  key: homeCampfireLandscapeKey,
+                  days: widget.days,
+                  tier: widget.tier,
+                  mood: widget.mood,
+                  landscape: true,
+                  replayToken: _replayToken,
+                ),
+              ),
+            ),
+            if (canReplay) ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  key: homeCampfireReplayKey,
+                  onPressed: _replay,
+                  icon: const Icon(Icons.replay_rounded),
+                  label: Text(context.strings.replayCampfire),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

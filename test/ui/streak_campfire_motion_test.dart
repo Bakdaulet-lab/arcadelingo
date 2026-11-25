@@ -3,6 +3,7 @@ import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/ui/home_ritual_card.dart';
 import 'package:arcadelingo/ui/streak_card.dart';
 import 'package:arcadelingo/ui/theme.dart';
+import 'package:arcadelingo/ui/valley_campfire_painter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -42,7 +43,10 @@ Future<void> _show(
 double _intensity(WidgetTester tester) {
   final fire = tester.widget<CustomPaint>(
     find.byWidgetPredicate(
-      (widget) => widget is CustomPaint && widget.painter is FlamePainter,
+      (widget) =>
+          widget is CustomPaint &&
+          widget.painter is ValleyCampfirePainter &&
+          !(widget.painter! as ValleyCampfirePainter).landscape,
     ),
   );
   return (fire.painter! as FlamePainter).intensity;

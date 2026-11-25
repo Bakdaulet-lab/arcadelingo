@@ -8,6 +8,7 @@ import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
+import 'package:arcadelingo/ui/home_ritual_card.dart';
 import 'package:arcadelingo/ui/streak_card.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:arcadelingo/ui/week_strip.dart';
@@ -15,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/campfire_artwork.dart';
 import '../support/ritual_views.dart';
 import 'peek_harness.dart';
 
@@ -72,6 +74,10 @@ void main() {
           ),
         ),
       );
+      final context = tester.element(find.byType(PlayView));
+      for (final day in [6, 7, 28, 100]) {
+        await warmCampfire(tester, context, day, brightness);
+      }
       await tester.runAsync(() async {
         final context = tester.element(find.byType(PlayView));
         for (final game in wordarcadeGames) {
@@ -125,6 +131,29 @@ void main() {
         await tester.pump(const Duration(milliseconds: 30));
       }
       await peek(tester, 'campfire/${brightness.name}/home');
+      for (final day in [28, 100]) {
+        days.value = day;
+        await tester.pumpAndSettle();
+        await peek(tester, 'campfire/${brightness.name}/home_day_$day');
+        await tester.tap(find.byKey(homeCampfireOpenKey));
+        await tester.pumpAndSettle();
+        await peek(tester, 'campfire/${brightness.name}/valley_day_$day');
+        if (day == (brightness == Brightness.dark ? 28 : 100)) {
+          await tester.tap(find.byKey(homeCampfireReplayKey));
+          await tester.pump();
+          final scene = find.byKey(homeCampfireLandscapeKey);
+          for (var frame = 0; frame < 72; frame++) {
+            await peek(
+              tester,
+              'campfire/${brightness.name}/day_${day}_motion/${frame.toString().padLeft(2, '0')}',
+              of: scene,
+            );
+            await tester.pump(const Duration(microseconds: 41667));
+          }
+        }
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+      }
     });
   }
 }

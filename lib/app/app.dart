@@ -253,7 +253,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String? _selectedGameId;
   CefrLevel _selectedLevel = CefrLevel.a1;
   List<SituationStory> _stories = const [];
@@ -451,6 +451,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// станет на тапе «Играть», а экран ошибки при входе в приложение
   /// появлялся бы раньше, чем человек о чём-либо попросил.
   StreakView? _ritual;
+  StreakDay? _ritualDay;
   int _weekRequest = 0;
 
   /// Семь дней недели для полосы; null — журнал ещё читается.
@@ -821,6 +822,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _selectFirstAvailableLevel();
     _refreshRitual();
     // «Открыл приложение» — здесь, а не в `main.dart`: оттуда событие не
@@ -829,6 +831,21 @@ class _HomeScreenState extends State<HomeScreen> {
     // события не будет. Битый сид — дефект сборки, играть всё равно нечем.
     _record(AppEventKind.appOpen);
     _refreshReminder();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        StreakDay.of(widget.now()) != _ritualDay) {
+      _refreshRitual();
+      _refreshReminder();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   List<CefrLevel> get _availableLevels {
@@ -876,6 +893,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// чём-либо попросил, было бы хуже.
   void _refreshRitual() {
     final today = StreakDay.of(widget.now());
+    _ritualDay = today;
     final state = switch (widget.ports.streaks.load()) {
       Ok(:final value) => value,
       Err() => null,

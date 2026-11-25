@@ -26,7 +26,9 @@ import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
+import 'package:arcadelingo/ui/home_ritual_card.dart';
 import 'package:arcadelingo/ui/streak_card.dart';
+import 'package:arcadelingo/ui/valley_campfire_painter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -144,6 +146,34 @@ void main() {
   }
 
   group('Что засчитывает день', () {
+    testWidgets('после обрыва серии в фоне прежний этап пропадает', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        prefs: {
+          'streak_state': jsonEncode({
+            'version': 2,
+            'current': 6,
+            'best': 100,
+            'last_day': '2026-08-26',
+            'freezes': 0,
+            'days_since_freeze': 6,
+          }),
+        },
+      );
+      expect(find.byKey(homeCampfireStageKey), findsOneWidget);
+      await tester.tap(find.byKey(homeCampfireOpenKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(homeCampfireLandscapeKey), findsOneWidget);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      _now = _t0.add(const Duration(days: 3));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(find.byKey(homeCampfireStageKey), findsNothing);
+      expect(find.byKey(homeCampfireLandscapeKey), findsNothing);
+      expect(await streakDoc(), containsPair('best', 100));
+    });
     for (final theme in AppTheme.values) {
       testWidgets(
         'возвращение из игры разжигает костёр один раз в ${theme.name}',
@@ -164,7 +194,7 @@ void main() {
             },
           );
           final fire = find.descendant(
-            of: find.byKey(streakCardKey),
+            of: find.byKey(homeCampfireBadgeKey),
             matching: find.byWidgetPredicate(
               (w) => w is CustomPaint && w.painter is FlamePainter,
             ),
@@ -188,6 +218,13 @@ void main() {
             expect(find.byKey(flameDigitKey), findsOneWidget);
             expect(flameIntensity(), firstRound ? greaterThan(0) : equals(0));
             await tester.pumpAndSettle();
+            expect(
+              (tester.widget<CustomPaint>(fire).painter!
+                      as ValleyCampfirePainter)
+                  .stage
+                  ?.day,
+              7,
+            );
             expect(
               tester.getBottomLeft(fire) -
                   tester.getTopLeft(find.byKey(streakCardKey)),
