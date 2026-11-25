@@ -271,7 +271,7 @@ class _RunnerHeading {
       MazeDirection.up => -math.pi / 2,
     };
     final now = run.elapsedSeconds;
-    if (_target == null || reduced) {
+    if (_target == null || reduced || now < _turnedAt) {
       _target = _from = target;
       _turnedAt = now;
       return target;
