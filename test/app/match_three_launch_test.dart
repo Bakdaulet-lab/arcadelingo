@@ -1,12 +1,17 @@
+import 'dart:math';
+
 import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/courses.dart';
 import 'package:arcadelingo/data/challenges/challenge_prefs_store.dart';
+import 'package:arcadelingo/data/words/words_seed_loader.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
+import 'package:arcadelingo/domain/usecases/start_session.dart';
 import 'package:arcadelingo/features/games/match_three/match_three_game.dart';
+import 'package:arcadelingo/features/games/match_three/match_three_run.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,6 +26,66 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  test(
+    'три обычных совпадения открывают слово выбранного курса и уровня',
+    () async {
+      final courses = {
+        StudyCourse.englishFromRussian: await loadWordsSeed(),
+        StudyCourse.spanishFromRussian: await loadSpanishSeed(),
+        StudyCourse.spanishFromEnglish: await loadSpanishFromEnglishSeed(),
+        StudyCourse.englishFromSpanish: await loadEnglishA1FromSpanishSeed(),
+      };
+      for (final entry in courses.entries) {
+        final items = (entry.value as Ok<List<ReviewItem>>).value;
+        final levels = items.map((item) => item.word.level).toSet();
+        for (final level in levels) {
+          final log = InMemoryAnswerLog();
+          final start = StartSession(
+            cards: InMemoryCardStore(),
+            streaks: InMemoryStreakStore(),
+            now: () => DateTime.utc(2026, 11, 26),
+            target: 1,
+            answerLog: log,
+          );
+          final session =
+              (start(items: items, gameId: 'match_three', level: level)
+                      as Ok<ReviewSession>)
+                  .value;
+          final run = MatchThreeRun(session, Random(0));
+          const moves = [(6, 7), (7, 13), (1, 7)];
+          for (final (index, move) in moves.indexed) {
+            expect(run.swap(move.$1, move.$2), isTrue);
+            run.advance();
+            expect(run.clearing, hasLength(3));
+            for (var phase = 0; phase < 30 && run.isAnimating; phase++) {
+              run.advance();
+            }
+            expect(run.chargeProgress, index + 1);
+            expect(log.records, isEmpty);
+          }
+          expect(
+            run.phase,
+            MatchThreePhase.question,
+            reason: '${entry.key.id}/${level.name}',
+          );
+          final card = items.firstWhere(
+            (item) => item.word.id == run.item!.word.id,
+          );
+          expect(card.word.level, level);
+          expect(run.choices, contains(card.word.translation));
+          expect(
+            run.choices,
+            everyElement(isIn({card.word.translation, ...card.distractors})),
+          );
+          expect(run.answer(card.word.translation, Duration.zero), isTrue);
+          expect(log.records.single.wordId, card.word.id);
+          expect(log.records.single.gameId, 'match_three');
+        }
+      }
+    },
+  );
+
   testWidgets('четвёрка запускает перевод выбранного курса и уровня', (
     tester,
   ) async {

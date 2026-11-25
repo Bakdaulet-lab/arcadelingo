@@ -521,27 +521,70 @@ class AppStrings {
     es: 'Desliza la gema resaltada hacia abajo para alinear cuatro gemas.',
   );
   String get matchHint => _text(
-    en: 'Match four gems in a row to unlock a word.',
-    ru: 'Собери четыре кристалла в ряд, чтобы открыть слово.',
-    es: 'Alinea cuatro gemas para descubrir una palabra.',
+    en:
+        'Three matches charge a word crystal. Four gems in a line charge it instantly.',
+    ru:
+        'Три совпадения заряжают кристалл слова. Четыре в ряд дают полный заряд сразу.',
+    es:
+        'Con tres combinaciones desbloqueas una palabra. Una línea de cuatro la desbloquea al instante.',
   );
   String get matchInvalidMove => _text(
-    en: 'Swap two gems to line up three of the same kind.',
-    ru: 'Поменяй два кристалла местами, чтобы собрать три одинаковых в ряд.',
-    es: 'Intercambia dos gemas para alinear tres del mismo tipo.',
+    en: 'Try another swap. That move was free.',
+    ru: 'Попробуй другой обмен. Ход сохранился.',
+    es: 'Prueba otro intercambio. Conservas el movimiento.',
   );
   String get matchBonus => _text(
-    en: 'Clear a row',
-    ru: 'Бонус «Очистить строку»',
-    es: 'Bono «Limpia una fila»',
+    en: 'Translate to clear a row',
+    ru: 'Переведи слово, чтобы очистить ряд',
+    es: 'Traduce para despejar una fila',
   );
-  String get matchCleared => _text(
-    en: 'Row cleared. Correct translation +60.',
-    ru: 'Строка очищена. За верный перевод +60.',
-    es: 'Fila eliminada. Traducción correcta +60.',
+  String get matchCrossBonus => _text(
+    en: 'Translate to clear a row and a column',
+    ru: 'Переведи слово, чтобы очистить ряд и столбец',
+    es: 'Traduce para despejar una fila y una columna',
   );
-  String matchMoves(int count) =>
-      _text(en: 'Moves: $count', ru: 'Ходы: $count', es: 'Movimientos: $count');
+  String get matchRowBurst => _text(
+    en: 'Row blast · +60',
+    ru: 'Разряд по ряду · +60',
+    es: 'Descarga en fila · +60',
+  );
+  String get matchCrossBurst => _text(
+    en: 'Cross blast · +60',
+    ru: 'Крестовой разряд · +60',
+    es: 'Descarga en cruz · +60',
+  );
+  String get matchChargeLabel =>
+      _text(en: 'Word charge', ru: 'Заряд слова', es: 'Carga de la gema');
+  String get matchScoreLabel => _text(en: 'Score', ru: 'Очки', es: 'Puntos');
+  String get matchMovesLabel =>
+      _text(en: 'Moves', ru: 'Ходы', es: 'Movimientos');
+  String get matchLastCharge => _text(
+    en: 'One more match unlocks a word.',
+    ru: 'Ещё одно совпадение откроет слово.',
+    es: 'Una combinación más desbloquea una palabra.',
+  );
+  String get matchHowTo =>
+      _text(en: 'How to play', ru: 'Как играть', es: 'Cómo jugar');
+  String get matchSwapRule => _text(
+    en: 'Swipe a gem or tap two neighbors to line up three of the same shape.',
+    ru:
+        'Сдвинь кристалл или нажми на два соседних, чтобы выстроить три одинаковых в ряд.',
+    es:
+        'Desliza una gema o toca dos gemas vecinas para alinear tres de la misma forma.',
+  );
+  String get matchCrossRule => _text(
+    en:
+        'A line of five or a T or L shape earns a cross. Translate the word to clear both a row and a column.',
+    ru:
+        'Пять в ряд или фигура в форме T или L дают крестовой разряд. Верный перевод очистит и ряд, и столбец.',
+    es:
+        'Una línea de cinco o una figura en T o en L forma una cruz. Acierta la traducción para despejar una fila y una columna.',
+  );
+  String matchCascade(int multiplier) => _text(
+    en: 'Cascade · points ×$multiplier',
+    ru: 'Каскад · очки ×$multiplier',
+    es: 'Cascada · puntos ×$multiplier',
+  );
   String matchGem(int kind, int row, int column) {
     final names = _text(
       en:

@@ -49,8 +49,10 @@ Iterable<({int from, int to, List<Set<int>> lines})> _moves(
 ) sync* {
   for (var from = 0; from < run.cells.length; from++) {
     for (final to in [from + 1, from + MatchThreeRun.size]) {
-      if (!MatchThreeRun.adjacent(from, to) || run.cells[from] == run.cells[to])
+      if (!MatchThreeRun.adjacent(from, to) ||
+          run.cells[from] == run.cells[to]) {
         continue;
+      }
       final lines = _linesAfter(run.cells, from, to);
       if (lines.isNotEmpty) yield (from: from, to: to, lines: lines);
     }

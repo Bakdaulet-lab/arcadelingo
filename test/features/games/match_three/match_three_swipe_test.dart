@@ -9,46 +9,58 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../support/fake_review_session.dart';
 
 void main() {
-  testWidgets('the two gems follow a short drag, return on cancel, and continue from the finger on commit', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
-      theme: wordarcadeTheme(),
-      home: MatchThreeGame(
-        session: FakeReviewSession(const [
-          ReviewItem(word: Word(id: 'sun', text: 'sun', translation: 'солнце')),
-        ]),
-        onPlayAgain: () {},
-        onExit: () {},
-        seed: 10,
-      ),
-    ));
-    Finder piece(int index) => find.byKey(ValueKey('match_three.piece.$index'));
-    final origin = tester.getCenter(piece(9));
-    final dest = tester.getCenter(piece(15));
-    final step = dest.dy - origin.dy;
-    final short = await tester.startGesture(origin);
-    await short.moveBy(Offset(0, step * .14));
-    await tester.pump();
-    expect(tester.getCenter(piece(9)).dy, closeTo(origin.dy + step * .14, 1));
-    expect(tester.getCenter(piece(15)).dy, closeTo(dest.dy - step * .14, 1));
-    await short.cancel();
-    await tester.pumpAndSettle();
-    expect(tester.getCenter(piece(9)), origin);
-    expect(tester.getCenter(piece(15)), dest);
+  testWidgets(
+    'the two gems follow a short drag, return on cancel, and continue from the finger on commit',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: wordarcadeTheme(),
+          home: MatchThreeGame(
+            session: FakeReviewSession(const [
+              ReviewItem(
+                word: Word(id: 'sun', text: 'sun', translation: 'солнце'),
+              ),
+            ]),
+            onPlayAgain: () {},
+            onExit: () {},
+            seed: 10,
+          ),
+        ),
+      );
+      Finder piece(int index) =>
+          find.byKey(ValueKey('match_three.piece.$index'));
+      final origin = tester.getCenter(piece(9));
+      final dest = tester.getCenter(piece(15));
+      final step = dest.dy - origin.dy;
+      final short = await tester.startGesture(origin);
+      await short.moveBy(Offset(0, step * .14));
+      await tester.pump();
+      expect(tester.getCenter(piece(9)).dy, closeTo(origin.dy + step * .14, 1));
+      expect(tester.getCenter(piece(15)).dy, closeTo(dest.dy - step * .14, 1));
+      await short.cancel();
+      await tester.pumpAndSettle();
+      expect(tester.getCenter(piece(9)), origin);
+      expect(tester.getCenter(piece(15)), dest);
 
-    final swap = await tester.startGesture(origin);
-    await swap.moveBy(Offset(0, step * .32));
-    await tester.pump();
-    // The model now indexes the original piece at its destination (15).
-    expect(tester.getCenter(piece(15)).dy, closeTo(origin.dy + step * .32, 1));
-    await swap.up();
-    await tester.pump(const Duration(milliseconds: 65));
-    expect(tester.getCenter(piece(15)).dy, greaterThan(origin.dy + step * .32));
-  });
+      final swap = await tester.startGesture(origin);
+      await swap.moveBy(Offset(0, step * .32));
+      await tester.pump();
+      // The model now indexes the original piece at its destination (15).
+      expect(
+        tester.getCenter(piece(15)).dy,
+        closeTo(origin.dy + step * .32, 1),
+      );
+      await swap.up();
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(
+        tester.getCenter(piece(15)).dy,
+        greaterThan(origin.dy + step * .32 + 1),
+      );
+    },
+  );
 
   // Both axes pass touch slop in a single pointer event, as can happen on a
   // quick diagonal swipe. The larger displacement must determine the exchange.

@@ -6,14 +6,18 @@ import 'package:flutter/material.dart';
 
 import 'match_three_run.dart';
 
+part 'match_three_effects.dart';
+part 'match_three_gems.dart';
+
 abstract final class MatchThreeKeys {
   static const field = Key('match_three.field');
   static const word = Key('match_three.word');
   static const summary = Key('match_three.summary');
   static Key cell(int index) => ValueKey('match_three.cell.$index');
+  static Key piece(int index) => ValueKey('match_three.piece.$index');
 }
 
-class MatchThreeField extends StatelessWidget {
+class MatchThreeField extends StatefulWidget {
   const MatchThreeField({
     required this.run,
     required this.motion,
@@ -29,31 +33,152 @@ class MatchThreeField extends StatelessWidget {
   final ValueChanged<int> onTap;
   final void Function(int from, int to) onSwap;
 
-  void _swipe(Offset origin, Offset delta, double step) {
-    final x = (origin.dx / step).floor();
-    final y = (origin.dy / step).floor();
-    if (x < 0 || x >= MatchThreeRun.size || y < 0 || y >= MatchThreeRun.size) {
-      return;
+  @override
+  State<MatchThreeField> createState() => _MatchThreeFieldState();
+}
+
+class _MatchThreeFieldState extends State<MatchThreeField>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _drag;
+  int? _pointer;
+  Offset _origin = Offset.zero;
+  Offset _last = Offset.zero;
+  int? _from;
+  int? _to;
+  double _handoff = 0;
+  bool _committed = false;
+
+  bool get _ready => widget.run.phase == MatchThreePhase.ready;
+
+  @override
+  void initState() {
+    super.initState();
+    _drag = AnimationController(vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _drag.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(MatchThreeField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.run.phase != MatchThreePhase.swapping && !_ready) {
+      _pointer = null;
+      _drag.value = 0;
+      _from = null;
+      _to = null;
+      _handoff = 0;
     }
-    final index = y * MatchThreeRun.size + x;
+  }
+
+  int? _cell(Offset position, double step) {
+    final x = (position.dx / step).floor(), y = (position.dy / step).floor();
+    if (x < 0 || x >= MatchThreeRun.size || y < 0 || y >= MatchThreeRun.size) {
+      return null;
+    }
+    return y * MatchThreeRun.size + x;
+  }
+
+  int? _neighbor(int from, Offset delta) {
+    if (delta == Offset.zero) return null;
     final direction =
         delta.dx.abs() > delta.dy.abs()
             ? delta.dx.sign.toInt()
             : delta.dy.sign.toInt() * MatchThreeRun.size;
-    if (MatchThreeRun.adjacent(index, index + direction)) {
-      onSwap(index, index + direction);
+    final target = from + direction;
+    return MatchThreeRun.adjacent(from, target) ? target : null;
+  }
+
+  void _down(PointerDownEvent e, double step) {
+    if (!_ready || _pointer != null || e.buttons != 1) return;
+    _pointer = e.pointer;
+    _origin = _last = e.localPosition;
+    _committed = false;
+    _handoff = 0;
+    _drag.value = 0;
+    _from = _cell(_origin, step);
+    _to = null;
+  }
+
+  void _move(PointerMoveEvent e, double step) {
+    if (!_ready || _committed || e.pointer != _pointer || _from == null) return;
+    _last = e.localPosition;
+    final delta = _last - _origin;
+    final target = _neighbor(_from!, delta);
+    if (_to != target) setState(() => _to = target);
+    _drag.value = target == null ? 0 : _fraction(delta, step);
+  }
+
+  double _fraction(Offset delta, double step) =>
+      (max(delta.dx.abs(), delta.dy.abs()) / step).clamp(0.0, .60).toDouble();
+
+  void _release(int pointer) {
+    if (_pointer != pointer) return;
+    _pointer = null;
+    if (!_committed && _drag.value > 0) {
+      _drag.animateBack(
+        0,
+        duration: const Duration(milliseconds: 105),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  void _swipe(Offset from, Offset delta, double step) {
+    if (!_ready || _committed || _pointer == null || _from == null) return;
+    // Only the finger that started this segment can exchange its two gems.
+    if ((from - _origin).distanceSquared > 4) return;
+    final primary = _last - _origin;
+    if (max(primary.dx.abs(), primary.dy.abs()) < step * .22) return;
+    final target = _neighbor(_from!, primary);
+    if (target == null) return;
+    _committed = true;
+    _to = target;
+    _handoff = _fraction(primary, step);
+    widget.onSwap(_from!, target);
+    if (_ready) {
+      // Equal neighbours cannot exchange. Ease the preview back into its slot.
+      _committed = false;
+      _handoff = 0;
+      _drag.animateBack(
+        0,
+        duration: const Duration(milliseconds: 105),
+        curve: Curves.easeOutCubic,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final ready = run.phase == MatchThreePhase.ready;
+    final paper = colors.brightness == Brightness.light;
+    final effects = !MediaQuery.disableAnimationsOf(context);
+    final run = widget.run;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.outlineVariant),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors:
+              paper
+                  ? const [
+                    Color(0xffddc6a4),
+                    Color(0xfff1e1c4),
+                    Color(0xffbd9979),
+                  ]
+                  : const [
+                    Color(0xff55516b),
+                    Color(0xff282436),
+                    Color(0xff423752),
+                  ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: paper ? const Color(0xffc9ac87) : const Color(0xff554760),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(5),
@@ -63,29 +188,64 @@ class MatchThreeField extends StatelessWidget {
             builder: (context, constraints) {
               final step = constraints.maxWidth / MatchThreeRun.size;
               return ClipRRect(
-                borderRadius: BorderRadius.circular(11),
-                child: ArcadeFieldSwipe(
-                  distance: step * .27,
-                  onSwipe:
-                      ready ? (from, delta) => _swipe(from, delta, step) : null,
-                  child: RepaintBoundary(
-                    child: Stack(
-                      children: [
-                        for (var i = 0; i < run.cells.length; i++)
-                          _tile(context, i, step, colors, ready),
-                        // Paint moving pieces above every cell background.
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: Stack(
-                              children: [
-                                for (final (index, gem) in run.cells.indexed)
-                                  if (gem != null)
-                                    _sprite(context, index, gem, step),
-                              ],
+                borderRadius: BorderRadius.circular(12),
+                child: ColoredBox(
+                  color:
+                      paper ? const Color(0xffcdb693) : const Color(0xff201e30),
+                  child: Listener(
+                    onPointerDown: (e) => _down(e, step),
+                    onPointerMove: (e) => _move(e, step),
+                    onPointerUp: (e) => _release(e.pointer),
+                    onPointerCancel: (e) => _release(e.pointer),
+                    child: ArcadeFieldSwipe(
+                      distance: step * .22,
+                      onSwipe:
+                          _ready
+                              ? (from, delta) => _swipe(from, delta, step)
+                              : null,
+                      child: RepaintBoundary(
+                        child: Stack(
+                          children: [
+                            for (var i = 0; i < run.cells.length; i++)
+                              _tile(context, i, step, colors, paper),
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: Stack(
+                                  children: [
+                                    for (final (index, gem)
+                                        in run.cells.indexed)
+                                      if (gem != null)
+                                        _sprite(
+                                          index,
+                                          gem,
+                                          step,
+                                          paper,
+                                          effects,
+                                        ),
+                                    if (effects &&
+                                        run.phase == MatchThreePhase.clearing)
+                                      Positioned.fill(
+                                        child: CustomPaint(
+                                          painter: _BurstPainter(
+                                            motion: widget.motion,
+                                            gems: run.cells,
+                                            cells: run.clearing,
+                                            origin: run.blastOrigin,
+                                            cross:
+                                                run.chargeKind ==
+                                                MatchChargeKind.cross,
+                                            chain: run.cascadeDepth,
+                                            paper: paper,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -99,71 +259,74 @@ class MatchThreeField extends StatelessWidget {
 
   Widget _tile(
     BuildContext context,
-    int index,
+    int i,
     double step,
     ColorScheme colors,
-    bool ready,
+    bool paper,
   ) {
-    final gem = run.cells[index];
-    final row = MatchThreeRun.row(index);
-    final column = MatchThreeRun.column(index);
-    final guide = run.showGuide;
-    final isSelected = selected == index;
-    final isStart = guide && index == MatchThreeRun.guideFrom;
-    final isTarget = guide && index == MatchThreeRun.guideTo;
+    final run = widget.run;
+    final gem = run.cells[i];
+    final row = MatchThreeRun.row(i), column = MatchThreeRun.column(i);
+    final selected = widget.selected == i;
+    final start = run.showGuide && i == MatchThreeRun.guideFrom;
+    final end = run.showGuide && i == MatchThreeRun.guideTo;
     final charged = gem == MatchGem.charged;
-    final tint =
-        isSelected || isStart || isTarget
+    final accent =
+        selected || start || end
             ? colors.primary
             : charged
             ? colors.tertiary
-            : Colors.transparent;
-
+            : null;
+    final even = (row + column).isEven;
+    final base =
+        paper
+            ? (even ? const Color(0xfff5e9d2) : const Color(0xffedddc1))
+            : (even ? const Color(0xff302c42) : const Color(0xff292636));
     return Positioned(
-      top: row * step,
       left: column * step,
+      top: row * step,
       width: step,
       height: step,
       child: Padding(
-        padding: const EdgeInsets.all(1.5),
+        padding: const EdgeInsets.all(1),
         child: Semantics(
-          key: MatchThreeKeys.cell(index),
-          selected: isSelected,
+          key: MatchThreeKeys.cell(i),
+          selected: selected,
           label: context.strings.matchGem(
             gem?.index ?? -1,
             row + 1,
             column + 1,
           ),
           child: InkWell(
-            borderRadius: BorderRadius.circular(7),
-            onTap: ready ? () => onTap(index) : null,
+            borderRadius: BorderRadius.circular(8),
+            onTap: _ready ? () => widget.onTap(i) : null,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: Color.lerp(
-                  colors.surface,
-                  colors.surfaceContainerHighest,
-                  (row + column).isEven ? .48 : .73,
-                ),
-                borderRadius: BorderRadius.circular(7),
+                color:
+                    accent == null
+                        ? base
+                        : Color.lerp(base, accent, selected ? .22 : .12),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: tint,
-                  width: isSelected || isStart ? 1.6 : 1,
+                  color:
+                      accent?.withValues(alpha: start || selected ? 1 : .66) ??
+                      (paper
+                          ? const Color(0xffdcc7a7)
+                          : const Color(0xff3c364c)),
+                  width: selected || start ? 1.8 : 1,
                 ),
               ),
-              child: Stack(
-                children: [
-                  if (isStart)
-                    Positioned(
-                      right: 1,
-                      bottom: 1,
-                      child: Icon(
-                        Icons.south_rounded,
-                        color: colors.primary,
-                        size: 11,
-                      ),
-                    ),
-                ],
-              ),
+              child:
+                  start
+                      ? Align(
+                        alignment: Alignment.bottomRight,
+                        child: Icon(
+                          Icons.south_rounded,
+                          color: colors.primary,
+                          size: 12,
+                        ),
+                      )
+                      : null,
             ),
           ),
         ),
@@ -171,199 +334,104 @@ class MatchThreeField extends StatelessWidget {
     );
   }
 
-  Widget _sprite(BuildContext context, int index, MatchGem gem, double step) {
-    final effects = !MediaQuery.disableAnimationsOf(context);
+  Widget _sprite(
+    int index,
+    MatchGem gem,
+    double step,
+    bool paper,
+    bool effects,
+  ) {
+    final run = widget.run, phase = run.phase;
+    final drawing = RepaintBoundary(
+      child: CustomPaint(
+        key: MatchThreeKeys.piece(index),
+        painter: _GemPainter(
+          gem,
+          paper: paper,
+          cross:
+              gem == MatchGem.charged &&
+              run.chargeKind == MatchChargeKind.cross,
+        ),
+      ),
+    );
+    final side = step * .76, inset = (step - side) / 2;
+    final preview =
+        effects && _ready && _to != null && (index == _from || index == _to);
     final travel = effects ? run.travel[index] : null;
-    final fade =
+    final clearing =
         effects &&
-        run.phase == MatchThreePhase.clearing &&
+        phase == MatchThreePhase.clearing &&
         run.clearing.contains(index);
-    final size = (step - 3) * .72;
-    final inset = (step - size) / 2;
-    final piece = CustomPaint(painter: _GemPainter(gem));
-    final falling = run.phase == MatchThreePhase.falling;
-    final moving =
-        falling ||
-        run.phase == MatchThreePhase.swapping ||
-        run.phase == MatchThreePhase.reverting;
-    final distance =
-        moving && travel != null
-            ? Offset(travel.columns * step, travel.rows * step)
-            : Offset.zero;
+    Widget art = drawing;
+    if (preview) {
+      final other = index == _from ? _to! : _from!;
+      final delta = Offset(
+        (MatchThreeRun.column(other) - MatchThreeRun.column(index)) * step,
+        (MatchThreeRun.row(other) - MatchThreeRun.row(index)) * step,
+      );
+      art = AnimatedBuilder(
+        animation: _drag,
+        child: drawing,
+        builder:
+            (context, child) =>
+                Transform.translate(offset: delta * _drag.value, child: child),
+      );
+    } else if (clearing || travel != null) {
+      art = AnimatedBuilder(
+        animation: widget.motion,
+        child: drawing,
+        builder: (context, child) {
+          final t = widget.motion.value;
+          if (clearing) {
+            final p = _clearProgress(t, index, run.blastOrigin);
+            final size =
+                p < .24
+                    ? 1 + .12 * Curves.easeOut.transform(p / .24)
+                    : 1.12 *
+                        (1 -
+                            Curves.easeInCubic.transform(
+                              _unit((p - .24) / .76),
+                            ));
+            return Transform.scale(scale: size, child: child);
+          }
+          final delta = Offset(travel!.columns * step, travel.rows * step);
+          if (phase == MatchThreePhase.falling) {
+            final delay = (MatchThreeRun.column(index) % 3) * .022;
+            final p = _unit((t - delay) / (1 - delay));
+            final drop = Curves.easeInQuad.transform(_unit(p / .76));
+            final landing = _unit((p - .76) / .24);
+            final recoil = sin(landing * pi);
+            return Transform.translate(
+              offset: delta * (1 - drop) - Offset(0, step * .039 * recoil),
+              child: Transform.scale(
+                scaleX: 1 + .075 * recoil,
+                scaleY: 1 - .085 * recoil,
+                alignment: Alignment.bottomCenter,
+                child: child,
+              ),
+            );
+          }
+          final remaining =
+              phase == MatchThreePhase.swapping ? 1 - _handoff : 1.0;
+          final curve =
+              phase == MatchThreePhase.reverting
+                  ? Curves.easeOutCubic
+                  : _handoff > 0
+                  ? Curves.easeOutQuad
+                  : Curves.easeInOutCubic;
+          return Transform.translate(
+            offset: delta * (remaining * (1 - curve.transform(t))),
+            child: child,
+          );
+        },
+      );
+    }
     return Positioned(
       left: MatchThreeRun.column(index) * step + inset,
       top: MatchThreeRun.row(index) * step + inset,
-      width: size,
-      height: size,
-      child:
-          !fade && distance == Offset.zero
-              ? piece
-              : AnimatedBuilder(
-                animation: motion,
-                child: piece,
-                builder: (context, child) {
-                  final progress = motion.value;
-                  if (fade) {
-                    final shrink = Curves.easeOutCubic.transform(progress);
-                    return Opacity(
-                      opacity: 1 - shrink,
-                      child: Transform.scale(
-                        scale: 1 - .88 * shrink,
-                        child: child,
-                      ),
-                    );
-                  }
-                  final curve =
-                      falling ? Curves.easeInQuad : Curves.easeInOutCubic;
-                  return Transform.translate(
-                    offset: distance * (1 - curve.transform(progress)),
-                    child: child,
-                  );
-                },
-              ),
+      width: side,
+      height: side,
+      child: art,
     );
   }
-}
-
-class _GemPainter extends CustomPainter {
-  const _GemPainter(this.gem);
-
-  final MatchGem gem;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final (light, body, dark) = switch (gem) {
-      MatchGem.aqua => (
-        const Color(0xffa5fffa),
-        const Color(0xff31d7eb),
-        const Color(0xff11748e),
-      ),
-      MatchGem.rose => (
-        const Color(0xffffbbdf),
-        const Color(0xfff477b9),
-        const Color(0xffa63774),
-      ),
-      MatchGem.amber => (
-        const Color(0xffffdea0),
-        const Color(0xfff7af48),
-        const Color(0xffb96526),
-      ),
-      MatchGem.plum => (
-        const Color(0xffe0c3ff),
-        const Color(0xffaa81f3),
-        const Color(0xff684cb5),
-      ),
-      MatchGem.mint => (
-        const Color(0xffaeffcf),
-        const Color(0xff53dfa4),
-        const Color(0xff207f5f),
-      ),
-      MatchGem.sapphire => (
-        const Color(0xffa6bbff),
-        const Color(0xff658ef8),
-        const Color(0xff374cbd),
-      ),
-      MatchGem.charged => (
-        const Color(0xfffff7ca),
-        const Color(0xffffc65b),
-        const Color(0xffe47c27),
-      ),
-    };
-    final rect = Offset.zero & size;
-    final path = switch (gem) {
-      MatchGem.aqua => _polygon(size, const [
-        Offset(.5, 0),
-        Offset(1, .5),
-        Offset(.5, 1),
-        Offset(0, .5),
-      ]),
-      MatchGem.rose => Path()..addOval(rect.deflate(1)),
-      MatchGem.amber => _polygon(size, const [
-        Offset(.25, .05),
-        Offset(.75, .05),
-        Offset(1, .5),
-        Offset(.75, .95),
-        Offset(.25, .95),
-        Offset(0, .5),
-      ]),
-      MatchGem.plum => _polygon(size, const [
-        Offset(.44, 0),
-        Offset(.82, .14),
-        Offset(1, .48),
-        Offset(.83, .8),
-        Offset(.46, 1),
-        Offset(.12, .76),
-        Offset(0, .4),
-        Offset(.14, .15),
-      ]),
-      MatchGem.mint => _polygon(size, const [
-        Offset(.2, .05),
-        Offset(.8, .05),
-        Offset(.95, .2),
-        Offset(.95, .8),
-        Offset(.8, .95),
-        Offset(.2, .95),
-        Offset(.05, .8),
-        Offset(.05, .2),
-      ]),
-      MatchGem.sapphire => _polygon(size, const [
-        Offset(.5, 0),
-        Offset(.97, .71),
-        Offset(.77, .96),
-        Offset(.23, .96),
-        Offset(.03, .71),
-      ]),
-      MatchGem.charged => _polygon(size, [
-        for (var i = 0; i < 16; i++)
-          const Offset(.5, .5) +
-              Offset(cos(i * pi / 8 - pi / 2), sin(i * pi / 8 - pi / 2)) *
-                  (i.isEven ? .5 : .28),
-      ]),
-    };
-    canvas.drawShadow(path, const Color(0x850d0914), 2, false);
-    canvas.drawPath(
-      path,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [light, body, dark],
-          stops: const [0, .52, 1],
-        ).createShader(rect),
-    );
-    canvas.save();
-    canvas.clipPath(path);
-    canvas.drawPath(
-      _polygon(size, const [
-        Offset(.02, .02),
-        Offset(.79, .12),
-        Offset(.6, .36),
-        Offset(.27, .67),
-        Offset(0, .87),
-      ]),
-      Paint()..color = const Color(0x50ffffff),
-    );
-    canvas.drawPath(
-      _polygon(size, const [
-        Offset(1, .05),
-        Offset(.98, 1),
-        Offset(.21, 1),
-        Offset(.57, .68),
-        Offset(.65, .37),
-      ]),
-      Paint()..color = const Color(0x30301b52),
-    );
-    canvas.restore();
-  }
-
-  Path _polygon(Size size, List<Offset> normalized) {
-    final points = [
-      for (final p in normalized) Offset(p.dx * size.width, p.dy * size.height),
-    ];
-    return Path()..addPolygon(points, true);
-  }
-
-  @override
-  bool shouldRepaint(covariant _GemPainter oldDelegate) =>
-      oldDelegate.gem != gem;
 }
