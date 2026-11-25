@@ -11,8 +11,10 @@
 /// мужчин).
 library;
 
+import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_hud.dart';
+import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/arcade_press_feedback.dart';
 import 'package:arcadelingo/ui/arcade_reveal_pair.dart';
 import 'package:arcadelingo/ui/arcade_round_summary.dart';
@@ -21,6 +23,9 @@ import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
 import 'falling_words_juice.dart';
+import 'falling_words_run.dart';
+
+part 'falling_listening_views.dart';
 
 /// До этой серии фон чистый: ранний тон был бы шумом, а не наградой.
 const int comboTintStart = 2;
@@ -87,6 +92,11 @@ LinearGradient comboGradientFor(ColorScheme scheme, Color hot) =>
 /// Ключи частей экрана. Тест ищет по ним то, что не опознать по тексту:
 /// падающее слово (текст у него меняется каждый раунд) и счётчики HUD.
 abstract final class FallingWordsKeys {
+  static const listeningMarker = Key('falling.listening.marker');
+  static const listeningReplay = Key('falling.listening.replay');
+  static const listeningRetry = Key('falling.listening.retry');
+  static const listeningText = Key('falling.listening.useText');
+
   /// Падающее слово. По нему же тест меряет, сдвинулось ли оно.
   static const Key word = Key('falling_words.word');
 

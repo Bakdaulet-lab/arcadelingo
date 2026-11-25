@@ -354,6 +354,38 @@ class AppStrings {
   );
   String get fallingWords =>
       _text(en: 'Falling Words', ru: 'Падающие слова', es: 'Palabras que caen');
+  String get listeningMode =>
+      _text(en: 'Listening', ru: 'На слух', es: 'De oído');
+  String get listeningModeHint => _text(
+    en: 'Listen and choose the translation in Falling Words',
+    ru: 'Послушай слово и выбери перевод в «Падающих словах»',
+    es: 'Escucha y elige la traducción en Palabras que caen',
+  );
+  String get listenToWord => _text(
+    en: 'Listen to the word',
+    ru: 'Слушай слово',
+    es: 'Escucha la palabra',
+  );
+  String get chooseListeningTranslation => _text(
+    en: 'Choose the translation',
+    ru: 'Выбери перевод',
+    es: 'Elige la traducción',
+  );
+  String get listeningChoicesAfterAudio => _text(
+    en: 'The translations will appear when the word finishes playing.',
+    ru: 'Когда слово прозвучит, появятся варианты перевода.',
+    es: 'Las traducciones aparecerán cuando termines de oír la palabra.',
+  );
+  String get replayWord => _text(
+    en: 'Listen again',
+    ru: 'Прослушать снова',
+    es: 'Escuchar de nuevo',
+  );
+  String get useWrittenWords => _text(
+    en: 'Play with written words',
+    ru: 'Играть с текстом',
+    es: 'Jugar con palabras escritas',
+  );
   String get fallingInstruction => _text(
     en: 'Tap the correct translation',
     ru: 'Нажми на верный перевод',

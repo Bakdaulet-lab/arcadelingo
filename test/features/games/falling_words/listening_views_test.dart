@@ -28,8 +28,6 @@ void main() {
   testWidgets(
     'moving sound marker and stationary replay button are independent',
     (tester) async {
-      final semantics = tester.ensureSemantics();
-      addTearDown(semantics.dispose);
       var plays = 0;
       Future<void> show(double progress, bool speaking) async {
         await _show(
