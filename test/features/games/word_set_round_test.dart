@@ -86,9 +86,8 @@ void main() {
       }
       expect(board.isCleared, isTrue);
 
-      final snake = SnakeRun(session(), [
-        for (final item in items) item.word,
-      ], Random(7));
+      final vocabulary = [for (final item in items) item.word];
+      final snake = SnakeRun(session(), vocabulary, Random(7));
       expect(snake.item!.word, _key);
       expect(snake.apples.map((apple) => apple.word), unorderedEquals(words));
     });
