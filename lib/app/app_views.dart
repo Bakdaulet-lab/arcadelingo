@@ -465,65 +465,133 @@ class _HomeActions extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final paper = theme.brightness == Brightness.light;
+    final strings = context.strings;
+    final compact = !paper && onChallenge != null && onLearn != null;
     final continuous = game?.challenge == ArcadeChallenge.continuous;
+    final challengeIcon = Icon(
+      continuous ? Icons.all_inclusive_rounded : Icons.emoji_events_outlined,
+      size: compact ? 17 : null,
+      color: compact ? colors.primary : null,
+    );
+    final challengeLabel = Text(
+      continuous ? strings.continuousMode : strings.challenge,
+      textAlign: TextAlign.center,
+    );
+    final compactStyle = OutlinedButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      backgroundColor: colors.surfaceContainerHighest,
+      foregroundColor: colors.onSurface,
+      side: BorderSide(color: colors.outline.withValues(alpha: .68)),
+      textStyle: withWeight(
+        theme.textTheme.labelLarge!.copyWith(fontSize: 13),
+        FontWeight.w600,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
     final challenge =
         onChallenge == null
             ? null
-            : TextButton.icon(
+            : !compact
+            ? TextButton.icon(
               key: AppKeys.challenge,
               onPressed: onChallenge,
-              icon: Icon(
-                continuous
-                    ? Icons.all_inclusive_rounded
-                    : Icons.emoji_events_outlined,
-              ),
-              label: Text(
-                continuous
-                    ? context.strings.continuousMode
-                    : context.strings.challenge,
-                textAlign: TextAlign.center,
-              ),
+              icon: challengeIcon,
+              label: challengeLabel,
               style: TextButton.styleFrom(
                 minimumSize: Size(0, paper ? 44 : 48),
               ),
+            )
+            : OutlinedButton.icon(
+              key: AppKeys.challenge,
+              onPressed: onChallenge,
+              icon: challengeIcon,
+              label: challengeLabel,
+              style: compactStyle,
             );
+    final learn =
+        onLearn == null
+            ? null
+            : OutlinedButton.icon(
+              key: AppKeys.learn,
+              onPressed: onLearn,
+              icon: Icon(
+                Icons.school_outlined,
+                size: compact ? 17 : null,
+                color: compact ? colors.primary : null,
+              ),
+              label: Text(strings.learnAndPlay, textAlign: TextAlign.center),
+              style:
+                  !compact
+                      ? OutlinedButton.styleFrom(
+                        minimumSize: Size.fromHeight(paper ? 46 : 52),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        textStyle: withWeight(
+                          theme.textTheme.titleMedium!,
+                          FontWeight.w600,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(paper ? 12 : 18),
+                        ),
+                      )
+                      : compactStyle,
+            );
+    final playLabel = Text(
+      ritual == null
+          ? strings.play
+          : ritualCallToAction(ritual!, strings: strings),
+      textAlign: TextAlign.center,
+    );
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (!paper && game != null && level != null) ...[
           Text(
-            '${game!.titleFor(context.strings)} · ${level!.name.toUpperCase()}',
+            '${game!.titleFor(strings)} · ${level!.name.toUpperCase()}',
             textAlign: TextAlign.center,
             style: withWeight(
-              theme.textTheme.labelLarge!,
+              compact
+                  ? theme.textTheme.labelMedium!
+                  : theme.textTheme.labelLarge!,
               FontWeight.w500,
             ).copyWith(color: colors.onSurfaceVariant),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: compact ? 7 : 10),
         ],
-        if (!paper && challenge != null) challenge,
-        if (onLearn != null) ...[
-          OutlinedButton.icon(
-            key: AppKeys.learn,
-            onPressed: onLearn,
-            icon: const Icon(Icons.school_outlined),
-            label: Text(
-              context.strings.learnAndPlay,
-              textAlign: TextAlign.center,
-            ),
-            style: OutlinedButton.styleFrom(
-              minimumSize: Size.fromHeight(paper ? 46 : 52),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              textStyle: withWeight(
-                theme.textTheme.titleMedium!,
-                FontWeight.w600,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(paper ? 12 : 18),
-              ),
-            ),
+        if (compact) ...[
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stack =
+                  constraints.maxWidth < 260 ||
+                  MediaQuery.textScalerOf(context).scale(16) > 22;
+              if (stack) {
+                return Column(
+                  spacing: 7,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [challenge!, learn!],
+                );
+              }
+              return IntrinsicHeight(
+                child: Row(
+                  spacing: 7,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(flex: 9, child: challenge!),
+                    Expanded(flex: 11, child: learn!),
+                  ],
+                ),
+              );
+            },
           ),
+          const SizedBox(height: 7),
+        ],
+        if (!paper && !compact && challenge != null) challenge,
+        if (!compact && learn != null) ...[
+          learn,
           SizedBox(height: paper ? 7 : 10),
         ],
         ArcadePressFeedback(
@@ -533,32 +601,44 @@ class _HomeActions extends StatelessWidget {
                 key: AppKeys.play,
                 onPressed: onPlay,
                 style: FilledButton.styleFrom(
-                  minimumSize: Size.fromHeight(paper ? 48 : 56),
+                  minimumSize: Size.fromHeight(
+                    paper ? 48 : (compact ? 50 : 56),
+                  ),
                   padding: EdgeInsets.symmetric(
                     horizontal: 20,
-                    vertical: paper ? 12 : 14,
+                    vertical: paper ? 12 : (compact ? 8 : 14),
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(paper ? 12 : 20),
+                    borderRadius: BorderRadius.circular(
+                      paper ? 12 : (compact ? 15 : 20),
+                    ),
                   ),
                   textStyle: withWeight(
-                    paper
-                        ? theme.textTheme.titleMedium!
-                        : theme.textTheme.titleLarge!,
+                    compact
+                        ? theme.textTheme.titleMedium!.copyWith(fontSize: 17)
+                        : (paper
+                            ? theme.textTheme.titleMedium!
+                            : theme.textTheme.titleLarge!),
                     FontWeight.bold,
                   ),
                 ),
-                child: Text(
-                  ritual == null
-                      ? context.strings.play
-                      : ritualCallToAction(ritual!, strings: context.strings),
-                  textAlign: TextAlign.center,
-                ),
+                child:
+                    !compact
+                        ? playLabel
+                        : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          spacing: 8,
+                          children: [
+                            const Icon(Icons.play_arrow_rounded, size: 18),
+                            Flexible(child: playLabel),
+                          ],
+                        ),
               ),
         ),
         if (paper && challenge != null) challenge,
         if (!paper) ...[
-          const SizedBox(height: 12),
+          SizedBox(height: compact ? 10 : 12),
           _HomeNavigation(onProgress: onProgress, onSettings: onSettings),
         ],
       ],
