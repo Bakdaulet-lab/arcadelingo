@@ -48,6 +48,10 @@ Future<void> mountGame(
 
 Future<void> reachNorthGate(WidgetTester tester) async {
   await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+  await waitForAnswer(tester);
+}
+
+Future<void> waitForAnswer(WidgetTester tester) async {
   for (
     var frame = 0;
     frame < 400 && find.byKey(MazeKeys.next).evaluate().isEmpty;
@@ -59,6 +63,87 @@ Future<void> reachNorthGate(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets(
+    'a fresh swipe after success goes straight into the next chase; a held finger cannot',
+    (tester) async {
+      final session = FakeReviewSession(const [
+        ReviewItem(word: target),
+        ReviewItem(word: candle),
+      ]);
+      await mountGame(tester, session, [target]);
+      final field = find.byKey(MazeKeys.field);
+      final touch = await tester.startGesture(tester.getCenter(field));
+      await touch.moveBy(const Offset(0, -22));
+      await waitForAnswer(tester);
+      expect(session.reports.single.outcome.correct, isTrue);
+      await touch.moveBy(const Offset(34, 0));
+      await tester.pump();
+      await touch.up();
+      expect(session.nextItemCalls, 1);
+      final nextTouch = await tester.startGesture(tester.getCenter(field));
+      await nextTouch.moveBy(const Offset(21, 0));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 35));
+      expect(session.nextItemCalls, 2);
+      expect(tester.widget<Text>(find.byKey(MazeKeys.word)).data, 'свеча');
+      final run = tester.widget<MazeField>(field).run;
+      expect(run.player.x, greaterThan(MazeRun.spawn.x));
+      await nextTouch.moveBy(const Offset(-21, 0));
+      await tester.pump();
+      expect(run.facing, MazeDirection.left);
+      await nextTouch.up();
+      expect(session.reports, hasLength(1));
+    },
+  );
+
+  testWidgets('quick continuation needs a fresh foreground key press', (
+    tester,
+  ) async {
+    final session = FakeReviewSession(const [
+      ReviewItem(word: target),
+      ReviewItem(word: candle),
+    ]);
+    await mountGame(tester, session, [target]);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowUp);
+    await waitForAnswer(tester);
+    await tester.sendKeyRepeatEvent(LogicalKeyboardKey.arrowUp);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pump();
+    expect(session.nextItemCalls, 1);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyD);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(session.nextItemCalls, 1);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyD);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 32));
+    final run = tester.widget<MazeField>(find.byKey(MazeKeys.field)).run;
+    expect(session.nextItemCalls, 2);
+    expect(run.player.x, greaterThan(MazeRun.spawn.x));
+  });
+
+  testWidgets(
+    'the Next button after a correct gate keeps the next word ready to read',
+    (tester) async {
+      final session = FakeReviewSession(const [
+        ReviewItem(word: target),
+        ReviewItem(word: candle),
+      ]);
+      await mountGame(tester, session, [target]);
+      await reachNorthGate(tester);
+      final next = find.byKey(MazeKeys.next);
+      await tester.ensureVisible(next);
+      await tester.tap(next);
+      await tester.pumpAndSettle();
+      expect(session.nextItemCalls, 2);
+      expect(
+        tester.widget<MazeField>(find.byKey(MazeKeys.field)).run.moving,
+        isFalse,
+      );
+    },
+  );
   testWidgets('answer and next question keep the field and prompt in place', (
     tester,
   ) async {
@@ -203,7 +288,10 @@ void main() {
       late FakeReviewSession session;
       late String northLabel;
       for (var seed = 0; seed < 10; seed++) {
-        session = FakeReviewSession(const [ReviewItem(word: target)]);
+        session = FakeReviewSession(const [
+          ReviewItem(word: target),
+          ReviewItem(word: candle),
+        ]);
         await mountGame(tester, session, [target, candle, table], seed: seed);
         northLabel = tester.widget<Text>(find.byKey(MazeKeys.gate(1))).data!;
         if (northLabel != 'llave') break;
@@ -213,6 +301,10 @@ void main() {
       expect(session.reports.single.outcome.correct, isFalse);
       expect(session.reports.single.outcome.selectedAnswer, northLabel);
       expect(find.textContaining('llave — ключ'), findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      expect(session.nextItemCalls, 1);
+      expect(find.byKey(MazeKeys.next), findsOneWidget);
     },
   );
 
