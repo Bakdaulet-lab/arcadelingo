@@ -590,6 +590,39 @@ class AppStrings {
   );
 
   String get snake => _text(en: 'Snake', ru: 'Змейка', es: 'Serpiente');
+  String get wordMaze =>
+      _text(en: 'Word maze', ru: 'Лабиринт', es: 'Laberinto de palabras');
+  String get mazeInstruction => _text(
+    en: 'Dodge the ghosts and reach the gate with the right word',
+    ru: 'Обойди привидений и найди ворота с нужным словом',
+    es: 'Esquiva a los fantasmas y llega a la puerta con la palabra correcta',
+  );
+  String get mazeBoard => _text(
+    en: 'Maze with word gates',
+    ru: 'Лабиринт с воротами',
+    es: 'Laberinto con puertas',
+  );
+  String get mazeSteering => _text(
+    en: 'Swipe to steer. You can turn before a corner.',
+    ru: 'Веди пальцем по полю. Поворот можно задать заранее.',
+    es:
+        'Desliza el dedo para girar. Puedes indicar el giro antes de llegar a la esquina.',
+  );
+  String get mazeCaught => _text(
+    en: 'A ghost caught you',
+    ru: 'Привидение тебя поймало',
+    es: 'Te ha atrapado un fantasma',
+  );
+  String get mazeTryAgain => _text(
+    en: 'Try another route',
+    ru: 'Попробовать другой путь',
+    es: 'Probar otro camino',
+  );
+  String mazeProgress(int number, int total) => _text(
+    en: 'Word $number of $total',
+    ru: 'Слово $number из $total',
+    es: 'Palabra $number de $total',
+  );
   String get snakeInstruction => _text(
     en: 'Catch the apple with the right translation',
     ru: 'Поймай яблоко с нужным переводом',

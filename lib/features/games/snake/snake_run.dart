@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:arcadelingo/domain/review/review_contract.dart';
-import 'package:arcadelingo/domain/review/word_labels.dart';
+import 'package:arcadelingo/domain/review/word_choices.dart';
 
 enum SnakeDirection {
   up(0, -1),
@@ -175,7 +175,11 @@ class SnakeRun {
 
     _item = question;
     final correctCell = available.removeAt(_random.nextInt(available.length));
-    final distractors = _chooseDistractors(question).take(available.length);
+    final distractors = wordDistractors(
+      question,
+      _vocabulary,
+      _random,
+    ).take(available.length);
     _apples = List.unmodifiable([
       SnakeApple(cell: correctCell, word: question.word),
       for (final (index, word) in distractors.indexed)
@@ -208,43 +212,5 @@ class SnakeRun {
       if (positions.length == 3) break;
     }
     return positions;
-  }
-
-  Iterable<Word> _chooseDistractors(ReviewItem question) sync* {
-    final word = question.word;
-    final translations = translationMeanings(word.translation);
-    final labels = {normalizedWordLabel(word.text)};
-    final curated = question.distractors.map(normalizedWordLabel).toSet();
-    final preferred = <Word>[];
-    final matchingPartOfSpeech = <Word>[];
-    final others = <Word>[];
-
-    for (final candidate in _vocabulary) {
-      if (candidate.level != word.level) continue;
-      if (translationMeanings(
-        candidate.translation,
-      ).any(translations.contains)) {
-        // The apple only shows the spelling, even if another personal or
-        // course card records a different meaning for the same spelling.
-        labels.add(normalizedWordLabel(candidate.text));
-        continue;
-      }
-      final normalizedTranslation = normalizedWordLabel(candidate.translation);
-      if (curated.contains(normalizedTranslation)) {
-        preferred.add(candidate);
-      } else if (word.partOfSpeech != null &&
-          word.partOfSpeech == candidate.partOfSpeech) {
-        matchingPartOfSpeech.add(candidate);
-      } else {
-        others.add(candidate);
-      }
-    }
-
-    for (final pool in [preferred, matchingPartOfSpeech, others]) {
-      pool.shuffle(_random);
-      for (final candidate in pool) {
-        if (labels.add(normalizedWordLabel(candidate.text))) yield candidate;
-      }
-    }
   }
 }
