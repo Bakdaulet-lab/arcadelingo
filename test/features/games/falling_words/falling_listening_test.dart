@@ -99,6 +99,41 @@ Future<void> _lifecycle(WidgetTester tester, AppLifecycleState state) async {
 }
 
 void main() {
+  testWidgets('back cancels the voice before the closing route animation', (
+    tester,
+  ) async {
+    final session = _Session();
+    final speech = _Speech();
+    final navigator = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      MaterialApp(navigatorKey: navigator, home: const Scaffold()),
+    );
+    unawaited(
+      navigator.currentState!.push(
+        MaterialPageRoute<void>(
+          builder:
+              (_) => FallingWordsGame(
+                session: session,
+                speech: speech,
+                listeningMode: true,
+                studyLanguage: 'es',
+                onExit: () {},
+                onPlayAgain: () {},
+              ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(speech.pending, hasLength(1));
+    navigator.currentState!.pop();
+    await tester.pump();
+    expect(speech.stops, greaterThan(0));
+    await _finishAudio(tester, speech.pending.single);
+    await tester.pumpAndSettle();
+    expect(session.reports, isEmpty);
+    expect(session.nextItem()!.word.text, 'llave');
+  });
+
   testWidgets(
     'full audio precedes each word; replay freezes position and grading time',
     (tester) async {
