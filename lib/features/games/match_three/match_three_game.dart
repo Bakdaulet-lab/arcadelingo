@@ -202,8 +202,8 @@ class _MatchThreeGameState extends State<MatchThreeGame>
             ? 740
             : 1600 +
                 min(
-                  1500,
-                  (_run.item?.word.translation.characters.length ?? 0) * 36,
+                  3600,
+                  (_run.item?.word.translation.characters.length ?? 0) * 38,
                 ),
       _ => 1,
     };
@@ -508,15 +508,32 @@ class _MatchThreeGameState extends State<MatchThreeGame>
           LayoutBuilder(
             builder: (context, constraints) {
               final options = _run.choices;
+              const gap = 5.0;
+              const horizontalPadding = 9.0;
+              final labelStyle = theme.textTheme.labelLarge!;
+              final available =
+                  (constraints.maxWidth - gap * (options.length - 1)) /
+                      options.length -
+                  2 * horizontalPadding;
+              final label = TextPainter(
+                textDirection: Directionality.of(context),
+                textScaler: MediaQuery.textScalerOf(context),
+                locale: Localizations.maybeLocaleOf(context),
+              );
               final row =
                   constraints.maxWidth >= 220 &&
-                  MediaQuery.textScalerOf(context).scale(14) <= 16 &&
-                  options.every((text) => text.characters.length <= 13);
+                  options.every((text) {
+                    label.text = TextSpan(text: text, style: labelStyle);
+                    label.layout();
+                    return label.width <= available;
+                  });
+              label.dispose();
               final buttons = [
                 for (final choice in options)
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(0, 48),
+                      textStyle: labelStyle,
                       foregroundColor: colors.onSurface,
                       backgroundColor:
                           feedback && choice == word.translation
@@ -531,7 +548,7 @@ class _MatchThreeGameState extends State<MatchThreeGame>
                               ? colors.onErrorContainer
                               : colors.onSurfaceVariant,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
+                        horizontal: horizontalPadding,
                         vertical: 7,
                       ),
                       side:
@@ -552,7 +569,7 @@ class _MatchThreeGameState extends State<MatchThreeGame>
               ];
               return row
                   ? Row(
-                    spacing: 5,
+                    spacing: gap,
                     children: [
                       for (final button in buttons) Expanded(child: button),
                     ],

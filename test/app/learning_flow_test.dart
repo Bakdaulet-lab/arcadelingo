@@ -113,7 +113,7 @@ Future<void> _openBrickBonus(WidgetTester tester) async {
   await tester.tapAt(
     Offset(
       board.left + gold.bounds.center.dx * board.width / BrickBreakerRun.width,
-      board.bottom - 22,
+      board.top + 12,
     ),
   );
   await tester.tap(find.byKey(BrickBreakerKeys.launch));
@@ -124,9 +124,9 @@ Future<void> _openBrickBonus(WidgetTester tester) async {
 }
 
 Future<void> _answerBrick(WidgetTester tester, String translation) async {
-  final board = tester.getRect(find.byKey(BrickBreakerKeys.field));
-  final x = tester.getCenter(find.text(translation)).dx;
-  await tester.tapAt(Offset(x, board.bottom - 22));
+  final card = find.text(translation);
+  await tester.ensureVisible(card);
+  await tester.tap(card);
   await tester.pumpAndSettle(const Duration(milliseconds: 20));
 }
 

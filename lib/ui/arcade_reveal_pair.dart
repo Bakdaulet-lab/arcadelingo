@@ -22,61 +22,51 @@ class ArcadeRevealPair extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
+        primary: false,
         padding: const EdgeInsets.all(16),
-        child: LayoutBuilder(
-          builder:
-              (context, constraints) => FittedBox(
-                fit: BoxFit.scaleDown,
-                child: SizedBox(
-                  width: constraints.maxWidth,
-                  child: ArcadePanel(
-                    padding: const EdgeInsets.all(16),
-                    accent: colors.primary,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.close, color: colors.error, size: 28),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  word,
-                                  key: wordKey,
-                                  softWrap: false,
-                                  style: withWeight(
-                                    theme.textTheme.displaySmall!,
-                                    FontWeight.bold,
-                                  ).copyWith(color: colors.error),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Icon(
-                          Icons.arrow_downward_rounded,
-                          color: colors.onSurfaceVariant,
-                          size: 24,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          answer,
-                          key: answerKey,
-                          textAlign: TextAlign.center,
-                          style: withWeight(
-                            theme.textTheme.headlineSmall!,
-                            FontWeight.bold,
-                          ).copyWith(color: colors.primary, height: 1.3),
-                        ),
-                      ],
+        child: ArcadePanel(
+          padding: const EdgeInsets.all(16),
+          accent: colors.primary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.close, color: colors.error, size: 28),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      word,
+                      key: wordKey,
+                      textAlign: TextAlign.center,
+                      style: withWeight(
+                        theme.textTheme.displaySmall!,
+                        FontWeight.bold,
+                      ).copyWith(color: colors.error),
                     ),
                   ),
-                ),
+                ],
               ),
+              const SizedBox(height: 8),
+              Icon(
+                Icons.arrow_downward_rounded,
+                color: colors.onSurfaceVariant,
+                size: 24,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                answer,
+                key: answerKey,
+                textAlign: TextAlign.center,
+                style: withWeight(
+                  theme.textTheme.headlineSmall!,
+                  FontWeight.bold,
+                ).copyWith(color: colors.primary, height: 1.3),
+              ),
+            ],
+          ),
         ),
       ),
     );

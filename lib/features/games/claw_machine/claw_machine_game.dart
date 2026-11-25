@@ -5,6 +5,7 @@ import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_answer_feedback.dart';
+import 'package:arcadelingo/ui/arcade_letter_wrap.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -490,92 +491,104 @@ class _AnswerSlots extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final letterStyle = withWeight(
+      theme.textTheme.titleLarge!,
+      FontWeight.bold,
+    );
+    final painter = TextPainter(
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    );
+    final slotWidths = <double>[];
+    for (final slot in slots) {
+      painter
+        ..text = TextSpan(text: slot, style: letterStyle)
+        ..layout();
+      slotWidths.add(painter.width);
+    }
+    painter.dispose();
     return Semantics(
       label: context.strings.lettersCollected(
         collected - separators.where((i) => i < collected).length,
         slots.length - separators.length,
       ),
       liveRegion: true,
-      child: Wrap(
+      child: ArcadeLetterWrap(
         key: ClawKeys.slots,
+        spelling: slots,
         alignment: WrapAlignment.center,
         spacing: 5,
         runSpacing: 5,
-        children: [
-          for (var i = 0; i < slots.length; i++)
-            if (separators.contains(i))
-              Padding(
-                padding: const EdgeInsets.only(top: 5),
-                child: Text(slots[i], style: theme.textTheme.titleLarge),
-              )
-            else
-              TweenAnimationBuilder<double>(
-                key: ValueKey((i, i < collected)),
-                tween: Tween(
-                  begin: !reducedMotion && i == collected - 1 ? 0 : 1,
-                  end: 1,
-                ),
-                duration:
-                    reducedMotion
-                        ? Duration.zero
-                        : const Duration(milliseconds: 210),
-                builder: (context, t, child) {
-                  final pulse = 1 - t;
-                  return Transform.scale(
-                    scale: 1 + .12 * sin(pi * t),
-                    child: Container(
-                      constraints: const BoxConstraints(
-                        minWidth: 38,
-                        minHeight: 40,
+        slot:
+            (context, i) =>
+                separators.contains(i)
+                    ? Padding(
+                      padding: const EdgeInsets.only(top: 5),
+                      child: Text(slots[i], style: theme.textTheme.titleLarge),
+                    )
+                    : TweenAnimationBuilder<double>(
+                      key: ValueKey((i, i < collected)),
+                      tween: Tween(
+                        begin: !reducedMotion && i == collected - 1 ? 0 : 1,
+                        end: 1,
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            i < collected
-                                ? Color.lerp(
-                                  colors.surfaceContainerHighest,
-                                  colors.primary,
-                                  .24 * pulse,
-                                )
-                                : colors.surface,
-                        border: Border.all(
-                          color:
-                              i == collected
-                                  ? colors.primary
-                                  : Color.lerp(
-                                    colors.outline,
-                                    colors.primary,
-                                    pulse,
-                                  )!,
-                        ),
-                        borderRadius: BorderRadius.circular(9),
-                        boxShadow: [
-                          if (pulse > 0)
-                            BoxShadow(
-                              color: colors.primary.withValues(
-                                alpha: .5 * pulse,
-                              ),
-                              blurRadius: 12 * pulse,
+                      duration:
+                          reducedMotion
+                              ? Duration.zero
+                              : const Duration(milliseconds: 210),
+                      builder: (context, t, child) {
+                        final pulse = 1 - t;
+                        return Transform.scale(
+                          scale: 1 + .12 * sin(pi * t),
+                          child: Container(
+                            constraints: BoxConstraints(
+                              minWidth: max(38, slotWidths[i] + 12),
+                              minHeight: 40,
                             ),
-                        ],
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  i < collected
+                                      ? Color.lerp(
+                                        colors.surfaceContainerHighest,
+                                        colors.primary,
+                                        .24 * pulse,
+                                      )
+                                      : colors.surface,
+                              border: Border.all(
+                                color:
+                                    i == collected
+                                        ? colors.primary
+                                        : Color.lerp(
+                                          colors.outline,
+                                          colors.primary,
+                                          pulse,
+                                        )!,
+                              ),
+                              borderRadius: BorderRadius.circular(9),
+                              boxShadow: [
+                                if (pulse > 0)
+                                  BoxShadow(
+                                    color: colors.primary.withValues(
+                                      alpha: .5 * pulse,
+                                    ),
+                                    blurRadius: 12 * pulse,
+                                  ),
+                              ],
+                            ),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: Text(
+                        i < collected ? slots[i] : ' ',
+                        textAlign: TextAlign.center,
+                        style: letterStyle,
                       ),
-                      child: child,
                     ),
-                  );
-                },
-                child: Text(
-                  i < collected ? slots[i] : ' ',
-                  textAlign: TextAlign.center,
-                  style: withWeight(
-                    theme.textTheme.titleLarge!,
-                    FontWeight.bold,
-                  ),
-                ),
-              ),
-        ],
       ),
     );
   }

@@ -32,11 +32,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'ninja_geometry.dart';
+import 'ninja_labels.dart';
 import 'ninja_run.dart';
 import 'ninja_slash_fx.dart';
 import 'ninja_slash_juice.dart';
 import 'ninja_slash_views.dart';
-import 'ninja_trajectory.dart';
+import 'ninja_trajectory.dart' show objectRadius;
 
 /// Ниндзя-слэш: слово наверху, три объекта на параболах, рез свайпом.
 class NinjaSlashGame extends StatefulWidget {
@@ -110,6 +111,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   /// Поле: по нему считаются позиции объектов, и его же координаты приходят
   /// в жест. Одна система координат на рисование и на рез.
   final GlobalKey _fieldKey = GlobalKey();
+  NinjaWordLayout? _wordLayout;
 
   /// Система шлёт состояния пачками (`resumed → inactive → hidden →
   /// paused` и обратно), поэтому пауза и возврат обязаны быть
@@ -229,13 +231,6 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
             .round(),
   );
 
-  /// Размер поля в этом кадре; null — поля ещё нет в дереве.
-  Size? get _fieldSize {
-    final box = _fieldKey.currentContext?.findRenderObject();
-    if (box is! RenderBox || !box.hasSize) return null;
-    return box.size;
-  }
-
   void _startFlight() {
     // Часы следа — часы полёта, и у каждой волны они свои: точка,
     // оставленная в конце прошлой волны, на старте новой оказалась бы
@@ -269,6 +264,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
   void _onFlightTick() {
     if (_run.phase != NinjaPhase.flying || _flight.value < 1) return;
     _flight.stop();
+    if (_wordLayout?.scrolls == true) return;
     if (_run.timeout()) {
       _feel();
       _sound();
@@ -296,6 +292,7 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     if (_bladePointer != null ||
         _paused ||
         _windingUp ||
+        _wordLayout?.scrolls == true ||
         _run.phase != NinjaPhase.flying) {
       return;
     }
@@ -330,57 +327,64 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     _gesture.add((at: to, stamp: _elapsed));
     if (_gesture.length > trailPoints) _gesture.removeAt(0);
     if (!swipeCounts(_travelled)) return;
-    final size = _fieldSize;
-    if (size == null) return;
-    final widths = [for (final label in _run.options) targetWidth(label, size)];
-    final wide = widths.any((width) => width > objectRadius * 2);
-    final centers = wavePositions(
-      count: _run.options.length,
-      t: _flight.value,
-      width: size.width,
-      height: size.height,
-      wide: wide,
-    );
+    final layout = _wordLayout;
+    if (layout == null ||
+        layout.scrolls ||
+        layout.targets.length != _run.options.length) {
+      return;
+    }
+    final centers = layout.centers(_flight.value);
     final target = sliceTarget(
       from: from,
       to: to,
       centers: centers,
       radius: objectRadius,
-      widths: widths,
+      cards: layout.stacked ? layout.targets : null,
     );
     if (target == null) {
       _maybeGraze(
         from: from,
         to: to,
         centers: centers,
-        width: widths[_run.correctIndex],
+        width: layout.targets[_run.correctIndex].width,
       );
       return;
     }
-    if (!_run.slice(target, _elapsed)) return;
+    _acceptSlice(
+      target,
+      angle: (to - from).direction,
+      point: closestPointOnSegment(from: from, to: to, point: centers[target]),
+      velocity: layout.velocity(target, _flight.value, _run.timeLimit),
+    );
+  }
+
+  void _chooseCard(int target, Offset globalPosition) {
+    if (_paused || _windingUp || _run.phase != NinjaPhase.flying) return;
+    final arena = _fieldKey.currentContext?.findRenderObject();
+    if (arena is! RenderBox || _wordLayout?.scrolls != true) return;
+    _acceptSlice(
+      target,
+      angle: 0,
+      point: arena.globalToLocal(globalPosition),
+      velocity: Offset.zero,
+      untimed: true,
+    );
+  }
+
+  void _acceptSlice(
+    int target, {
+    required double angle,
+    required Offset point,
+    required Offset velocity,
+    bool untimed = false,
+  }) {
+    if (!_run.slice(target, _elapsed, untimed: untimed)) return;
     _flight.stop();
     _trail = List.of(_gesture);
     _sliceElapsed = _elapsed;
-    _sliceAngle = (to - from).direction;
-    // Скорость в момент реза — производная той же траектории, по которой
-    // объект летел: половинки продолжают его движение, а не начинают своё.
-    _sliceVelocity = waveVelocity(
-      count: _run.options.length,
-      index: target,
-      t: _flight.value,
-      width: size.width,
-      height: size.height,
-      duration: _run.timeLimit,
-      wide: wide,
-    );
-    // Точка реза, а не центр объекта: касательный рез виден именно краем, и
-    // искры из центра при нём читались бы как посторонний взрыв. Считает её
-    // та же функция, по которой проверено попадание.
-    _slicePoint = closestPointOnSegment(
-      from: from,
-      to: to,
-      point: centers[target],
-    );
+    _sliceAngle = angle;
+    _sliceVelocity = velocity;
+    _slicePoint = point;
     // Искры считаются на любом резе, а показываются только на верном:
     // страж один — в `sliced` ниже. Второй здесь дублировал бы его и был бы
     // ненаблюдаем (частицы на промахе — вне скоупа `SPEC.md`).
@@ -393,6 +397,21 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
     _sound();
     setState(() {});
     _startReveal();
+  }
+
+  void _rememberLayout(NinjaWordLayout layout) {
+    final backToFlight = _wordLayout?.scrolls == true && !layout.scrolls;
+    _wordLayout = layout;
+    if (!backToFlight || _flight.value < 1) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted &&
+          identical(_wordLayout, layout) &&
+          !_paused &&
+          !_windingUp &&
+          _run.phase == NinjaPhase.flying) {
+        _startFlight();
+      }
+    });
   }
 
   /// Отдать руке итог реза.
@@ -744,6 +763,9 @@ class _NinjaSlashGameState extends State<NinjaSlashGame>
                   Transform.translate(
                     offset: Offset(shake, 0),
                     child: NinjaField(
+                      onLayout: _rememberLayout,
+                      onChooseCard: _chooseCard,
+                      waveIndex: _run.answeredCount - (revealing ? 1 : 0),
                       word: _run.item!.word.text,
                       objects: [
                         // Взвод: слово уже на экране, волны ещё нет.

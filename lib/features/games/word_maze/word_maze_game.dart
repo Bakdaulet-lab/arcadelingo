@@ -473,34 +473,7 @@ class _WordMazeGameState extends State<WordMazeGame>
         ],
       ),
     );
-    final legend = Wrap(
-      spacing: 8,
-      runSpacing: 6,
-      children: [
-        for (final (i, choice) in _choices.indexed)
-          Container(
-            padding: const EdgeInsets.fromLTRB(5, 5, 10, 5),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                MazeGateBadge(index: i),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    choice.text,
-                    key: MazeKeys.gate(i),
-                    style: theme.textTheme.titleSmall,
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
+    final legend = _gateLegend(context);
     final last = _lastAnswer;
     final lastCorrect = last == null ? null : last.target.id == last.choice.id;
     final (guideIcon, guideColor) = switch (lastCorrect) {
@@ -610,6 +583,72 @@ class _WordMazeGameState extends State<WordMazeGame>
           );
         },
       ),
+    );
+  }
+
+  Widget _gateLegend(BuildContext context) {
+    final theme = Theme.of(context);
+    final style = theme.textTheme.titleSmall!.copyWith(
+      fontSize: 16,
+      height: 1.25,
+    );
+    const gap = 8.0;
+    const padding = EdgeInsets.fromLTRB(6, 6, 10, 6);
+    const badgeSize = 26.0;
+    const labelGap = 8.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Put all signs in one row only when each complete label fits.
+        final measure = TextPainter(
+          textScaler: MediaQuery.textScalerOf(context),
+          textDirection: Directionality.of(context),
+          locale: Localizations.localeOf(context),
+        );
+        var ideal = -gap;
+        for (final choice in _choices) {
+          measure.text = TextSpan(text: choice.text, style: style);
+          measure.layout();
+          ideal +=
+              measure.maxIntrinsicWidth.ceilToDouble() +
+              badgeSize +
+              labelGap +
+              padding.horizontal +
+              gap;
+        }
+        measure.dispose();
+        final inline =
+            ideal <= constraints.maxWidth &&
+            _choices.every((word) => !word.text.contains('\n'));
+        return Wrap(
+          spacing: gap,
+          runSpacing: 6,
+          children: [
+            for (final (index, choice) in _choices.indexed)
+              Container(
+                width: inline ? null : constraints.maxWidth,
+                padding: padding,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    MazeGateBadge(index: index),
+                    const SizedBox(width: labelGap),
+                    Flexible(
+                      child: Text(
+                        choice.text,
+                        key: MazeKeys.gate(index),
+                        style: style,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 

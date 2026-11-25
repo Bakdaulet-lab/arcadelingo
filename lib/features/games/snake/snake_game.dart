@@ -359,20 +359,12 @@ class _SnakeGameState extends State<SnakeGame>
               ],
               _prompt(context),
               const SizedBox(height: 10),
-              ArcadePanel(
-                padding: const EdgeInsets.all(7),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SnakeField(
-                      key: SnakeKeys.field,
-                      run: _run,
-                      motion: _motion,
-                      onTurn: _canSteer ? _turn : null,
-                    ),
-                    if (paused) Positioned.fill(child: _pausePanel(context)),
-                  ],
-                ),
+              SnakePlayfield(
+                fieldKey: SnakeKeys.field,
+                run: _run,
+                motion: _motion,
+                onTurn: _canSteer ? _turn : null,
+                overlay: paused ? _pausePanel(context) : null,
               ),
               const SizedBox(height: 10),
               _feedback(context),
@@ -456,41 +448,43 @@ class _SnakeGameState extends State<SnakeGame>
             : theme.colorScheme.error;
     final message = Text(
       status,
-      style: theme.textTheme.bodySmall?.copyWith(color: color),
+      style: (responding
+              ? theme.textTheme.bodyMedium
+              : theme.textTheme.bodySmall)
+          ?.copyWith(color: color),
     );
     return ArcadePanel(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
       accent: responding ? color : null,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 40),
-        child: Row(
-          spacing: 5,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: Semantics(
-                liveRegion: responding,
-                child:
-                    responding
-                        ? ArcadeAnswerFeedback(
-                          key: ValueKey(widget.session.answered),
-                          correct: _run.answerCorrect,
-                          child: message,
-                        )
-                        : message,
-              ),
+            Semantics(
+              liveRegion: responding,
+              child:
+                  responding
+                      ? ArcadeAnswerFeedback(
+                        key: ValueKey(widget.session.answered),
+                        correct: _run.answerCorrect,
+                        child: message,
+                      )
+                      : message,
             ),
             if (_run.phase == SnakePhase.feedback)
-              TextButton(
-                key: SnakeKeys.next,
-                onPressed: _next,
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(56, 44),
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                ),
-                child: Text(
-                  widget.session.isFinished
-                      ? strings.snakeResults
-                      : strings.next,
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton(
+                  key: SnakeKeys.next,
+                  onPressed: _next,
+                  child: Text(
+                    widget.session.isFinished
+                        ? strings.snakeResults
+                        : strings.next,
+                  ),
                 ),
               ),
           ],
@@ -506,32 +500,34 @@ class _SnakeGameState extends State<SnakeGame>
       child: ColoredBox(
         color: Theme.of(context).colorScheme.scrim.withValues(alpha: .57),
         child: Center(
-          child: SizedBox(
-            width: 216,
-            child: ArcadePanel(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                spacing: 8,
-                children: [
-                  Text(
-                    strings.snakePause,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  FilledButton(
-                    key: SnakeKeys.resume,
-                    onPressed: _start,
-                    child: Text(strings.snakeResume),
-                  ),
-                  if (widget.continuous)
-                    TextButton(
-                      key: SnakeKeys.finish,
-                      onPressed: _endRun,
-                      child: Text(strings.finishRun),
-                    )
-                  else
-                    TextButton(onPressed: _exit, child: Text(strings.exit)),
-                ],
+          child: SingleChildScrollView(
+            child: SizedBox(
+              width: 216,
+              child: ArcadePanel(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 8,
+                  children: [
+                    Text(
+                      strings.snakePause,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    FilledButton(
+                      key: SnakeKeys.resume,
+                      onPressed: _start,
+                      child: Text(strings.snakeResume),
+                    ),
+                    if (widget.continuous)
+                      TextButton(
+                        key: SnakeKeys.finish,
+                        onPressed: _endRun,
+                        child: Text(strings.finishRun),
+                      )
+                    else
+                      TextButton(onPressed: _exit, child: Text(strings.exit)),
+                  ],
+                ),
               ),
             ),
           ),

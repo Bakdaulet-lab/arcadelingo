@@ -229,8 +229,22 @@ Offset waveVelocity({
 }) {
   final slot = laneSlotsFor(count)[index];
   final flight = flightForSlot(slot, width: width, height: height, wide: wide);
+  return trajectoryVelocity(
+    t: t,
+    drift: flight.drift,
+    apex: flight.apex,
+    duration: duration,
+  );
+}
+
+Offset trajectoryVelocity({
+  required double t,
+  required double drift,
+  required double apex,
+  required Duration duration,
+}) {
   final clock = _flightClock(t);
   final seconds = duration.inMicroseconds / Duration.microsecondsPerSecond;
-  return Offset(flight.drift, -flight.apex * 4 * (1 - 2 * clock.time)) *
+  return Offset(drift, -apex * 4 * (1 - 2 * clock.time)) *
       (clock.rate / seconds);
 }

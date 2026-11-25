@@ -148,13 +148,15 @@ class _SceneryPainter extends CustomPainter {
         ).createShader(rect),
     );
     _walls(canvas);
+    final readableSign = .50 * textScale * size.width / MazeRun.columns >= 14;
     for (var i = 0; i < run.gates.length; i++) {
       final cell = run.gates[i];
       final center = Offset(cell.x + .5, cell.y + .5);
       final ink = _gateInk(i, dark);
       // The top rail has room for short signs. Inner gates use just the
       // matching seal so a leader line never hides a route across the board.
-      if (i < labels.length &&
+      if (readableSign &&
+          i < labels.length &&
           (cell.y == 1 ||
               (cell.y == 3 &&
                   (cell.x <= 2 || cell.x >= MazeRun.columns - 3)))) {

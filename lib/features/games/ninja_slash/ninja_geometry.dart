@@ -70,17 +70,23 @@ int? sliceTarget({
   required List<Offset> centers,
   required double radius,
   List<double>? widths,
+  List<Size>? cards,
 }) {
   int? nearest;
   var best = double.infinity;
   for (var i = 0; i < centers.length; i++) {
-    if (!sliceHit(
-      from: from,
-      to: to,
-      center: centers[i],
-      radius: radius,
-      width: widths?[i],
-    )) {
+    final card = cards?[i];
+    final hit =
+        card == null
+            ? sliceHit(
+              from: from,
+              to: to,
+              center: centers[i],
+              radius: radius,
+              width: widths?[i],
+            )
+            : _sliceCard(from, to, centers[i], card);
+    if (!hit) {
       continue;
     }
     // Квадрат расстояния: корень порядок не меняет, а считается на каждом
@@ -92,6 +98,55 @@ int? sliceTarget({
     }
   }
   return nearest;
+}
+
+/// The visible card consists of two intersecting strips and four rounded
+/// corners. Test the swipe segment against the same shape.
+bool _sliceCard(Offset from, Offset to, Offset center, Size size) {
+  const corner = 16.0;
+  final rect = Rect.fromCenter(
+    center: center,
+    width: size.width,
+    height: size.height,
+  );
+  final inner = rect.deflate(corner);
+  return _sliceRect(
+        from,
+        to,
+        Rect.fromLTRB(rect.left, inner.top, rect.right, inner.bottom),
+      ) ||
+      _sliceRect(
+        from,
+        to,
+        Rect.fromLTRB(inner.left, rect.top, inner.right, rect.bottom),
+      ) ||
+      [
+        inner.topLeft,
+        inner.topRight,
+        inner.bottomLeft,
+        inner.bottomRight,
+      ].any((p) => sliceHit(from: from, to: to, center: p, radius: corner));
+}
+
+bool _sliceRect(Offset from, Offset to, Rect rect) {
+  if (rect.contains(from) || rect.contains(to)) return true;
+  final dx = to.dx - from.dx;
+  final dy = to.dy - from.dy;
+  if (dx != 0) {
+    for (final side in [rect.left, rect.right]) {
+      final t = (side - from.dx) / dx;
+      final y = from.dy + t * dy;
+      if (t >= 0 && t <= 1 && y >= rect.top && y <= rect.bottom) return true;
+    }
+  }
+  if (dy != 0) {
+    for (final side in [rect.top, rect.bottom]) {
+      final t = (side - from.dy) / dy;
+      final x = from.dx + t * dx;
+      if (t >= 0 && t <= 1 && x >= rect.left && x <= rect.right) return true;
+    }
+  }
+  return false;
 }
 
 /// Расстояние от [point] до отрезка [from] → [to].

@@ -24,8 +24,10 @@ import 'package:arcadelingo/ui/arcade_reveal_pair.dart';
 import 'package:arcadelingo/ui/arcade_round_summary.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
 import 'package:arcadelingo/ui/theme.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'ninja_labels.dart';
 import 'ninja_slash_fx.dart';
 import 'ninja_slash_juice.dart';
 import 'ninja_trajectory.dart';
@@ -263,12 +265,16 @@ class FlyingObject extends StatelessWidget {
     required this.label,
     required this.state,
     this.width = objectRadius * 2,
+    this.height = objectRadius * 2,
+    this.card = false,
     super.key,
   });
 
   final String label;
   final ObjectState state;
   final double width;
+  final double height;
+  final bool card;
 
   @override
   Widget build(BuildContext context) {
@@ -308,7 +314,7 @@ class FlyingObject extends StatelessWidget {
       opacity: state == ObjectState.dimmed ? 0.5 : 1,
       child: Container(
         width: width,
-        height: objectRadius * 2,
+        height: height,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: background,
@@ -317,7 +323,7 @@ class FlyingObject extends StatelessWidget {
             radius: 1.1,
             colors: [Color.lerp(background, foreground, .1)!, background],
           ),
-          borderRadius: BorderRadius.circular(objectRadius),
+          borderRadius: BorderRadius.circular(card ? 16 : objectRadius),
           border: Border.all(color: rim, width: icon == null ? 2 : 3),
           boxShadow: [
             BoxShadow(
@@ -326,27 +332,48 @@ class FlyingObject extends StatelessWidget {
             ),
           ],
         ),
-        // Полная подпись подгоняется внутри мишени с запасом до обода.
-        // Контур совпадает с зоной реза и для круглой, и для широкой мишени.
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) Icon(icon, color: foreground, size: 18),
-                _WholeWordLabel(
-                  label: label,
-                  availableWidth: width - 20,
-                  style: withWeight(
-                    Theme.of(context).textTheme.bodyMedium!,
-                    FontWeight.bold,
-                  ).copyWith(color: foreground, height: 1.15),
-                ),
-              ],
-            ),
-          ),
+          padding: EdgeInsets.symmetric(horizontal: card ? 13 : 8, vertical: 4),
+          child:
+              card
+                  ? Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Center(
+                        child: Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          style: ninjaLabelStyle(
+                            context,
+                          ).copyWith(color: foreground),
+                        ),
+                      ),
+                      if (icon != null)
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Icon(icon, color: foreground, size: 12),
+                        ),
+                    ],
+                  )
+                  : FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (icon != null)
+                          Icon(icon, color: foreground, size: 18),
+                        _WholeWordLabel(
+                          label: label,
+                          availableWidth: width - 20,
+                          style: withWeight(
+                            Theme.of(context).textTheme.bodyMedium!,
+                            FontWeight.bold,
+                          ).copyWith(color: foreground, height: 1.15),
+                        ),
+                      ],
+                    ),
+                  ),
         ),
       ),
     );
@@ -435,7 +462,7 @@ class _WholeWordLabelState extends State<_WholeWordLabel> {
 /// апексах, 1 — снова под кромкой. Позиции считает `wavePositions`, та же
 /// функция, по которой игра проверяет попадание реза: рисовать одно, а
 /// резать другое здесь невозможно по построению.
-class NinjaField extends StatelessWidget {
+class NinjaField extends StatefulWidget {
   const NinjaField({
     required this.word,
     required this.objects,
@@ -448,6 +475,9 @@ class NinjaField extends StatelessWidget {
     this.sliceVelocity = Offset.zero,
     this.tilts = const [],
     this.scale = 1,
+    this.onLayout,
+    this.onChooseCard,
+    this.waveIndex = 0,
   });
 
   /// Английское слово наверху.
@@ -485,79 +515,156 @@ class NinjaField extends StatelessWidget {
   /// Масштаб объектов в этом кадре: scale-pop при вылете.
   final double scale;
 
+  final ValueChanged<NinjaWordLayout>? onLayout;
+  final void Function(int index, Offset globalPosition)? onChooseCard;
+  final int waveIndex;
+
+  @override
+  State<NinjaField> createState() => _NinjaFieldState();
+}
+
+class _NinjaFieldState extends State<NinjaField> {
+  (Size, String, TextScaler, TextDirection, Locale?, TextTheme, List<String>)?
+  _snapshot;
+  late NinjaWordLayout _layout;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final objects = widget.objects;
+    final labels = objects
+        .map((object) => object.label)
+        .toList(growable: false);
+    final scaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+    final locale = Localizations.maybeLocaleOf(context);
+    final typography = Theme.of(context).textTheme;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final widths = [
-          for (final o in objects) targetWidth(o.label, constraints.biggest),
-        ];
-        final positions = wavePositions(
-          count: objects.length,
-          t: progress,
-          width: constraints.maxWidth,
-          height: constraints.maxHeight,
-          wide: widths.any((w) => w > objectRadius * 2),
+        final size = constraints.biggest;
+        final previous = _snapshot;
+        if (previous == null ||
+            previous.$1 != size ||
+            previous.$2 != widget.word ||
+            previous.$3 != scaler ||
+            previous.$4 != direction ||
+            previous.$5 != locale ||
+            previous.$6 != typography ||
+            !listEquals(previous.$7, labels)) {
+          _snapshot = (
+            size,
+            widget.word,
+            scaler,
+            direction,
+            locale,
+            typography,
+            labels,
+          );
+          _layout = NinjaWordLayout(
+            context: context,
+            field: size,
+            prompt: widget.word,
+            labels: labels,
+          );
+        }
+        widget.onLayout?.call(_layout);
+        final prompt = Text(
+          widget.word,
+          key: NinjaKeys.word,
+          textAlign: TextAlign.center,
+          style: _layout.promptStyle.copyWith(color: scheme.onSurface),
         );
+        if (_layout.scrolls) {
+          return SingleChildScrollView(
+            key: ValueKey((widget.word, widget.waveIndex)),
+            primary: false,
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                if (!widget.faded) prompt,
+                const SizedBox(height: 12),
+                for (final (index, object) in objects.indexed)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Builder(
+                      builder: (context) {
+                        final choose = widget.onChooseCard;
+                        return InkWell(
+                          onTap:
+                              choose == null
+                                  ? null
+                                  : () {
+                                    final box = context.findRenderObject()!;
+                                    final target = box as RenderBox;
+                                    choose(
+                                      index,
+                                      target.localToGlobal(
+                                        target.size.center(Offset.zero),
+                                      ),
+                                    );
+                                  },
+                          child: FlyingObject(
+                            key: NinjaKeys.objectAt(index),
+                            label: object.label,
+                            state: object.state,
+                            width: _layout.targets[index].width,
+                            height: _layout.targets[index].height,
+                            card: true,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }
+        final positions = _layout.centers(widget.progress);
         return Stack(
           children: [
-            if (!faded)
-              Positioned(
-                top: 12,
-                left: 16,
-                right: 16,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    word,
-                    key: NinjaKeys.word,
-                    textAlign: TextAlign.center,
-                    softWrap: false,
-                    style: withWeight(
-                      Theme.of(context).textTheme.displaySmall!,
-                      FontWeight.bold,
-                    ).copyWith(color: scheme.onSurface),
-                  ),
-                ),
-              ),
+            if (!widget.faded)
+              Positioned(top: 12, left: 16, right: 16, child: prompt),
             Positioned.fill(
               key: NinjaKeys.objects,
               child: Opacity(
                 // Гаснут, а не исчезают: стоп-кадр обязан остаться
                 // стоп-кадром, но пара по центру читается поверх него.
-                opacity: faded ? 0.25 : 1,
+                opacity: widget.faded ? 0.25 : 1,
                 child: Stack(
                   children: [
                     for (var i = 0; i < objects.length; i++)
                       Positioned(
-                        left: positions[i].dx - widths[i] / 2,
-                        top: positions[i].dy - objectRadius,
+                        left: positions[i].dx - _layout.targets[i].width / 2,
+                        top: positions[i].dy - _layout.targets[i].height / 2,
                         // Поворот и масштаб — вокруг центра объекта, поэтому
                         // центр, по которому считается рез, не двигается:
                         // украшение не трогает геометрию.
                         child: Transform.rotate(
                           angle:
-                              widths[i] == objectRadius * 2 && i < tilts.length
-                                  ? tilts[i]
+                              !_layout.stacked && i < widget.tilts.length
+                                  ? widget.tilts[i]
                                   : 0,
                           child: Transform.scale(
-                            scale: scale,
+                            scale: _layout.stacked ? 1 : widget.scale,
                             child:
-                                i == sliced
+                                i == widget.sliced
                                     ? SlicedObject(
                                       key: NinjaKeys.objectAt(i),
                                       label: objects[i].label,
-                                      width: widths[i],
+                                      width: _layout.targets[i].width,
+                                      height: _layout.targets[i].height,
+                                      card: _layout.stacked,
                                       state: objects[i].state,
-                                      angle: sliceAngle,
-                                      velocity: sliceVelocity,
-                                      progress: sliceProgress,
+                                      angle: widget.sliceAngle,
+                                      velocity: widget.sliceVelocity,
+                                      progress: widget.sliceProgress,
                                     )
                                     : FlyingObject(
                                       key: NinjaKeys.objectAt(i),
                                       label: objects[i].label,
-                                      width: widths[i],
+                                      width: _layout.targets[i].width,
+                                      height: _layout.targets[i].height,
+                                      card: _layout.stacked,
                                       state: objects[i].state,
                                     ),
                           ),
@@ -939,12 +1046,16 @@ class SlicedObject extends StatelessWidget {
     required this.progress,
     this.velocity = Offset.zero,
     this.width = objectRadius * 2,
+    this.height = objectRadius * 2,
+    this.card = false,
     super.key,
   });
 
   final String label;
   final ObjectState state;
   final double width;
+  final double height;
+  final bool card;
 
   /// Направление реза в радианах: по нему делится круг.
   final double angle;
@@ -958,7 +1069,7 @@ class SlicedObject extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SizedBox(
     width: width,
-    height: objectRadius * 2,
+    height: height,
     // Без обрезки: половинки разлетаются за пределы круга, в котором жил
     // объект, — в том и смысл.
     child: Stack(clipBehavior: Clip.none, children: [_half(1), _half(-1)]),
@@ -981,7 +1092,13 @@ class SlicedObject extends StatelessWidget {
           opacity: motion.alpha,
           child: ClipPath(
             clipper: _HalfClipper(angle: angle, side: side),
-            child: FlyingObject(label: label, state: state, width: width),
+            child: FlyingObject(
+              label: label,
+              state: state,
+              width: width,
+              height: height,
+              card: card,
+            ),
           ),
         ),
       ),

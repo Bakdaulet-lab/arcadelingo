@@ -132,8 +132,15 @@ class FallingWordsRun {
 
   /// Сколько держать подсветку по [verdict]. Таймаут — тот же неверный
   /// ответ: верный вариант надо успеть прочитать.
-  Duration get revealTime =>
-      _withinSprint(_verdict == Verdict.correct ? correctReveal : wrongReveal);
+  Duration get revealTime {
+    if (_verdict == Verdict.correct) return _withinSprint(correctReveal);
+    final word = _item?.word;
+    final length =
+        (word?.text.runes.length ?? 0) + (word?.translation.runes.length ?? 0);
+    return _withinSprint(
+      wrongReveal + Duration(milliseconds: ((length - 28) * 35).clamp(0, 4500)),
+    );
+  }
 
   Duration _withinSprint(Duration duration) {
     final remaining = _sprintRemaining;
@@ -260,7 +267,13 @@ class FallingWordsRun {
     _item = item;
     _options = List.unmodifiable([for (final i in order) variants[i]]);
     _correctIndex = order.indexOf(0);
-    _timeLimit = _withinSprint(_fallTime());
+    final length = _options.fold(
+      item.word.text.runes.length,
+      (sum, label) => sum + label.runes.length,
+    );
+    _timeLimit = _withinSprint(
+      _fallTime() + Duration(milliseconds: ((length - 70) * 30).clamp(0, 5000)),
+    );
     _verdict = null;
     _chosenIndex = null;
     _nearMiss = false;

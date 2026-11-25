@@ -35,10 +35,21 @@ void main() {
             box.localToGlobal(const Offset(1, 0)) -
             box.localToGlobal(Offset.zero);
         expect(pixel.dx, closeTo(1, .01));
-        await tester.ensureVisible(finder);
-        await tester.pumpAndSettle();
-        expect(finder.hitTestable(), findsOneWidget);
       }
+      final scroll = find.byType(SingleChildScrollView);
+      final viewport = tester.getRect(scroll).inflate(.1);
+      expect(viewport.contains(tester.getTopLeft(find.byKey(prompt))), isTrue);
+      final scrolling = tester.state<ScrollableState>(find.byType(Scrollable));
+      expect(scrolling.position.maxScrollExtent, greaterThan(0));
+      await tester.drag(scroll, const Offset(0, -185));
+      await tester.pumpAndSettle();
+      expect(scrolling.position.pixels, greaterThan(0));
+      scrolling.position.jumpTo(scrolling.position.maxScrollExtent);
+      await tester.pumpAndSettle();
+      expect(
+        viewport.contains(tester.getBottomRight(find.byKey(answer))),
+        isTrue,
+      );
       expect(tester.takeException(), isNull);
     });
   }

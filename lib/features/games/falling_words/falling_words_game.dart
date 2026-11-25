@@ -454,6 +454,8 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     final scheme = Theme.of(context).colorScheme;
     final juicy = !MediaQuery.disableAnimationsOf(context);
     final revealing = _run.phase == FallingPhase.reveal;
+    final questionIndex = _run.answeredCount - (revealing ? 1 : 0);
+    final answersKey = ValueKey((_run.item?.word.id, questionIndex));
     // Во время падения меняется только поле. Счётчики строим один раз на слово.
     final stableHud =
         !revealing && _run.sprintRemaining == null
@@ -465,31 +467,52 @@ class _FallingWordsGameState extends State<FallingWordsGame>
       // четыре виджета заново шестьдесят раз в секунду незачем. Обёртка
       // Transform вокруг них при этом новая на каждый кадр — она и есть
       // тряска.
-      child: AnimatedBuilder(
-        animation: Listenable.merge([_fall, _reveal]),
-        child: _listening ? _listeningActions(revealing) : _answers(revealing),
-        builder: (context, answers) {
-          final shake = _shake(juicy: juicy, revealing: revealing);
-          return Column(
-            children: [
-              Transform.translate(
-                offset: Offset(shake, 0),
-                child:
-                    stableHud ??
-                    (_run.sprintRemaining != null
-                        ? _sprintHud(context, revealing)
-                        : _hud(
-                          revealing: revealing,
-                          pulse: _pulse(juicy: juicy, revealing: revealing),
-                        )),
-              ),
-              Expanded(
-                child: _field(scheme, juicy: juicy, revealing: revealing),
-              ),
-              Transform.translate(offset: Offset(shake, 0), child: answers),
-            ],
-          );
-        },
+      child: LayoutBuilder(
+        builder:
+            (context, screen) => AnimatedBuilder(
+              animation: Listenable.merge([_fall, _reveal]),
+              child:
+                  _listening
+                      ? _listeningActions(revealing)
+                      : _answers(revealing),
+              builder: (context, answers) {
+                final shake = _shake(juicy: juicy, revealing: revealing);
+                return Column(
+                  children: [
+                    Transform.translate(
+                      offset: Offset(shake, 0),
+                      child:
+                          stableHud ??
+                          (_run.sprintRemaining != null
+                              ? _sprintHud(context, revealing)
+                              : _hud(
+                                revealing: revealing,
+                                pulse: _pulse(
+                                  juicy: juicy,
+                                  revealing: revealing,
+                                ),
+                              )),
+                    ),
+                    Expanded(
+                      child: _field(scheme, juicy: juicy, revealing: revealing),
+                    ),
+                    Transform.translate(
+                      offset: Offset(shake, 0),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: screen.maxHeight * .60,
+                        ),
+                        child: SingleChildScrollView(
+                          key: answersKey,
+                          primary: false,
+                          child: answers,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
       ),
     );
   }

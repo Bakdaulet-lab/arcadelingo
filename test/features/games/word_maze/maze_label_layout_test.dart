@@ -30,7 +30,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(320, 720);
       addTearDown(tester.view.reset);
-      final session = FakeReviewSession(const [ReviewItem(word: _words.first)]);
+      final session = FakeReviewSession([ReviewItem(word: _words.first)]);
       await tester.pumpWidget(
         MaterialApp(
           theme: wordarcadeTheme(brightness: brightness),

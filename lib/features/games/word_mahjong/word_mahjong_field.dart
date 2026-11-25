@@ -39,6 +39,7 @@ class WordMahjongField extends StatelessWidget {
   static const _gap = 9.0;
   static const _rise = 10.0;
   static const _shift = 4.0;
+  static const _glyphPadding = 6.0;
 
   @override
   Widget build(BuildContext context) {
@@ -51,48 +52,37 @@ class WordMahjongField extends StatelessWidget {
             ? Duration.zero
             : const Duration(milliseconds: 190);
     return ArcadePanel(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(MediaQuery.sizeOf(context).width < 350 ? 4 : 12),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final columns =
               1 + board.tiles.map((tile) => tile.column).reduce(math.max);
-          final rows = 1 + board.tiles.map((tile) => tile.row).reduce(math.max);
-          final width =
-              (constraints.maxWidth - _gap * (columns - 1) - _shift) / columns;
-          final fieldWidth = width * columns + _gap * (columns - 1) + _shift;
-          final heights = List.filled(rows, 78.0);
-          final tops = List.filled(rows, _rise);
           final scaler = MediaQuery.textScalerOf(context);
           final paletteHeight = scaler.scale(10) + 8;
           final painter = TextPainter(
             textDirection: Directionality.of(context),
             textScaler: scaler,
           );
-          for (final tile in board.tiles) {
-            painter.text = TextSpan(text: tile.label, style: style);
-            painter.layout(maxWidth: math.max(1, width - 16));
-            heights[tile.row] = math.max(
-              heights[tile.row],
-              painter.height.ceilToDouble() + paletteHeight + 21,
-            );
-          }
+          final (tiles, height) = _arrange(
+            style,
+            painter,
+            constraints.maxWidth - _shift,
+            columns,
+            paletteHeight,
+          );
           painter.dispose();
-          for (var row = 1; row < rows; row++) {
-            tops[row] = tops[row - 1] + heights[row - 1] + _gap + _rise;
-          }
           return Center(
             child: SizedBox(
-              width: fieldWidth,
-              height: tops.last + heights.last + 4,
+              width: constraints.maxWidth,
+              height: height,
               child: Stack(
                 key: ObjectKey(board),
                 children: [
                   for (final tile in board.tiles)
-                    Positioned(
-                      left: tile.column * (width + _gap) + tile.layer * _shift,
-                      top: tops[tile.row] - tile.layer * _rise,
-                      width: width,
-                      height: heights[tile.row],
+                    Positioned.fromRect(
+                      rect: tiles[(tile.row, tile.column)]!.shift(
+                        Offset(tile.layer * _shift, -tile.layer * _rise),
+                      ),
                       child: IgnorePointer(
                         ignoring: !board.contains(tile),
                         child: _buildTile(context, tile, style, duration),
@@ -105,6 +95,78 @@ class WordMahjongField extends StatelessWidget {
         },
       ),
     );
+  }
+
+  (Map<(int, int), Rect>, double) _arrange(
+    TextStyle style,
+    TextPainter painter,
+    double width,
+    int columns,
+    double paletteHeight,
+  ) {
+    final cellWidth = (width - _gap * (columns - 1)) / columns;
+    final rows = <int, Map<int, List<MahjongTile>>>{};
+    for (final tile in board.tiles) {
+      final row = rows.putIfAbsent(tile.row, () => {});
+      row.putIfAbsent(tile.column, () => []).add(tile);
+    }
+
+    final placements = <(int, int), Rect>{};
+    var top = _rise;
+    for (final row in rows.entries) {
+      final shelf = <(int, double)>[];
+      var usedWidth = 0.0;
+      var shelfHeight = 78.0;
+
+      void placeShelf() {
+        var left = (width - usedWidth) / 2;
+        for (final (column, tileWidth) in shelf) {
+          placements[(row.key, column)] = Rect.fromLTWH(
+            left,
+            top,
+            tileWidth,
+            shelfHeight,
+          );
+          left += tileWidth + _gap;
+        }
+        top += shelfHeight + _gap + _rise;
+        shelf.clear();
+        usedWidth = 0;
+        shelfHeight = 78;
+      }
+
+      // A slot's width includes every layer even after it is removed. The
+      // tiles never shift because another pair was picked or uncovered.
+      for (final entry in row.value.entries) {
+        var tileWidth = cellWidth;
+        for (final tile in entry.value) {
+          painter
+            ..text = TextSpan(text: tile.label, style: style)
+            ..layout();
+          tileWidth = math.max(
+            tileWidth,
+            painter.minIntrinsicWidth.ceilToDouble() + 2 * _glyphPadding + 2,
+          );
+        }
+        tileWidth = math.min(tileWidth, width);
+        if (shelf.isNotEmpty && usedWidth + _gap + tileWidth > width + .001) {
+          placeShelf();
+        }
+        for (final tile in entry.value) {
+          painter
+            ..text = TextSpan(text: tile.label, style: style)
+            ..layout(maxWidth: math.max(1, tileWidth - 2 * _glyphPadding));
+          shelfHeight = math.max(
+            shelfHeight,
+            painter.height.ceilToDouble() + paletteHeight + 21,
+          );
+        }
+        usedWidth += tileWidth + (shelf.isEmpty ? 0 : _gap);
+        shelf.add((entry.key, tileWidth));
+      }
+      placeShelf();
+    }
+    return (placements, top - _gap - _rise + 4);
   }
 
   Widget _buildTile(
@@ -201,7 +263,7 @@ class WordMahjongField extends StatelessWidget {
                     onTap: canTap ? () => onTap(tile) : null,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
+                        horizontal: _glyphPadding,
                         vertical: 7,
                       ),
                       child: Column(
@@ -233,11 +295,12 @@ class WordMahjongField extends StatelessWidget {
                                 letterSpacing: .7,
                               ),
                             ),
-                          Text(
-                            tile.label,
-                            style: style.copyWith(color: foreground),
-                            textAlign: TextAlign.center,
-                          ),
+                          if (!covered)
+                            Text(
+                              tile.label,
+                              style: style.copyWith(color: foreground),
+                              textAlign: TextAlign.center,
+                            ),
                         ],
                       ),
                     ),

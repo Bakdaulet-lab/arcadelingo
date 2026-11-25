@@ -4,6 +4,7 @@ import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_answer_feedback.dart';
+import 'package:arcadelingo/ui/arcade_letter_wrap.dart';
 import 'package:arcadelingo/ui/arcade_page.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -279,33 +280,29 @@ class _LetterBoard extends StatelessWidget {
             ),
             value: slots.whereType<String>().join(),
             excludeSemantics: true,
-            child: Wrap(
+            child: ArcadeLetterWrap(
+              spelling: exercise.item.word.text.characters.toList(),
               spacing: 4,
               runSpacing: 8,
-              children: [
-                for (final slot in slots)
-                  if (slot == ' ')
-                    const SizedBox(width: 12)
-                  else
-                    Container(
-                      constraints: const BoxConstraints(minWidth: 22),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: colors.outlineVariant,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                      child: Text(
-                        slot ?? ' ',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: colors.primary,
+              slot:
+                  (context, index) => Container(
+                    constraints: const BoxConstraints(minWidth: 22),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: colors.outlineVariant,
+                          width: 2,
                         ),
                       ),
                     ),
-              ],
+                    child: Text(
+                      slots[index] ?? ' ',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: colors.primary,
+                      ),
+                    ),
+                  ),
             ),
           ),
         ),
