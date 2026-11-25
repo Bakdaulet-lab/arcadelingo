@@ -123,7 +123,8 @@ void main() {
       expect(streaks.saves, hasLength(1));
 
       await _tap(tester, find.byKey(AppKeys.recall));
-      await tester.pageBack();
+      expect(find.byType(RecallScreen), findsOneWidget);
+      await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(log.records, hasLength(3));
       expect(events.kinds.last, AppEventKind.roundAbandon);

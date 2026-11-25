@@ -48,6 +48,7 @@ import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/domain/usecases/count_played_day.dart';
 import 'package:arcadelingo/domain/usecases/start_session.dart';
+import 'package:arcadelingo/features/recall/recall_screen.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_choice_dialog.dart';
 import 'package:arcadelingo/ui/reminder_labels.dart';
@@ -252,6 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
   CefrLevel _selectedLevel = CefrLevel.a1;
   List<SituationStory> _stories = const [];
   bool _preparingLearning = false;
+  bool _recallOpen = false;
   bool _selectingCourse = false;
   bool _selectingChallenge = false;
 
@@ -344,6 +346,61 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadStories();
   }
 
+  Future<void> _openRecall() async {
+    if (_recallOpen) return;
+    final level = _selectedLevel;
+    final course = widget.course;
+    final items = _levelItems(level, _customItems(level));
+    if (items.isEmpty) return;
+    final started = StartSession(
+      cards: widget.ports.cards,
+      streaks: widget.ports.streaks,
+      now: widget.now,
+      target: 5,
+      answerLog: widget.ports.answers,
+    )(items: items, level: level, gameId: 'active_recall', practiceAll: true);
+    final ReviewSession session;
+    switch (started) {
+      case Err(:final failure):
+        setState(() => _stateFailure = failure);
+        return;
+      case Ok(:final value):
+        session = value;
+    }
+    final sessionId = session is ObservedSession ? session.sessionId : null;
+    final vocabulary = [for (final item in items) item.word];
+    final seed = widget.now().microsecondsSinceEpoch;
+    var finished = false;
+    _recallOpen = true;
+    _record(AppEventKind.roundStart, sessionId: sessionId);
+    try {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder:
+              (context) => RecallScreen(
+                session: session,
+                vocabulary: vocabulary,
+                course: course,
+                level: level,
+                seed: seed,
+                onComplete: () {
+                  if (finished) return;
+                  finished = true;
+                  _finishRound(sessionId);
+                },
+                onExit: () => Navigator.of(context).pop(),
+              ),
+        ),
+      );
+    } finally {
+      _recallOpen = false;
+      if (mounted) {
+        if (!finished) _record(AppEventKind.roundAbandon, sessionId: sessionId);
+        _refreshRitual();
+      }
+    }
+  }
+
   /// Серия глазами сегодняшнего дня; null — документ не читается.
   ///
   /// Не `state.current`, а пересчёт на сегодня: состояние знает последний
@@ -388,6 +445,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   : null,
           onProgress: _openProgress,
           onStories: _stories.isEmpty ? null : _openStories,
+          onRecall: _hasWordsForLevel ? _openRecall : null,
           onSettings: _openSettings,
           onSources: _openSources,
           ritual: _ritual,
@@ -477,6 +535,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       studyLanguage:
                                           widget.course.studyLanguage,
                                       gameTitles: {
+                                        'active_recall':
+                                            context.strings.activeRecall,
                                         for (final game in widget.games)
                                           game.id: game.titleFor(
                                             context.strings,
