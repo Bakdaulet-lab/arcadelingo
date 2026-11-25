@@ -86,6 +86,7 @@ class _WordMazeGameState extends State<WordMazeGame>
   int _combo = 0;
   int _bestCombo = 0;
   bool _active = true;
+  bool _leaving = false;
   String? _footer;
   Widget? _record;
 
@@ -199,7 +200,7 @@ class _WordMazeGameState extends State<WordMazeGame>
   }
 
   void _next() {
-    if (_stage != _Stage.feedback) return;
+    if (_leaving || _stage != _Stage.feedback) return;
     unawaited(widget.speech.stop());
     setState(_loadQuestion);
     if (_stage == _Stage.finished) {
@@ -211,14 +212,27 @@ class _WordMazeGameState extends State<WordMazeGame>
   }
 
   void _exit() {
+    _leave();
+    widget.onExit();
+  }
+
+  void _leave() {
+    if (_leaving) return;
+    _leaving = true;
+    _active = false;
     _ticker.stop();
     _reading.stop();
+    if (_item != null && _selected == null) {
+      widget.session.report(
+        ReviewOutcome.untimed(correct: false, responseTime: _reading.elapsed),
+      );
+    }
     unawaited(widget.speech.stop());
-    widget.onExit();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_leaving) return;
     _active = state == AppLifecycleState.resumed;
     if (!_active) {
       _pause();
@@ -232,33 +246,38 @@ class _WordMazeGameState extends State<WordMazeGame>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _reading.stop();
+    _leave();
     _ticker.dispose();
     _frames.dispose();
     _score.dispose();
-    unawaited(widget.speech.stop());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final strings = context.strings;
-    return Scaffold(
-      appBar: AppBar(
-        leading: BackButton(onPressed: _exit),
-        title: Text(strings.wordMaze),
-        actions: [
-          if (_stage != _Stage.finished)
-            IconButton.filledTonal(
-              key: MazeKeys.pause,
-              tooltip: strings.snakePause,
-              onPressed: _stage == _Stage.moving ? _pause : null,
-              icon: const Icon(Icons.pause_rounded),
-            ),
-          const SizedBox(width: 10),
-        ],
+    return PopScope<void>(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) _leave();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: BackButton(onPressed: _exit),
+          title: Text(strings.wordMaze),
+          actions: [
+            if (_stage != _Stage.finished)
+              IconButton.filledTonal(
+                key: MazeKeys.pause,
+                tooltip: strings.snakePause,
+                onPressed: _stage == _Stage.moving ? _pause : null,
+                icon: const Icon(Icons.pause_rounded),
+              ),
+            const SizedBox(width: 10),
+          ],
+        ),
+        body:
+            _stage == _Stage.finished ? _summary(context) : _gameplay(context),
       ),
-      body: _stage == _Stage.finished ? _summary(context) : _gameplay(context),
     );
   }
 
@@ -379,37 +398,6 @@ class _WordMazeGameState extends State<WordMazeGame>
               fontWeight: FontWeight.w700,
             ),
           ),
-          if (answered != null) ...[
-            const SizedBox(height: 6),
-            ArcadeAnswerFeedback(
-              key: MazeKeys.feedback,
-              correct: answered.id == question.id,
-              child: Semantics(
-                liveRegion: true,
-                child: Text(
-                  strings.snakeAnswer(
-                    question,
-                    answered,
-                    correct: answered.id == question.id,
-                  ),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color:
-                        answered.id == question.id
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.error,
-                  ),
-                ),
-              ),
-            ),
-            TextButton.icon(
-              key: MazeKeys.next,
-              onPressed: _next,
-              icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-              label: Text(
-                widget.session.isFinished ? strings.snakeResults : strings.next,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -452,13 +440,30 @@ class _WordMazeGameState extends State<WordMazeGame>
         const SizedBox(width: 7),
         Expanded(
           child: Text(
-            strings.mazeSteering,
+            _stage == _Stage.ready
+                ? strings.mazeReadyGuide
+                : strings.mazeSteering,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ),
       ],
+    );
+    final foot = AnimatedSwitcher(
+      duration:
+          MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 160),
+      child:
+          answered == null
+              ? Column(
+                key: const ValueKey('guide'),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: 10,
+                children: [legend, guidance],
+              )
+              : _feedback(context, question, answered),
     );
     final scope = Wrap(
       spacing: 8,
@@ -499,7 +504,7 @@ class _WordMazeGameState extends State<WordMazeGame>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 spacing: 12,
-                                children: [scope, prompt, legend, guidance],
+                                children: [scope, prompt, foot],
                               ),
                             ),
                           ],
@@ -511,14 +516,68 @@ class _WordMazeGameState extends State<WordMazeGame>
                             if (course != null || level != null) scope,
                             prompt,
                             field,
-                            legend,
-                            if (answered == null) guidance,
+                            foot,
                           ],
                         ),
               ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _feedback(BuildContext context, Word target, Word choice) {
+    final strings = context.strings;
+    final theme = Theme.of(context);
+    final correct = target.id == choice.id;
+    final color = correct ? theme.colorScheme.primary : theme.colorScheme.error;
+    return ArcadeAnswerFeedback(
+      key: MazeKeys.feedback,
+      correct: correct,
+      child: ArcadePanel(
+        accent: color,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              liveRegion: true,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    correct
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.info_outline_rounded,
+                    color: color,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      strings.snakeAnswer(target, choice, correct: correct),
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton.icon(
+                key: MazeKeys.next,
+                onPressed: _next,
+                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                label: Text(
+                  widget.session.isFinished
+                      ? strings.snakeResults
+                      : strings.next,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

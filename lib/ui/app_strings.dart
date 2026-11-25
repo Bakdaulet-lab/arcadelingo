@@ -608,6 +608,14 @@ class AppStrings {
     es:
         'Desliza el dedo para girar. Puedes indicar el giro antes de llegar a la esquina.',
   );
+  String get mazeReadyGuide => _text(
+    en:
+        'Swipe toward the gate with the right word. Collect dots and dodge the ghosts.',
+    ru:
+        'Веди пальцем к воротам с нужным словом. Собирай точки и обходи привидений.',
+    es:
+        'Desliza el dedo hacia la puerta con la palabra correcta. Recoge los puntos y esquiva a los fantasmas.',
+  );
   String get mazeCaught => _text(
     en: 'A ghost caught you',
     ru: 'Привидение тебя поймало',
