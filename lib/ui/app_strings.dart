@@ -587,6 +587,78 @@ class AppStrings {
   );
   String get cancel => _text(en: 'Cancel', ru: 'Отмена', es: 'Cancelar');
   String get save => _text(en: 'Save', ru: 'Сохранить', es: 'Guardar');
+
+  String get wordSets =>
+      _text(en: 'My word sets', ru: 'Мои наборы', es: 'Mis listas');
+  String get createWordSet =>
+      _text(en: 'Create a set', ru: 'Создать набор', es: 'Crear una lista');
+  String get emptyWordSets => _text(
+    en: 'Group words by topic and play with the ones you choose.',
+    ru: 'Собери слова по теме и сыграй с ними в аркаду.',
+    es: 'Agrupa palabras por tema y juega con las que elijas.',
+  );
+  String get wordSetName =>
+      _text(en: 'Set name', ru: 'Название набора', es: 'Nombre de la lista');
+  String get wordSetSearch => _text(
+    en: 'Search words or translations',
+    ru: 'Поиск по слову или переводу',
+    es: 'Buscar palabras o traducciones',
+  );
+  String get wordSetNoMatches => _text(
+    en: 'No matching words',
+    ru: 'Подходящих слов нет',
+    es: 'No hay palabras que coincidan',
+  );
+  String wordSetCount(int count) => _text(
+    en: '$count ${count == 1 ? "word" : "words"}',
+    ru: switch ((count % 10, count % 100)) {
+      (1, != 11) => '$count слово',
+      (>= 2 && <= 4, < 12 || > 14) => '$count слова',
+      _ => '$count слов',
+    },
+    es: '$count ${count == 1 ? "palabra" : "palabras"}',
+  );
+  String selectedWordSetCount(int count) => _text(
+    en: 'Selected ($count)',
+    ru: 'Выбрано ($count)',
+    es: 'Seleccionadas ($count)',
+  );
+  String get editWordSet =>
+      _text(en: 'Edit set', ru: 'Изменить набор', es: 'Editar lista');
+  String get edit => _text(en: 'Edit', ru: 'Изменить', es: 'Editar');
+  String get delete => _text(en: 'Delete', ru: 'Удалить', es: 'Eliminar');
+  String deleteWordSet(String name) => _text(
+    en: 'Delete “$name”?',
+    ru: 'Удалить «$name»?',
+    es: '¿Eliminar «$name»?',
+  );
+  String get deletingSetKeepsWords => _text(
+    en: 'Your words will stay in the dictionary.',
+    ru: 'Слова останутся в словаре.',
+    es: 'Las palabras seguirán en el diccionario.',
+  );
+  String get addWordsToSet =>
+      _text(en: 'Add words', ru: 'Добавить слова', es: 'Añadir palabras');
+  String get wordSetNeedsName => _text(
+    en: 'Enter a name for this set.',
+    ru: 'Введи название набора.',
+    es: 'Escribe un nombre para la lista.',
+  );
+  String get duplicateWordSet => _text(
+    en: 'A set with this name already exists.',
+    ru: 'Набор с таким названием уже есть.',
+    es: 'Ya existe una lista con este nombre.',
+  );
+  String get missingWordSet => _text(
+    en: 'This set has been deleted.',
+    ru: 'Этот набор уже удалён.',
+    es: 'Esta lista ya se ha eliminado.',
+  );
+  String get wordSetWriteFailed => _text(
+    en: 'Couldn’t save the changes. Try again.',
+    ru: 'Не удалось сохранить изменения. Попробуй ещё раз.',
+    es: 'No se pudieron guardar los cambios. Inténtalo de nuevo.',
+  );
   String get hours => _text(en: 'Hour', ru: 'Часы', es: 'Hora');
   String get minutes => _text(en: 'Minute', ru: 'Минуты', es: 'Minutos');
   String get dailyReminder => _text(
