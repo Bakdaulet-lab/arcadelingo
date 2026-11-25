@@ -12,3 +12,26 @@ Set<String> translationMeanings(String translation) {
     ...label.split(_separators).where((part) => part.isNotEmpty),
   };
 }
+
+// Keyboards can enter accented letters either as one code point or as a base
+// plus a combining mark. Compare equivalent
+// spellings in the course languages without discarding meaningful accents.
+const _accentLetters = {
+  '\u0300': ('aeiou', 'àèìòù'),
+  '\u0301': ('aeiouy', 'áéíóúý'),
+  '\u0302': ('aeiou', 'âêîôû'),
+  '\u0303': ('ano', 'ãñõ'),
+  '\u0306': ('и', 'й'),
+  '\u0308': ('aeiouyе', 'äëïöüÿё'),
+  '\u030a': ('a', 'å'),
+  '\u0327': ('c', 'ç'),
+};
+final _combiningLetter = RegExp(r'([a-zеи])(\p{M})', unicode: true);
+
+String normalizedCourseSpelling(String value) =>
+    normalizedWordLabel(value).replaceAllMapped(_combiningLetter, (match) {
+      final forms = _accentLetters[match[2]];
+      if (forms == null) return match[0]!;
+      final index = forms.$1.indexOf(match[1]!);
+      return index < 0 ? match[0]! : forms.$2[index];
+    });
