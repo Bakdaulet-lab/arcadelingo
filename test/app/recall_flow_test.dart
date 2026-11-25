@@ -40,7 +40,10 @@ void main() {
       const course = StudyCourse.spanishFromEnglish;
       final date = DateTime(2026, 11, 25);
       final cards = InMemoryCardStore({
-        'avería': LeitnerCard(box: 3, due: date.add(const Duration(days: 3))),
+        'avería': LeitnerCard(
+          box: 3,
+          due: date.subtract(const Duration(days: 3)),
+        ),
       });
       final log = InMemoryAnswerLog();
       final baseLog = InMemoryAnswerLog();
@@ -91,12 +94,27 @@ void main() {
       expect(find.text('repair'), findsNothing);
       await _tap(tester, find.text('avería'));
       await _tap(tester, find.byKey(const Key('recall.next')));
+      for (final word in ['reseña', 'huésped']) {
+        await _tap(tester, find.byKey(const Key('recall.options')));
+        await _tap(tester, find.text(word));
+        await _tap(tester, find.byKey(const Key('recall.next')));
+      }
       expect(find.byKey(const Key('recall.summary')), findsOneWidget);
       await _tap(tester, find.byKey(const Key('recall.exit')));
-      expect(log.records.single.gameId, 'active_recall');
-      expect(log.records.single.wordId, 'avería');
-      expect(log.records.single.grade, ReviewGrade.hard);
-      expect(cards.saves, hasLength(1));
+      expect(
+        log.records.map((answer) => answer.gameId),
+        everyElement('active_recall'),
+      );
+      expect(log.records.map((answer) => answer.wordId), [
+        'avería',
+        'reseña',
+        'huésped',
+      ]);
+      expect(
+        log.records.map((answer) => answer.grade),
+        everyElement(ReviewGrade.hard),
+      );
+      expect(cards.saves, hasLength(3));
       expect(baseLog.records, isEmpty);
       expect(
         events.kinds.where((kind) => kind == AppEventKind.roundOver),
@@ -107,7 +125,7 @@ void main() {
       await _tap(tester, find.byKey(AppKeys.recall));
       await tester.pageBack();
       await tester.pumpAndSettle();
-      expect(log.records, hasLength(1));
+      expect(log.records, hasLength(3));
       expect(events.kinds.last, AppEventKind.roundAbandon);
       expect(streaks.saves, hasLength(1));
     },
