@@ -2,8 +2,11 @@ import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/courses.dart';
+import 'package:arcadelingo/app/learning_views.dart';
 import 'package:arcadelingo/data/dictionary/favorites_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
+import 'package:arcadelingo/domain/log/answer_record.dart';
+import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/features/games/falling_words/falling_words_run.dart';
@@ -14,6 +17,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../support/in_memory_answer_log.dart';
 import '../support/in_memory_stores.dart';
+
+class _CountingLog extends InMemoryAnswerLog {
+  int reads = 0;
+  @override
+  Future<List<AnswerRecord>> all() {
+    reads++;
+    return super.all();
+  }
+}
+
+class _Speech implements WordSpeech {
+  final spoken = <String>[];
+  int stops = 0;
+  @override
+  Future<SpeechResult> speak(String text) async {
+    spoken.add(text);
+    return SpeechResult.completed;
+  }
+
+  @override
+  Future<void> stop() async => stops++;
+}
 
 List<ReviewItem> _family(String mother, String father) => [
   ReviewItem(
@@ -41,7 +66,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final russianToEnglish = InMemoryAnswerLog();
-    final russianToSpanish = InMemoryAnswerLog();
+    final russianToSpanish = _CountingLog();
+    final speech = _Speech();
     await tester.pumpWidget(
       WordarcadeApp(
         ports: AppPorts(
@@ -58,6 +84,7 @@ void main() {
             cards: InMemoryCardStore(),
             streaks: InMemoryStreakStore(),
             answers: russianToSpanish,
+            speech: speech,
           ),
         ],
         now: () => DateTime(2026, 11, 25),
@@ -87,8 +114,34 @@ void main() {
       'мать',
     ]);
     expect(russianToEnglish.records, isEmpty);
+    final readsBeforeReview = russianToSpanish.reads;
     await _tap(tester, find.byKey(const Key('game.review_mistakes')));
+    final suggestion = find.textContaining(
+      RegExp(r'(madre.*padre|padre.*madre)'),
+    );
+    expect(suggestion, findsOneWidget);
+    await _tap(tester, find.byKey(LearningKeys.speak));
+    expect(speech.spoken.last, 'madre');
+    final stopsBeforePractice = speech.stops;
+    await _tap(tester, suggestion);
+    expect(speech.stops, greaterThan(stopsBeforePractice));
+    for (var i = 0; i < 2; i++) {
+      final asksMother =
+          find
+              .byKey(const ValueKey('confusions.prompt.mother'))
+              .evaluate()
+              .isNotEmpty;
+      expect(find.text('madre'), findsOneWidget);
+      expect(find.text('padre'), findsOneWidget);
+      await _tap(tester, find.text(asksMother ? 'madre' : 'padre'));
+      await _tap(tester, find.byKey(const ValueKey('confusions.next')));
+    }
+    await _tap(tester, find.text('Разбор ошибок'));
+    expect(find.byKey(LearningKeys.mistakes), findsOneWidget);
+    await _tap(tester, find.byKey(LearningKeys.next));
+    expect(suggestion, findsOneWidget);
     await _tap(tester, find.text('Слова, которые я путаю'));
+    expect(russianToSpanish.reads, readsBeforeReview + 1);
     expect(find.text('Разобрать пару'), findsOneWidget);
     expect(find.textContaining('madre'), findsOneWidget);
     expect(find.textContaining('padre'), findsOneWidget);
