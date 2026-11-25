@@ -23,6 +23,12 @@ Future<void> _tap(WidgetTester tester, Finder target) async {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late List<ReviewItem> spanish;
+  setUpAll(() async {
+    spanish =
+        (await loadSpanishFromEnglishSeed() as Ok<List<ReviewItem>>).value;
+  });
   testWidgets(
     'switch course and level, finish two station games and act on the Spanish clue',
     (tester) async {
@@ -32,8 +38,6 @@ void main() {
       const course = StudyCourse.spanishFromEnglish;
       final baseLog = InMemoryAnswerLog();
       final storyLog = InMemoryAnswerLog();
-      final spanish =
-          (await loadSpanishFromEnglishSeed() as Ok<List<ReviewItem>>).value;
       await tester.pumpWidget(
         WordarcadeApp(
           ports: AppPorts(

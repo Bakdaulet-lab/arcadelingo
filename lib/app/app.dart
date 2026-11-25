@@ -26,6 +26,8 @@ import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/app/learning_views.dart';
 import 'package:arcadelingo/app/progress_view.dart';
 import 'package:arcadelingo/app/settings_view.dart';
+import 'package:arcadelingo/app/story_game.dart';
+import 'package:arcadelingo/app/story_views.dart';
 import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
@@ -41,6 +43,7 @@ import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/domain/session/observed_session.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
+import 'package:arcadelingo/domain/stories/situation_story.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/domain/usecases/count_played_day.dart';
@@ -247,6 +250,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String? _selectedGameId;
   CefrLevel _selectedLevel = CefrLevel.a1;
+  List<SituationStory> _stories = const [];
   bool _preparingLearning = false;
   bool _selectingCourse = false;
   bool _selectingChallenge = false;
@@ -287,7 +291,58 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
   }
 
-  void _selectLevel(CefrLevel level) => setState(() => _selectedLevel = level);
+  void _selectLevel(CefrLevel level) {
+    if (level == _selectedLevel) return;
+    setState(() {
+      _selectedLevel = level;
+      _loadStories();
+    });
+  }
+
+  void _loadStories() {
+    _stories = buildSituationStories(
+      course: widget.course,
+      level: _selectedLevel,
+      courseItems: widget.items,
+      random: Random(widget.now().microsecondsSinceEpoch),
+    );
+  }
+
+  Future<void> _openStories() async {
+    final course = widget.course;
+    final level = _selectedLevel;
+    final ports = widget.ports;
+    final now = widget.now;
+    final stories = _stories;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder:
+            (context) => SituationStoriesScreen(
+              course: course,
+              level: level,
+              stories: stories,
+              playStage: (story, stage) async {
+                final completed = await playStoryStage(
+                  context,
+                  ports: ports,
+                  course: course,
+                  level: level,
+                  stage: stage,
+                  items: stage == 0 ? story.firstRound : story.secondRound,
+                  now: now,
+                );
+                if (completed && mounted && widget.course.id == course.id) {
+                  _refreshRitual();
+                  _refreshReminder();
+                }
+                return completed;
+              },
+            ),
+      ),
+    );
+    if (!mounted) return;
+    _loadStories();
+  }
 
   /// Серия глазами сегодняшнего дня; null — документ не читается.
   ///
@@ -332,6 +387,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? _openChallenge
                   : null,
           onProgress: _openProgress,
+          onStories: _stories.isEmpty ? null : _openStories,
           onSettings: _openSettings,
           onSources: _openSources,
           ritual: _ritual,
@@ -595,6 +651,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _selectFirstAvailableLevel() {
     _selectedLevel = _availableLevels.firstOrNull ?? CefrLevel.a1;
+    _loadStories();
   }
 
   @override
@@ -606,6 +663,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _week = null;
       _refreshRitual();
       _refreshReminder();
+    } else if (oldWidget.items != widget.items) {
+      _loadStories();
     }
   }
 

@@ -36,6 +36,7 @@ abstract final class AppKeys {
   static const Key play = Key('app.play');
 
   static const Key challenge = Key('app.challenge');
+  static const Key stories = Key('app.stories');
 
   static const Key learn = Key('app.learn');
 
@@ -101,6 +102,7 @@ class PlayView extends StatelessWidget {
     super.key,
     this.onLearn,
     this.onChallenge,
+    this.onStories,
     this.ritual,
     this.week,
     this.games = const [],
@@ -144,6 +146,7 @@ class PlayView extends StatelessWidget {
 
   final VoidCallback? onLearn;
   final VoidCallback? onChallenge;
+  final VoidCallback? onStories;
 
   /// Вход на «Источники».
   ///
@@ -302,6 +305,26 @@ class PlayView extends StatelessWidget {
                           ),
                         ),
                       ),
+                  ],
+                  if (onStories != null) ...[
+                    SizedBox(height: paper ? 10 : 14),
+                    ArcadePanel(
+                      padding: EdgeInsets.zero,
+                      child: ListTile(
+                        key: AppKeys.stories,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(paper ? 12 : 24),
+                        ),
+                        leading: Icon(
+                          Icons.route_outlined,
+                          color: colors.primary,
+                        ),
+                        title: Text(context.strings.situationStories),
+                        subtitle: Text(context.strings.storyHomeHint),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: onStories,
+                      ),
+                    ),
                   ],
                   if (games.length > 1) ...[
                     SizedBox(height: paper ? 10 : 20),
