@@ -616,6 +616,11 @@ class AppStrings {
     es:
         'Desliza el dedo hacia la puerta con la palabra correcta. Recoge los puntos y esquiva a los fantasmas.',
   );
+  String get mazeContinueSwipe => _text(
+    en: 'Swipe the board to keep playing.',
+    ru: 'Проведи по полю, чтобы продолжить.',
+    es: 'Desliza el dedo por el tablero para seguir.',
+  );
   String get mazeCaught => _text(
     en: 'A ghost caught you',
     ru: 'Привидение тебя поймало',

@@ -90,6 +90,11 @@ class _WordMazeGameState extends State<WordMazeGame>
   String? _footer;
   Widget? _record;
 
+  bool get _canContinueFromGate =>
+      _stage == _Stage.feedback &&
+      _selected!.id == _item!.word.id &&
+      !widget.session.isFinished;
+
   @override
   void initState() {
     super.initState();
@@ -125,6 +130,12 @@ class _WordMazeGameState extends State<WordMazeGame>
       setState(() => _stage = _Stage.moving);
       _startTicker();
     }
+  }
+
+  void _continueToward(MazeDirection direction) {
+    if (!_active || _leaving || !_canContinueFromGate) return;
+    _next();
+    _turn(direction);
   }
 
   void _startTicker() {
@@ -233,7 +244,10 @@ class _WordMazeGameState extends State<WordMazeGame>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (_leaving) return;
-    _active = state == AppLifecycleState.resumed;
+    final active = state == AppLifecycleState.resumed;
+    if (_active == active) return;
+    _active = active;
+    if (_canContinueFromGate) setState(() {});
     if (!_active) {
       _pause();
       _reading.stop();
@@ -330,6 +344,9 @@ class _WordMazeGameState extends State<WordMazeGame>
       alignment: Alignment.center,
       children: [
         AspectRatio(
+          // Discard the old pointer at a gate. Keep the new recognizer alive
+          // when its first swipe starts the next word so the finger can steer.
+          key: ValueKey(widget.session.answered),
           aspectRatio: MazeRun.columns / MazeRun.rows,
           child: MazeField(
             key: MazeKeys.field,
@@ -337,10 +354,12 @@ class _WordMazeGameState extends State<WordMazeGame>
             frames: _frames,
             boardLabel: strings.mazeBoard,
             gateLabels: [for (final word in _choices) word.text],
-            onTurn:
-                _stage == _Stage.ready || _stage == _Stage.moving
-                    ? _turn
-                    : null,
+            onTurn: switch (_stage) {
+              _Stage.ready || _Stage.moving => _turn,
+              _Stage.feedback when _active && _canContinueFromGate =>
+                _continueToward,
+              _ => null,
+            },
           ),
         ),
         if (left) Positioned.fill(child: _overlay(context)),
@@ -563,18 +582,29 @@ class _WordMazeGameState extends State<WordMazeGame>
                 ],
               ),
             ),
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: TextButton.icon(
-                key: MazeKeys.next,
-                onPressed: _next,
-                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                label: Text(
-                  widget.session.isFinished
-                      ? strings.snakeResults
-                      : strings.next,
+            Wrap(
+              alignment: WrapAlignment.end,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 10,
+              children: [
+                if (_canContinueFromGate)
+                  Text(
+                    strings.mazeContinueSwipe,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                TextButton.icon(
+                  key: MazeKeys.next,
+                  onPressed: _next,
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                  label: Text(
+                    widget.session.isFinished
+                        ? strings.snakeResults
+                        : strings.next,
+                  ),
                 ),
-              ),
+              ],
             ),
           ],
         ),
