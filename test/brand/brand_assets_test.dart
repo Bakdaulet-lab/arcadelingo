@@ -197,7 +197,7 @@ void main() {
       final xml = _code('$androidRes/mipmap-anydpi-v26/ic_launcher.xml');
       expect(
         xml,
-        contains('<background android:drawable="@color/brand_surface"'),
+        contains('<background android:drawable="@color/launcher_background"'),
       );
       expect(xml, contains('@drawable/ic_launcher_foreground'));
       expect(
@@ -235,21 +235,63 @@ void main() {
       },
     );
 
-    test('иконка нарисована фоном темы, а не чем-то похожим', () {
-      // Угловой пиксель легаси-иконки — чистый фон: рисунок занимает 86%
-      // квадрата и до угла не достаёт.
+    test(
+      '«Словомат» сохраняет светлую букву, коралловый джойстик и индиго',
+      () {
+        final bytes =
+            File(
+              '$androidRes/mipmap-xxxhdpi/ic_launcher.png',
+            ).readAsBytesSync();
+        expect(_pixel(bytes, 84, 72), [237, 255, 243]);
+        expect(_pixel(bytes, 69, 100), [255, 137, 123]);
+        expect(
+          _read('$androidRes/values/launcher_background.xml'),
+          contains('<color name="launcher_background">#FF191B3B</color>'),
+        );
+      },
+    );
+
+    test('тематический значок сохраняет букву в прозрачном экране', () {
       final bytes =
-          File('$androidRes/mipmap-xxxhdpi/ic_launcher.png').readAsBytesSync();
-      final png = _pngOf(bytes);
-      expect(png.colorType, 2);
-      final surface = wordarcadeColors.surface;
-      final corner = _firstPixelRgb(bytes);
-      expect(corner, [
-        (surface.r * 255).round(),
-        (surface.g * 255).round(),
-        (surface.b * 255).round(),
-      ]);
+          File(
+            '$androidRes/drawable-xxxhdpi/ic_launcher_monochrome.png',
+          ).readAsBytesSync();
+      expect(_pixel(bytes, 0, 0).last, 0);
+      expect(_pixel(bytes, 198, 180).last, 255);
+      expect(_pixel(bytes, 177, 189).last, 0);
     });
+
+    test(
+      'macOS, Windows и Web используют значки во всех объявленных размерах',
+      () {
+        const mac = 'macos/Runner/Assets.xcassets/AppIcon.appiconset';
+        final catalog =
+            json.decode(_read('$mac/Contents.json')) as Map<String, dynamic>;
+        for (final entry
+            in (catalog['images'] as List).cast<Map<String, dynamic>>()) {
+          final size = int.parse((entry['size'] as String).split('x').first);
+          final scale = int.parse((entry['scale'] as String).split('x').first);
+          expect(_png('$mac/${entry['filename']}').width, size * scale);
+        }
+        final manifest =
+            json.decode(_read('web/manifest.json')) as Map<String, dynamic>;
+        for (final entry
+            in (manifest['icons'] as List).cast<Map<String, dynamic>>()) {
+          final size = int.parse((entry['sizes'] as String).split('x').first);
+          expect(_png('web/${entry['src']}').width, size);
+        }
+        final ico =
+            File('windows/runner/resources/app_icon.ico').readAsBytesSync();
+        final dir = ByteData.sublistView(ico);
+        expect(dir.getUint16(2, Endian.little), 1);
+        final sizes = <int>[];
+        for (var i = 0; i < dir.getUint16(4, Endian.little); i++) {
+          final offset = dir.getUint32(6 + i * 16 + 12, Endian.little);
+          sizes.add(_pngOf(Uint8List.sublistView(ico, offset)).width);
+        }
+        expect(sizes, [16, 32, 48, 256]);
+      },
+    );
   });
 
   test('applicationId не тронут', () {
@@ -304,8 +346,10 @@ _Png _pngOf(Uint8List bytes) {
   );
 }
 
-/// Первый пиксель распакованной картинки — левый верхний угол.
-List<int> _firstPixelRgb(Uint8List bytes) {
+/// PNG генератора содержат один IDAT и используют фильтр None.
+List<int> _pixel(Uint8List bytes, int x, int y) {
+  final png = _pngOf(bytes);
+  final channels = png.colorType == 2 ? 3 : 4;
   var offset = 8;
   while (offset < bytes.length) {
     final length = ByteData.sublistView(bytes).getUint32(offset);
@@ -314,9 +358,10 @@ List<int> _firstPixelRgb(Uint8List bytes) {
       final raw = ZLibCodec().decode(
         bytes.sublist(offset + 8, offset + 8 + length),
       );
-      // Первый байт строки — код фильтра; для наших PNG он всегда 0.
-      expect(raw.first, 0, reason: 'ожидался фильтр None');
-      return [raw[1], raw[2], raw[3]];
+      final row = y * (png.width * channels + 1);
+      expect(raw[row], 0, reason: 'ожидался фильтр None');
+      final start = row + 1 + x * channels;
+      return raw.sublist(start, start + channels);
     }
     offset += 12 + length;
   }

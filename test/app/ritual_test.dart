@@ -16,12 +16,14 @@ import 'package:arcadelingo/app/app.dart';
 import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/games.dart';
+import 'package:arcadelingo/data/settings/settings_prefs_store.dart';
 import 'package:arcadelingo/data/srs/leitner_codec.dart';
 import 'package:arcadelingo/data/srs/leitner_prefs_store.dart';
 import 'package:arcadelingo/data/streak/streak_prefs_store.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/ui/streak_card.dart';
@@ -91,6 +93,7 @@ void main() {
     Map<String, Object> prefs = const {},
     int words = 3,
     DateTime? now,
+    AppTheme? theme,
     List<AppEvent> history = const [],
   }) async {
     _now = now ?? _t0;
@@ -100,6 +103,10 @@ void main() {
     events.events.addAll(history);
     SharedPreferences.setMockInitialValues(prefs);
     final instance = await SharedPreferences.getInstance();
+    final settings = theme == null ? null : SettingsPrefsStore(instance);
+    if (theme != null) {
+      await settings!.save(AppSettings.defaults.copyWith(theme: theme));
+    }
     tester.view.physicalSize = const Size(1080, 2340);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -109,6 +116,7 @@ void main() {
           cards: LeitnerPrefsStore(instance),
           streaks: StreakPrefsStore(instance),
           events: events,
+          settings: settings,
         ),
         seed: Ok(wordItems(words)),
         now: () => _now,
@@ -136,6 +144,62 @@ void main() {
   }
 
   group('Что засчитывает день', () {
+    for (final theme in AppTheme.values) {
+      testWidgets(
+        'возвращение из игры разжигает костёр один раз в ${theme.name}',
+        (tester) async {
+          await pumpApp(
+            tester,
+            theme: theme,
+            words: 20,
+            prefs: {
+              'streak_state': jsonEncode({
+                'version': 2,
+                'current': 6,
+                'best': 6,
+                'last_day': '2026-08-25',
+                'freezes': 0,
+                'days_since_freeze': 6,
+              }),
+            },
+          );
+          final fire = find.descendant(
+            of: find.byKey(streakCardKey),
+            matching: find.byWidgetPredicate(
+              (w) => w is CustomPaint && w.painter is FlamePainter,
+            ),
+          );
+          double flameIntensity() =>
+              (tester.widget<CustomPaint>(fire).painter! as FlamePainter)
+                  .intensity;
+          final base =
+              tester.getBottomLeft(fire) -
+              tester.getTopLeft(find.byKey(streakCardKey));
+
+          expect(flameIntensity(), 0);
+          for (final firstRound in [true, false]) {
+            await enterGame(tester);
+            await tester.tap(find.byKey(_TwoTapGame.finish));
+            await tester.pump();
+            await tester.binding.handlePopRoute();
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 320));
+            await tester.pump(const Duration(milliseconds: 80));
+            expect(find.byKey(flameDigitKey), findsOneWidget);
+            expect(flameIntensity(), firstRound ? greaterThan(0) : equals(0));
+            await tester.pumpAndSettle();
+            expect(
+              tester.getBottomLeft(fire) -
+                  tester.getTopLeft(find.byKey(streakCardKey)),
+              base,
+            );
+            expect(flameIntensity(), 0);
+            expect(await streakDoc(), containsPair('current', 7));
+          }
+        },
+      );
+    }
+
     testWidgets('законченная партия — засчитывает', (tester) async {
       await pumpApp(tester);
       await enterGame(tester);
