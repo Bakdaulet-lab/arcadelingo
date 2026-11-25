@@ -59,6 +59,100 @@ Future<void> reachNorthGate(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('answer and next question keep the field and prompt in place', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 780);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final session = FakeReviewSession(const [
+      ReviewItem(word: target),
+      ReviewItem(word: candle),
+    ]);
+    await mountGame(tester, session, [target, candle, table]);
+    final field = find.byKey(MazeKeys.field);
+    final prompt = find.byKey(MazeKeys.word);
+    final frame = tester.getRect(field);
+    final label = tester.getTopLeft(prompt);
+    await reachNorthGate(tester);
+    await tester.pumpAndSettle();
+    expect(tester.getRect(field), frame);
+    expect(tester.getTopLeft(prompt), label);
+    await tester.tap(find.byKey(MazeKeys.next));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(field), frame);
+    expect(tester.getTopLeft(prompt), label);
+  });
+
+  testWidgets(
+    'system back closes the pending review once without inventing a selected gate',
+    (tester) async {
+      final session = FakeReviewSession(const [ReviewItem(word: target)]);
+      var finished = 0;
+      final game = WordMazeGame(
+        session: session,
+        vocabulary: const [target],
+        onPlayAgain: () {},
+        onExit: () {},
+        onRoundOver: () => finished++,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              return Scaffold(
+                body: TextButton(
+                  child: const Text('open'),
+                  onPressed:
+                      () => Navigator.of(
+                        context,
+                      ).push(MaterialPageRoute<void>(builder: (_) => game)),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      final outcome = session.reports.single.outcome;
+      expect(outcome.correct, isFalse);
+      expect(outcome.selectedAnswer, isNull);
+      expect(outcome.timedOut, isFalse);
+      expect(finished, 0);
+    },
+  );
+
+  testWidgets(
+    'being caught returns to the same word and keeps its collected dots',
+    (tester) async {
+      final session = FakeReviewSession(const [ReviewItem(word: target)]);
+      await mountGame(tester, session, [target, candle, table]);
+      final field = find.byKey(MazeKeys.field);
+      final run = tester.widget<MazeField>(field).run;
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      for (
+        var frame = 0;
+        frame < 1000 && find.byKey(MazeKeys.respawn).evaluate().isEmpty;
+        frame++
+      ) {
+        await tester.pump(const Duration(milliseconds: 32));
+      }
+      expect(find.byKey(MazeKeys.respawn), findsOneWidget);
+      expect(session.reports, isEmpty);
+      final collected = run.collected;
+      expect(collected, greaterThan(0));
+      await tester.tap(find.byKey(MazeKeys.respawn));
+      await tester.pumpAndSettle();
+      expect(find.byKey(MazeKeys.respawn), findsNothing);
+      expect(run.collected, collected);
+      expect(session.nextItemCalls, 1);
+      await reachNorthGate(tester);
+      expect(session.reports, hasLength(1));
+    },
+  );
   for (final brightness in Brightness.values) {
     testWidgets(
       'gate alone reports the answer, final result and replay in ${brightness.name}',
