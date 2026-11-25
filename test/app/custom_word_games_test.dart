@@ -19,6 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/claw_actions.dart';
 import '../support/in_memory_answer_log.dart';
 import '../support/in_memory_stores.dart';
+import '../support/maze_actions.dart';
 
 const _courses = [
   (
@@ -206,6 +207,17 @@ void main() {
               );
               expect(field.run.apples, hasLength(3));
               await _eatOpeningApple(tester, field.run);
+            case 'word_maze':
+              expect(answer, findsOneWidget);
+              final gates = mazeGateWords(tester);
+              expect(gates, hasLength(3));
+              expect(
+                gates,
+                everyElement(
+                  isIn([source, ...support.map((word) => word.text)]),
+                ),
+              );
+              await enterMazeGate(tester, gates.indexOf(source));
             default:
               fail('Missing game exercise for ${game.id}');
           }

@@ -159,7 +159,7 @@ void main() {
 
   // The board and movement games have dedicated launch tests.
   for (final entry in wordarcadeGames.where(
-    (game) => !const {'word_mahjong', 'snake'}.contains(game.id),
+    (game) => !const {'word_mahjong', 'snake', 'word_maze'}.contains(game.id),
   )) {
     final isMatch = entry.id == matchThreeEntry.id;
     final isBrick = entry.id == brickBreakerEntry.id;

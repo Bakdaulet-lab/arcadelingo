@@ -67,6 +67,8 @@ void main() {
     }
     final reversed = _answer(_take, 'correr', game: 'active_recall', hints: 1);
     final apple = _answer(_run, 'tomar — брать', game: 'snake');
+    final maze = _answer(_bring, 'tomar', game: 'word_maze');
+    expect(_pairs([maze, maze]).single.second.id, _take.id);
     final pair = _pairs([reversed, apple]).single;
     expect({pair.first.id, pair.second.id}, {_take.id, _run.id});
   });
