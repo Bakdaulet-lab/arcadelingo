@@ -175,28 +175,24 @@ void main() {
             (selected.cards as InMemoryCardStore).saves.single.keys,
             contains(target.id),
           );
-          expect(
-            records.load((
-              gameId: 'word_maze',
-              courseId: course.id,
-              level: level,
-            )),
-            isNotNull,
+          final scoreKey = (
+            gameId: 'word_maze',
+            courseId: course.id,
+            level: level,
           );
+          expect(records.load(scoreKey), isNotNull);
           expect(
             records.load((gameId: 'snake', courseId: course.id, level: level)),
             isNull,
           );
           for (final deck in decks.values.where((d) => d != selected)) {
             expect((deck.answers as InMemoryAnswerLog).records, isEmpty);
-            expect(
-              records.load((
-                gameId: 'word_maze',
-                courseId: deck.course.id,
-                level: level,
-              )),
-              isNull,
+            final otherCourse = (
+              gameId: 'word_maze',
+              courseId: deck.course.id,
+              level: level,
             );
+            expect(records.load(otherCourse), isNull);
           }
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox.shrink());
