@@ -396,25 +396,40 @@ void main() {
         final field = find.byKey(BrickBreakerKeys.field);
         final bounds = tester.getRect(field);
         final run = tester.widget<BrickBreakerField>(field).run;
-        final gold = run.bricks.singleWhere((brick) => brick.gold);
+        final goldX =
+            run.bricks.singleWhere((brick) => brick.gold).bounds.center.dx;
+        // Aim from the top of the field, outside the paddle's grab zone.
         await tester.tapAt(
           Offset(
-            bounds.left +
-                gold.bounds.center.dx * bounds.width / BrickBreakerRun.width,
-            bounds.bottom - 22,
+            bounds.left + goldX * bounds.width / BrickBreakerRun.width,
+            bounds.top + 12,
+          ),
+        );
+        expect(
+          run.paddle,
+          closeTo(
+            goldX.clamp(
+              BrickBreakerRun.paddleHalfWidth,
+              BrickBreakerRun.width - BrickBreakerRun.paddleHalfWidth,
+            ),
+            .01,
           ),
         );
         await tester.tap(find.byKey(BrickBreakerKeys.launch));
-        for (var j = 0; j < 80; j++) {
+        for (var j = 0; j < 80 && run.phase == BrickPhase.flying; j++) {
           await tester.pump(const Duration(milliseconds: 16));
         }
+        expect(run.phase, BrickPhase.bonus);
         expect(find.text('pez'), findsOneWidget);
         expect(find.text('cat'), findsNothing);
         expect(find.text('dog'), findsNothing);
         expect(find.text('Слово ${i + 1} из 3'), findsOneWidget);
-        final x = tester.getCenter(find.text('рыба')).dx;
-        await tester.tapAt(Offset(x, bounds.bottom - 22));
+        final answer = find.text('рыба');
+        await tester.ensureVisible(answer);
+        await tester.tap(answer);
+        expect(run.catchLane, run.choices.indexOf('рыба'));
         await tester.pumpAndSettle(const Duration(milliseconds: 32));
+        expect(run.correctCount, i + 1);
         if (i < 2) {
           expect(records.load(key, mode: ArcadeChallenge.brick), isNull);
         }
