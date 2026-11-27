@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:arcadelingo/features/games/candy_delivery/candy_field.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget board(
@@ -28,6 +30,61 @@ Widget board(
 );
 
 void main() {
+  testWidgets(
+    'tall glade keeps the sweet round and offsets swipe coordinates to the drawn rope',
+    (tester) async {
+      final landed = <int?>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Center(
+            child: SizedBox(
+              width: 360,
+              child: CandyField(
+                aspectRatio: .92,
+                rabbits: const [0, 1, 2],
+                reducedMotion: true,
+                aim: 1,
+                onLand: landed.add,
+              ),
+            ),
+          ),
+        ),
+      );
+      final field = find.byType(CandyField);
+      final rect = tester.getRect(field);
+      expect(rect.height, closeTo(360 / .92, .01));
+      final foreground = tester.renderObject<RenderRepaintBoundary>(
+        find.descendant(of: field, matching: find.byType(RepaintBoundary)).last,
+      );
+      final centerY = (127 * rect.height / 292).round();
+      final opacities = await tester.runAsync(() async {
+        final image = await foreground.toImage();
+        try {
+          final bytes =
+              (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
+          return [
+            for (final dy in [12, 20])
+              bytes.getUint8(((centerY + dy) * image.width + 184) * 4 + 3),
+          ];
+        } finally {
+          image.dispose();
+        }
+      });
+      expect(opacities!.first, 255);
+      expect(
+        opacities.last,
+        0,
+        reason: 'The sweet grows no taller on a tall phone.',
+      );
+      final swipe = await tester.startGesture(
+        rect.topLeft + const Offset(130, 155),
+      );
+      await swipe.moveTo(rect.topLeft + const Offset(222, 155));
+      await swipe.up();
+      expect(landed, [2]);
+    },
+  );
+
   testWidgets('a covered flight cannot deliver after motion settings change', (
     tester,
   ) async {
