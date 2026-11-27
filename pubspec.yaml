@@ -73,6 +73,7 @@ flutter:
 
   assets:
     - assets/images/home/
+    - assets/images/candy_delivery/
     - assets/streak_valley/dark/
     - assets/streak_valley/light/
     - assets/words_seed.json

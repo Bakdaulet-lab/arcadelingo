@@ -109,8 +109,9 @@ void main() {
           tester.widget<Text>(find.byKey(const Key('candy.status'))).data,
           'Доставлено!',
         );
-        if (n < orders.length - 1)
+        if (n < orders.length - 1) {
           await tapControl(tester, find.byKey(const Key('candy.next')));
+        }
       }
       expect(targetStreak.state.current, 1);
       expect(homeStreak.state.current, 0);

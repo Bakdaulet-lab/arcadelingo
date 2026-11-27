@@ -31,6 +31,7 @@ import 'package:arcadelingo/app/settings_view.dart';
 import 'package:arcadelingo/app/story_game.dart';
 import 'package:arcadelingo/app/story_views.dart';
 import 'package:arcadelingo/app/word_sets_view.dart';
+import 'package:arcadelingo/domain/candy_delivery/candy_orders.dart';
 import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
@@ -54,6 +55,7 @@ import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/domain/usecases/count_played_day.dart';
 import 'package:arcadelingo/domain/usecases/start_session.dart';
+import 'package:arcadelingo/features/games/candy_delivery/candy_delivery_game.dart';
 import 'package:arcadelingo/features/games/order_kitchen/order_kitchen_game.dart';
 import 'package:arcadelingo/features/recall/recall_screen.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
@@ -261,7 +263,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<SituationStory> _stories = const [];
   bool _preparingLearning = false;
   bool _recallOpen = false;
-  bool _kitchenOpen = false;
+  bool _orderGameOpen = false;
   bool _selectingCourse = false;
   bool _selectingChallenge = false;
 
@@ -353,39 +355,77 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     ).push<void>(MaterialPageRoute<void>(builder: (_) => route));
   }
 
-  Future<void> _openKitchen() async {
-    if (_kitchenOpen) return;
+  Future<void> _openKitchen() {
+    final course = widget.course;
+    return _openOrderGame(
+      'order_kitchen',
+      (seed, finish, replay, exit) => OrderKitchenGame(
+        course: course,
+        seed: seed,
+        onShiftComplete: finish,
+        onReplay: replay,
+        onExit: exit,
+      ),
+    );
+  }
+
+  Future<void> _openCandyDelivery() {
+    final course = widget.course;
+    final level = _selectedLevel;
+    return _openOrderGame(
+      'candy_delivery',
+      (seed, finish, replay, exit) => CandyDeliveryGame(
+        course: course,
+        level: level,
+        seed: seed,
+        onComplete: finish,
+        onReplay: replay,
+        onExit: exit,
+      ),
+    );
+  }
+
+  Future<void> _openOrderGame(
+    String gameId,
+    Widget Function(
+      int seed,
+      VoidCallback finish,
+      VoidCallback replay,
+      VoidCallback exit,
+    )
+    buildGame,
+  ) async {
+    if (_orderGameOpen) return;
     final course = widget.course;
     final seed = widget.now().microsecondsSinceEpoch;
     final navigator = Navigator.of(context);
     var shift = 1;
     var finished = false;
-    String sessionId() => 'order_kitchen.$seed.$shift';
-    _kitchenOpen = true;
+    String sessionId() => '$gameId.$seed.$shift';
+    _orderGameOpen = true;
     _record(AppEventKind.roundStart, sessionId: sessionId());
     try {
       await navigator.push<void>(
         MaterialPageRoute<void>(
           builder:
-              (_) => OrderKitchenGame(
-                course: course,
-                seed: seed,
-                onShiftComplete: () {
+              (_) => buildGame(
+                seed,
+                () {
                   if (finished) return;
                   finished = true;
                   _finishRound(sessionId());
                 },
-                onReplay: () {
+                () {
                   shift++;
                   finished = false;
                   _record(AppEventKind.roundStart, sessionId: sessionId());
                 },
-                onExit: navigator.pop,
+                navigator.pop,
               ),
         ),
       );
     } finally {
-      _kitchenOpen = false;
+      _orderGameOpen = false;
       if (mounted && widget.course.id == course.id) {
         if (!finished) {
           _record(AppEventKind.roundAbandon, sessionId: sessionId());
@@ -539,6 +579,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           onOrderKitchen:
               kitchenAvailableFor(widget.course, _selectedLevel)
                   ? _openKitchen
+                  : null,
+          onCandyDelivery:
+              _hasWordsForLevel &&
+                      candyAvailableFor(widget.course, _selectedLevel)
+                  ? _openCandyDelivery
                   : null,
           onRecall: _hasWordsForLevel ? _openRecall : null,
           onDailyWord:

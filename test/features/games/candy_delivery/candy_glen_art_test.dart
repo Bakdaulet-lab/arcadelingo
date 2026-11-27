@@ -67,7 +67,7 @@ void main() {
             ),
         ];
         final before = await pixels();
-        final sky = (8 * 360 + 180) * 4;
+        const sky = (8 * 360 + 180) * 4;
         expect(before[sky + 3], 255);
         expect(before[sky], day ? greaterThan(200) : lessThan(100));
         await show(shuffled, null);

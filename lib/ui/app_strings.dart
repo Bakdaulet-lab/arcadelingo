@@ -7,6 +7,8 @@ import 'package:arcadelingo/ui/campfire_stage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+part 'candy_delivery_strings.dart';
+
 const russianStrings = AppStrings(InterfaceLanguage.russian);
 
 /// Тексты ArcadeLingo. Язык курса задаёт данные карточки независимо от меню.

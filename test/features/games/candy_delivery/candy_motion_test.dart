@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:arcadelingo/features/games/candy_delivery/candy_motion.dart';
 import 'package:flutter_test/flutter_test.dart';
 
