@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:arcadelingo/features/games/candy_delivery/candy_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,6 +28,50 @@ Widget board(
 );
 
 void main() {
+  testWidgets('a covered flight cannot deliver after motion settings change', (
+    tester,
+  ) async {
+    final field = GlobalKey<CandyFieldState>();
+    final navigator = GlobalKey<NavigatorState>();
+    final reduced = ValueNotifier(false);
+    addTearDown(reduced.dispose);
+    final landings = <int?>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navigator,
+        home: ValueListenableBuilder<bool>(
+          valueListenable: reduced,
+          builder:
+              (context, quiet, _) => CandyField(
+                key: field,
+                reducedMotion: quiet,
+                aim: 0,
+                rabbits: const [0, 1, 2],
+                onLand: landings.add,
+              ),
+        ),
+      ),
+    );
+    field.currentState!.cut();
+    await tester.pump();
+    unawaited(
+      navigator.currentState!.push<void>(
+        MaterialPageRoute<void>(builder: (_) => const Scaffold()),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(landings, isEmpty);
+    reduced.value = true;
+    await tester.pump();
+    await tester.pump();
+    expect(landings, isEmpty);
+    navigator.currentState!.pop();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(landings, hasLength(1));
+  });
+
   testWidgets(
     'sparse swipe cuts once and cannot splice two different fingers',
     (tester) async {
