@@ -122,6 +122,14 @@ class AppStrings {
     es: 'De camino a casa',
   );
 
+  String get orderKitchen =>
+      _text(en: 'Café Orders', ru: 'Кухня заказов', es: 'Pedidos de cafetería');
+  String get orderKitchenHint => _text(
+    en: 'Read each order and make the guest’s drink.',
+    ru: 'Прочитай заказ и приготовь гостю напиток.',
+    es: 'Lee cada pedido y prepara la bebida.',
+  );
+
   String get activeRecall =>
       _text(en: 'Recall it', ru: 'Вспомни сам', es: 'Recuerda la palabra');
 

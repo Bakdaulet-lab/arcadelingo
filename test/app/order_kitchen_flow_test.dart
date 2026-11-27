@@ -33,17 +33,34 @@ void main() {
     final answers = InMemoryAnswerLog();
     const items = [
       ReviewItem(word: Word(id: 'cafe', text: 'café', translation: 'coffee')),
-      ReviewItem(word: Word(id: 'turno', text: 'turno', translation: 'shift', level: CefrLevel.a2)),
+      ReviewItem(
+        word: Word(
+          id: 'turno',
+          text: 'turno',
+          translation: 'shift',
+          level: CefrLevel.a2,
+        ),
+      ),
     ];
-    await tester.pumpWidget(WordarcadeApp(
-      now: () => DateTime(2026, 6, 10, 12),
-      ports: AppPorts(cards: InMemoryCardStore(), streaks: homeStreak),
-      seed: const Ok([ReviewItem(word: Word(id: 'tea', text: 'tea', translation: 'чай'))]),
-      additionalDecks: [
-        CourseDeck(course: course, items: items, cards: InMemoryCardStore(), answers: answers,
-          streaks: cafeStreak, events: cafeEvents),
-      ],
-    ));
+    await tester.pumpWidget(
+      WordarcadeApp(
+        now: () => DateTime(2026, 6, 10, 12),
+        ports: AppPorts(cards: InMemoryCardStore(), streaks: homeStreak),
+        seed: const Ok([
+          ReviewItem(word: Word(id: 'tea', text: 'tea', translation: 'чай')),
+        ]),
+        additionalDecks: [
+          CourseDeck(
+            course: course,
+            items: items,
+            cards: InMemoryCardStore(),
+            answers: answers,
+            streaks: cafeStreak,
+            events: cafeEvents,
+          ),
+        ],
+      ),
+    );
     await tester.pumpAndSettle();
     final kitchen = find.byKey(AppKeys.orderKitchen);
     expect(kitchen, findsOneWidget);
@@ -55,11 +72,18 @@ void main() {
     await _tap(tester, kitchen);
     final game = tester.widget<OrderKitchenGame>(find.byType(OrderKitchenGame));
     expect(game.course.id, course.id);
-    final orders = kitchenOrdersFor(course: course, level: CefrLevel.a1, seed: game.seed);
+    final orders = kitchenOrdersFor(
+      course: course,
+      level: CefrLevel.a1,
+      seed: game.seed,
+    );
     for (final order in orders) {
       expect(find.text(order.phrase('es')), findsOneWidget);
       for (final ingredient in order.ingredients) {
-        await _tap(tester, find.byKey(Key('kitchen.ingredient.${ingredient.name}')));
+        await _tap(
+          tester,
+          find.byKey(Key('kitchen.ingredient.${ingredient.name}')),
+        );
       }
       await _tap(tester, find.byKey(const Key('kitchen.serve')));
       await _tap(tester, find.byKey(const Key('kitchen.next')));
@@ -71,9 +95,13 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(kitchen, findsOneWidget);
-    final shifts = cafeEvents.events.where((e) => e.kind != AppEventKind.appOpen).toList();
+    final shifts =
+        cafeEvents.events.where((e) => e.kind != AppEventKind.appOpen).toList();
     expect(shifts.map((e) => e.kind), [
-      AppEventKind.roundStart, AppEventKind.roundOver, AppEventKind.roundStart, AppEventKind.roundAbandon,
+      AppEventKind.roundStart,
+      AppEventKind.roundOver,
+      AppEventKind.roundStart,
+      AppEventKind.roundAbandon,
     ]);
     expect(shifts[0].sessionId, shifts[1].sessionId);
     expect(shifts[2].sessionId, shifts[3].sessionId);

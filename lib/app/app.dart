@@ -34,6 +34,7 @@ import 'package:arcadelingo/app/word_sets_view.dart';
 import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
+import 'package:arcadelingo/domain/kitchen/kitchen_shift.dart';
 import 'package:arcadelingo/domain/learning/confused_words.dart';
 import 'package:arcadelingo/domain/learning/custom_review_items.dart';
 import 'package:arcadelingo/domain/learning/learning_plan.dart';
@@ -53,6 +54,7 @@ import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/domain/usecases/count_played_day.dart';
 import 'package:arcadelingo/domain/usecases/start_session.dart';
+import 'package:arcadelingo/features/games/order_kitchen/order_kitchen_game.dart';
 import 'package:arcadelingo/features/recall/recall_screen.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_choice_dialog.dart';
@@ -259,6 +261,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<SituationStory> _stories = const [];
   bool _preparingLearning = false;
   bool _recallOpen = false;
+  bool _kitchenOpen = false;
   bool _selectingCourse = false;
   bool _selectingChallenge = false;
 
@@ -348,6 +351,48 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return Navigator.of(
       context,
     ).push<void>(MaterialPageRoute<void>(builder: (_) => route));
+  }
+
+  Future<void> _openKitchen() async {
+    if (_kitchenOpen) return;
+    final course = widget.course;
+    final seed = widget.now().microsecondsSinceEpoch;
+    final navigator = Navigator.of(context);
+    var shift = 1;
+    var finished = false;
+    String sessionId() => 'order_kitchen.$seed.$shift';
+    _kitchenOpen = true;
+    _record(AppEventKind.roundStart, sessionId: sessionId());
+    try {
+      await navigator.push<void>(
+        MaterialPageRoute<void>(
+          builder:
+              (_) => OrderKitchenGame(
+                course: course,
+                seed: seed,
+                onShiftComplete: () {
+                  if (finished) return;
+                  finished = true;
+                  _finishRound(sessionId());
+                },
+                onReplay: () {
+                  shift++;
+                  finished = false;
+                  _record(AppEventKind.roundStart, sessionId: sessionId());
+                },
+                onExit: navigator.pop,
+              ),
+        ),
+      );
+    } finally {
+      _kitchenOpen = false;
+      if (mounted && widget.course.id == course.id) {
+        if (!finished) {
+          _record(AppEventKind.roundAbandon, sessionId: sessionId());
+        }
+        _refreshRitual();
+      }
+    }
   }
 
   Future<void> _openStories() async {
@@ -491,6 +536,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   : null,
           onProgress: _openProgress,
           onStories: _stories.isEmpty ? null : _openStories,
+          onOrderKitchen:
+              kitchenAvailableFor(widget.course, _selectedLevel)
+                  ? _openKitchen
+                  : null,
           onRecall: _hasWordsForLevel ? _openRecall : null,
           onDailyWord:
               widget.ports.dailyWord != null &&

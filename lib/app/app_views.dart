@@ -37,6 +37,7 @@ abstract final class AppKeys {
 
   static const Key challenge = Key('app.challenge');
   static const Key stories = Key('app.stories');
+  static const Key orderKitchen = Key('app.order-kitchen');
   static const Key recall = Key('app.recall');
 
   static const Key learn = Key('app.learn');
@@ -106,6 +107,7 @@ class PlayView extends StatelessWidget {
     this.onLearn,
     this.onChallenge,
     this.onStories,
+    this.onOrderKitchen,
     this.onRecall,
     this.onListening,
     this.onDailyWord,
@@ -153,6 +155,7 @@ class PlayView extends StatelessWidget {
   final VoidCallback? onLearn;
   final VoidCallback? onChallenge;
   final VoidCallback? onStories;
+  final VoidCallback? onOrderKitchen;
   final VoidCallback? onRecall;
   final VoidCallback? onListening;
   final VoidCallback? onDailyWord;
@@ -357,6 +360,16 @@ class PlayView extends StatelessWidget {
                       title: context.strings.listeningMode,
                       hint: context.strings.listeningModeHint,
                       onTap: onListening!,
+                    ),
+                  ],
+                  if (onOrderKitchen != null) ...[
+                    SizedBox(height: paper ? 8 : 10),
+                    _StudyModeTile(
+                      key: AppKeys.orderKitchen,
+                      icon: Icons.local_cafe_outlined,
+                      title: context.strings.orderKitchen,
+                      hint: context.strings.orderKitchenHint,
+                      onTap: onOrderKitchen!,
                     ),
                   ],
                   if (games.length > 1) ...[
