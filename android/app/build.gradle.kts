@@ -91,6 +91,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -129,6 +130,10 @@ android {
         // debug не описан намеренно: у него отладочный ключ из ~/.android, и
         // `flutter run` обязан работать на машине, где ключа релиза нет вовсе.
     }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }
 
 flutter {
