@@ -205,6 +205,7 @@ class _DailyWordScreenState extends State<DailyWordScreen> {
     final puzzle = widget.puzzle;
     final extraLetters = switch (puzzle.course.studyLanguage) {
       'es' => const ['á', 'é', 'í', 'ó', 'ú', 'ü', 'ñ'],
+      'de' => const ['ä', 'ö', 'ü', 'ß'],
       'ru' => const ['ё'],
       _ => const <String>[],
     };
@@ -302,7 +303,7 @@ class _DailyWordScreenState extends State<DailyWordScreen> {
                           Text(
                             playing
                                 ? puzzle.answer.translation
-                                : puzzle.answer.text,
+                                : puzzle.answer.headword,
                             style: theme.textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
@@ -386,8 +387,11 @@ class _DailyWordScreenState extends State<DailyWordScreen> {
                                         width:
                                             extraLetters.length == 1
                                                 ? 44
-                                                : constraints.maxWidth / 7 >= 44
-                                                ? constraints.maxWidth / 7
+                                                : constraints.maxWidth /
+                                                        extraLetters.length >=
+                                                    44
+                                                ? constraints.maxWidth /
+                                                    extraLetters.length
                                                 : constraints.maxWidth / 4,
                                         child: TextButton(
                                           key: ValueKey(

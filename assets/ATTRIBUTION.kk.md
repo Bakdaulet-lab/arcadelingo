@@ -65,6 +65,18 @@ ArcadeLingo-ның бұрыннан бар испан тілі курстары�
   Сөздікқор <https://sozdikqor.kz/> және Termincom <https://termincom.kz/>
   пайдаланылды.
 
+## Неміс тілінің A1–C1 курстары
+
+Сөздер мен тіркестер ArcadeLingo үшін іріктелді. Аудармалар мен жауап
+нұсқалары төрт курсқа арнап әзірленді. Тақырыптар мен деңгейлерді белгілеуде
+Goethe-Institut материалдары басшылыққа алынды. Сөздердің жазылуы, артикльдері
+және мағыналары Duden сөздігімен салыстырылды.
+
+- A1–B1 деңгейлері: <https://www.goethe.de/prj/dvt/de/index.html>
+- B2 және C1 деңгейлері: <https://www.goethe.de/ins/de/de/prf/gzb2.cfm> және
+  <https://www.goethe.de/ins/de/de/prf/gzc1.cfm>
+- Duden сөздігі: <https://www.duden.de/woerterbuch>
+
 ## Rubik қарпі
 
 - **Авторлары.** Hubert & Fischer (Philipp Hubert және Sebastian Fischer).

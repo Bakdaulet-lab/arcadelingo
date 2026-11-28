@@ -91,6 +91,10 @@ flutter:
     - assets/words_kk_ru/
     - assets/words_kk_en/
     - assets/words_kk_es/
+    - assets/words_de_ru/
+    - assets/words_de_en/
+    - assets/words_de_es/
+    - assets/words_de_kk/
     - assets/words_en_a1_es.json
     - assets/words_c1.json
     - assets/words_c1.LICENSE.md

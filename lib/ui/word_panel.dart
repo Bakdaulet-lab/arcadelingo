@@ -47,7 +47,7 @@ class WordPanel extends StatelessWidget {
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
-              word.text,
+              word.headword,
               key: wordKey,
               softWrap: false,
               style: withWeight(theme.textTheme.displaySmall!, FontWeight.bold),

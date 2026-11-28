@@ -16,11 +16,15 @@ enum DailyGuessError {
 }
 
 final _latinLetters = RegExp(r'^[a-záéíóúñü]+$');
+final _germanLetters = RegExp(r'^[a-zäöüß]+$');
 final _russianLetters = RegExp(r'^[а-яё]+$');
 final _clueWords = RegExp(r'\p{L}+', unicode: true);
 
-RegExp _lettersFor(StudyCourse course) =>
-    course.studyLanguage == 'ru' ? _russianLetters : _latinLetters;
+RegExp _lettersFor(StudyCourse course) => switch (course.studyLanguage) {
+  'ru' => _russianLetters,
+  'de' => _germanLetters,
+  _ => _latinLetters,
+};
 
 class DailyWordPuzzle {
   DailyWordPuzzle._(

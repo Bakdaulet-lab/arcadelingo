@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/review/word_labels.dart';
 import 'package:flutter/widgets.dart' show StringCharacters;
 
 /// Партия хранит только раскладку и попытку по выданному слову.
@@ -11,10 +12,11 @@ class ClawMachineRun {
     int? hintLimit,
     String studyLanguage = 'en',
   }) : _hintsRemaining = hintLimit,
-       _alphabet =
-           studyLanguage == 'ru'
-               ? 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
-               : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+       _alphabet = switch (studyLanguage) {
+         'ru' => 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ',
+         'de' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ',
+         _ => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+       };
 
   static const columnCount = 5;
   static final _letterOrDigit = RegExp(r'[\p{L}\p{N}]', unicode: true);
@@ -44,7 +46,7 @@ class ClawMachineRun {
     item = session.nextItem();
     final word = item?.word;
     if (word == null) return;
-    answer = word.text.toUpperCase();
+    answer = uppercaseWordLetters(word.text);
     slots = answer.characters.toList(growable: false);
     separators = {
       for (final (i, slot) in slots.indexed)

@@ -326,7 +326,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                             vertical: 8,
                           ),
                           title: Text(
-                            entry.word.text,
+                            entry.word.headword,
                             style: withWeight(
                               theme.textTheme.titleMedium!,
                               FontWeight.bold,
@@ -426,7 +426,7 @@ class _DictionaryWordScreenState extends State<_DictionaryWordScreen> {
                   WordPanel(word: word),
                   const SizedBox(height: 12),
                   WordPronunciation(
-                    text: word.text,
+                    text: word.headword,
                     speech: widget.speech,
                     studyLanguage: widget.studyLanguage,
                   ),

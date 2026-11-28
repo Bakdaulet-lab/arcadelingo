@@ -60,6 +60,18 @@ C1/C2 Version 1.0**, Octanove Labs. Исходный набор:
   [Emle](https://emle.kz/), [Сөздікқор](https://sozdikqor.kz/)
   и [Termincom](https://termincom.kz/).
 
+## Немецкий язык A1–C1
+
+Слова и выражения отобраны для ArcadeLingo. Переводы и варианты ответов
+составлены для русского, английского, испанского и казахского курсов.
+Для выбора тем и сложности использованы материалы Goethe-Institut.
+Написание, артикли и спорные значения сверены по Duden.
+
+- Уровни A1–B1: <https://www.goethe.de/prj/dvt/de/index.html>
+- Уровни B2 и C1: <https://www.goethe.de/ins/de/de/prf/gzb2.cfm> и
+  <https://www.goethe.de/ins/de/de/prf/gzc1.cfm>
+- Duden: <https://www.duden.de/woerterbuch>
+
 ## Шрифт Rubik
 
 - **Автор:** Hubert & Fischer (Philipp Hubert, Sebastian Fischer).

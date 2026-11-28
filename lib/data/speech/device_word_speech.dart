@@ -220,8 +220,8 @@ class DeviceWordSpeech implements WordSpeech {
       locale.toLowerCase().replaceAll('_', '-');
 
   int _priority(String locale) => switch (_normalizeTag(locale)) {
-    'en-us' || 'es-es' || 'ru-ru' => 0,
-    'en-gb' || 'es-mx' => 1,
+    'en-us' || 'es-es' || 'ru-ru' || 'de-de' => 0,
+    'en-gb' || 'es-mx' || 'de-at' || 'de-ch' => 1,
     _ => 2,
   };
 }

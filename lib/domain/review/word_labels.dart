@@ -2,7 +2,11 @@ final _spaces = RegExp(r'\s+');
 final _separators = RegExp(r'\s*[,;/]\s*');
 
 String normalizedWordLabel(String value) =>
-    value.trim().toLowerCase().replaceAll(_spaces, ' ');
+    value.trim().replaceAll('ẞ', 'ß').toLowerCase().replaceAll(_spaces, ' ');
+
+/// Letter tiles stay one glyph per letter, including German ß.
+String uppercaseWordLetters(String value) =>
+    value.replaceAll('ß', 'ẞ').toUpperCase();
 
 /// Course entries may list several accepted meanings for the same word.
 Set<String> translationMeanings(String translation) {

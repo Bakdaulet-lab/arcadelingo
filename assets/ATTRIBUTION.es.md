@@ -27,6 +27,18 @@ Conjunto de datos original <https://github.com/openlanguageprofiles/olp-en-cefrj
 
 Se seleccionaron entradas de una sola palabra, se eliminaron duplicados y se añadieron las traducciones al ruso y las opciones de respuesta. Los diccionarios `assets/words_c1.json` y `assets/words_c2.json` se distribuyen bajo la licencia **Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)** <https://creativecommons.org/licenses/by-sa/4.0/>.
 
+## Cursos de alemán A1–C1
+
+El vocabulario, las traducciones y las opciones de respuesta se prepararon
+para ArcadeLingo. Los materiales del Goethe-Institut sirvieron de referencia
+para los temas y la dificultad. Se consultó Duden para revisar la ortografía,
+los artículos y las acepciones.
+
+- A1–B1: <https://www.goethe.de/prj/dvt/de/index.html>
+- B2 y C1: <https://www.goethe.de/ins/de/de/prf/gzb2.cfm> y
+  <https://www.goethe.de/ins/de/de/prf/gzc1.cfm>
+- Duden: <https://www.duden.de/woerterbuch>
+
 ## Tipografía Rubik
 
 - **Autores.** Hubert & Fischer (Philipp Hubert y Sebastian Fischer). El equipo de Cyreal (Alexei Vanyashin y Nikita Kanarev) revisó y amplió los caracteres cirílicos.

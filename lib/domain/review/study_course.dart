@@ -51,6 +51,33 @@ class StudyCourse {
     spanishFromKazakh,
   ];
 
+  static const germanFromRussian = StudyCourse(
+    id: 'ru-de',
+    studyLanguage: 'de',
+    translationLanguage: 'ru',
+  );
+  static const germanFromEnglish = StudyCourse(
+    id: 'en-de',
+    studyLanguage: 'de',
+    translationLanguage: 'en',
+  );
+  static const germanFromSpanish = StudyCourse(
+    id: 'es-de',
+    studyLanguage: 'de',
+    translationLanguage: 'es',
+  );
+  static const germanFromKazakh = StudyCourse(
+    id: 'kk-de',
+    studyLanguage: 'de',
+    translationLanguage: 'kk',
+  );
+  static const germanCourses = [
+    germanFromRussian,
+    germanFromEnglish,
+    germanFromSpanish,
+    germanFromKazakh,
+  ];
+
   final String id;
   final String studyLanguage;
   final String translationLanguage;

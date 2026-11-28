@@ -288,6 +288,7 @@ class AppStrings {
       'en' => 'Как это сказать по-английски?',
       'es' => 'Как это сказать по-испански?',
       'ru' => 'Как это сказать по-русски?',
+      'de' => 'Как это сказать по-немецки?',
       _ => 'Как это сказать на изучаемом языке?',
     },
     es: '¿Cómo se dice en ${languageName(tag).toLowerCase()}?',
@@ -295,6 +296,7 @@ class AppStrings {
       'en' => 'Мұны ағылшынша қалай айтады?',
       'es' => 'Мұны испанша қалай айтады?',
       'ru' => 'Мұны орысша қалай айтады?',
+      'de' => 'Мұны немісше қалай айтады?',
       _ => 'Мұны үйреніп жүрген тіліңде қалай айтады?',
     },
   );
@@ -1716,6 +1718,16 @@ class AppStrings {
   String get phrase =>
       _text(en: 'Phrase', ru: 'Выражение', es: 'Expresión', kk: 'Сөз тіркесі');
   String voiceUnavailable(String studyLanguage) => switch (studyLanguage) {
+    'de' => _text(
+      en:
+          'German speech is unavailable. Install a local German voice in your device’s text-to-speech settings.',
+      ru:
+          'Немецкий голос недоступен. Установи немецкий голос в настройках синтеза речи устройства.',
+      es:
+          'El audio en alemán no está disponible. Instala una voz en alemán en los ajustes de síntesis de voz del dispositivo.',
+      kk:
+          'Немісше дыбыстау қолжетімсіз. Құрылғының мәтінді дыбыстау баптауларынан неміс тіліндегі дауысты орнат.',
+    ),
     'en' => _text(
       en:
           'English speech is unavailable. Check your device’s text-to-speech settings for a local English voice.',
@@ -2021,6 +2033,7 @@ class AppStrings {
   }
 
   String languageName(String tag) => switch (tag) {
+    'de' => _text(en: 'German', ru: 'Немецкий', es: 'Alemán', kk: 'Неміс тілі'),
     'en' => _text(
       en: 'English',
       ru: 'Английский',
@@ -2049,6 +2062,7 @@ class AppStrings {
       'en' => 'Уровень английского',
       'ru' => 'Уровень русского',
       'es' => 'Уровень испанского',
+      'de' => 'Уровень немецкого',
       _ => 'Уровень языка ($tag)',
     },
     es: 'Nivel de ${languageName(tag).toLowerCase()}',
@@ -2056,6 +2070,7 @@ class AppStrings {
       'en' => 'Ағылшын тілінің деңгейі',
       'ru' => 'Орыс тілінің деңгейі',
       'es' => 'Испан тілінің деңгейі',
+      'de' => 'Неміс тілінің деңгейі',
       'kk' => 'Қазақ тілінің деңгейі',
       _ => 'Тіл деңгейі',
     },

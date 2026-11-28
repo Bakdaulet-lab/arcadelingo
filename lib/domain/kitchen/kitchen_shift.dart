@@ -4,28 +4,31 @@ import '../review/review_contract.dart';
 import '../review/study_course.dart';
 
 enum KitchenIngredient {
-  coffee('Coffee', 'Café', 'Кофе', 'Кофе'),
-  tea('Tea', 'Té', 'Чай', 'Шай'),
-  milk('Milk', 'Leche', 'Молоко', 'Сүт'),
-  sugar('Sugar', 'Azúcar', 'Сахар', 'Қант'),
-  lemon('Lemon', 'Limón', 'Лимон', 'Лимон'),
-  honey('Honey', 'Miel', 'Мёд', 'Бал');
+  coffee('Coffee', 'Café', 'Кофе', 'Кофе', 'Kaffee'),
+  tea('Tea', 'Té', 'Чай', 'Шай', 'Tee'),
+  milk('Milk', 'Leche', 'Молоко', 'Сүт', 'Milch'),
+  sugar('Sugar', 'Azúcar', 'Сахар', 'Қант', 'Zucker'),
+  lemon('Lemon', 'Limón', 'Лимон', 'Лимон', 'Zitrone'),
+  honey('Honey', 'Miel', 'Мёд', 'Бал', 'Honig');
 
   const KitchenIngredient(
     this._english,
     this._spanish,
     this._russian,
     this._kazakh,
+    this._german,
   );
   final String _english;
   final String _spanish;
   final String _russian;
   final String _kazakh;
+  final String _german;
 
   String label(String language) => switch (language) {
     'es' => _spanish,
     'ru' => _russian,
     'kk' => _kazakh,
+    'de' => _german,
     _ => _english,
   };
 }
@@ -37,6 +40,7 @@ class KitchenOrder {
     this._spanish,
     this._russian,
     this._kazakh,
+    this._german,
   );
 
   final Set<KitchenIngredient> ingredients;
@@ -44,11 +48,13 @@ class KitchenOrder {
   final String _spanish;
   final String _russian;
   final String _kazakh;
+  final String _german;
 
   String phrase(String language) => switch (language) {
     'es' => _spanish,
     'ru' => _russian,
     'kk' => _kazakh,
+    'de' => _german,
     _ => _english,
   };
 
@@ -63,6 +69,7 @@ const _plain = [
     'Un té, por favor.',
     'Чай, пожалуйста.',
     'Шай беріңізші.',
+    'Einen Tee, bitte.',
   ),
   KitchenOrder._(
     {KitchenIngredient.coffee},
@@ -70,6 +77,7 @@ const _plain = [
     'Un café, por favor.',
     'Кофе, пожалуйста.',
     'Кофе беріңізші.',
+    'Einen Kaffee, bitte.',
   ),
 ];
 
@@ -80,6 +88,7 @@ const _withOneExtra = [
     'Un té con miel, por favor.',
     'Чай с мёдом, пожалуйста.',
     'Бал қосылған шай беріңізші.',
+    'Einen Tee mit Honig, bitte.',
   ),
   KitchenOrder._(
     {KitchenIngredient.coffee, KitchenIngredient.sugar},
@@ -87,6 +96,7 @@ const _withOneExtra = [
     'Un café con azúcar, por favor.',
     'Кофе с сахаром, пожалуйста.',
     'Қант қосылған кофе беріңізші.',
+    'Einen Kaffee mit Zucker, bitte.',
   ),
   KitchenOrder._(
     {KitchenIngredient.tea, KitchenIngredient.lemon},
@@ -94,6 +104,7 @@ const _withOneExtra = [
     'Quiero un té con limón, por favor.',
     'Мне чай с лимоном, пожалуйста.',
     'Маған лимон қосылған шай беріңізші.',
+    'Ich möchte einen Tee mit Zitrone.',
   ),
   KitchenOrder._(
     {KitchenIngredient.tea, KitchenIngredient.milk},
@@ -101,6 +112,7 @@ const _withOneExtra = [
     'Un té con leche, por favor.',
     'Чай с молоком, пожалуйста.',
     'Сүт қосылған шай беріңізші.',
+    'Einen Tee mit Milch, bitte.',
   ),
   KitchenOrder._(
     {KitchenIngredient.coffee, KitchenIngredient.milk},
@@ -108,6 +120,7 @@ const _withOneExtra = [
     'Quiero un café con leche, por favor.',
     'Мне кофе с молоком, пожалуйста.',
     'Маған сүт қосылған кофе беріңізші.',
+    'Ich möchte einen Kaffee mit Milch.',
   ),
   KitchenOrder._(
     {KitchenIngredient.tea, KitchenIngredient.sugar},
@@ -115,6 +128,7 @@ const _withOneExtra = [
     'Un té con azúcar, por favor.',
     'Чай с сахаром, пожалуйста.',
     'Қант қосылған шай беріңізші.',
+    'Einen Tee mit Zucker, bitte.',
   ),
 ];
 
@@ -132,6 +146,7 @@ const _contrasts = [
       'Un café con leche y azúcar, por favor.',
       'Кофе с молоком и сахаром, пожалуйста.',
       'Сүт пен қант қосылған кофе беріңізші.',
+      'Kaffee mit Milch und Zucker, bitte.',
     ),
     KitchenOrder._(
       {KitchenIngredient.coffee, KitchenIngredient.milk},
@@ -139,6 +154,7 @@ const _contrasts = [
       'Un café con leche, sin azúcar, por favor.',
       'Кофе с молоком, без сахара, пожалуйста.',
       'Сүт қосылған, бірақ қантсыз кофе беріңізші.',
+      'Kaffee mit Milch, aber ohne Zucker, bitte.',
     ),
   ),
   (
@@ -148,6 +164,7 @@ const _contrasts = [
       'Un té con limón y miel, por favor.',
       'Чай с лимоном и мёдом, пожалуйста.',
       'Лимон мен бал қосылған шай беріңізші.',
+      'Tee mit Zitrone und Honig, bitte.',
     ),
     KitchenOrder._(
       {KitchenIngredient.tea, KitchenIngredient.lemon},
@@ -155,6 +172,7 @@ const _contrasts = [
       'Un té con limón, sin miel, por favor.',
       'Чай с лимоном, без мёда, пожалуйста.',
       'Лимон қосылған, бірақ балсыз шай беріңізші.',
+      'Tee mit Zitrone, aber ohne Honig, bitte.',
     ),
   ),
   (
@@ -164,6 +182,7 @@ const _contrasts = [
       'Un té con leche y azúcar, por favor.',
       'Чай с молоком и сахаром, пожалуйста.',
       'Сүт пен қант қосылған шай беріңізші.',
+      'Tee mit Milch und Zucker, bitte.',
     ),
     KitchenOrder._(
       {KitchenIngredient.tea, KitchenIngredient.sugar},
@@ -171,6 +190,7 @@ const _contrasts = [
       'Un té con azúcar, pero sin leche, por favor.',
       'Чай с сахаром, но без молока, пожалуйста.',
       'Қант қосылған, бірақ сүтсіз шай беріңізші.',
+      'Tee mit Zucker, aber ohne Milch, bitte.',
     ),
   ),
   (
@@ -180,6 +200,7 @@ const _contrasts = [
       'Un té con limón y azúcar, por favor.',
       'Чай с лимоном и сахаром, пожалуйста.',
       'Лимон мен қант қосылған шай беріңізші.',
+      'Tee mit Zitrone und Zucker, bitte.',
     ),
     KitchenOrder._(
       {KitchenIngredient.tea, KitchenIngredient.lemon},
@@ -187,6 +208,7 @@ const _contrasts = [
       'Un té con limón, pero sin azúcar, por favor.',
       'Чай с лимоном, но без сахара, пожалуйста.',
       'Лимон қосылған, бірақ қантсыз шай беріңізші.',
+      'Tee mit Zitrone, aber ohne Zucker, bitte.',
     ),
   ),
 ];
@@ -197,14 +219,15 @@ bool kitchenAvailableFor(StudyCourse course, CefrLevel level) {
     return false;
   }
   return const {
-    'ru-en',
-    'ru-es',
-    'es-en',
-    'en-es',
-    'kk-ru',
-    'kk-en',
-    'kk-es',
-  }.contains(course.id);
+        'ru-en',
+        'ru-es',
+        'es-en',
+        'en-es',
+        'kk-ru',
+        'kk-en',
+        'kk-es',
+      }.contains(course.id) ||
+      StudyCourse.germanCourses.any((entry) => entry.id == course.id);
 }
 
 List<KitchenOrder> kitchenOrdersFor({

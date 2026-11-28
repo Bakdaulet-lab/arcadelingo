@@ -19,14 +19,15 @@ class Word {
     this.level = CefrLevel.a1,
     this.partOfSpeech,
     this.example,
+    this.article,
   });
 
   final String id;
 
-  /// Английское слово.
+  /// Написание изучаемого слова без отдельного артикля.
   final String text;
 
-  /// Перевод на язык интерфейса.
+  /// Перевод на исходный язык курса.
   final String translation;
 
   /// Уровень слова для отбора карточек перед началом партии.
@@ -37,6 +38,11 @@ class Word {
 
   /// Пример употребления.
   final String? example;
+
+  /// Артикль словарного заголовка, когда курс его предоставляет.
+  final String? article;
+
+  String get headword => article == null ? text : '$article $text';
 }
 
 /// Единица показа: слово плюс правдоподобные обманки для игр с выбором.

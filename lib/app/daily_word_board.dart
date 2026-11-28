@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:arcadelingo/domain/daily_word/daily_word.dart';
+import 'package:arcadelingo/domain/review/word_labels.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:flutter/material.dart';
 
@@ -42,7 +43,8 @@ class DailyWordBoard extends StatelessWidget {
                           : current
                           ? draft.trim()
                           : '';
-                  final letters = word.toUpperCase().characters.toList();
+                  final letters =
+                      uppercaseWordLetters(word).characters.toList();
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
