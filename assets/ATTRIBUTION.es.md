@@ -1,5 +1,21 @@
 # Fuentes y materiales de terceros
 
+## Turco de A1 a C1
+
+Las palabras, las traducciones y las opciones de respuesta en turco se prepararon para ArcadeLingo. Los niveles siguen la secuencia didáctica de la aplicación. Se consultaron el [Güncel Türkçe Sözlük](https://sozluk.gov.tr/) y las [reglas ortográficas](https://tdk.gov.tr/icerik/yazim-kurallari/duzeltme-isareti/) de la Asociación de la Lengua Turca, así como los materiales [Yedi İklim Türkçe](https://yee.org.tr/_next/yayinlar/yedi-iklim-turkce-seti) del Instituto Yunus Emre.
+
+## Japonés de A1 a C1
+
+Las palabras, las lecturas, las traducciones y las opciones de respuesta se prepararon para ArcadeLingo. Los niveles siguen la secuencia didáctica de la aplicación. Se consultaron el [Estándar JF](https://www.jfstandard.jpf.go.jp/summaryen/ja/render.do) y los [materiales didácticos de Marugoto](https://www.marugoto.jpf.go.jp/en/download/) de la Fundación Japón.
+
+Arcade Japanese deriva de [Noto Sans JP](https://github.com/google/fonts/tree/main/ofl/notosansjp) y permite mostrar la escritura japonesa sin conexión. La licencia SIL Open Font License 1.1 está disponible en la aplicación.
+
+## Coreano de A1 a C1
+
+El vocabulario del coreano estándar de Corea del Sur, las traducciones y las opciones de respuesta se prepararon para ArcadeLingo. Los niveles siguen la secuencia didáctica de la aplicación. Se consultaron el [Diccionario básico de coreano del Instituto Nacional de la Lengua Coreana](https://krdict.korean.go.kr/) y los [materiales didácticos de la Fundación Instituto Rey Sejong](https://app.ksif.or.kr/eng/index.do).
+
+Arcade Korean deriva de [Noto Sans KR](https://github.com/google/fonts/tree/main/ofl/notosanskr) y permite mostrar el alfabeto hangul sin conexión. La licencia SIL Open Font License 1.1 está disponible en la aplicación.
+
 ## Niveles A1–B2 de inglés
 
 Las palabras en inglés y los niveles A1–B2 de ArcadeLingo proceden de la lista de vocabulario CEFR-J.

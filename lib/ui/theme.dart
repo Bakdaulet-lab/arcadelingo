@@ -31,7 +31,9 @@ const String wordarcadeFont = 'Rubik';
 const String warmPaperFont = 'Lora';
 const String chineseFont = 'Arcade Chinese';
 const String arabicFont = 'Noto Sans Arabic';
-const arcadeFontFallback = [arabicFont, chineseFont];
+const koreanFont = 'Arcade Korean';
+const japaneseFont = 'Arcade Japanese';
+const arcadeFontFallback = [arabicFont, chineseFont, koreanFont];
 
 /// Палитра «ночной автомат»: глубокий тёмный фон и два неоновых акцента.
 ///
@@ -117,6 +119,7 @@ ThemeData wordarcadeTheme({
   TargetPlatform? platform,
   Brightness brightness = Brightness.dark,
   bool reduceMotion = false,
+  String? studyLanguage,
 }) {
   final paper = brightness == Brightness.light;
   final colors = paper ? warmPaperColors : wordarcadeColors;
@@ -124,7 +127,10 @@ ThemeData wordarcadeTheme({
     colorScheme: colors,
     platform: platform,
     fontFamily: wordarcadeFont,
-    fontFamilyFallback: arcadeFontFallback,
+    fontFamilyFallback:
+        studyLanguage == 'ja'
+            ? const [japaneseFont, ...arcadeFontFallback]
+            : arcadeFontFallback,
     pageTransitionsTheme: arcadePageTransitions(reduceMotion: reduceMotion),
   );
   final buttonShape = RoundedRectangleBorder(

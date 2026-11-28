@@ -63,6 +63,7 @@ class _RecallScreenState extends State<RecallScreen> {
               item: item,
               vocabulary: widget.vocabulary,
               random: _random,
+              studyLanguage: widget.course.studyLanguage,
             );
     _phase = _Phase.prompt;
     _outcome = null;
@@ -197,7 +198,7 @@ class _RecallScreenState extends State<RecallScreen> {
                   onPressed:
                       exercise.complete
                           ? () => _submit(
-                            exercise.slots.join(),
+                            exercise.answerText,
                             correct: exercise.correct,
                           )
                           : null,
@@ -290,7 +291,7 @@ class _LetterBoard extends StatelessWidget {
             value: slots.whereType<String>().join(),
             excludeSemantics: true,
             child: ArcadeLetterWrap(
-              spelling: exercise.item.word.text.characters.toList(),
+              spelling: exercise.spelling,
               textDirection: textDirection,
               spacing: 4,
               runSpacing: 8,

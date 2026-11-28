@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:arcadelingo/domain/ports/sounds.dart';
+import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_answer_feedback.dart';
@@ -9,6 +10,7 @@ import 'package:arcadelingo/ui/arcade_letter_wrap.dart';
 import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/arcade_status_layout.dart';
 import 'package:arcadelingo/ui/theme.dart';
+import 'package:arcadelingo/ui/word_pronunciation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -26,6 +28,7 @@ class ClawMachineGame extends StatefulWidget {
     this.onChallengeComplete,
     this.summaryFooter,
     this.sounds = const NoopSounds(),
+    this.speech = const NoopWordSpeech(),
     this.mistakeCount,
     this.onReviewMistakes,
     this.studyLanguage = 'en',
@@ -36,6 +39,7 @@ class ClawMachineGame extends StatefulWidget {
 
   final ReviewSession session;
   final Sounds sounds;
+  final WordSpeech speech;
   final VoidCallback onExit;
   final VoidCallback onPlayAgain;
   final VoidCallback? onRoundOver;
@@ -273,6 +277,12 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                   ),
                 ),
                 const SizedBox(height: 14),
+                if (_run.hangulPreview case final preview?)
+                  Text(
+                    preview.isEmpty ? ' ' : preview,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleLarge,
+                  ),
                 _AnswerSlots(
                   key: ValueKey(_boardNumber),
                   slots: _run.slots,
@@ -342,6 +352,29 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                                     FontWeight.bold,
                                   ),
                                 ),
+                                if (word.reading case final reading?
+                                    when widget.studyLanguage == 'ja' &&
+                                        reading != _run.answer) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    reading,
+                                    textAlign: TextAlign.center,
+                                    style: theme.textTheme.titleMedium,
+                                  ),
+                                ],
+                                if (const {
+                                  'ko',
+                                  'ja',
+                                  'tr',
+                                }.contains(widget.studyLanguage)) ...[
+                                  const SizedBox(height: 8),
+                                  WordPronunciation(
+                                    text: word.text,
+                                    speech: widget.speech,
+                                    studyLanguage: widget.studyLanguage,
+                                    enabled: !_paused,
+                                  ),
+                                ],
                               ],
                             ),
                           ),

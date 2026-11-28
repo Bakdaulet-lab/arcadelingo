@@ -237,7 +237,15 @@ Result<CourseDeck> _buildCourseDeck(
       wordSets: WordSetsPrefsStore(prefs, courseId: course.id),
       dailyWord: DailyWordPrefsStore(prefs, courseId: course.id),
       customWords: CustomWordsPrefsStore(prefs, courseId: course.id),
-      speech: speech.forLanguage(course.studyLanguage),
+      speech: speech.forLanguage(
+        course.studyLanguage,
+        readings: {
+          if (course.studyLanguage == 'ja')
+            for (final item in value)
+              if (item.word.reading case final reading?)
+                item.word.text: reading,
+        },
+      ),
     ),
   ),
   Err(:final failure) => Err(failure),
@@ -262,5 +270,13 @@ void _registerFontLicense() {
       'assets/fonts/NotoSansSC-OFL.txt',
     );
     yield LicenseEntryWithLineBreaks([chineseFont], chinese);
+    final korean = await rootBundle.loadString(
+      'assets/fonts/NotoSansKR-OFL.txt',
+    );
+    yield LicenseEntryWithLineBreaks([koreanFont], korean);
+    final japanese = await rootBundle.loadString(
+      'assets/fonts/NotoSansJP-OFL.txt',
+    );
+    yield LicenseEntryWithLineBreaks([japaneseFont], japanese);
   });
 }

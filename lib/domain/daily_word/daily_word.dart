@@ -19,6 +19,9 @@ final _latinLetters = RegExp(r'^[a-záéíóúñü]+$');
 final _germanLetters = RegExp(r'^[a-zäöüß]+$');
 final _frenchLetters = RegExp(r'^[a-zàâæçéèêëîïôœùûüÿ]+$');
 final _hanCharacters = RegExp(r'^[\u3400-\u9fff]+$');
+final _hangulSyllables = RegExp(r'^[\uac00-\ud7a3]+$');
+final _japaneseLetters = RegExp(r'^[ぁ-ゖァ-ヺーゝゞヽヾ々〆\u3400-\u9fff]+$');
+final _turkishLetters = RegExp(r'^[abcçdefgğhıijklmnoöprsştuüvyzâîû]+$');
 final _arabicLetters = RegExp(r'^[\u0621-\u063a\u0641-\u064a]+$');
 final _russianLetters = RegExp(r'^[а-яё]+$');
 final _clueWords = RegExp(r'\p{L}+', unicode: true);
@@ -28,6 +31,9 @@ RegExp _lettersFor(StudyCourse course) => switch (course.studyLanguage) {
   'de' => _germanLetters,
   'fr' => _frenchLetters,
   'zh' => _hanCharacters,
+  'ko' => _hangulSyllables,
+  'ja' => _japaneseLetters,
+  'tr' => _turkishLetters,
   'ar' => _arabicLetters,
   _ => _latinLetters,
 };
@@ -39,7 +45,10 @@ class DailyWordPuzzle {
     this.day,
     this.answer,
     this._allowed,
-  ) : _spelling = normalizedCourseSpelling(answer.text);
+  ) : _spelling = normalizedCourseSpelling(
+        answer.text,
+        studyLanguage: course.studyLanguage,
+      );
 
   final StudyCourse course;
   final CefrLevel level;
@@ -61,13 +70,22 @@ DailyWordPuzzle? selectDailyWord({
   String? targetId,
 }) {
   final letters = _lettersFor(course);
-  final (minLength, maxLength) = course.studyLanguage == 'zh' ? (2, 4) : (4, 7);
+  final (minLength, maxLength) = switch (course.studyLanguage) {
+    'zh' => (2, 4),
+    'ko' => (2, 5),
+    'ja' => (2, 5),
+    'tr' => (4, 9),
+    _ => (4, 7),
+  };
   final clear = <String, Word>{};
   final revealing = <String, Word>{};
   final allowed = <String>{};
   Word? target;
   for (final word in vocabulary) {
-    final spelling = normalizedCourseSpelling(word.text);
+    final spelling = normalizedCourseSpelling(
+      word.text,
+      studyLanguage: course.studyLanguage,
+    );
     if (spelling.length < minLength ||
         spelling.length > maxLength ||
         !letters.hasMatch(spelling)) {
@@ -120,7 +138,7 @@ DailyWordPuzzle? selectDailyWord({
 class DailyWordRound {
   DailyWordRound(this.puzzle, {Iterable<String> guesses = const []}) {
     for (final saved in guesses) {
-      final spelling = normalizedCourseSpelling(saved);
+      final spelling = _guessSpelling(saved);
       // Accepted guesses remain meaningful if a later catalogue removes one.
       if (_validate(spelling, requireKnown: false) != null) {
         _validHistory = false;
@@ -164,11 +182,16 @@ class DailyWordRound {
     return null;
   }
 
+  String _guessSpelling(String guess) => normalizedCourseSpelling(
+    guess,
+    studyLanguage: puzzle.course.studyLanguage,
+  );
+
   DailyGuessError? check(String guess) =>
-      _validate(normalizedCourseSpelling(guess), requireKnown: true);
+      _validate(_guessSpelling(guess), requireKnown: true);
 
   DailyGuessError? submit(String guess) {
-    final spelling = normalizedCourseSpelling(guess);
+    final spelling = _guessSpelling(guess);
     final error = _validate(spelling, requireKnown: true);
     if (error == null) _accept(spelling);
     return error;

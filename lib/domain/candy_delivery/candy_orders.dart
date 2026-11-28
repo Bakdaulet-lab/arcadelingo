@@ -94,6 +94,9 @@ class _Cue {
     this.fr,
     this.zh,
     this.ar,
+    this.ko,
+    this.ja,
+    this.tr,
   ]);
   final int target;
   final String en;
@@ -105,6 +108,9 @@ class _Cue {
   final String? fr;
   final String? zh;
   final String? ar;
+  final String? ko;
+  final String? ja;
+  final String? tr;
 
   String inLanguage(String language) => switch (language) {
     'en' => en,
@@ -115,6 +121,9 @@ class _Cue {
     'fr' => fr!,
     'zh' => zh!,
     'ar' => ar!,
+    'ko' => ko!,
+    'ja' => ja!,
+    'tr' => tr!,
     _ => throw ArgumentError.value(language, 'language'),
   };
 }
@@ -132,6 +141,9 @@ const _cues = {
       'Pour le lapin à l’écharpe.',
       '给戴围巾的兔子。',
       'للأرنب الذي يلبس وشاحًا.',
+      '목도리를 한 토끼에게 주세요.',
+      'マフラーをしたウサギにどうぞ。',
+      'Atkılı tavşana ver.',
     ),
     _Cue(
       _scarf,
@@ -143,6 +155,9 @@ const _cues = {
       'Cherche l’écharpe verte.',
       '找绿色的围巾。',
       'ابحث عن الوشاح الأخضر.',
+      '초록색 목도리를 찾아보세요.',
+      '緑のマフラーを探してください。',
+      'Yeşil atkıyı bul.',
     ),
     _Cue(
       _scarf,
@@ -154,6 +169,9 @@ const _cues = {
       'Qui porte une écharpe ?',
       '谁戴着围巾？',
       'من يلبس وشاحًا؟',
+      '누가 목도리를 했어요?',
+      'どのウサギがマフラーをしていますか。',
+      'Hangi tavşanın atkısı var?',
     ),
     _Cue(
       _sleep,
@@ -165,6 +183,9 @@ const _cues = {
       'Pour le lapin qui dort.',
       '给睡觉的兔子。',
       'للأرنب النائم.',
+      '자는 토끼에게 주세요.',
+      '寝ているウサギにどうぞ。',
+      'Uyuyan tavşana ver.',
     ),
     _Cue(
       _sleep,
@@ -176,6 +197,9 @@ const _cues = {
       'Cherche la couverture.',
       '找那条毯子。',
       'ابحث عن البطانية.',
+      '이불을 찾아보세요.',
+      '毛布を探してください。',
+      'Battaniyeyi göster.',
     ),
     _Cue(
       _sleep,
@@ -187,6 +211,9 @@ const _cues = {
       'Qui dort ?',
       '谁在睡觉？',
       'من ينام؟',
+      '누가 자고 있어요?',
+      'どのウサギが寝ていますか。',
+      'Hangi tavşan uyuyor?',
     ),
     _Cue(
       _flower,
@@ -198,6 +225,9 @@ const _cues = {
       'Pour le lapin à la fleur.',
       '给戴花的兔子。',
       'للأرنب الذي لديه زهرة.',
+      '꽃을 단 토끼에게 주세요.',
+      '花をつけたウサギにどうぞ。',
+      'Çiçekli tavşana ver.',
     ),
     _Cue(
       _flower,
@@ -209,6 +239,9 @@ const _cues = {
       'Cherche la fleur rose.',
       '找粉红色的花。',
       'ابحث عن الزهرة الوردية.',
+      '분홍색 꽃을 찾아보세요.',
+      'ピンクの花を探してください。',
+      'Pembe çiçeği bul.',
     ),
     _Cue(
       _flower,
@@ -220,6 +253,9 @@ const _cues = {
       'Qui a un livre ?',
       '谁有一本书？',
       'من معه كتاب؟',
+      '누구에게 책이 있어요?',
+      'どのウサギが本を持っていますか。',
+      'Hangi tavşanın kitabı var?',
     ),
   ],
   CefrLevel.a2: [
@@ -233,6 +269,9 @@ const _cues = {
       'Donne le bonbon au lapin à l’écharpe verte.',
       '把糖果给戴绿色围巾的兔子。',
       'أعط الحلوى للأرنب الذي يلبس الوشاح الأخضر.',
+      '초록색 목도리를 한 토끼에게 사탕을 주세요.',
+      '緑のマフラーをしたウサギに渡してください。',
+      'Yeşil atkı takan tavşana ver.',
     ),
     _Cue(
       _scarf,
@@ -244,6 +283,9 @@ const _cues = {
       'Un lapin porte une écharpe aujourd’hui. Ce bonbon est pour lui.',
       '今天有只兔子戴着围巾。这颗糖是给它的。',
       'أحد الأرانب يلبس وشاحًا اليوم. هذه الحلوى له.',
+      '오늘 목도리를 한 토끼가 있어요. 그 토끼에게 주면 돼요.',
+      '今日はマフラーをしているウサギが一匹います。そのウサギにどうぞ。',
+      'Bugün bir tavşan atkı takmış. Şeker onun için.',
     ),
     _Cue(
       _scarf,
@@ -255,6 +297,9 @@ const _cues = {
       'Quel lapin a une écharpe autour du cou ?',
       '哪只兔子脖子上围着围巾？',
       'أي أرنب يلبس وشاحًا حول عنقه؟',
+      '어느 토끼가 목에 목도리를 두르고 있어요?',
+      '首にマフラーを巻いているのはどのウサギですか。',
+      'Hangi tavşanın boynunda atkı var?',
     ),
     _Cue(
       _sleep,
@@ -266,6 +311,9 @@ const _cues = {
       'Pour le lapin qui est en train de dormir.',
       '给正在睡觉的兔子。',
       'للأرنب الذي ينام الآن.',
+      '지금 잠을 자고 있는 토끼에게 주면 돼요.',
+      '今眠っているウサギに渡してください。',
+      'Şekeri şu anda uyuyan tavşana ver.',
     ),
     _Cue(
       _sleep,
@@ -277,6 +325,9 @@ const _cues = {
       'Laisse le bonbon près du lapin sous la couverture.',
       '把糖果放在盖着毯子的兔子旁边。',
       'اترك الحلوى بجانب الأرنب المستلقي تحت البطانية.',
+      '이불을 덮은 토끼 옆에 사탕을 놓아 주세요.',
+      '毛布をかぶっているウサギのそばに置いてください。',
+      'Şekeri battaniyenin altındaki tavşanın yanına bırak.',
     ),
     _Cue(
       _sleep,
@@ -288,6 +339,9 @@ const _cues = {
       'Tu peux trouver le lapin qui a les yeux fermés ?',
       '你能找到闭着眼睛的兔子吗？',
       'هل تستطيع أن تجد الأرنب الذي أغمض عينيه؟',
+      '눈을 감고 있는 토끼를 찾을 수 있어요?',
+      '目を閉じているウサギを見つけられますか。',
+      'Gözleri kapalı olan tavşanı bulabilir misin?',
     ),
     _Cue(
       _flower,
@@ -299,6 +353,9 @@ const _cues = {
       'Donne le bonbon au lapin qui a une fleur près de l’oreille.',
       '把糖果给耳边别着一朵花的兔子。',
       'أعط الحلوى للأرنب الذي بجانب أذنه زهرة.',
+      '귀 옆에 꽃을 단 토끼에게 사탕을 주세요.',
+      '耳のそばに花をつけたウサギに渡してください。',
+      'Şekeri kulağının yanında çiçek olan tavşana ver.',
     ),
     _Cue(
       _flower,
@@ -310,6 +367,9 @@ const _cues = {
       'Ce lapin a un livre ouvert. Trouve-le.',
       '这只兔子面前有本打开的书。找到它。',
       'ابحث عن الأرنب الذي أمامه كتاب مفتوح.',
+      '펼쳐 놓은 책이 있는 토끼를 찾아보세요.',
+      '開いた本を持っているウサギがいます。探してください。',
+      'Tavşanlardan birinin kitabı açık. Onu bul.',
     ),
     _Cue(
       _flower,
@@ -321,6 +381,9 @@ const _cues = {
       'Quel lapin est en train de lire ?',
       '哪只兔子正在看书？',
       'أي أرنب يقرأ كتابًا الآن؟',
+      '어느 토끼가 책을 읽고 있어요?',
+      'どのウサギが本を読んでいますか。',
+      'Hangi tavşan kitap okuyor?',
     ),
   ],
   CefrLevel.b1: [
@@ -334,6 +397,9 @@ const _cues = {
       'Le lapin qui lit peut attendre. Cherche l’autre lapin qui est encore réveillé.',
       '看书的兔子可以等一等。去找另一只还没睡的兔子。',
       'يمكن للأرنب الذي يقرأ أن ينتظر. ابحث عن الأرنب الآخر الذي ما زال مستيقظًا.',
+      '책을 읽는 토끼는 나중에 줘도 돼요. 아직 깨어 있는 다른 토끼를 찾아보세요.',
+      '本を読んでいるウサギは後でいいので、起きているもう一匹を探してください。',
+      'Kitap okuyan tavşan bekleyebilir. Uyanık olan öteki tavşanı bul.',
     ),
     _Cue(
       _scarf,
@@ -345,6 +411,9 @@ const _cues = {
       'Donne le bonbon à celui qui a mis une écharpe pour avoir chaud.',
       '把糖果给那只戴围巾保暖的兔子。',
       'أعط الحلوى لمن لبس وشاحًا ليتدفأ.',
+      '추위를 막으려고 목도리를 두른 토끼에게 사탕을 주세요.',
+      '寒くないようにマフラーを巻いたウサギに渡してください。',
+      'Şekeri üşümemek için atkı takan tavşana ver.',
     ),
     _Cue(
       _scarf,
@@ -356,6 +425,9 @@ const _cues = {
       'Tu reconnaîtras le bon lapin à l’écharpe verte qu’il porte autour du cou.',
       '看脖子上的绿色围巾，就知道是哪只兔子了。',
       'ستتعرف على الأرنب المطلوب من وشاحه الأخضر حول عنقه.',
+      '목에 두른 초록색 목도리를 보면 어느 토끼인지 알 수 있어요.',
+      '首に巻いた緑のマフラーを見れば、どのウサギか分かります。',
+      'Boynundaki yeşil atkıya bakarsan hangi tavşan olduğunu anlarsın.',
     ),
     _Cue(
       _sleep,
@@ -367,6 +439,9 @@ const _cues = {
       'Laisse le bonbon là où le lapin le trouvera en se réveillant.',
       '把糖果放在那只兔子一醒来就能找到的地方。',
       'اترك الحلوى حيث يجدها الأرنب حين يستيقظ.',
+      '토끼가 잠에서 깼을 때 찾을 수 있는 곳에 사탕을 두세요.',
+      '目が覚めたときにウサギが見つけられる場所に置いてください。',
+      'Şekeri, tavşanın uyandığında bulabileceği bir yere bırak.',
     ),
     _Cue(
       _sleep,
@@ -378,6 +453,9 @@ const _cues = {
       'Pendant que les autres sont réveillés, ce lapin fait la sieste.',
       '别的兔子都醒着，这只却在打盹儿。',
       'بينما الآخرون مستيقظون، يأخذ هذا الأرنب قيلولة.',
+      '다른 토끼들이 깨어 있는 동안 이 토끼는 낮잠을 자고 있어요.',
+      'ほかのウサギたちが起きている間、このウサギは昼寝をしています。',
+      'Diğer tavşanlar uyanıkken bu tavşan kestiriyor.',
     ),
     _Cue(
       _sleep,
@@ -389,6 +467,9 @@ const _cues = {
       'Pose le bonbon à côté de la couverture pour que le lapin endormi puisse le manger plus tard.',
       '把糖果放在毯子旁，好让睡着的兔子待会儿吃。',
       'ضع الحلوى بجوار البطانية ليأكلها الأرنب النائم لاحقًا.',
+      '자고 있는 토끼가 나중에 먹을 수 있도록 이불 옆에 사탕을 놓아 주세요.',
+      '眠っているウサギが後で食べられるように、毛布のそばに置いてください。',
+      'Uyuyan tavşan daha sonra alabilsin diye şekeri battaniyenin yanına bırak.',
     ),
     _Cue(
       _flower,
@@ -400,6 +481,9 @@ const _cues = {
       'Le lapin qui doit recevoir le bonbon a une fleur près de l’oreille et un livre entre les pattes.',
       '该收糖果的那只兔子耳边别着一朵花，正用两只爪子捧着一本书。',
       'ستجد زهرة بجانب أذن الأرنب الذي سيتلقى الحلوى، وكتابًا بين كفّيه.',
+      '사탕을 받을 토끼는 귀 옆에 꽃을 달고 앞발로 책을 들고 있어요.',
+      'キャンディーを受け取るのは、耳のそばに花をつけて前足で本を持っているウサギです。',
+      'Şekeri alacak tavşanın kulağının yanında çiçek, ön patilerinde kitap var.',
     ),
     _Cue(
       _flower,
@@ -411,6 +495,9 @@ const _cues = {
       'Apporte le bonbon au lapin qui lit avant qu’il ne tourne la page.',
       '趁那只看书的兔子还没翻页，把糖果送给它。',
       'أوصل الحلوى إلى الأرنب القارئ قبل أن يقلب الصفحة.',
+      '책을 읽는 토끼가 책장을 넘기기 전에 사탕을 갖다 주세요.',
+      '本を読んでいるウサギがページをめくる前に届けてください。',
+      'Kitap okuyan tavşan sayfayı çevirmeden önce şekeri ona götür.',
     ),
     _Cue(
       _flower,
@@ -422,6 +509,9 @@ const _cues = {
       'Cherche le lapin qui a préféré lire plutôt que de faire la sieste.',
       '找那只选择看书而不是打盹的兔子。',
       'ابحث عن الأرنب الذي اختار القراءة بدلًا من القيلولة.',
+      '낮잠을 자는 대신 책을 읽기로 한 토끼를 찾아보세요.',
+      '昼寝をする代わりに本を読むことにしたウサギを探してください。',
+      'Kestirmek yerine kitap okumayı seçen tavşanı bul.',
     ),
   ],
   CefrLevel.b2: [
@@ -435,6 +525,9 @@ const _cues = {
       'Si tu écartais à la fois le lapin qui lit et celui qui dort, lequel resterait ?',
       '如果把看书的和睡着的都排除，还剩哪只兔子？',
       'لو استبعدت الأرنب القارئ والأرنب النائم معًا، فمن يبقى؟',
+      '책을 읽는 토끼와 자는 토끼를 둘 다 빼면 어떤 토끼가 남을까요?',
+      '本を読んでいるウサギと眠っているウサギを候補から外すと、どのウサギが残るでしょうか。',
+      'Hem okuyanı hem de uyuyanı elersen geriye hangi tavşan kalır?',
     ),
     _Cue(
       _scarf,
@@ -446,6 +539,9 @@ const _cues = {
       'Le bonbon était destiné au lapin dont l’écharpe est enroulée autour du cou.',
       '这颗糖本来就是给脖子上裹着围巾的兔子的。',
       'كانت الحلوى مخصصة للأرنب الذي لف وشاحًا حول عنقه.',
+      '사탕은 목에 목도리를 두른 토끼에게 갈 것이었어요.',
+      'キャンディーは首にマフラーを巻いたウサギに渡すはずのものでした。',
+      'Şeker, atkısını boynuna dolamış olan tavşan içindi.',
     ),
     _Cue(
       _scarf,
@@ -457,6 +553,9 @@ const _cues = {
       'Parmi les deux lapins qui se tiennent au chaud, choisis celui qui est bien réveillé.',
       '两只兔子都在保暖，选其中清醒的那一只。',
       'من بين الأرنبين اللذين يحافظان على دفئهما، اختر المستيقظ تمامًا.',
+      '따뜻하게 몸을 감싼 두 토끼 중 잠이 완전히 깬 토끼를 골라 보세요.',
+      '寒さをしのいでいる二匹のうち、すっかり目が覚めているほうを選んでください。',
+      'Isınmaya çalışan iki tavşandan iyice uyanık olanı seç.',
     ),
     _Cue(
       _sleep,
@@ -468,6 +567,9 @@ const _cues = {
       'Même si le lapin n’ouvre pas les yeux, laisse le bonbon à côté de sa couverture.',
       '即使兔子始终不睁眼，也把糖果留在它的毯子旁边。',
       'حتى لو لم يفتح الأرنب عينيه، اترك الحلوى بجانب بطانيته.',
+      '토끼가 끝내 눈을 뜨지 않더라도 이불 옆에 사탕을 놓아 주세요.',
+      'たとえウサギが最後まで目を開けなくても、キャンディーを毛布のそばに置いてください。',
+      'Tavşan gözlerini hiç açmasa bile şekeri battaniyesinin yanına bırak.',
     ),
     _Cue(
       _sleep,
@@ -479,6 +581,9 @@ const _cues = {
       'Le lapin te verrait venir s’il ne dormait pas si profondément.',
       '要不是睡得那么沉，那只兔子就能看到你走过来。',
       'لرآك الأرنب تقترب لو لم يكن غارقًا في النوم.',
+      '깊이 잠들지만 않았다면 이 토끼도 당신이 다가오는 것을 보았을 거예요.',
+      'ぐっすり眠ってさえいなければ、近づいてくるあなたに気づいたはずです。',
+      'Tavşan derin uykuda olmasaydı yaklaştığını görürdü.',
     ),
     _Cue(
       _sleep,
@@ -490,6 +595,9 @@ const _cues = {
       'Choisis le lapin qui s’est assoupi alors que les deux autres sont toujours réveillés.',
       '另外两只还醒着，选已经打起瞌睡的那只兔子。',
       'اختر الأرنب الذي غفا فيما لا يزال الآخران مستيقظين.',
+      '나머지 둘이 아직 깨어 있는 사이에 잠이 든 토끼를 고르세요.',
+      '残りの二匹がまだ起きているうちに寝入ってしまったウサギを選んでください。',
+      'Öteki ikisi henüz uyumamışken uykuya dalan tavşanı seç.',
     ),
     _Cue(
       _flower,
@@ -501,6 +609,9 @@ const _cues = {
       'Donne le bonbon à celui qui lit, que tu voies la fleur ou non.',
       '不管你看不看得见那朵花，都把糖果给正在看书的兔子。',
       'أعط الحلوى لمن يقرأ، سواء رأيت الزهرة أم لم ترها.',
+      '꽃이 보이든 보이지 않든 책을 읽고 있는 토끼에게 주세요.',
+      '花が見えるかどうかにかかわらず、本を読んでいるウサギに渡してください。',
+      'Çiçeği görüp görmediğine bakmadan şekeri kitap okuyan tavşana ver.',
     ),
     _Cue(
       _flower,
@@ -512,6 +623,9 @@ const _cues = {
       'Même si le lapin posait son livre, tu pourrais encore le reconnaître à sa fleur.',
       '就算那只看书的兔子放下书，你也能凭它戴的花认出它。',
       'حتى لو وضع الأرنب القارئ كتابه جانبًا، لأمكنك أن تتعرف عليه من زهرته.',
+      '책을 내려놓는다 해도 귀에 단 꽃을 보면 그 토끼를 알아볼 수 있을 거예요.',
+      '仮に本を置いたとしても、耳のそばの花でそのウサギを見分けられるでしょう。',
+      'Kitabı elinden bıraksa da çiçeğinden hangi tavşan olduğunu anlayabilirsin.',
     ),
     _Cue(
       _flower,
@@ -523,6 +637,9 @@ const _cues = {
       'Le lapin que tu cherches paraît s’intéresser davantage à son livre qu’au bonbon.',
       '比起糖果，你要找的那只兔子似乎对手里的书更感兴趣。',
       'يبدو أن الأرنب الذي تبحث عنه مهتم بكتابه أكثر من الحلوى.',
+      '찾고 있는 토끼는 사탕보다 책에 더 관심이 있는 모양이에요.',
+      '探しているウサギは、どうやらキャンディーよりも本のほうに興味があるようです。',
+      'Aradığın tavşanın şekerden çok kitaba meraklı olduğu anlaşılıyor.',
     ),
   ],
   CefrLevel.c1: [
@@ -536,6 +653,9 @@ const _cues = {
       'Ni plongé dans un livre ni blotti sous une couverture, le destinataire est facile à repérer.',
       '收糖的兔子既没埋头看书，也没缩在毯子里，很容易认出来。',
       'يسهل تمييز متلقي الحلوى، فهو لا يستغرق في القراءة ولا يتدثر ببطانية.',
+      '책에 파묻혀 있지도, 이불 속에 웅크려 있지도 않은 토끼가 사탕의 주인이에요.',
+      '本に没頭しているわけでも、毛布にくるまっているわけでもないウサギこそ、届け先です。',
+      'Şekerin sahibi ne kitaba gömülmüş ne de battaniyenin altına kıvrılmış olan tavşan.',
     ),
     _Cue(
       _scarf,
@@ -547,6 +667,9 @@ const _cues = {
       'Sans l’écharpe, on risquerait de ne pas remarquer le lapin aux pattes vides et aux yeux grands ouverts.',
       '若非围巾，你或许会忽略那只双眼睁得大大的、两爪空空的兔子。',
       'لولا الوشاح، لربما لم تنتبه إلى الأرنب الذي ليس في كفّيه شيء وعيناه مفتوحتان على اتّساعهما.',
+      '목도리가 아니었다면 앞발이 비어 있고 두 눈을 뜬 그 토끼를 무심코 지나쳤을지도 몰라요.',
+      'マフラーがなければ、前足に何も持たず、目をぱっちり開けたそのウサギを見過ごしていたかもしれません。',
+      'Atkısı olmasa gözleri faltaşı gibi açık, patilerinde hiçbir şey olmayan tavşanı gözden kaçırabilirdin.',
     ),
     _Cue(
       _scarf,
@@ -558,6 +681,9 @@ const _cues = {
       'Si le livre attire ton regard, poursuis néanmoins ta recherche : c’est l’écharpe qui révèle l’identité du destinataire.',
       '纵使那本书吸引了你的目光，也要继续找围巾，那才是辨认收糖果的兔子的线索。',
       'إن استوقفك الكتاب، فواصل البحث عن الوشاح، فهو ما يميز متلقي الحلوى.',
+      '펼친 책이 눈에 띄더라도 목도리를 찾으세요. 사탕을 받을 토끼를 가려낼 단서는 목도리예요.',
+      '開いた本が目を引こうとも、探すべきはマフラーです。それが届け先を見極める決め手になります。',
+      'Açık kitap gözüne çarpsa da atkıyı aramayı sürdür. Şekerin sahibini ele veren ayrıntı o.',
     ),
     _Cue(
       _sleep,
@@ -569,6 +695,9 @@ const _cues = {
       'Pose le bonbon à portée de celui qui, à en juger par ses yeux fermés, ne s’est pas aperçu de ton arrivée.',
       '把糖果放在那只兔子够得着的地方。看它双眼紧闭，想必没察觉你来了。',
       'ضع الحلوى في متناول من لم يلحظ قدومك، على ما تشي به عيناه المغمضتان.',
+      '감은 눈으로 보아 당신이 온 줄도 모르는 토끼의 앞발이 닿을 만한 곳에 사탕을 두세요.',
+      '目を閉じているところを見ると、こちらが来たことにも気づいていないようです。そのウサギの前足が届くところに置いてください。',
+      'Gözlerinin kapalı olmasına bakılırsa geldiğinden haberi yok. Şekeri o tavşanın patisinin uzanabileceği bir yere koy.',
     ),
     _Cue(
       _sleep,
@@ -580,6 +709,9 @@ const _cues = {
       'Le lecteur a beau être absorbé par son histoire, le lapin que tu cherches est en plein rêve.',
       '看书的兔子固然沉浸在故事里，可你要找的那只正沉浸在梦中。',
       'قد يكون القارئ مستغرقًا في حكايته، غير أن الأرنب الذي تقصده غارق في حلمه.',
+      '책 읽는 토끼는 이야기에 푹 빠져 있지만, 찾는 토끼는 꿈속을 헤매고 있어요.',
+      '物語に読みふけるウサギもいますが、届け先のウサギは夢の中をさまよっています。',
+      'Kitap okuyan tavşan hikâyeye dalmış olabilir ama aradığın tavşan rüyasında dolaşıyor.',
     ),
     _Cue(
       _sleep,
@@ -591,6 +723,9 @@ const _cues = {
       'Dépose le bonbon sans bruit, de peur que le lapin recroquevillé sous la couverture ne bouge.',
       '悄悄放下糖果，免得惊动蜷缩在毯子里的兔子。',
       'ضع الحلوى بهدوء لئلّا توقظ الأرنب المتكوّر تحت البطانية.',
+      '이불 아래 몸을 웅크린 토끼가 뒤척이지 않도록 사탕을 살며시 놓고 오세요.',
+      '毛布の下で丸くなっているウサギが身じろぎしないよう、音を立てずにキャンディーを届けてください。',
+      'Battaniyenin altında kıvrılıp yatan tavşan kıpırdanmasın diye şekerini usulca bırak.',
     ),
     _Cue(
       _flower,
@@ -602,6 +737,9 @@ const _cues = {
       'Tout absorbé qu’il soit par sa lecture, le lapin à la fleur est bien celui qui attend la livraison.',
       '尽管戴花的兔子全神贯注地看书，等着收糖的恰恰就是它。',
       'على الرغم من انهماكه في القراءة، فإن الأرنب الذي يضع الزهرة هو من ينتظر الحلوى.',
+      '꽃을 단 토끼가 독서에 한창 열중하고 있기는 해도 배달을 기다리는 토끼는 바로 그 토끼예요.',
+      '花をつけたウサギは読書に没頭しているとはいえ、届け物を待っているのはほかならぬそのウサギです。',
+      'Çiçekli tavşan kendini okumaya kaptırmış olsa da teslimatı bekleyen tam da o.',
     ),
     _Cue(
       _flower,
@@ -613,6 +751,9 @@ const _cues = {
       'Si la fleur près de son oreille t’échappe, laisse-toi guider par les pages ouvertes.',
       '倘若没留意到耳边那朵花，就凭摊开的书页去认吧。',
       'إن فاتتك الزهرة بجانب أذن القارئ، فاستدل بالصفحات المفتوحة.',
+      '책 읽는 토끼의 귀 옆에 달린 꽃을 미처 보지 못했다면 펼쳐진 책장을 단서로 삼으세요.',
+      '読書中のウサギの耳元に咲く花を見落としたなら、開いた本のページを手がかりにしてください。',
+      'Okuyan tavşanın kulağındaki çiçek gözünden kaçarsa açık sayfalar sana yol göstersin.',
     ),
     _Cue(
       _flower,
@@ -624,6 +765,9 @@ const _cues = {
       'Le destinataire a les pattes prises, au sens propre : il tient un livre.',
       '收糖果的兔子可真是腾不出手来：它正捧着一本书。',
       'كفّا متلقي الحلوى مشغولتان بالمعنى الحرفي، فهو يمسك كتابًا.',
+      '사탕을 받을 토끼는 말 그대로 앞발이 다 차 있어요. 두 앞발로 책을 들고 있거든요.',
+      '届け先のウサギは文字どおり両手がふさがっています。二本の前足で本を抱えているのです。',
+      'Şekerin sahibinin eli kelimenin tam anlamıyla dolu. İki patisiyle bir kitap tutuyor.',
     ),
   ],
   CefrLevel.c2: [

@@ -72,10 +72,10 @@ void main() {
   }
 
   test(
-    '12 course directions reload independent word and streak progress',
+    '24 course directions reload independent word and streak progress',
     () async {
       final courses = StudyCourse.multilingualCourses;
-      expect(courses.length, 12);
+      expect(courses.length, 24);
       final histories = [for (final _ in courses) newHistory()];
       final at = DateTime.utc(2026, 11, 28, 10);
       final wordIds = <String, String>{};
@@ -120,7 +120,7 @@ void main() {
 
   for (final mandarin in ['cmn-CN', 'zh-CN']) {
     test(
-      'course speech prefers installed fr-FR, $mandarin and ar-SA',
+      'course speech prefers installed fr-FR, $mandarin, ar-SA and ko-KR',
       () async {
         final calls = mockVoices(
           installed: [
@@ -132,10 +132,17 @@ void main() {
             'fr-FR',
             mandarin,
             'ar-SA',
+            'ko',
+            'ko-KR',
           ],
-          online: ['fr-FR', mandarin, 'ar-SA'],
+          online: ['fr-FR', mandarin, 'ar-SA', 'ko-KR'],
         );
-        final locales = {'fr': 'fr-FR', 'zh': mandarin, 'ar': 'ar-SA'};
+        final locales = {
+          'fr': 'fr-FR',
+          'zh': mandarin,
+          'ar': 'ar-SA',
+          'ko': 'ko-KR',
+        };
         final spoken = <String>[];
         for (final language in locales.keys) {
           final course = StudyCourse.multilingualCourses.firstWhere(
@@ -165,6 +172,48 @@ void main() {
       },
     );
   }
+
+  test('Turkish speech prefers the installed tr-TR voice', () async {
+    final calls = mockVoices(installed: ['tr', 'tr-TR'], online: ['tr-TR']);
+    final course = StudyCourse.multilingualCourses.firstWhere(
+      (course) => course.id == 'ru-tr',
+    );
+    final deck = await load(course, newHistory());
+    const spelling = 'ışık';
+    expect(await deck.speech.speak(spelling), SpeechResult.completed);
+    expect(calls.singleWhere((call) => call.method == 'setVoice').arguments, {
+      'name': 'local tr-TR',
+      'locale': 'tr-TR',
+    });
+    expect(
+      calls.singleWhere((call) => call.method == 'speak').arguments,
+      spelling,
+    );
+  });
+
+  test(
+    'Japanese speech uses the installed ja-JP voice and the card reading',
+    () async {
+      final calls = mockVoices(installed: ['ja', 'ja-JP'], online: ['ja-JP']);
+      final course = StudyCourse.multilingualCourses.firstWhere(
+        (course) => course.id == 'ru-ja',
+      );
+      final deck = await load(course, newHistory());
+      final word =
+          deck.items.firstWhere((item) {
+            return item.word.text == '学校';
+          }).word;
+      expect(await deck.speech.speak(word.text), SpeechResult.completed);
+      expect(calls.singleWhere((call) => call.method == 'setVoice').arguments, {
+        'name': 'local ja-JP',
+        'locale': 'ja-JP',
+      });
+      expect(
+        calls.singleWhere((call) => call.method == 'speak').arguments,
+        'がっこう',
+      );
+    },
+  );
 
   test(
     'Mandarin reports unavailable with only Cantonese and cloud Mandarin',

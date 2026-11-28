@@ -1,5 +1,21 @@
 # Sources and third-party materials
 
+## Turkish A1–C1
+
+The Turkish words, translations, and answer choices were written for ArcadeLingo. Levels follow the app’s learning sequence. Editorial references include the Turkish Language Association’s [Güncel Türkçe Sözlük](https://sozluk.gov.tr/) and [spelling rules](https://tdk.gov.tr/icerik/yazim-kurallari/duzeltme-isareti/) and the Yunus Emre Institute’s [Yedi İklim Türkçe](https://yee.org.tr/_next/yayinlar/yedi-iklim-turkce-seti) teaching materials.
+
+## Japanese A1–C1
+
+The Japanese words, readings, translations, and answer choices were written for ArcadeLingo. Levels reflect the app's learning sequence. Editorial references include the Japan Foundation's [JF Standard](https://www.jfstandard.jpf.go.jp/summaryen/ja/render.do) and [Marugoto learning materials](https://www.marugoto.jpf.go.jp/en/download/).
+
+Arcade Japanese is derived from [Noto Sans JP](https://github.com/google/fonts/tree/main/ofl/notosansjp) and renders Japanese script offline. The SIL Open Font License 1.1 is available in the app.
+
+## Korean A1–C1
+
+The Standard South Korean vocabulary, translations, and answer choices were written for ArcadeLingo. Levels follow the app's learning sequence. Editorial references include the [National Institute of Korean Language's Korean Basic Dictionary](https://krdict.korean.go.kr/) and [King Sejong Institute Foundation's learning materials](https://app.ksif.or.kr/eng/index.do).
+
+Arcade Korean is derived from [Noto Sans KR](https://github.com/google/fonts/tree/main/ofl/notosanskr) and renders Hangul offline. The SIL Open Font License 1.1 is available in the app.
+
 ## A1–B2 levels — CEFR-J Wordlist
 
 ArcadeLingo uses the CEFR-J dataset for its A1–B2 English headwords and levels.

@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:arcadelingo/domain/review/hangul.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/word_labels.dart';
 import 'package:flutter/widgets.dart' show StringCharacters;
@@ -10,7 +11,7 @@ class ClawMachineRun {
     this.session,
     this.random, {
     int? hintLimit,
-    String studyLanguage = 'en',
+    this.studyLanguage = 'en',
   }) : _hintsRemaining = hintLimit,
        _alphabet = switch (studyLanguage) {
          'ru' => 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ',
@@ -18,15 +19,33 @@ class ClawMachineRun {
          'fr' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZÀÂÆÇÉÈÊËÎÏÔŒÙÛÜŸ',
          'zh' => '你我他她它们的这那有在去来看学说听写吃喝水火木土山上下中大小日月人心东西南北',
          'ar' => 'ابتثجحخدذرزسشصضطظعغفقكلمنهويأإآؤئةىء',
+         'ko' => '가나다라마바사아자차카타파하',
+         'ja' => 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん',
+         'tr' => 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ',
          _ => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
        };
 
   static const columnCount = 5;
   static final _letterOrDigit = RegExp(r'[\p{L}\p{N}]', unicode: true);
+  static final _shortKana = RegExp(r'^[ぁ-ゖァ-ヺーゝゞヽヾ]{1,8}$');
+  static final _katakana = RegExp(r'^[ァ-ヺーヽヾ]+$');
+  static const _katakanaTiles = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン';
 
   final ReviewSession session;
   final Random random;
+  final String studyLanguage;
   final String _alphabet;
+  HangulSpelling? _hangul;
+  String? kanaReading;
+  String? get hangulPreview => _hangul?.completedAt(collected);
+  String get _tileAlphabet {
+    if (_hangul != null) return hangulTileAlphabet;
+    if (studyLanguage == 'ja' && _katakana.hasMatch(kanaReading ?? answer)) {
+      return _katakanaTiles;
+    }
+    return _alphabet;
+  }
+
   int? _hintsRemaining;
   int? get hintsRemaining => _hintsRemaining;
 
@@ -49,8 +68,16 @@ class ClawMachineRun {
     item = session.nextItem();
     final word = item?.word;
     if (word == null) return;
-    answer = uppercaseWordLetters(word.text);
-    slots = answer.characters.toList(growable: false);
+    answer = uppercaseWordLetters(word.text, studyLanguage: studyLanguage);
+    _hangul = studyLanguage == 'ko' ? HangulSpelling.forWord(answer) : null;
+    final reading = word.reading;
+    kanaReading =
+        studyLanguage == 'ja' && reading != null && _shortKana.hasMatch(reading)
+            ? reading
+            : null;
+    slots =
+        _hangul?.tiles ??
+        (kanaReading ?? answer).characters.toList(growable: false);
     separators = {
       for (final (i, slot) in slots.indexed)
         if (!_letterOrDigit.hasMatch(slot)) i,
@@ -72,7 +99,7 @@ class ClawMachineRun {
               if (!separators.contains(i)) slot,
           }.toList()
           ..shuffle(random);
-    final pool = [...letters, ..._alphabet.split('')]..shuffle(random);
+    final pool = [...letters, ..._tileAlphabet.split('')]..shuffle(random);
     stacks
       ..clear()
       ..addAll(List.generate(columnCount, (_) => [pool.removeLast()]));
@@ -136,7 +163,7 @@ class ClawMachineRun {
     if (_targetColumn == -1) {
       stack.add(slots[collected]);
     } else if (stack.isEmpty) {
-      stack.add(_alphabet[random.nextInt(_alphabet.length)]);
+      stack.add(_tileAlphabet[random.nextInt(_tileAlphabet.length)]);
     }
   }
 

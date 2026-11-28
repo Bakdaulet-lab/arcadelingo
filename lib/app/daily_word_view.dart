@@ -189,12 +189,17 @@ class _DailyWordScreenState extends State<DailyWordScreen> {
     return switch (_error) {
       DailyGuessError.wrongLength => s.dailyWordWrongLength(
         widget.puzzle.length,
-        characters: widget.puzzle.course.studyLanguage == 'zh',
+        studyLanguage: widget.puzzle.course.studyLanguage,
       ),
-      DailyGuessError.invalidLetters =>
-        widget.puzzle.course.studyLanguage == 'zh'
-            ? s.dailyWordInvalidCharacters
-            : s.dailyWordInvalidLetters,
+      DailyGuessError.invalidLetters => switch (widget
+          .puzzle
+          .course
+          .studyLanguage) {
+        'zh' => s.dailyWordInvalidCharacters,
+        'ko' => s.dailyWordInvalidHangul,
+        'ja' => s.dailyWordInvalidJapanese,
+        _ => s.dailyWordInvalidLetters,
+      },
       DailyGuessError.unknownWord => s.dailyWordUnknown,
       DailyGuessError.alreadyTried => s.dailyWordRepeated,
       DailyGuessError.finished || null => null,
@@ -235,7 +240,11 @@ class _DailyWordScreenState extends State<DailyWordScreen> {
     final notice = _notice(s);
     final direction =
         puzzle.course.studyLanguage == 'ar' ? TextDirection.rtl : null;
-    final usesCharacters = puzzle.course.studyLanguage == 'zh';
+    final usesInputMethod = const {
+      'zh',
+      'ko',
+      'ja',
+    }.contains(puzzle.course.studyLanguage);
     return ArcadePage(
       title: s.dailyWord,
       compactHeader: true,
@@ -388,14 +397,14 @@ class _DailyWordScreenState extends State<DailyWordScreen> {
                         focusNode: _focus,
                         readOnly: _saving,
                         autocorrect: false,
-                        enableSuggestions: usesCharacters,
+                        enableSuggestions: usesInputMethod,
                         textDirection: direction,
                         textCapitalization: TextCapitalization.none,
                         textInputAction: TextInputAction.done,
                         decoration: InputDecoration(
                           labelText: s.dailyWordEntry(
                             puzzle.length,
-                            characters: usesCharacters,
+                            studyLanguage: puzzle.course.studyLanguage,
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),

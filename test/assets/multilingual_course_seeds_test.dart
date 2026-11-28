@@ -20,12 +20,12 @@ const _wordsPerLevel = 500;
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('twelve offline courses each include 500 words per level', () async {
+  test('24 offline courses each include 500 words per level', () async {
     final courses = StudyCourse.multilingualCourses;
     expect(
       courses.map((course) => course.id),
       unorderedEquals([
-        for (final study in ['fr', 'zh', 'ar'])
+        for (final study in ['fr', 'zh', 'ar', 'ko', 'ja', 'tr'])
           for (final bridge in ['ru', 'en', 'es', 'kk']) '$bridge-$study',
       ]),
     );
@@ -90,8 +90,16 @@ void main() {
           if (course.studyLanguage == 'zh') {
             expect(word.text, matches(RegExp(r'[\u3400-\u9fff]')));
             expect(word.reading, isNotEmpty);
+          } else if (course.studyLanguage == 'ja') {
+            expect(word.text, matches(RegExp(r'[\u3041-\u30fa\u3400-\u9fff]')));
+            expect(word.reading, matches(RegExp(r'^[ぁ-ゖァ-ヺーゝゞヽヾ]+$')));
+            expect(word.article, isNull);
           } else {
             expect(word.reading, isNull);
+          }
+          if (course.studyLanguage == 'ko') {
+            expect(word.text, matches(RegExp(r'[\uac00-\ud7a3]')));
+            expect(word.article, isNull);
           }
         }
         final daily = selectDailyWord(
@@ -111,6 +119,9 @@ void main() {
       final writing = switch (course.studyLanguage) {
         'zh' => RegExp(r'[\u3400-\u9fff]'),
         'ar' => RegExp(r'[\u0621-\u064a]'),
+        'ko' => RegExp(r'[\uac00-\ud7a3]'),
+        'ja' => RegExp(r'[ぁ-ゖァ-ヺ]'),
+        'tr' => RegExp(r'[çğıİöşüÇĞÖŞÜ]'),
         _ => RegExp(r'[a-z]'),
       };
       for (final level in _levels) {

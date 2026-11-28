@@ -30,12 +30,17 @@ _GateInk _gateInk(int index, bool dark) =>
 
 // Lay out text in normal font units, then paint into the cell-space canvas.
 const _fontUnits = 32.0;
-TextPainter _type(String value, double height, Color color) => TextPainter(
+TextPainter _type(
+  String value,
+  double height,
+  Color color, {
+  List<String> fontFallback = arcadeFontFallback,
+}) => TextPainter(
   text: TextSpan(
     text: value,
     style: TextStyle(
       fontFamily: wordarcadeFont,
-      fontFamilyFallback: arcadeFontFallback,
+      fontFamilyFallback: fontFallback,
       fontSize: height * _fontUnits,
       height: 1,
       fontWeight: FontWeight.w700,
@@ -118,12 +123,14 @@ class _SceneryPainter extends CustomPainter {
     required this.dark,
     required this.labels,
     required this.textScale,
+    required this.fontFallback,
   }) : gateWave = run.gateWave;
   final MazeRun run;
   final bool dark;
   final List<String> labels;
   final int gateWave;
   final double textScale;
+  final List<String> fontFallback;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -231,7 +238,12 @@ class _SceneryPainter extends CustomPainter {
     // The entire upper rail is a wall. Short signs fit there without masking
     // a walkable cell. Every full label is also shown in the accessible HUD.
     if (word.isEmpty || word.length > 24 || word.contains('\n')) return;
-    final text = _type(word, .50 * textScale, ink.fill);
+    final text = _type(
+      word,
+      .50 * textScale,
+      ink.fill,
+      fontFallback: fontFallback,
+    );
     final width = text.width / _fontUnits + .48;
     final height = text.height / _fontUnits + .16;
     if (width <= 3.83 && height <= .83) {
@@ -267,6 +279,7 @@ class _SceneryPainter extends CustomPainter {
       gateWave != old.gateWave ||
       dark != old.dark ||
       textScale != old.textScale ||
+      !listEquals(fontFallback, old.fontFallback) ||
       !listEquals(labels, old.labels);
 }
 
