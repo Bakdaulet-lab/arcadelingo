@@ -53,6 +53,15 @@ class WordPanel extends StatelessWidget {
               style: withWeight(theme.textTheme.displaySmall!, FontWeight.bold),
             ),
           ),
+          if (word.reading case final reading?) ...[
+            const SizedBox(height: 6),
+            Text(
+              reading,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           if (labelCorrectTranslation) ...[
             Text(

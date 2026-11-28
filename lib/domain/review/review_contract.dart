@@ -20,6 +20,7 @@ class Word {
     this.partOfSpeech,
     this.example,
     this.article,
+    this.reading,
   });
 
   final String id;
@@ -42,7 +43,15 @@ class Word {
   /// Артикль словарного заголовка, когда курс его предоставляет.
   final String? article;
 
-  String get headword => article == null ? text : '$article $text';
+  /// Pronunciation in writing, for example marked pinyin for Mandarin.
+  final String? reading;
+
+  String get headword {
+    final prefix = article;
+    if (prefix == null) return text;
+    final separator = prefix.endsWith('’') || prefix.endsWith("'") ? '' : ' ';
+    return '$prefix$separator$text';
+  }
 }
 
 /// Единица показа: слово плюс правдоподобные обманки для игр с выбором.

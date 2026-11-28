@@ -197,7 +197,18 @@ class DeviceWordSpeech implements WordSpeech {
       final locale = raw['locale'];
       if (name is! String || name.isEmpty || locale is! String) continue;
       final tag = _normalizeTag(locale);
-      if (tag != language && !tag.startsWith('$language-')) continue;
+      if (language == 'zh') {
+        // Some native engines file Cantonese under zh-HK rather than yue.
+        if (tag.endsWith('-hk') || tag.endsWith('-mo')) continue;
+        if (tag != 'zh' &&
+            !tag.startsWith('zh-') &&
+            tag != 'cmn' &&
+            !tag.startsWith('cmn-')) {
+          continue;
+        }
+      } else if (tag != language && !tag.startsWith('$language-')) {
+        continue;
+      }
       if (_platform == TargetPlatform.android) {
         final network = raw['network_required'];
         if (network != false &&
@@ -220,8 +231,23 @@ class DeviceWordSpeech implements WordSpeech {
       locale.toLowerCase().replaceAll('_', '-');
 
   int _priority(String locale) => switch (_normalizeTag(locale)) {
-    'en-us' || 'es-es' || 'ru-ru' || 'de-de' => 0,
-    'en-gb' || 'es-mx' || 'de-at' || 'de-ch' => 1,
+    'en-us' ||
+    'es-es' ||
+    'ru-ru' ||
+    'de-de' ||
+    'fr-fr' ||
+    'ar-sa' ||
+    'zh-cn' ||
+    'zh-hans-cn' ||
+    'cmn-cn' => 0,
+    'en-gb' ||
+    'es-mx' ||
+    'de-at' ||
+    'de-ch' ||
+    'fr-ca' ||
+    'ar-eg' ||
+    'zh-tw' ||
+    'zh-hant-tw' => 1,
     _ => 2,
   };
 }

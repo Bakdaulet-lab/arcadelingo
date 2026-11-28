@@ -189,8 +189,12 @@ class _DailyWordScreenState extends State<DailyWordScreen> {
     return switch (_error) {
       DailyGuessError.wrongLength => s.dailyWordWrongLength(
         widget.puzzle.length,
+        characters: widget.puzzle.course.studyLanguage == 'zh',
       ),
-      DailyGuessError.invalidLetters => s.dailyWordInvalidLetters,
+      DailyGuessError.invalidLetters =>
+        widget.puzzle.course.studyLanguage == 'zh'
+            ? s.dailyWordInvalidCharacters
+            : s.dailyWordInvalidLetters,
       DailyGuessError.unknownWord => s.dailyWordUnknown,
       DailyGuessError.alreadyTried => s.dailyWordRepeated,
       DailyGuessError.finished || null => null,
@@ -206,12 +210,32 @@ class _DailyWordScreenState extends State<DailyWordScreen> {
     final extraLetters = switch (puzzle.course.studyLanguage) {
       'es' => const ['á', 'é', 'í', 'ó', 'ú', 'ü', 'ñ'],
       'de' => const ['ä', 'ö', 'ü', 'ß'],
+      'fr' => const [
+        'à',
+        'â',
+        'ç',
+        'é',
+        'è',
+        'ê',
+        'ë',
+        'î',
+        'ï',
+        'ô',
+        'œ',
+        'ù',
+        'û',
+        'ü',
+        'ÿ',
+      ],
       'ru' => const ['ё'],
       _ => const <String>[],
     };
     final playing = _round.status == DailyWordStatus.playing;
     final won = _round.status == DailyWordStatus.won;
     final notice = _notice(s);
+    final direction =
+        puzzle.course.studyLanguage == 'ar' ? TextDirection.rtl : null;
+    final usesCharacters = puzzle.course.studyLanguage == 'zh';
     return ArcadePage(
       title: s.dailyWord,
       compactHeader: true,
@@ -304,6 +328,7 @@ class _DailyWordScreenState extends State<DailyWordScreen> {
                             playing
                                 ? puzzle.answer.translation
                                 : puzzle.answer.headword,
+                            textDirection: playing ? null : direction,
                             style: theme.textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
@@ -363,11 +388,15 @@ class _DailyWordScreenState extends State<DailyWordScreen> {
                         focusNode: _focus,
                         readOnly: _saving,
                         autocorrect: false,
-                        enableSuggestions: false,
+                        enableSuggestions: usesCharacters,
+                        textDirection: direction,
                         textCapitalization: TextCapitalization.none,
                         textInputAction: TextInputAction.done,
                         decoration: InputDecoration(
-                          labelText: s.dailyWordEntry(puzzle.length),
+                          labelText: s.dailyWordEntry(
+                            puzzle.length,
+                            characters: usesCharacters,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),

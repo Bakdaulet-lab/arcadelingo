@@ -51,6 +51,14 @@ Duden was used to check spelling, articles, and individual senses.
 
 The light theme uses Lora by The Lora Project Authors for headings. The bundled SIL Open Font License 1.1 is in `assets/fonts/Lora-OFL.txt`. Source <https://github.com/google/fonts/tree/main/ofl/lora>.
 
+## French, Chinese and Arabic A1–C1
+
+ArcadeLingo curated these words and their four sets of translations and answer choices. French uses references from the Académie française and France Éducation international. Mandarin uses simplified characters and marked pinyin following GB/T 16159. Arabic uses Modern Standard Arabic. The Chinese and Arabic levels follow ArcadeLingo's learning progression.
+
+References: <https://www.dictionnaire-academie.fr/9e_edition>, <https://www.france-education-international.fr/document/cecrl>, <https://www.moe.gov.cn/jyb_xwfb/gzdt_gzdt/s5987/202103/t20210329_523304.html>, <https://dictionary.ksaa.gov.sa/about>.
+
+Noto Sans Arabic and Arcade Chinese (a subset of Noto Sans SC) render Arabic and Chinese offline. Both fonts are licensed under the SIL Open Font License 1.1, available in the app. Sources: <https://github.com/google/fonts/tree/main/ofl/notosansarabic> and <https://github.com/google/fonts/tree/main/ofl/notosanssc>.
+
 ## Ninja Slash sound effects
 
 - **Author:** Kenney (Kenney Vleugels).

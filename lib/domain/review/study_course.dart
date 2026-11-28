@@ -78,6 +78,16 @@ class StudyCourse {
     germanFromKazakh,
   ];
 
+  static final multilingualCourses = List<StudyCourse>.unmodifiable([
+    for (final study in ['fr', 'zh', 'ar'])
+      for (final bridge in ['ru', 'en', 'es', 'kk'])
+        StudyCourse(
+          id: '$bridge-$study',
+          studyLanguage: study,
+          translationLanguage: bridge,
+        ),
+  ]);
+
   final String id;
   final String studyLanguage;
   final String translationLanguage;

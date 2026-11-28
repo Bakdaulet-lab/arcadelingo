@@ -17,12 +17,18 @@ enum DailyGuessError {
 
 final _latinLetters = RegExp(r'^[a-záéíóúñü]+$');
 final _germanLetters = RegExp(r'^[a-zäöüß]+$');
+final _frenchLetters = RegExp(r'^[a-zàâæçéèêëîïôœùûüÿ]+$');
+final _hanCharacters = RegExp(r'^[\u3400-\u9fff]+$');
+final _arabicLetters = RegExp(r'^[\u0621-\u063a\u0641-\u064a]+$');
 final _russianLetters = RegExp(r'^[а-яё]+$');
 final _clueWords = RegExp(r'\p{L}+', unicode: true);
 
 RegExp _lettersFor(StudyCourse course) => switch (course.studyLanguage) {
   'ru' => _russianLetters,
   'de' => _germanLetters,
+  'fr' => _frenchLetters,
+  'zh' => _hanCharacters,
+  'ar' => _arabicLetters,
   _ => _latinLetters,
 };
 
@@ -55,14 +61,15 @@ DailyWordPuzzle? selectDailyWord({
   String? targetId,
 }) {
   final letters = _lettersFor(course);
+  final (minLength, maxLength) = course.studyLanguage == 'zh' ? (2, 4) : (4, 7);
   final clear = <String, Word>{};
   final revealing = <String, Word>{};
   final allowed = <String>{};
   Word? target;
   for (final word in vocabulary) {
     final spelling = normalizedCourseSpelling(word.text);
-    if (spelling.length < 4 ||
-        spelling.length > 7 ||
+    if (spelling.length < minLength ||
+        spelling.length > maxLength ||
         !letters.hasMatch(spelling)) {
       continue;
     }

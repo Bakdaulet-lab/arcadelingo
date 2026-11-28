@@ -279,6 +279,8 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                   separators: _run.separators,
                   collected: _run.collected,
                   reducedMotion: _reducedMotion,
+                  textDirection:
+                      widget.studyLanguage == 'ar' ? TextDirection.rtl : null,
                 ),
                 const SizedBox(height: 16),
                 Stack(
@@ -482,6 +484,7 @@ class _AnswerSlots extends StatelessWidget {
     required this.separators,
     required this.collected,
     required this.reducedMotion,
+    required this.textDirection,
     super.key,
   });
 
@@ -489,6 +492,7 @@ class _AnswerSlots extends StatelessWidget {
   final Set<int> separators;
   final int collected;
   final bool reducedMotion;
+  final TextDirection? textDirection;
 
   @override
   Widget build(BuildContext context) {
@@ -519,6 +523,7 @@ class _AnswerSlots extends StatelessWidget {
       child: ArcadeLetterWrap(
         key: ClawKeys.slots,
         spelling: slots,
+        textDirection: textDirection,
         alignment: WrapAlignment.center,
         spacing: 5,
         runSpacing: 5,

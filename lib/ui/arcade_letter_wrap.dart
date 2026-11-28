@@ -8,6 +8,7 @@ class ArcadeLetterWrap extends StatelessWidget {
     required this.spacing,
     required this.runSpacing,
     this.alignment = WrapAlignment.start,
+    this.textDirection,
     super.key,
   });
 
@@ -16,11 +17,13 @@ class ArcadeLetterWrap extends StatelessWidget {
   final double spacing;
   final double runSpacing;
   final WrapAlignment alignment;
+  final TextDirection? textDirection;
 
   @override
   Widget build(BuildContext context) {
     Widget wrap(List<Widget> children, double gap) => Wrap(
       alignment: alignment,
+      textDirection: textDirection,
       spacing: gap,
       runSpacing: runSpacing,
       children: children,

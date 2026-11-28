@@ -99,6 +99,14 @@ Goethe-Institut материалдары басшылыққа алынды. Сө
 `assets/fonts/Lora-OFL.txt` файлында беріледі. Дереккөзі
 <https://github.com/google/fonts/tree/main/ofl/lora>.
 
+## Француз, қытай және араб тілдері A1–C1
+
+Сөздер, аудармалар және жауап нұсқалары ArcadeLingo үшін төрт аударма тілінде әзірленді. Француз тілі Académie française сөздігі мен France Éducation international материалдары арқылы тексерілді. Қытай курсында жеңілдетілген иероглифтер мен GB/T 16159 стандартына сай тоны белгіленген пиньинь қолданылады. Араб курсы қазіргі әдеби араб тіліне негізделген. Қытай және араб тілдерінің деңгейлері ArcadeLingo оқу ретімен берілген.
+
+Дереккөздер: <https://www.dictionnaire-academie.fr/9e_edition>, <https://www.france-education-international.fr/document/cecrl>, <https://www.moe.gov.cn/jyb_xwfb/gzdt_gzdt/s5987/202103/t20210329_523304.html>, <https://dictionary.ksaa.gov.sa/about>.
+
+Noto Sans Arabic және Noto Sans SC қарпінің негізіндегі Arcade Chinese араб және қытай жазуын интернетсіз көрсетеді. Екі қаріптің SIL Open Font License 1.1 лицензиясы қолданбада берілген. Бастапқы қаріптер: <https://github.com/google/fonts/tree/main/ofl/notosansarabic> және <https://github.com/google/fonts/tree/main/ofl/notosanssc>.
+
 ## «Ниндзяның соққысы» ойынының дыбыс әсерлері
 
 - **Авторы.** Kenney (Kenney Vleugels).

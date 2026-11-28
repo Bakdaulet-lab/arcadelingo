@@ -23,7 +23,11 @@ import '../support/bundled_fonts.dart';
 import '../support/in_memory_answer_log.dart';
 import '../support/in_memory_stores.dart';
 
-const _courses = [...StudyCourse.kazakhCourses, ...StudyCourse.germanCourses];
+final _courses = [
+  ...StudyCourse.kazakhCourses,
+  ...StudyCourse.germanCourses,
+  ...StudyCourse.multilingualCourses,
+];
 const _languages = [
   InterfaceLanguage.russian,
   InterfaceLanguage.english,
@@ -50,6 +54,9 @@ void main() {
         course: (await loadKazakhSeed(course) as Ok<List<ReviewItem>>).value,
       for (final course in StudyCourse.germanCourses)
         course: (await loadGermanSeed(course) as Ok<List<ReviewItem>>).value,
+      for (final course in StudyCourse.multilingualCourses)
+        course:
+            (await loadMultilingualSeed(course) as Ok<List<ReviewItem>>).value,
     };
   });
 
@@ -178,8 +185,7 @@ void main() {
             for (final item in catalogues[course]!)
               if (item.word.level == level) item.word,
           ];
-          // Every game actually opens in each of the three courses. Levels A1–B2
-          // also exercise the normal home path with a rotating selection.
+          // Open every game at C1 and rotate through the registry for A1–B2.
           final entries =
               level == CefrLevel.c1
                   ? games
@@ -192,23 +198,21 @@ void main() {
             expect(last?.level, level);
             expect(last?.vocabulary, unorderedEquals(authorized));
             expect(last?.session.total, entry.roundLimit ?? sessionTarget);
-            if (entry.id == 'claw_machine' &&
-                (course.studyLanguage == 'ru' ||
-                    course.studyLanguage == 'de')) {
+            final script = switch (course.studyLanguage) {
+              'ru' => r'^[А-ЯЁ0-9]$',
+              'de' => r'^[A-ZÄÖÜẞ0-9]$',
+              'fr' => r'^[A-ZÀÂÆÇÉÈÊËÎÏÔŒÙÛÜŸ0-9]$',
+              'zh' => r'^[\u3400-\u9fff]$',
+              'ar' => r'^[\u0621-\u063a\u0641-\u064a][\u064b-\u0652\u0670]*$',
+              _ => null,
+            };
+            if (entry.id == 'claw_machine' && script != null) {
               final field = tester.widget<ClawMachineField>(
                 find.byType(ClawMachineField),
               );
               expect(
                 field.stacks.expand((stack) => stack),
-                everyElement(
-                  matches(
-                    RegExp(
-                      course.studyLanguage == 'de'
-                          ? r'^[A-ZÄÖÜẞ0-9]$'
-                          : r'^[А-ЯЁ0-9]$',
-                    ),
-                  ),
-                ),
+                everyElement(matches(RegExp(script))),
               );
             }
             expect(tester.takeException(), isNull);

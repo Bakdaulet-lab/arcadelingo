@@ -93,6 +93,11 @@ Result<ReviewItem> _parseItem(int index, Object? raw) {
   if (rawArticle != null && article == null) {
     return Err(Failure('сид слов: слово "$id": article отсутствует или пуст'));
   }
+  final rawReading = raw['reading'];
+  final reading = _nonEmptyString(rawReading);
+  if (rawReading != null && reading == null) {
+    return Err(Failure('сид слов: слово "$id": reading отсутствует или пуст'));
+  }
   final rawDistractors = raw['distractors'];
   if (rawDistractors is! List<Object?>) {
     return Err(
@@ -117,6 +122,7 @@ Result<ReviewItem> _parseItem(int index, Object? raw) {
         level: level,
         partOfSpeech: partOfSpeech,
         article: article,
+        reading: reading,
       ),
       distractors: distractors,
     ),

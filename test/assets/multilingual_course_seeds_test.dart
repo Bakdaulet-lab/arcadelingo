@@ -105,21 +105,29 @@ void main() {
       final writing = switch (course.studyLanguage) {
         'zh' => RegExp(r'[\u3400-\u9fff]'),
         'ar' => RegExp(r'[\u0621-\u064a]'),
-        _ => RegExp(r'\b(?:thé|café|lapin|foulard)\b'),
+        _ => RegExp(r'[a-z]'),
       };
       for (final level in _levels) {
         final kitchen = kitchenOrdersFor(course: course, level: level, seed: 8);
         expect(kitchen, hasLength(level == CefrLevel.a1 ? 5 : 0));
         for (final order in kitchen) {
           expect(order.phrase(course.studyLanguage), matches(writing));
+          expect(order.phrase(course.studyLanguage), isNot(order.phrase('en')));
           expect(order.phrase(course.translationLanguage), isNotEmpty);
         }
         final candy = candyOrdersFor(course: course, level: level, seed: 8);
         expect(candy, hasLength(3));
-        for (final order in candy) {
+        final english = candyOrdersFor(
+          course: StudyCourse.englishFromRussian,
+          level: level,
+          seed: 8,
+        );
+        for (final (index, order) in candy.indexed) {
           expect(order.level, level);
           expect(order.courseId, course.id);
           expect(order.phrase, matches(writing));
+          expect(order.phrase, isNot(english[index].phrase));
+          expect(order.target, english[index].target);
           expect(order.translation, isNotEmpty);
         }
       }

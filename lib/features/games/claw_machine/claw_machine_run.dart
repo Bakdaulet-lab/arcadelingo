@@ -15,6 +15,9 @@ class ClawMachineRun {
        _alphabet = switch (studyLanguage) {
          'ru' => 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ',
          'de' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ',
+         'fr' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZÀÂÆÇÉÈÊËÎÏÔŒÙÛÜŸ',
+         'zh' => '你我他她它们的这那有在去来看学说听写吃喝水火木土山上下中大小日月人心东西南北',
+         'ar' => 'ابتثجحخدذرزسشصضطظعغفقكلمنهويأإآؤئةىء',
          _ => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
        };
 

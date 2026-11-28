@@ -44,9 +44,15 @@ class DailyWordBoard extends StatelessWidget {
                           ? draft.trim()
                           : '';
                   final letters =
-                      uppercaseWordLetters(word).characters.toList();
+                      uppercaseWordLetters(
+                        normalizedCourseSpelling(word),
+                      ).characters.toList();
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    textDirection:
+                        round.puzzle.course.studyLanguage == 'ar'
+                            ? TextDirection.rtl
+                            : null,
                     children: [
                       for (var col = 0; col < length; col++) ...[
                         if (col > 0) const SizedBox(width: gap),

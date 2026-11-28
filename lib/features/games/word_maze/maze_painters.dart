@@ -35,6 +35,7 @@ TextPainter _type(String value, double height, Color color) => TextPainter(
     text: value,
     style: TextStyle(
       fontFamily: wordarcadeFont,
+      fontFamilyFallback: arcadeFontFallback,
       fontSize: height * _fontUnits,
       height: 1,
       fontWeight: FontWeight.w700,

@@ -29,6 +29,9 @@ const Color wordarcadeSeed = Color(0xFF3DFFC0);
 /// лежит рядом и уходит в `LicenseRegistry` из `main.dart`.
 const String wordarcadeFont = 'Rubik';
 const String warmPaperFont = 'Lora';
+const String chineseFont = 'Arcade Chinese';
+const String arabicFont = 'Noto Sans Arabic';
+const arcadeFontFallback = [arabicFont, chineseFont];
 
 /// Палитра «ночной автомат»: глубокий тёмный фон и два неоновых акцента.
 ///
@@ -121,6 +124,7 @@ ThemeData wordarcadeTheme({
     colorScheme: colors,
     platform: platform,
     fontFamily: wordarcadeFont,
+    fontFamilyFallback: arcadeFontFallback,
     pageTransitionsTheme: arcadePageTransitions(reduceMotion: reduceMotion),
   );
   final buttonShape = RoundedRectangleBorder(
