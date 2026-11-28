@@ -50,7 +50,7 @@ void main() {
     await t.tap(find.byKey(SpaceWordKeys.start));
     await t.pump();
     final field = t.widget<SpaceField>(find.byType(SpaceField));
-    expect(field.labels, lengthEquals(3));
+    expect(field.labels, hasLength(3));
     expect(field.labels, contains('luna'));
     expect(field.labels, isNot(contains('lunar')));
     expect(field.labels, isNot(contains('astro')));
@@ -65,7 +65,7 @@ void main() {
     expect(find.byKey(SpaceWordKeys.summary), findsOneWidget);
     expect(record, 100);
     expect(ends, 1);
-    expect(session.reports, lengthEquals(1));
+    expect(session.reports, hasLength(1));
   });
 
   testWidgets('pause, physical collisions, exit and no-answer accounting', (

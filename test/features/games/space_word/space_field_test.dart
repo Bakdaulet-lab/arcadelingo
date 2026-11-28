@@ -33,10 +33,52 @@ Future<void> step(WidgetTester tester, int frames) async {
 }
 
 void main() {
+  testWidgets('Space fires during flight and activates buttons while paused', (
+    tester,
+  ) async {
+    final flight =
+        SpaceFlight()..startWave(options: labels, correctIndex: 2, wave: 1);
+    var activations = 0;
+    Widget scene(bool playing) => MaterialApp(
+      home: Scaffold(
+        body: Column(
+          children: [
+            TextButton(
+              autofocus: true,
+              onPressed: () => activations++,
+              child: const Text('Pause'),
+            ),
+            Expanded(
+              child: SpaceField(
+                flight: flight,
+                labels: labels,
+                playing: playing,
+                reducedMotion: false,
+                onEvent: (_) {},
+                onPause: () {},
+                semanticsLabel: 'Space Word',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpWidget(scene(true));
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    expect(flight.bolts, isNotEmpty);
+    expect(activations, 0);
+    await tester.pumpWidget(scene(false));
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    expect(activations, 1);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('relative drag steers on both axes and fires through the turn', (
     tester,
   ) async {
-    final flight = SpaceFlight()..startWave(options: labels, correctIndex: 2, wave: 1);
+    final flight =
+        SpaceFlight()..startWave(options: labels, correctIndex: 2, wave: 1);
     await tester.pumpWidget(board(flight));
     await tester.pump();
     final origin = tester.getTopLeft(find.byType(SpaceField));
@@ -59,8 +101,11 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('keyboard thrust, fire, and focus loss are independent', (tester) async {
-    final flight = SpaceFlight()..startWave(options: labels, correctIndex: 2, wave: 1);
+  testWidgets('keyboard thrust, fire, and focus loss are independent', (
+    tester,
+  ) async {
+    final flight =
+        SpaceFlight()..startWave(options: labels, correctIndex: 2, wave: 1);
     var pauses = 0;
     await tester.pumpWidget(board(flight, onPause: () => pauses++));
     await tester.pump();
