@@ -11,7 +11,8 @@ enum InterfaceLanguage {
   system('system'),
   russian('ru'),
   english('en'),
-  spanish('es');
+  spanish('es'),
+  kazakh('kk');
 
   const InterfaceLanguage(this.tag);
   final String tag;

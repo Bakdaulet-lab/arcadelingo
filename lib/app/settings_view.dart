@@ -87,6 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         InterfaceLanguage.russian => 'Русский',
         InterfaceLanguage.english => 'English',
         InterfaceLanguage.spanish => 'Español',
+        InterfaceLanguage.kazakh => 'Қазақша',
       };
 
   String _themeLabel(AppTheme theme, AppStrings strings) => switch (theme) {

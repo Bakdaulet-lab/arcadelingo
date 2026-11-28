@@ -56,6 +56,7 @@ String? ritualStreakLabel(
           InterfaceLanguage.english => '${englishDayWord(view.days)} in a row',
           InterfaceLanguage.spanish =>
             view.days == 1 ? 'día seguido' : 'días seguidos',
+          InterfaceLanguage.kazakh => 'күн қатарынан',
           InterfaceLanguage.russian ||
           InterfaceLanguage.system => '${dayWord(view.days)} подряд',
         };
@@ -107,6 +108,24 @@ String? ritualFreezeLabel(
           ][spent.month - 1];
       return 'Streak Freeze used for $month ${spent.day}';
     }
+    if (strings.language == InterfaceLanguage.kazakh) {
+      final month =
+          const [
+            'қаңтар',
+            'ақпан',
+            'наурыз',
+            'сәуір',
+            'мамыр',
+            'маусым',
+            'шілде',
+            'тамыз',
+            'қыркүйек',
+            'қазан',
+            'қараша',
+            'желтоқсан',
+          ][spent.month - 1];
+      return 'Серия қорғанысы қолданылды · ${spent.day} $month';
+    }
     return 'Заморозка потрачена за '
         '${spent.day} ${monthInGenitive(spent.month)}';
   }
@@ -116,6 +135,7 @@ String? ritualFreezeLabel(
       'Streak Freeze returns in $left ${englishDayWord(left)}',
     InterfaceLanguage.spanish =>
       'Recuperas la protección en $left ${spanishDayWord(left)}',
+    InterfaceLanguage.kazakh => 'Серия қорғанысы $left күннен кейін жаңарады',
     InterfaceLanguage.russian || InterfaceLanguage.system =>
       'Заморозка вернётся через $left ${dayWord(left)}',
   };

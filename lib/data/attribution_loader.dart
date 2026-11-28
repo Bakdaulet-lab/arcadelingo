@@ -13,6 +13,7 @@ const String attributionAssetPath = 'assets/ATTRIBUTION.md';
 
 const String englishAttributionAssetPath = 'assets/ATTRIBUTION.en.md';
 const String spanishAttributionAssetPath = 'assets/ATTRIBUTION.es.md';
+const String kazakhAttributionAssetPath = 'assets/ATTRIBUTION.kk.md';
 
 /// Текст атрибуции из [bundle] (по умолчанию [rootBundle]).
 Future<String> loadAttribution({
@@ -22,6 +23,7 @@ Future<String> loadAttribution({
   final asset = switch (language) {
     InterfaceLanguage.english => englishAttributionAssetPath,
     InterfaceLanguage.spanish => spanishAttributionAssetPath,
+    InterfaceLanguage.kazakh => kazakhAttributionAssetPath,
     InterfaceLanguage.russian ||
     InterfaceLanguage.system => attributionAssetPath,
   };

@@ -238,6 +238,15 @@ class _PairPracticeScreenState extends State<_PairPracticeScreen> {
     final total = widget.questions.length;
     final finished = _index == total;
     final question = finished ? null : widget.questions[_index];
+    final prompt =
+        question == null
+            ? ''
+            : question.kind == ConfusionPromptKind.meaning
+            ? strings.confusionMeaningPrompt(
+              question.target.translation,
+              inMessage: _index > 0,
+            )
+            : question.prompt;
     return ArcadePage(
       title: strings.practisePair,
       child: SingleChildScrollView(
@@ -301,8 +310,8 @@ class _PairPracticeScreenState extends State<_PairPracticeScreen> {
                     const SizedBox(height: 12),
                     Text(
                       _correct
-                          ? (question.completedSentence ?? question.prompt)
-                          : question.prompt,
+                          ? (question.completedSentence ?? prompt)
+                          : prompt,
                       style: theme.textTheme.headlineSmall,
                     ),
                     if (question.cue case final cue?) ...[
