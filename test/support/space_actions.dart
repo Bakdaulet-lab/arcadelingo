@@ -20,12 +20,17 @@ Future<void> shootSpaceWord(WidgetTester tester, String spelling) async {
   final index = field.labels.indexOf(spelling);
   expect(index, greaterThanOrEqualTo(0));
   final drone = flight.drones.singleWhere((drone) => drone.index == index);
-  final direction = drone.position.dx < flight.ship.dx
-      ? LogicalKeyboardKey.arrowLeft
-      : LogicalKeyboardKey.arrowRight;
+  final direction =
+      drone.position.dx < flight.ship.dx
+          ? LogicalKeyboardKey.arrowLeft
+          : LogicalKeyboardKey.arrowRight;
   if ((drone.position.dx - flight.ship.dx).abs() > 6) {
     await tester.sendKeyDownEvent(direction);
-    for (var i = 0; i < 100 && (drone.position.dx - flight.ship.dx).abs() > 6; i++) {
+    for (
+      var i = 0;
+      i < 100 && (drone.position.dx - flight.ship.dx).abs() > 6;
+      i++
+    ) {
       await pilotFrames(tester, 1);
     }
     await tester.sendKeyUpEvent(direction);

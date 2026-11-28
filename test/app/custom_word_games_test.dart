@@ -213,7 +213,12 @@ void main() {
               final field = tester.widget<SpaceField>(find.byType(SpaceField));
               expect(answer, findsOneWidget);
               expect(field.labels, contains(source));
-              expect(field.labels, everyElement(isIn([source, ...support.map((word) => word.text)])));
+              expect(
+                field.labels,
+                everyElement(
+                  isIn([source, ...support.map((word) => word.text)]),
+                ),
+              );
               await shootSpaceWord(tester, source);
             case 'word_maze':
               expect(answer, findsOneWidget);
