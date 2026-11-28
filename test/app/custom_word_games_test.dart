@@ -11,6 +11,7 @@ import 'package:arcadelingo/features/games/match_three/match_three_game.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
 import 'package:arcadelingo/features/games/snake/snake_field.dart';
 import 'package:arcadelingo/features/games/snake/snake_run.dart';
+import 'package:arcadelingo/features/games/space_word/space_field.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,6 +21,7 @@ import '../support/claw_actions.dart';
 import '../support/in_memory_answer_log.dart';
 import '../support/in_memory_stores.dart';
 import '../support/maze_actions.dart';
+import '../support/space_actions.dart';
 
 const _courses = [
   (
@@ -207,6 +209,12 @@ void main() {
               );
               expect(field.run.apples, hasLength(3));
               await _eatOpeningApple(tester, field.run);
+            case 'space_word':
+              final field = tester.widget<SpaceField>(find.byType(SpaceField));
+              expect(answer, findsOneWidget);
+              expect(field.labels, contains(source));
+              expect(field.labels, everyElement(isIn([source, ...support.map((word) => word.text)])));
+              await shootSpaceWord(tester, source);
             case 'word_maze':
               expect(answer, findsOneWidget);
               final gates = mazeGateWords(tester);

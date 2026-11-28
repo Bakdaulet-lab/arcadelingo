@@ -155,7 +155,7 @@ void main() {
       }
     });
 
-    test('в реестре восемь игр, и падающие слова по-прежнему первые', () {
+    test('Space Word доступна в выборе игр, падающие слова первые', () {
       expect(wordarcadeGames.map((g) => g.id), [
         'falling_words',
         'ninja_slash',
@@ -165,6 +165,7 @@ void main() {
         'word_mahjong',
         'snake',
         'word_maze',
+        'space_word',
       ]);
       expect(
         wordarcadeGames.first,
