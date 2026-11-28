@@ -209,7 +209,9 @@ void main() {
             await _tap(tester, find.byKey(AppKeys.play));
 
             final field = find.byKey(SnakeKeys.field);
+            final playfield = find.byType(SnakePlayfield);
             expect(find.byType(SnakeGame), findsOneWidget);
+            expect(playfield, findsOneWidget);
             expect(
               Theme.of(tester.element(field)).brightness,
               theme == AppTheme.light ? Brightness.light : Brightness.dark,
@@ -231,7 +233,7 @@ void main() {
               expect(words, contains(apple.word));
               expect(
                 find.descendant(
-                  of: field,
+                  of: playfield,
                   matching: find.text(apple.word.text),
                 ),
                 findsOneWidget,

@@ -18,6 +18,8 @@ class DeviceWordSpeech implements WordSpeech {
   _Request? _speaking;
   Future<void> _commands = Future.value();
   String? _voiceLanguage;
+  int _pendingAndroidStops = 0;
+  final _sinceAndroidStop = Stopwatch();
 
   // A broken plugin must not leave navigation or the pronunciation button stuck.
   static const _commandTimeout = Duration(seconds: 3);
@@ -99,7 +101,11 @@ class DeviceWordSpeech implements WordSpeech {
       // waiting for speech: a subsequent stop must be able to interrupt it.
       request.timer = Timer(_utteranceTimeout, () {
         if (!_current(request)) return;
-        request.finish(SpeechResult.failed);
+        request.finish(
+          request.ambiguousCancel
+              ? SpeechResult.cancelled
+              : SpeechResult.failed,
+        );
         _voiceLanguage = null;
         unawaited(_enqueue(_stopEngine));
       });
@@ -122,9 +128,17 @@ class DeviceWordSpeech implements WordSpeech {
 
   void _nativeResult(SpeechResult result) {
     final request = _speaking;
+    // Android posts onStop without an utterance ID, independently of stop()'s
+    // reply. It can arrive after the next speak was sent (even across courses).
+    if (result == SpeechResult.cancelled && _pendingAndroidStops > 0) {
+      _pendingAndroidStops--;
+      if (request != null && _current(request)) request.ambiguousCancel = true;
+      return;
+    }
+    _speaking = null;
     if (request == null || !_current(request)) return;
     request.finish(result);
-    _speaking = null;
+    _pendingAndroidStops = 0;
     if (result == SpeechResult.failed) {
       _voiceLanguage = null;
       unawaited(_enqueue(_stopEngine));
@@ -135,19 +149,34 @@ class DeviceWordSpeech implements WordSpeech {
     try {
       final result = await utterance;
       if (_current(request)) {
-        request.finish(
-          result == 1 ? SpeechResult.completed : SpeechResult.failed,
-        );
+        _pendingAndroidStops = 0;
+        final outcome = switch (result) {
+          1 => SpeechResult.completed,
+          0 when request.ambiguousCancel => SpeechResult.cancelled,
+          _ => SpeechResult.failed,
+        };
+        request.finish(outcome);
       }
     } on MissingPluginException {
       if (_current(request)) request.finish(SpeechResult.unavailable);
     } catch (_) {
       if (_current(request)) request.finish(SpeechResult.failed);
+    } finally {
+      if (identical(_speaking, request)) _speaking = null;
     }
   }
 
   Future<void> _stopEngine() async {
-    // A cancel event from our own stop belongs to the previous utterance.
+    // Old stops without a notification cannot accumulate across idle periods.
+    if (_sinceAndroidStop.elapsed >= _commandTimeout) {
+      _pendingAndroidStops = 0;
+    }
+    if (_platform == TargetPlatform.android && _speaking != null) {
+      _pendingAndroidStops++;
+      _sinceAndroidStop
+        ..reset()
+        ..start();
+    }
     _speaking = null;
     final tts = _tts;
     if (tts == null) return;
@@ -217,6 +246,7 @@ class _Request {
   final String language;
   final result = Completer<SpeechResult>();
   Timer? timer;
+  bool ambiguousCancel = false;
 
   void finish(SpeechResult value) {
     timer?.cancel();

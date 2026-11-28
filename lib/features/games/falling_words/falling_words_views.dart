@@ -11,8 +11,10 @@
 /// мужчин).
 library;
 
+import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_hud.dart';
+import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/arcade_press_feedback.dart';
 import 'package:arcadelingo/ui/arcade_reveal_pair.dart';
 import 'package:arcadelingo/ui/arcade_round_summary.dart';
@@ -21,6 +23,9 @@ import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 
 import 'falling_words_juice.dart';
+import 'falling_words_run.dart';
+
+part 'falling_listening_views.dart';
 
 /// До этой серии фон чистый: ранний тон был бы шумом, а не наградой.
 const int comboTintStart = 2;
@@ -87,6 +92,11 @@ LinearGradient comboGradientFor(ColorScheme scheme, Color hot) =>
 /// Ключи частей экрана. Тест ищет по ним то, что не опознать по тексту:
 /// падающее слово (текст у него меняется каждый раунд) и счётчики HUD.
 abstract final class FallingWordsKeys {
+  static const listeningMarker = Key('falling.listening.marker');
+  static const listeningReplay = Key('falling.listening.replay');
+  static const listeningRetry = Key('falling.listening.retry');
+  static const listeningText = Key('falling.listening.useText');
+
   /// Падающее слово. По нему же тест меряет, сдвинулось ли оно.
   static const Key word = Key('falling_words.word');
 
@@ -222,15 +232,20 @@ class FallingField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    Widget word = FittedBox(
-      fit: BoxFit.scaleDown,
+    final typography = Theme.of(context).textTheme;
+    final title =
+        text.runes.length > 17
+            ? typography.headlineSmall
+            : typography.displaySmall;
+    Widget word = SingleChildScrollView(
+      key: ValueKey(text),
+      primary: false,
       child: Text(
         text,
         key: FallingWordsKeys.word,
         textAlign: TextAlign.center,
-        softWrap: false,
         style: withWeight(
-          Theme.of(context).textTheme.displaySmall!,
+          title!,
           FontWeight.bold,
         ).copyWith(color: scheme.onSurface),
       ),
@@ -329,10 +344,7 @@ class AnswerButton extends StatelessWidget {
                 onTap: onTap,
                 borderRadius: radius,
                 child: Container(
-                  constraints: const BoxConstraints(
-                    minHeight: 56,
-                    maxHeight: 88,
-                  ),
+                  constraints: const BoxConstraints(minHeight: 56),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 10,
@@ -344,37 +356,28 @@ class AnswerButton extends StatelessWidget {
                       width: icon == null ? 1 : 3,
                     ),
                   ),
-                  child: LayoutBuilder(
-                    builder:
-                        (context, constraints) => FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: SizedBox(
-                            width: constraints.maxWidth,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                if (icon != null) ...[
-                                  Icon(icon, color: foreground, size: 24),
-                                  const SizedBox(width: 8),
-                                ],
-                                Flexible(
-                                  child: Text(
-                                    label,
-                                    textAlign: TextAlign.center,
-                                    style: withWeight(
-                                      theme.textTheme.titleMedium!,
-                                      FontWeight.w600,
-                                    ).copyWith(
-                                      fontSize: 18,
-                                      color: foreground,
-                                      height: 1.25,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (icon != null) ...[
+                        Icon(icon, color: foreground, size: 24),
+                        const SizedBox(width: 8),
+                      ],
+                      Flexible(
+                        child: Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          style: withWeight(
+                            theme.textTheme.titleMedium!,
+                            FontWeight.w600,
+                          ).copyWith(
+                            fontSize: 18,
+                            color: foreground,
+                            height: 1.25,
                           ),
                         ),
+                      ),
+                    ],
                   ),
                 ),
               ),

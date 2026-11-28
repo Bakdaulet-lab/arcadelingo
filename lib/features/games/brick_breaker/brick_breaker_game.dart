@@ -266,25 +266,27 @@ class _BrickBreakerGameState extends State<BrickBreakerGame>
                     accent: bonus ? colors.tertiary : colors.primary,
                     child: Column(
                       children: [
-                        SizedBox(
-                          height: 52,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 52),
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
                               if (bonus && word != null)
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 48,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal:
+                                        widget.speech is NoopWordSpeech
+                                            ? 6
+                                            : 46,
+                                    vertical: 6,
                                   ),
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      word.text,
-                                      key: BrickBreakerKeys.word,
-                                      style: withWeight(
-                                        theme.textTheme.headlineSmall!,
-                                        FontWeight.bold,
-                                      ),
+                                  child: Text(
+                                    word.text,
+                                    key: BrickBreakerKeys.word,
+                                    textAlign: TextAlign.center,
+                                    style: withWeight(
+                                      theme.textTheme.headlineSmall!,
+                                      FontWeight.bold,
                                     ),
                                   ),
                                 )
@@ -294,8 +296,8 @@ class _BrickBreakerGameState extends State<BrickBreakerGame>
                                   style: theme.textTheme.titleMedium,
                                 ),
                               if (bonus && widget.speech is! NoopWordSpeech)
-                                Align(
-                                  alignment: AlignmentDirectional.centerEnd,
+                                PositionedDirectional(
+                                  end: 0,
                                   child: IconButton(
                                     onPressed: _paused ? null : _speak,
                                     tooltip: strings.listen,
@@ -357,7 +359,7 @@ class _BrickBreakerGameState extends State<BrickBreakerGame>
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    strings.brickMove,
+                    bonus ? strings.brickTapToAim : strings.brickMove,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodySmall,
                   ),

@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'match_three_field.dart';
+import 'match_three_hud.dart';
 import 'match_three_run.dart';
 
 export 'match_three_field.dart' show MatchThreeKeys;
@@ -61,6 +62,10 @@ class _MatchThreeGameState extends State<MatchThreeGame>
   late final AnimationController _motion;
   late final AppLifecycleListener _lifecycle;
   final Stopwatch _reading = Stopwatch();
+  final _scroll = ScrollController();
+  final _questionAnchor = GlobalKey();
+  final _feedbackAnchor = GlobalKey();
+  double _boardOffset = 0;
   int? _selected;
   bool _background = false;
   bool _leaving = false;
@@ -85,6 +90,7 @@ class _MatchThreeGameState extends State<MatchThreeGame>
     _abandon();
     _motion.dispose();
     _lifecycle.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -138,6 +144,7 @@ class _MatchThreeGameState extends State<MatchThreeGame>
       _run.answerCorrect ? GameSound.clawWord : GameSound.miss,
     );
     _animate();
+    if (!_run.answerCorrect) _reveal(_feedbackAnchor, MatchThreePhase.feedback);
   }
 
   void _speak() {
@@ -146,12 +153,58 @@ class _MatchThreeGameState extends State<MatchThreeGame>
     }
   }
 
+  void _reveal(GlobalKey target, MatchThreePhase phase) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final anchor = target.currentContext;
+      if (!mounted ||
+          _leaving ||
+          _run.phase != phase ||
+          !_scroll.hasClients ||
+          anchor == null) {
+        return;
+      }
+      // Reveal the choices together. With very large type, reveal the word
+      // first and let the player scroll through the translations at will.
+      final fits =
+          (anchor.size?.height ?? 0) <= _scroll.position.viewportDimension;
+      unawaited(
+        Scrollable.ensureVisible(
+          anchor,
+          alignment: fits ? 1 : 0,
+          alignmentPolicy:
+              fits
+                  ? ScrollPositionAlignmentPolicy.keepVisibleAtEnd
+                  : ScrollPositionAlignmentPolicy.explicit,
+          duration:
+              MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+        ),
+      );
+    });
+  }
+
   void _animate() {
-    final duration = switch (_run.phase) {
-      MatchThreePhase.swapping || MatchThreePhase.reverting => 145,
-      MatchThreePhase.clearing => _run.rowCleared ? 250 : 150,
-      MatchThreePhase.falling => 245,
-      MatchThreePhase.feedback => 900,
+    final int duration = switch (_run.phase) {
+      MatchThreePhase.swapping => 155,
+      MatchThreePhase.reverting => 150,
+      MatchThreePhase.clearing => _run.blastOrigin == null ? 195 : 315,
+      MatchThreePhase.falling =>
+        182 +
+            27 *
+                _run.travel.values.fold<int>(
+                  0,
+                  (rows, travel) => max(rows, travel.rows.abs()),
+                ),
+      MatchThreePhase.feedback =>
+        _run.answerCorrect
+            ? 740
+            : 1600 +
+                min(
+                  3600,
+                  (_run.item?.word.translation.characters.length ?? 0) * 38,
+                ),
       _ => 1,
     };
     final reduced = MediaQuery.disableAnimationsOf(context);
@@ -167,17 +220,44 @@ class _MatchThreeGameState extends State<MatchThreeGame>
     if (status != AnimationStatus.completed || _leaving || !_run.isAnimating) {
       return;
     }
+    final previous = _run.phase;
     _run.advance();
+    if (previous == MatchThreePhase.feedback) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _leaving || !_scroll.hasClients) return;
+        final offset = min(_boardOffset, _scroll.position.maxScrollExtent);
+        if (MediaQuery.disableAnimationsOf(context)) {
+          _scroll.jumpTo(offset);
+        } else {
+          unawaited(
+            _scroll.animateTo(
+              offset,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+            ),
+          );
+        }
+      });
+    }
+    if (_run.phase == MatchThreePhase.clearing &&
+        _run.blastOrigin == null &&
+        previous != MatchThreePhase.feedback) {
+      widget.sounds.play(
+        _run.cascadeDepth > 1 ? GameSound.sliceHot : GameSound.clawCatch,
+      );
+    }
     if (_run.isAnimating) {
       _animate();
       return;
     }
     if (_run.phase == MatchThreePhase.question) {
+      _boardOffset = _scroll.hasClients ? _scroll.offset : 0;
       _reading
         ..reset()
         ..start();
       unawaited(HapticFeedback.lightImpact());
       _speak();
+      _reveal(_questionAnchor, MatchThreePhase.question);
     } else if (_run.phase == MatchThreePhase.finished) {
       _footer = widget.summaryFooter?.call();
       _record = widget.onRoundScore?.call(_run.score);
@@ -196,12 +276,60 @@ class _MatchThreeGameState extends State<MatchThreeGame>
       appBar: AppBar(
         leading: BackButton(onPressed: widget.onExit),
         title: Text(context.strings.matchThree),
+        actions: [
+          if (_run.phase != MatchThreePhase.finished)
+            IconButton(
+              tooltip: context.strings.matchHowTo,
+              onPressed: _run.phase == MatchThreePhase.ready ? _rules : null,
+              icon: const Icon(Icons.help_outline_rounded),
+            ),
+        ],
       ),
       body:
           _run.phase == MatchThreePhase.finished
               ? _summary(context)
               : _board(context),
     ),
+  );
+
+  Future<void> _rules() => showDialog<void>(
+    context: context,
+    builder: (context) {
+      final strings = context.strings;
+      return AlertDialog(
+        title: Text(strings.matchHowTo),
+        scrollable: true,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 12,
+          children: [
+            for (final (icon, line) in [
+              (Icons.swap_horiz_rounded, strings.matchSwapRule),
+              (
+                Icons.diamond_outlined,
+                '${strings.matchHint} ${strings.matchBonus}.',
+              ),
+              (Icons.add_rounded, strings.matchCrossRule),
+            ])
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, color: Theme.of(context).colorScheme.tertiary),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(line)),
+                ],
+              ),
+          ],
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(strings.play),
+          ),
+        ],
+      );
+    },
   );
 
   Widget _board(BuildContext context) {
@@ -213,6 +341,7 @@ class _MatchThreeGameState extends State<MatchThreeGame>
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 440),
           child: SingleChildScrollView(
+            controller: _scroll,
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -231,21 +360,7 @@ class _MatchThreeGameState extends State<MatchThreeGame>
                       ),
                     ),
                   ),
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  spacing: 12,
-                  runSpacing: 4,
-                  children: [
-                    Text(
-                      strings.score(_run.score),
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    Text(
-                      strings.matchMoves(_run.moves),
-                      style: theme.textTheme.titleMedium,
-                    ),
-                  ],
-                ),
+                MatchThreeHud(run: _run),
                 const SizedBox(height: 10),
                 MatchThreeField(
                   key: MatchThreeKeys.field,
@@ -257,7 +372,10 @@ class _MatchThreeGameState extends State<MatchThreeGame>
                 ),
                 const SizedBox(height: 12),
                 if (_run.item case final item?)
-                  _wordPanel(context, item.word)
+                  KeyedSubtree(
+                    key: _questionAnchor,
+                    child: _wordPanel(context, item.word),
+                  )
                 else
                   _status(context),
               ],
@@ -271,21 +389,56 @@ class _MatchThreeGameState extends State<MatchThreeGame>
   Widget _status(BuildContext context) {
     final strings = context.strings;
     final colors = Theme.of(context).colorScheme;
+    final blast = _run.blastOrigin != null;
+    final cascade =
+        _run.cascadeDepth > 1 &&
+        (_run.phase == MatchThreePhase.clearing ||
+            _run.phase == MatchThreePhase.falling);
     final text =
-        _run.rowCleared
-            ? strings.matchCleared
+        blast
+            ? (_run.chargeKind == MatchChargeKind.cross
+                ? strings.matchCrossBurst
+                : strings.matchRowBurst)
             : _run.invalidMove
             ? strings.matchInvalidMove
+            : cascade
+            ? strings.matchCascade(_run.cascadeMultiplier)
             : _run.showGuide
             ? strings.matchGuide
+            : _run.chargeProgress == MatchThreeRun.chargeGoal - 1
+            ? strings.matchLastCharge
             : strings.matchHint;
-    return ArcadePanel(
-      padding: const EdgeInsets.all(12),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.auto_awesome_rounded, color: colors.tertiary),
+          Icon(
+            cascade || blast
+                ? Icons.auto_awesome_rounded
+                : _run.invalidMove
+                ? Icons.undo_rounded
+                : _run.showGuide
+                ? Icons.south_rounded
+                : Icons.diamond_outlined,
+            color: cascade || blast ? colors.tertiary : colors.onSurfaceVariant,
+            size: 20,
+          ),
           const SizedBox(width: 10),
-          Expanded(child: Semantics(liveRegion: true, child: Text(text))),
+          Expanded(
+            child: Semantics(
+              liveRegion: _run.invalidMove,
+              child: Text(
+                text,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color:
+                      cascade || blast
+                          ? colors.tertiary
+                          : colors.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -304,15 +457,33 @@ class _MatchThreeGameState extends State<MatchThreeGame>
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome_rounded, color: colors.tertiary),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colors.tertiary.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    _run.chargeKind == MatchChargeKind.cross
+                        ? Icons.add_rounded
+                        : Icons.swap_horiz_rounded,
+                    color: colors.tertiary,
+                  ),
+                ),
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      strings.matchBonus,
-                      style: theme.textTheme.labelMedium,
+                      _run.chargeKind == MatchChargeKind.cross
+                          ? strings.matchCrossBonus
+                          : strings.matchBonus,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: colors.tertiary,
+                      ),
                     ),
                     Text(
                       word.text,
@@ -337,24 +508,56 @@ class _MatchThreeGameState extends State<MatchThreeGame>
           LayoutBuilder(
             builder: (context, constraints) {
               final options = _run.choices;
+              const gap = 5.0;
+              const horizontalPadding = 9.0;
+              final labelStyle = theme.textTheme.labelLarge!;
+              final available =
+                  (constraints.maxWidth - gap * (options.length - 1)) /
+                      options.length -
+                  2 * horizontalPadding;
+              final label = TextPainter(
+                textDirection: Directionality.of(context),
+                textScaler: MediaQuery.textScalerOf(context),
+                locale: Localizations.maybeLocaleOf(context),
+              );
               final row =
                   constraints.maxWidth >= 220 &&
-                  MediaQuery.textScalerOf(context).scale(14) <= 16 &&
-                  options.every((text) => text.characters.length <= 13);
+                  options.every((text) {
+                    label.text = TextSpan(text: text, style: labelStyle);
+                    label.layout();
+                    return label.width <= available;
+                  });
+              label.dispose();
               final buttons = [
                 for (final choice in options)
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(0, 45),
+                      minimumSize: const Size(0, 48),
+                      textStyle: labelStyle,
+                      foregroundColor: colors.onSurface,
+                      backgroundColor:
+                          feedback && choice == word.translation
+                              ? colors.primaryContainer
+                              : feedback && choice == _run.selectedAnswer
+                              ? colors.errorContainer
+                              : colors.surface,
+                      disabledForegroundColor:
+                          choice == word.translation
+                              ? colors.onPrimaryContainer
+                              : choice == _run.selectedAnswer
+                              ? colors.onErrorContainer
+                              : colors.onSurfaceVariant,
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
+                        horizontal: horizontalPadding,
                         vertical: 7,
                       ),
                       side:
-                          feedback && choice == _run.selectedAnswer
+                          feedback &&
+                                  (choice == word.translation ||
+                                      choice == _run.selectedAnswer)
                               ? BorderSide(
                                 color:
-                                    _run.answerCorrect
+                                    choice == word.translation
                                         ? colors.primary
                                         : colors.error,
                               )
@@ -366,7 +569,7 @@ class _MatchThreeGameState extends State<MatchThreeGame>
               ];
               return row
                   ? Row(
-                    spacing: 5,
+                    spacing: gap,
                     children: [
                       for (final button in buttons) Expanded(child: button),
                     ],
@@ -381,6 +584,7 @@ class _MatchThreeGameState extends State<MatchThreeGame>
           if (feedback) ...[
             const SizedBox(height: 7),
             ArcadeAnswerFeedback(
+              key: _feedbackAnchor,
               correct: _run.answerCorrect,
               child: Semantics(
                 liveRegion: true,

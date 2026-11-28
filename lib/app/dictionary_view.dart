@@ -52,6 +52,8 @@ class DictionaryScreen extends StatefulWidget {
     this.customWords,
     this.onCustomWordsChanged,
     this.onPlayCustom,
+    this.onWordSets,
+    this.onConfusions,
     super.key,
   });
 
@@ -65,6 +67,8 @@ class DictionaryScreen extends StatefulWidget {
   final CustomWordsStore? customWords;
   final VoidCallback? onCustomWordsChanged;
   final FutureOr<void> Function()? onPlayCustom;
+  final Future<void> Function()? onWordSets;
+  final VoidCallback? onConfusions;
   final Map<String, String> gameTitles;
 
   @override
@@ -111,8 +115,8 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
     });
   }
 
-  Future<void> _playCustom() async {
-    await widget.onPlayCustom?.call();
+  Future<void> _openPractice(FutureOr<void> Function() open) async {
+    await open();
     if (mounted) _refresh();
   }
 
@@ -198,13 +202,29 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                           FontWeight.bold,
                         ).copyWith(color: colors.primary),
                       ),
-                      if (widget.customWords != null) ...[
+                      if (widget.customWords != null ||
+                          widget.onWordSets != null) ...[
                         const SizedBox(height: 8),
-                        FilledButton.tonalIcon(
-                          key: const ValueKey('dictionary.add-word'),
-                          onPressed: _addWord,
-                          icon: const Icon(Icons.add_rounded),
-                          label: Text(context.strings.addWord),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            if (widget.customWords != null)
+                              FilledButton.tonalIcon(
+                                key: const ValueKey('dictionary.add-word'),
+                                onPressed: _addWord,
+                                icon: const Icon(Icons.add_rounded),
+                                label: Text(context.strings.addWord),
+                              ),
+                            if (widget.onWordSets case final open?)
+                              OutlinedButton.icon(
+                                onPressed: () => _openPractice(open),
+                                icon: const Icon(
+                                  Icons.collections_bookmark_outlined,
+                                ),
+                                label: Text(context.strings.wordSets),
+                              ),
+                          ],
                         ),
                       ],
                       const SizedBox(height: 12),
@@ -233,9 +253,17 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                         const SizedBox(height: 12),
                         FilledButton.icon(
                           key: const ValueKey('dictionary.play-custom'),
-                          onPressed: _playCustom,
+                          onPressed: () => _openPractice(widget.onPlayCustom!),
                           icon: const Icon(Icons.play_arrow_rounded),
                           label: Text(context.strings.playCustomWords),
+                        ),
+                      ],
+                      if (widget.onConfusions != null) ...[
+                        const SizedBox(height: 8),
+                        TextButton.icon(
+                          icon: const Icon(Icons.swap_horiz_rounded),
+                          label: Text(context.strings.confusedWords),
+                          onPressed: widget.onConfusions,
                         ),
                       ],
                     ],

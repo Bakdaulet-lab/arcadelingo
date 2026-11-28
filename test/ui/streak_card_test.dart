@@ -76,7 +76,9 @@ void main() {
       expect(_flameHeight(tester), greaterThan(spark));
     });
 
-    testWidgets('число дней стоит внутри пламени', (tester) async {
+    testWidgets('рядом со значком показано число засчитанных дней', (
+      tester,
+    ) async {
       await _pump(tester, days: 7);
 
       expect(tester.widget<Text>(find.byKey(flameDigitKey)).data, '7');
@@ -103,7 +105,7 @@ void main() {
   });
 
   group('Подпись', () {
-    testWidgets('без числа: оно уже в пламени', (tester) async {
+    testWidgets('подпись не дублирует счётчик дней', (tester) async {
       await _pump(tester, days: 5);
 
       final caption = tester.widget<Text>(find.byKey(streakCaptionKey)).data!;

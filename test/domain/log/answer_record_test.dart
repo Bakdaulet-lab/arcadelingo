@@ -20,6 +20,8 @@ ReviewEvent _event({
   Duration responseTime = const Duration(seconds: 2),
   Duration timeLimit = const Duration(seconds: 6),
   int hintsUsed = 0,
+  String? selectedAnswer,
+  bool timedOut = false,
   DateTime? at,
   String gameId = 'falling_words',
   String sessionId = 'сессия-1',
@@ -30,6 +32,8 @@ ReviewEvent _event({
     responseTime: responseTime,
     timeLimit: timeLimit,
     hintsUsed: hintsUsed,
+    selectedAnswer: selectedAnswer,
+    timedOut: timedOut,
   ),
   grade: grade,
   at: at ?? DateTime.utc(2026, 8, 25, 21, 30),
@@ -39,6 +43,27 @@ ReviewEvent _event({
 
 void main() {
   group('Что переезжает в запись', () {
+    test('запоминает точный ошибочный выбор, включая диакритику', () {
+      final wrong = AnswerRecord.of(
+        _event(correct: false, selectedAnswer: 'año'),
+      );
+      expect(wrong.selectedAnswer, 'año');
+      expect(
+        wrong,
+        isNot(AnswerRecord.of(_event(correct: false, selectedAnswer: 'ano'))),
+      );
+    });
+
+    test('верный ответ, тайм-аут и пропуск не создают ошибочный выбор', () {
+      for (final event in [
+        _event(selectedAnswer: 'tomar'),
+        _event(correct: false, timedOut: true, selectedAnswer: 'tomar'),
+        _event(correct: false),
+      ]) {
+        expect(AnswerRecord.of(event).selectedAnswer, isNull);
+      }
+    });
+
     test('слово — только id, не сам ReviewItem', () {
       final record = AnswerRecord.of(_event(word: 7));
 

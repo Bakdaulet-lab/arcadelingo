@@ -8,6 +8,8 @@
 // Часы инъектируются переменной: «завтра» здесь — присваивание, а не сутки
 // ожидания.
 
+import 'dart:math';
+
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
@@ -30,6 +32,54 @@ ReviewItem _levelWord(String id, CefrLevel level) =>
     ReviewItem(word: Word(id: id, text: id, translation: id, level: level));
 
 void main() {
+  test(
+    'continuous play cycles through one level and saves each actual answer',
+    () {
+      final untouched = LeitnerCard(box: 4, due: _today);
+      final cards = InMemoryCardStore({'outside': untouched});
+      final session =
+          ok(
+                StartSession(
+                  cards: cards,
+                  streaks: InMemoryStreakStore(),
+                  now: () => _today,
+                  target: 1,
+                )(
+                  items: [
+                    _levelWord('outside', CefrLevel.b2),
+                    for (final id in ['uno', 'dos', 'tres'])
+                      _levelWord(id, CefrLevel.a2),
+                  ],
+                  gameId: 'snake',
+                  level: CefrLevel.a2,
+                  continuousShuffle: Random(17),
+                ),
+              )
+              as BoardReviewSession;
+      String? previous;
+      for (var cycle = 0; cycle < 6; cycle++) {
+        final seen = <String>{};
+        for (var i = 0; i < 3; i++) {
+          final item = session.remainingItems.first;
+          expect(item.word.id, isNot(previous));
+          expect(seen.add(item.word.id), isTrue);
+          previous = item.word.id;
+          if (cycle.isEven) {
+            session.reportPair(item, _correct());
+          } else {
+            expect(session.nextItem(), same(item));
+            session.report(_correct());
+          }
+          expect(session.isFinished, isFalse);
+        }
+        expect(seen, {'uno', 'dos', 'tres'});
+      }
+      expect(session.answered, 18);
+      expect(cards.saves, hasLength(18));
+      expect(cards.saves.last['outside'], untouched);
+    },
+  );
+
   group('Не читается состояние — партии нет', () {
     test('битые карточки: Err с причиной, сессия не создаётся', () {
       final usecase = StartSession(

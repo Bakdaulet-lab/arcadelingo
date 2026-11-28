@@ -25,7 +25,9 @@ import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart
 import 'package:arcadelingo/features/games/match_three/match_three_game.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
 import 'package:arcadelingo/features/games/snake/snake_game.dart';
+import 'package:arcadelingo/features/games/space_word/space_word_game.dart';
 import 'package:arcadelingo/features/games/word_mahjong/word_mahjong_game.dart';
+import 'package:arcadelingo/features/games/word_maze/word_maze_game.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:flutter/material.dart';
 
@@ -47,6 +49,8 @@ class GameLaunch {
     this.onChallengeComplete,
     this.onRoundScore,
     this.speech = const NoopWordSpeech(),
+    this.listeningMode = false,
+    this.continuous = false,
     this.course,
     this.level,
     this.vocabulary = const [],
@@ -75,6 +79,8 @@ class GameLaunch {
   final Widget Function(int score)? onChallengeComplete;
   final Widget Function(int score)? onRoundScore;
   final WordSpeech speech;
+  final bool listeningMode;
+  final bool continuous;
 
   /// Партия дошла до конца: игра показала экран итогов или «жизни кончились».
   ///
@@ -107,6 +113,7 @@ class GameEntry {
     this.instruction,
     this.challenge,
     this.tracksRoundScore = false,
+    this.roundLimit,
   });
 
   /// Идентификатор в событиях ответа.
@@ -123,6 +130,7 @@ class GameEntry {
   final String? instruction;
   final ArcadeChallenge? challenge;
   final bool tracksRoundScore;
+  final int? roundLimit;
 
   ArcadeChallenge? get challengeRecordMode =>
       tracksRoundScore ? challenge : null;
@@ -135,6 +143,7 @@ class GameEntry {
     'match_three' => strings.matchThree,
     'word_mahjong' => strings.wordMahjong,
     'snake' => strings.snake,
+    'word_maze' => strings.wordMaze,
     _ => title,
   };
 
@@ -146,6 +155,8 @@ class GameEntry {
     'match_three' => strings.matchInstruction,
     'word_mahjong' => strings.mahjongInstruction,
     'snake' => strings.snakeInstruction,
+    'word_maze' => strings.mazeInstruction,
+    'space_word' => strings.spaceWordInstruction,
     _ => instruction,
   };
 
@@ -219,8 +230,28 @@ const snakeEntry = GameEntry(
   id: 'snake',
   title: 'Змейка',
   build: _buildSnake,
+  challenge: ArcadeChallenge.continuous,
   artwork: 'assets/images/home/snake.webp',
   instruction: 'Поймай яблоко с нужным переводом',
+  tracksRoundScore: true,
+);
+
+const wordMazeEntry = GameEntry(
+  id: 'word_maze',
+  title: 'Лабиринт',
+  build: _buildWordMaze,
+  challenge: ArcadeChallenge.continuous,
+  artwork: 'assets/images/home/word-maze.webp',
+  instruction: 'Проведи курьера к воротам с нужным словом',
+  tracksRoundScore: true,
+);
+
+const spaceWordEntry = GameEntry(
+  id: 'space_word',
+  title: 'Space Word',
+  build: _buildSpaceWord,
+  artwork: 'assets/images/home/space-word.webp',
+  roundLimit: SpaceWordGame.maxWaves,
   tracksRoundScore: true,
 );
 
@@ -236,10 +267,30 @@ const List<GameEntry> wordarcadeGames = [
   matchThreeEntry,
   wordMahjongEntry,
   snakeEntry,
+  wordMazeEntry,
+  spaceWordEntry,
 ];
+
+Widget _buildSpaceWord(GameLaunch launch) => SpaceWordGame(
+  session: launch.session,
+  course: launch.course,
+  level: launch.level,
+  vocabulary: launch.vocabulary,
+  sounds: launch.sounds,
+  summaryFooter: launch.summaryFooter,
+  onRoundScore: launch.onRoundScore,
+  mistakeCount: launch.mistakeCount,
+  onReviewMistakes: launch.onReviewMistakes,
+  onPlayAgain: launch.onPlayAgain,
+  onExit: launch.onExit,
+  onRoundOver: launch.onRoundOver,
+);
 
 Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
   session: launch.session,
+  listeningMode: launch.listeningMode,
+  speech: launch.speech,
+  studyLanguage: launch.course?.studyLanguage ?? 'en',
   summaryFooter:
       launch.onChallengeComplete == null ? launch.summaryFooter : null,
   onChallengeComplete: launch.onChallengeComplete,
@@ -322,7 +373,25 @@ Widget _buildWordMahjong(GameLaunch launch) => WordMahjongGame(
 );
 
 Widget _buildSnake(GameLaunch launch) => SnakeGame(
+  continuous: launch.continuous,
   session: launch.session as BoardReviewSession,
+  vocabulary: launch.vocabulary.toList(growable: false),
+  course: launch.course,
+  level: launch.level,
+  speech: launch.speech,
+  sounds: launch.sounds,
+  summaryFooter: launch.summaryFooter,
+  onRoundScore: launch.onRoundScore,
+  onPlayAgain: launch.onPlayAgain,
+  onExit: launch.onExit,
+  onRoundOver: launch.onRoundOver,
+  mistakeCount: launch.mistakeCount,
+  onReviewMistakes: launch.onReviewMistakes,
+);
+
+Widget _buildWordMaze(GameLaunch launch) => WordMazeGame(
+  continuous: launch.continuous,
+  session: launch.session,
   vocabulary: launch.vocabulary.toList(growable: false),
   course: launch.course,
   level: launch.level,

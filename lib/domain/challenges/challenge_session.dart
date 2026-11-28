@@ -1,12 +1,14 @@
 import 'dart:math';
 
 import '../review/review_contract.dart';
+import '../review/word_choices.dart';
 
 enum ArcadeChallenge {
   sprint(null),
   streak(15),
   claw(3),
-  brick(3);
+  brick(3),
+  continuous(null);
 
   const ArcadeChallenge(this.wordLimit);
   final int? wordLimit;
@@ -48,13 +50,7 @@ class ChallengeSession implements ReviewSession {
     if (_pending) throw StateError('Report the current challenge word first');
     if (isFinished) return null;
     if (_index == _pool.length) {
-      final previous = _pool.last;
-      _pool.shuffle(_random);
-      if (_pool.length > 1 && identical(_pool.first, previous)) {
-        final replacement = 1 + _random.nextInt(_pool.length - 1);
-        _pool[0] = _pool[replacement];
-        _pool[replacement] = previous;
-      }
+      shuffleWordCycle(_pool, _random, previous: _pool.last);
       _index = 0;
     }
     _pending = true;

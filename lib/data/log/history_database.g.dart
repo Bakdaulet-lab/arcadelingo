@@ -132,6 +132,17 @@ class $AnswersTable extends Answers with TableInfo<$AnswersTable, Answer> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _selectedAnswerMeta = const VerificationMeta(
+    'selectedAnswer',
+  );
+  @override
+  late final GeneratedColumn<String> selectedAnswer = GeneratedColumn<String>(
+    'selected_answer',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -145,6 +156,7 @@ class $AnswersTable extends Answers with TableInfo<$AnswersTable, Answer> {
     hintsUsed,
     gameId,
     sessionId,
+    selectedAnswer,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -242,6 +254,15 @@ class $AnswersTable extends Answers with TableInfo<$AnswersTable, Answer> {
     } else if (isInserting) {
       context.missing(_sessionIdMeta);
     }
+    if (data.containsKey('selected_answer')) {
+      context.handle(
+        _selectedAnswerMeta,
+        selectedAnswer.isAcceptableOrUnknown(
+          data['selected_answer']!,
+          _selectedAnswerMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -307,6 +328,10 @@ class $AnswersTable extends Answers with TableInfo<$AnswersTable, Answer> {
             DriftSqlType.string,
             data['${effectivePrefix}session_id'],
           )!,
+      selectedAnswer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}selected_answer'],
+      ),
     );
   }
 
@@ -354,6 +379,9 @@ class Answer extends DataClass implements Insertable<Answer> {
 
   /// Партия, внутри которой случился ответ.
   final String sessionId;
+
+  /// Выбранный неверный вариант. Для прежних ответов он неизвестен.
+  final String? selectedAnswer;
   const Answer({
     required this.id,
     required this.wordId,
@@ -366,6 +394,7 @@ class Answer extends DataClass implements Insertable<Answer> {
     required this.hintsUsed,
     required this.gameId,
     required this.sessionId,
+    this.selectedAnswer,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -385,6 +414,9 @@ class Answer extends DataClass implements Insertable<Answer> {
     map['hints_used'] = Variable<int>(hintsUsed);
     map['game_id'] = Variable<String>(gameId);
     map['session_id'] = Variable<String>(sessionId);
+    if (!nullToAbsent || selectedAnswer != null) {
+      map['selected_answer'] = Variable<String>(selectedAnswer);
+    }
     return map;
   }
 
@@ -401,6 +433,10 @@ class Answer extends DataClass implements Insertable<Answer> {
       hintsUsed: Value(hintsUsed),
       gameId: Value(gameId),
       sessionId: Value(sessionId),
+      selectedAnswer:
+          selectedAnswer == null && nullToAbsent
+              ? const Value.absent()
+              : Value(selectedAnswer),
     );
   }
 
@@ -423,6 +459,7 @@ class Answer extends DataClass implements Insertable<Answer> {
       hintsUsed: serializer.fromJson<int>(json['hintsUsed']),
       gameId: serializer.fromJson<String>(json['gameId']),
       sessionId: serializer.fromJson<String>(json['sessionId']),
+      selectedAnswer: serializer.fromJson<String?>(json['selectedAnswer']),
     );
   }
   @override
@@ -442,6 +479,7 @@ class Answer extends DataClass implements Insertable<Answer> {
       'hintsUsed': serializer.toJson<int>(hintsUsed),
       'gameId': serializer.toJson<String>(gameId),
       'sessionId': serializer.toJson<String>(sessionId),
+      'selectedAnswer': serializer.toJson<String?>(selectedAnswer),
     };
   }
 
@@ -457,6 +495,7 @@ class Answer extends DataClass implements Insertable<Answer> {
     int? hintsUsed,
     String? gameId,
     String? sessionId,
+    Value<String?> selectedAnswer = const Value.absent(),
   }) => Answer(
     id: id ?? this.id,
     wordId: wordId ?? this.wordId,
@@ -469,6 +508,8 @@ class Answer extends DataClass implements Insertable<Answer> {
     hintsUsed: hintsUsed ?? this.hintsUsed,
     gameId: gameId ?? this.gameId,
     sessionId: sessionId ?? this.sessionId,
+    selectedAnswer:
+        selectedAnswer.present ? selectedAnswer.value : this.selectedAnswer,
   );
   Answer copyWithCompanion(AnswersCompanion data) {
     return Answer(
@@ -488,6 +529,10 @@ class Answer extends DataClass implements Insertable<Answer> {
       hintsUsed: data.hintsUsed.present ? data.hintsUsed.value : this.hintsUsed,
       gameId: data.gameId.present ? data.gameId.value : this.gameId,
       sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      selectedAnswer:
+          data.selectedAnswer.present
+              ? data.selectedAnswer.value
+              : this.selectedAnswer,
     );
   }
 
@@ -504,7 +549,8 @@ class Answer extends DataClass implements Insertable<Answer> {
           ..write('limitMicros: $limitMicros, ')
           ..write('hintsUsed: $hintsUsed, ')
           ..write('gameId: $gameId, ')
-          ..write('sessionId: $sessionId')
+          ..write('sessionId: $sessionId, ')
+          ..write('selectedAnswer: $selectedAnswer')
           ..write(')'))
         .toString();
   }
@@ -522,6 +568,7 @@ class Answer extends DataClass implements Insertable<Answer> {
     hintsUsed,
     gameId,
     sessionId,
+    selectedAnswer,
   );
   @override
   bool operator ==(Object other) =>
@@ -537,7 +584,8 @@ class Answer extends DataClass implements Insertable<Answer> {
           other.limitMicros == this.limitMicros &&
           other.hintsUsed == this.hintsUsed &&
           other.gameId == this.gameId &&
-          other.sessionId == this.sessionId);
+          other.sessionId == this.sessionId &&
+          other.selectedAnswer == this.selectedAnswer);
 }
 
 class AnswersCompanion extends UpdateCompanion<Answer> {
@@ -552,6 +600,7 @@ class AnswersCompanion extends UpdateCompanion<Answer> {
   final Value<int> hintsUsed;
   final Value<String> gameId;
   final Value<String> sessionId;
+  final Value<String?> selectedAnswer;
   const AnswersCompanion({
     this.id = const Value.absent(),
     this.wordId = const Value.absent(),
@@ -564,6 +613,7 @@ class AnswersCompanion extends UpdateCompanion<Answer> {
     this.hintsUsed = const Value.absent(),
     this.gameId = const Value.absent(),
     this.sessionId = const Value.absent(),
+    this.selectedAnswer = const Value.absent(),
   });
   AnswersCompanion.insert({
     this.id = const Value.absent(),
@@ -577,6 +627,7 @@ class AnswersCompanion extends UpdateCompanion<Answer> {
     required int hintsUsed,
     required String gameId,
     required String sessionId,
+    this.selectedAnswer = const Value.absent(),
   }) : wordId = Value(wordId),
        atUtcMicros = Value(atUtcMicros),
        localDay = Value(localDay),
@@ -599,6 +650,7 @@ class AnswersCompanion extends UpdateCompanion<Answer> {
     Expression<int>? hintsUsed,
     Expression<String>? gameId,
     Expression<String>? sessionId,
+    Expression<String>? selectedAnswer,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -612,6 +664,7 @@ class AnswersCompanion extends UpdateCompanion<Answer> {
       if (hintsUsed != null) 'hints_used': hintsUsed,
       if (gameId != null) 'game_id': gameId,
       if (sessionId != null) 'session_id': sessionId,
+      if (selectedAnswer != null) 'selected_answer': selectedAnswer,
     });
   }
 
@@ -627,6 +680,7 @@ class AnswersCompanion extends UpdateCompanion<Answer> {
     Value<int>? hintsUsed,
     Value<String>? gameId,
     Value<String>? sessionId,
+    Value<String?>? selectedAnswer,
   }) {
     return AnswersCompanion(
       id: id ?? this.id,
@@ -640,6 +694,7 @@ class AnswersCompanion extends UpdateCompanion<Answer> {
       hintsUsed: hintsUsed ?? this.hintsUsed,
       gameId: gameId ?? this.gameId,
       sessionId: sessionId ?? this.sessionId,
+      selectedAnswer: selectedAnswer ?? this.selectedAnswer,
     );
   }
 
@@ -681,6 +736,9 @@ class AnswersCompanion extends UpdateCompanion<Answer> {
     if (sessionId.present) {
       map['session_id'] = Variable<String>(sessionId.value);
     }
+    if (selectedAnswer.present) {
+      map['selected_answer'] = Variable<String>(selectedAnswer.value);
+    }
     return map;
   }
 
@@ -697,7 +755,8 @@ class AnswersCompanion extends UpdateCompanion<Answer> {
           ..write('limitMicros: $limitMicros, ')
           ..write('hintsUsed: $hintsUsed, ')
           ..write('gameId: $gameId, ')
-          ..write('sessionId: $sessionId')
+          ..write('sessionId: $sessionId, ')
+          ..write('selectedAnswer: $selectedAnswer')
           ..write(')'))
         .toString();
   }
@@ -1126,6 +1185,7 @@ typedef $$AnswersTableCreateCompanionBuilder =
       required int hintsUsed,
       required String gameId,
       required String sessionId,
+      Value<String?> selectedAnswer,
     });
 typedef $$AnswersTableUpdateCompanionBuilder =
     AnswersCompanion Function({
@@ -1140,6 +1200,7 @@ typedef $$AnswersTableUpdateCompanionBuilder =
       Value<int> hintsUsed,
       Value<String> gameId,
       Value<String> sessionId,
+      Value<String?> selectedAnswer,
     });
 
 class $$AnswersTableFilterComposer
@@ -1204,6 +1265,11 @@ class $$AnswersTableFilterComposer
 
   ColumnFilters<String> get sessionId => $composableBuilder(
     column: $table.sessionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get selectedAnswer => $composableBuilder(
+    column: $table.selectedAnswer,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1271,6 +1337,11 @@ class $$AnswersTableOrderingComposer
     column: $table.sessionId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get selectedAnswer => $composableBuilder(
+    column: $table.selectedAnswer,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AnswersTableAnnotationComposer
@@ -1320,6 +1391,11 @@ class $$AnswersTableAnnotationComposer
 
   GeneratedColumn<String> get sessionId =>
       $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<String> get selectedAnswer => $composableBuilder(
+    column: $table.selectedAnswer,
+    builder: (column) => column,
+  );
 }
 
 class $$AnswersTableTableManager
@@ -1361,6 +1437,7 @@ class $$AnswersTableTableManager
                 Value<int> hintsUsed = const Value.absent(),
                 Value<String> gameId = const Value.absent(),
                 Value<String> sessionId = const Value.absent(),
+                Value<String?> selectedAnswer = const Value.absent(),
               }) => AnswersCompanion(
                 id: id,
                 wordId: wordId,
@@ -1373,6 +1450,7 @@ class $$AnswersTableTableManager
                 hintsUsed: hintsUsed,
                 gameId: gameId,
                 sessionId: sessionId,
+                selectedAnswer: selectedAnswer,
               ),
           createCompanionCallback:
               ({
@@ -1387,6 +1465,7 @@ class $$AnswersTableTableManager
                 required int hintsUsed,
                 required String gameId,
                 required String sessionId,
+                Value<String?> selectedAnswer = const Value.absent(),
               }) => AnswersCompanion.insert(
                 id: id,
                 wordId: wordId,
@@ -1399,6 +1478,7 @@ class $$AnswersTableTableManager
                 hintsUsed: hintsUsed,
                 gameId: gameId,
                 sessionId: sessionId,
+                selectedAnswer: selectedAnswer,
               ),
           withReferenceMapper:
               (p0) =>

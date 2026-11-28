@@ -140,8 +140,14 @@ class NinjaRun {
 
   /// Сколько держать подсветку по [verdict]. Таймаут — тот же промах:
   /// верный перевод надо успеть прочитать.
-  Duration get revealTime =>
-      _verdict == Verdict.correct ? correctReveal : wrongReveal;
+  Duration get revealTime {
+    if (_verdict == Verdict.correct) return correctReveal;
+    final word = _item?.word;
+    final length =
+        (word?.text.runes.length ?? 0) + (word?.translation.runes.length ?? 0);
+    return wrongReveal +
+        Duration(milliseconds: ((length - 28) * 35).clamp(0, 4500));
+  }
 
   int get lives => _lives;
 
@@ -183,14 +189,18 @@ class NinjaRun {
   /// и ничего не докладывает — этим держится «ровно один report() на
   /// слово»: следующая точка того же свайпа приходит в ещё не
   /// перестроенное дерево, и остановить её может только состояние.
-  bool slice(int index, Duration elapsed) {
+  bool slice(int index, Duration elapsed, {bool untimed = false}) {
     if (_phase != NinjaPhase.flying) return false;
     if (index < 0 || index >= _options.length) {
       throw ArgumentError.value(index, 'index', 'нет такого объекта в волне');
     }
     _checkElapsed(elapsed);
     _slicedIndex = index;
-    _finish(index == _correctIndex ? Verdict.correct : Verdict.wrong, elapsed);
+    _finish(
+      index == _correctIndex ? Verdict.correct : Verdict.wrong,
+      elapsed,
+      untimed: untimed,
+    );
     return true;
   }
 
@@ -251,7 +261,13 @@ class NinjaRun {
     _item = item;
     _options = List.unmodifiable([for (final i in order) variants[i]]);
     _correctIndex = order.indexOf(0);
-    _timeLimit = _flightTime();
+    final length = _options.fold(
+      item.word.text.runes.length,
+      (sum, label) => sum + label.runes.length,
+    );
+    _timeLimit =
+        _flightTime() +
+        Duration(milliseconds: ((length - 52) * 37).clamp(0, 6000));
     _verdict = null;
     _slicedIndex = null;
     _nearMiss = false;
@@ -271,14 +287,15 @@ class NinjaRun {
   /// Фаза меняется первой строкой — до доклада и до любого `setState` в
   /// виджете: пока она не сменилась, следующая точка того же свайпа ещё
   /// считалась бы резом.
-  void _finish(Verdict verdict, Duration elapsed) {
+  void _finish(Verdict verdict, Duration elapsed, {bool untimed = false}) {
     _phase = NinjaPhase.reveal;
     _verdict = verdict;
     _answeredCount++;
     if (verdict == Verdict.correct) {
       // Бонус только верному резу: промах и таймаут бывают сколь угодно
       // поздними, и награждать за вышедшее время игра не станет.
-      _nearMiss = isNearMiss(responseTime: elapsed, timeLimit: _timeLimit);
+      _nearMiss =
+          !untimed && isNearMiss(responseTime: elapsed, timeLimit: _timeLimit);
       final earned = pointsPerCombo * scoreMultiplier;
       // Целочисленно и от очков с множителем, а не от базовых десяти:
       // умножение идёт до деления, поэтому остатка здесь не бывает вовсе.
@@ -299,6 +316,7 @@ class NinjaRun {
       elapsed: elapsed,
       selectedIndex: _slicedIndex,
       timedOut: verdict == Verdict.timeout,
+      untimed: untimed,
     );
   }
 
@@ -312,12 +330,13 @@ class NinjaRun {
     required Duration elapsed,
     int? selectedIndex,
     bool timedOut = false,
+    bool untimed = false,
   }) {
     _session.report(
       ReviewOutcome(
         correct: correct,
         responseTime: elapsed,
-        timeLimit: _timeLimit,
+        timeLimit: untimed ? Duration.zero : _timeLimit,
         selectedAnswer: selectedIndex == null ? null : _options[selectedIndex],
         timedOut: timedOut,
       ),

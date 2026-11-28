@@ -1,8 +1,11 @@
+import 'dart:math';
+
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/session/leitner_review_session.dart';
 import 'package:arcadelingo/features/games/snake/snake_field.dart';
 import 'package:arcadelingo/features/games/snake/snake_game.dart';
 import 'package:arcadelingo/features/games/snake/snake_run.dart';
+import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -56,6 +59,68 @@ void main() {
   });
 
   for (final theme in Brightness.values) {
+    testWidgets(
+      'continuous play shows the next word after a wrong apple ($theme)',
+      (tester) async {
+        final session = LeitnerReviewSession.start(
+          items: [for (final word in words) ReviewItem(word: word)],
+          cards: {},
+          target: 2,
+          now: () => DateTime(2026, 11, 24),
+          onCardsChanged: (_) {},
+        );
+        var finishes = 0;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: wordarcadeTheme(brightness: theme),
+            home: SnakeGame(
+              session: session,
+              vocabulary: words,
+              continuous: true,
+              onPlayAgain: () {},
+              onExit: () {},
+              onRoundOver: () => finishes++,
+              seed: Iterable<int>.generate(
+                30,
+              ).firstWhere((seed) => Random(seed).nextInt(3) == 0),
+            ),
+          ),
+        );
+        final field = find.byKey(SnakeKeys.field);
+        final run = tester.widget<SnakeField>(field).run;
+        final eaten =
+            run.apples.singleWhere((a) => a.cell == (x: 8, y: 6)).word;
+        expect(eaten, words.last);
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+        await tester.pump();
+        await tester.pump(run.pace);
+        await tester.pump(run.pace);
+        expect(session.answered, 1);
+        expect(run.phase, SnakePhase.moving);
+        expect(
+          tester.widget<Text>(find.byKey(SnakeKeys.word)).data,
+          words.last.translation,
+        );
+        expect(
+          find.text(
+            tester
+                .element(field)
+                .strings
+                .snakeAnswer(words.first, eaten, correct: false),
+          ),
+          findsOneWidget,
+        );
+        expect(find.byKey(SnakeKeys.next), findsNothing);
+        await tester.tap(find.byKey(SnakeKeys.pause));
+        await tester.pump();
+        await tester.tap(find.byKey(SnakeKeys.finish));
+        await tester.pumpAndSettle();
+        expect(finishes, 1);
+        expect(find.byKey(SnakeKeys.summary), findsOneWidget);
+        expect(session.answered, 1);
+      },
+    );
+
     testWidgets('rapid turns and pause keep continuous motion ($theme)', (
       tester,
     ) async {

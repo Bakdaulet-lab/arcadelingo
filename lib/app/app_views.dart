@@ -37,9 +37,13 @@ abstract final class AppKeys {
 
   static const Key challenge = Key('app.challenge');
   static const Key stories = Key('app.stories');
+  static const Key orderKitchen = Key('app.order-kitchen');
+  static const Key candyDelivery = Key('app.candy-delivery');
   static const Key recall = Key('app.recall');
 
   static const Key learn = Key('app.learn');
+  static const Key listening = Key('app.listening');
+  static const Key dailyWord = Key('app.daily-word');
 
   static const Key gameSelector = Key('app.game_selector');
 
@@ -104,7 +108,11 @@ class PlayView extends StatelessWidget {
     this.onLearn,
     this.onChallenge,
     this.onStories,
+    this.onOrderKitchen,
+    this.onCandyDelivery,
     this.onRecall,
+    this.onListening,
+    this.onDailyWord,
     this.ritual,
     this.week,
     this.games = const [],
@@ -149,7 +157,11 @@ class PlayView extends StatelessWidget {
   final VoidCallback? onLearn;
   final VoidCallback? onChallenge;
   final VoidCallback? onStories;
+  final VoidCallback? onOrderKitchen;
+  final VoidCallback? onCandyDelivery;
   final VoidCallback? onRecall;
+  final VoidCallback? onListening;
+  final VoidCallback? onDailyWord;
 
   /// Вход на «Источники».
   ///
@@ -242,7 +254,11 @@ class PlayView extends StatelessWidget {
                   ],
                   if (ritual case final view?) ...[
                     SizedBox(height: paper ? 10 : 16),
-                    HomeRitualCard(ritual: view, week: week),
+                    HomeRitualCard(
+                      key: ValueKey(course?.id),
+                      ritual: view,
+                      week: week,
+                    ),
                   ],
                   if (course case final selected?) ...[
                     SizedBox(height: paper ? 10 : 14),
@@ -309,6 +325,16 @@ class PlayView extends StatelessWidget {
                         ),
                       ),
                   ],
+                  if (onDailyWord != null) ...[
+                    SizedBox(height: paper ? 10 : 14),
+                    _StudyModeTile(
+                      key: AppKeys.dailyWord,
+                      icon: Icons.calendar_month_outlined,
+                      title: context.strings.dailyWord,
+                      hint: context.strings.dailyWordHomeHint,
+                      onTap: onDailyWord!,
+                    ),
+                  ],
                   if (onStories != null) ...[
                     SizedBox(height: paper ? 10 : 14),
                     _StudyModeTile(
@@ -327,6 +353,36 @@ class PlayView extends StatelessWidget {
                       title: context.strings.activeRecall,
                       hint: context.strings.recallHomeHint,
                       onTap: onRecall!,
+                    ),
+                  ],
+                  if (onListening != null) ...[
+                    SizedBox(height: paper ? 8 : 10),
+                    _StudyModeTile(
+                      key: AppKeys.listening,
+                      icon: Icons.headphones_rounded,
+                      title: context.strings.listeningMode,
+                      hint: context.strings.listeningModeHint,
+                      onTap: onListening!,
+                    ),
+                  ],
+                  if (onOrderKitchen != null) ...[
+                    SizedBox(height: paper ? 8 : 10),
+                    _StudyModeTile(
+                      key: AppKeys.orderKitchen,
+                      icon: Icons.local_cafe_outlined,
+                      title: context.strings.orderKitchen,
+                      hint: context.strings.orderKitchenHint,
+                      onTap: onOrderKitchen!,
+                    ),
+                  ],
+                  if (onCandyDelivery != null) ...[
+                    SizedBox(height: paper ? 8 : 10),
+                    _StudyModeTile(
+                      key: AppKeys.candyDelivery,
+                      icon: Icons.content_cut_rounded,
+                      title: context.strings.candyDelivery,
+                      hint: context.strings.candyHomeHint,
+                      onTap: onCandyDelivery!,
                     ),
                   ],
                   if (games.length > 1) ...[
@@ -435,58 +491,133 @@ class _HomeActions extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final paper = theme.brightness == Brightness.light;
+    final strings = context.strings;
+    final compact = !paper && onChallenge != null && onLearn != null;
+    final continuous = game?.challenge == ArcadeChallenge.continuous;
+    final challengeIcon = Icon(
+      continuous ? Icons.all_inclusive_rounded : Icons.emoji_events_outlined,
+      size: compact ? 17 : null,
+      color: compact ? colors.primary : null,
+    );
+    final challengeLabel = Text(
+      continuous ? strings.continuousMode : strings.challenge,
+      textAlign: TextAlign.center,
+    );
+    final compactStyle = OutlinedButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      backgroundColor: colors.surfaceContainerHighest,
+      foregroundColor: colors.onSurface,
+      side: BorderSide(color: colors.outline.withValues(alpha: .68)),
+      textStyle: withWeight(
+        theme.textTheme.labelLarge!.copyWith(fontSize: 13),
+        FontWeight.w600,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
     final challenge =
         onChallenge == null
             ? null
-            : TextButton.icon(
+            : !compact
+            ? TextButton.icon(
               key: AppKeys.challenge,
               onPressed: onChallenge,
-              icon: const Icon(Icons.emoji_events_outlined),
-              label: Text(
-                context.strings.challenge,
-                textAlign: TextAlign.center,
-              ),
+              icon: challengeIcon,
+              label: challengeLabel,
               style: TextButton.styleFrom(
                 minimumSize: Size(0, paper ? 44 : 48),
               ),
+            )
+            : OutlinedButton.icon(
+              key: AppKeys.challenge,
+              onPressed: onChallenge,
+              icon: challengeIcon,
+              label: challengeLabel,
+              style: compactStyle,
             );
+    final learn =
+        onLearn == null
+            ? null
+            : OutlinedButton.icon(
+              key: AppKeys.learn,
+              onPressed: onLearn,
+              icon: Icon(
+                Icons.school_outlined,
+                size: compact ? 17 : null,
+                color: compact ? colors.primary : null,
+              ),
+              label: Text(strings.learnAndPlay, textAlign: TextAlign.center),
+              style:
+                  !compact
+                      ? OutlinedButton.styleFrom(
+                        minimumSize: Size.fromHeight(paper ? 46 : 52),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        textStyle: withWeight(
+                          theme.textTheme.titleMedium!,
+                          FontWeight.w600,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(paper ? 12 : 18),
+                        ),
+                      )
+                      : compactStyle,
+            );
+    final playLabel = Text(
+      ritual == null
+          ? strings.play
+          : ritualCallToAction(ritual!, strings: strings),
+      textAlign: TextAlign.center,
+    );
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (!paper && game != null && level != null) ...[
           Text(
-            '${game!.titleFor(context.strings)} · ${level!.name.toUpperCase()}',
+            '${game!.titleFor(strings)} · ${level!.name.toUpperCase()}',
             textAlign: TextAlign.center,
             style: withWeight(
-              theme.textTheme.labelLarge!,
+              compact
+                  ? theme.textTheme.labelMedium!
+                  : theme.textTheme.labelLarge!,
               FontWeight.w500,
             ).copyWith(color: colors.onSurfaceVariant),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: compact ? 7 : 10),
         ],
-        if (!paper && challenge != null) challenge,
-        if (onLearn != null) ...[
-          OutlinedButton.icon(
-            key: AppKeys.learn,
-            onPressed: onLearn,
-            icon: const Icon(Icons.school_outlined),
-            label: Text(
-              context.strings.learnAndPlay,
-              textAlign: TextAlign.center,
-            ),
-            style: OutlinedButton.styleFrom(
-              minimumSize: Size.fromHeight(paper ? 46 : 52),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              textStyle: withWeight(
-                theme.textTheme.titleMedium!,
-                FontWeight.w600,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(paper ? 12 : 18),
-              ),
-            ),
+        if (compact) ...[
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stack =
+                  constraints.maxWidth < 260 ||
+                  MediaQuery.textScalerOf(context).scale(16) > 22;
+              if (stack) {
+                return Column(
+                  spacing: 7,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [challenge!, learn!],
+                );
+              }
+              return IntrinsicHeight(
+                child: Row(
+                  spacing: 7,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(flex: 9, child: challenge!),
+                    Expanded(flex: 11, child: learn!),
+                  ],
+                ),
+              );
+            },
           ),
+          const SizedBox(height: 7),
+        ],
+        if (!paper && !compact && challenge != null) challenge,
+        if (!compact && learn != null) ...[
+          learn,
           SizedBox(height: paper ? 7 : 10),
         ],
         ArcadePressFeedback(
@@ -496,32 +627,44 @@ class _HomeActions extends StatelessWidget {
                 key: AppKeys.play,
                 onPressed: onPlay,
                 style: FilledButton.styleFrom(
-                  minimumSize: Size.fromHeight(paper ? 48 : 56),
+                  minimumSize: Size.fromHeight(
+                    paper ? 48 : (compact ? 50 : 56),
+                  ),
                   padding: EdgeInsets.symmetric(
                     horizontal: 20,
-                    vertical: paper ? 12 : 14,
+                    vertical: paper ? 12 : (compact ? 8 : 14),
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(paper ? 12 : 20),
+                    borderRadius: BorderRadius.circular(
+                      paper ? 12 : (compact ? 15 : 20),
+                    ),
                   ),
                   textStyle: withWeight(
-                    paper
-                        ? theme.textTheme.titleMedium!
-                        : theme.textTheme.titleLarge!,
+                    compact
+                        ? theme.textTheme.titleMedium!.copyWith(fontSize: 17)
+                        : (paper
+                            ? theme.textTheme.titleMedium!
+                            : theme.textTheme.titleLarge!),
                     FontWeight.bold,
                   ),
                 ),
-                child: Text(
-                  ritual == null
-                      ? context.strings.play
-                      : ritualCallToAction(ritual!, strings: context.strings),
-                  textAlign: TextAlign.center,
-                ),
+                child:
+                    !compact
+                        ? playLabel
+                        : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          spacing: 8,
+                          children: [
+                            const Icon(Icons.play_arrow_rounded, size: 18),
+                            Flexible(child: playLabel),
+                          ],
+                        ),
               ),
         ),
         if (paper && challenge != null) challenge,
         if (!paper) ...[
-          const SizedBox(height: 12),
+          SizedBox(height: compact ? 10 : 12),
           _HomeNavigation(onProgress: onProgress, onSettings: onSettings),
         ],
       ],

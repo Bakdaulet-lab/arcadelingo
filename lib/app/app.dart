@@ -20,7 +20,9 @@ import 'dart:math';
 import 'package:arcadelingo/app/app_ports.dart';
 import 'package:arcadelingo/app/app_views.dart';
 import 'package:arcadelingo/app/attribution_view.dart';
+import 'package:arcadelingo/app/confused_words_view.dart';
 import 'package:arcadelingo/app/courses.dart';
+import 'package:arcadelingo/app/daily_word_route.dart';
 import 'package:arcadelingo/app/dictionary_view.dart';
 import 'package:arcadelingo/app/games.dart';
 import 'package:arcadelingo/app/learning_views.dart';
@@ -28,14 +30,19 @@ import 'package:arcadelingo/app/progress_view.dart';
 import 'package:arcadelingo/app/settings_view.dart';
 import 'package:arcadelingo/app/story_game.dart';
 import 'package:arcadelingo/app/story_views.dart';
+import 'package:arcadelingo/app/word_sets_view.dart';
+import 'package:arcadelingo/domain/candy_delivery/candy_orders.dart';
 import 'package:arcadelingo/domain/challenges/challenge_session.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/events/app_event.dart';
+import 'package:arcadelingo/domain/kitchen/kitchen_shift.dart';
+import 'package:arcadelingo/domain/learning/confused_words.dart';
 import 'package:arcadelingo/domain/learning/custom_review_items.dart';
 import 'package:arcadelingo/domain/learning/learning_plan.dart';
 import 'package:arcadelingo/domain/learning/mistake_review_observer.dart';
 import 'package:arcadelingo/domain/ports/challenge_records.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
+import 'package:arcadelingo/domain/ports/word_sets_store.dart';
 import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/reminders/reminder_policy.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
@@ -48,6 +55,8 @@ import 'package:arcadelingo/domain/streak/streak.dart';
 import 'package:arcadelingo/domain/streak/streak_view.dart';
 import 'package:arcadelingo/domain/usecases/count_played_day.dart';
 import 'package:arcadelingo/domain/usecases/start_session.dart';
+import 'package:arcadelingo/features/games/candy_delivery/candy_delivery_game.dart';
+import 'package:arcadelingo/features/games/order_kitchen/order_kitchen_game.dart';
 import 'package:arcadelingo/features/recall/recall_screen.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_choice_dialog.dart';
@@ -248,12 +257,13 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   String? _selectedGameId;
   CefrLevel _selectedLevel = CefrLevel.a1;
   List<SituationStory> _stories = const [];
   bool _preparingLearning = false;
   bool _recallOpen = false;
+  bool _orderGameOpen = false;
   bool _selectingCourse = false;
   bool _selectingChallenge = false;
 
@@ -301,6 +311,28 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  List<Word> _dictionaryVocabulary(CefrLevel level) => [
+    for (final item in widget.items)
+      if (item.word.level == level) item.word,
+    ...?widget.ports.customWords?.load(level),
+  ];
+
+  Future<void> _openConfusedWords(
+    CefrLevel level, {
+    Future<List<ConfusedWordPair>>? initialPairs,
+  }) => Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder:
+          (_) => ConfusedWordsScreen(
+            course: widget.course,
+            level: level,
+            answers: widget.ports.answers,
+            vocabulary: _dictionaryVocabulary(level),
+            initialPairs: initialPairs,
+          ),
+    ),
+  );
+
   void _loadStories() {
     _stories = buildSituationStories(
       course: widget.course,
@@ -308,6 +340,99 @@ class _HomeScreenState extends State<HomeScreen> {
       courseItems: widget.items,
       random: Random(widget.now().microsecondsSinceEpoch),
     );
+  }
+
+  Future<void> _openDailyWord() {
+    final route = DailyWordRoute(
+      course: widget.course,
+      level: _selectedLevel,
+      vocabulary: [for (final item in widget.items) item.word],
+      store: widget.ports.dailyWord!,
+      now: widget.now,
+    );
+    return Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute<void>(builder: (_) => route));
+  }
+
+  Future<void> _openKitchen() {
+    final course = widget.course;
+    return _openOrderGame(
+      'order_kitchen',
+      (seed, finish, replay, exit) => OrderKitchenGame(
+        course: course,
+        seed: seed,
+        onShiftComplete: finish,
+        onReplay: replay,
+        onExit: exit,
+      ),
+    );
+  }
+
+  Future<void> _openCandyDelivery() {
+    final course = widget.course;
+    final level = _selectedLevel;
+    return _openOrderGame(
+      'candy_delivery',
+      (seed, finish, replay, exit) => CandyDeliveryGame(
+        course: course,
+        level: level,
+        seed: seed,
+        onComplete: finish,
+        onReplay: replay,
+        onExit: exit,
+      ),
+    );
+  }
+
+  Future<void> _openOrderGame(
+    String gameId,
+    Widget Function(
+      int seed,
+      VoidCallback finish,
+      VoidCallback replay,
+      VoidCallback exit,
+    )
+    buildGame,
+  ) async {
+    if (_orderGameOpen) return;
+    final course = widget.course;
+    final seed = widget.now().microsecondsSinceEpoch;
+    final navigator = Navigator.of(context);
+    var shift = 1;
+    var finished = false;
+    String sessionId() => '$gameId.$seed.$shift';
+    _orderGameOpen = true;
+    _record(AppEventKind.roundStart, sessionId: sessionId());
+    try {
+      await navigator.push<void>(
+        MaterialPageRoute<void>(
+          builder:
+              (_) => buildGame(
+                seed,
+                () {
+                  if (finished) return;
+                  finished = true;
+                  _finishRound(sessionId());
+                },
+                () {
+                  shift++;
+                  finished = false;
+                  _record(AppEventKind.roundStart, sessionId: sessionId());
+                },
+                navigator.pop,
+              ),
+        ),
+      );
+    } finally {
+      _orderGameOpen = false;
+      if (mounted && widget.course.id == course.id) {
+        if (!finished) {
+          _record(AppEventKind.roundAbandon, sessionId: sessionId());
+        }
+        _refreshRitual();
+      }
+    }
   }
 
   Future<void> _openStories() async {
@@ -411,6 +536,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// станет на тапе «Играть», а экран ошибки при входе в приложение
   /// появлялся бы раньше, чем человек о чём-либо попросил.
   StreakView? _ritual;
+  StreakDay? _ritualDay;
   int _weekRequest = 0;
 
   /// Семь дней недели для полосы; null — журнал ещё читается.
@@ -428,6 +554,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final failure = _stateFailure;
+    final fallingWords =
+        widget.games
+            .where((game) => game.id == fallingWordsEntry.id)
+            .firstOrNull;
     return failure == null
         ? PlayView(
           onPlay: _hasWordsForLevel ? _start : null,
@@ -438,14 +568,35 @@ class _HomeScreenState extends State<HomeScreen> {
           onChallenge:
               _hasWordsForLevel &&
                       !_preparingLearning &&
-                      widget.ports.challengeRecords != null &&
                       widget.games.isNotEmpty &&
-                      _selectedGame.challenge != null
+                      _selectedGame.challenge != null &&
+                      (widget.ports.challengeRecords != null ||
+                          _selectedGame.challenge == ArcadeChallenge.continuous)
                   ? _openChallenge
                   : null,
           onProgress: _openProgress,
           onStories: _stories.isEmpty ? null : _openStories,
+          onOrderKitchen:
+              kitchenAvailableFor(widget.course, _selectedLevel)
+                  ? _openKitchen
+                  : null,
+          onCandyDelivery:
+              _hasWordsForLevel &&
+                      candyAvailableFor(widget.course, _selectedLevel)
+                  ? _openCandyDelivery
+                  : null,
           onRecall: _hasWordsForLevel ? _openRecall : null,
+          onDailyWord:
+              widget.ports.dailyWord != null &&
+                      widget.items.any(
+                        (item) => item.word.level == _selectedLevel,
+                      )
+                  ? _openDailyWord
+                  : null,
+          onListening:
+              _hasWordsForLevel && fallingWords != null
+                  ? () => _start(chosenGame: fallingWords, listeningMode: true)
+                  : null,
           onSettings: _openSettings,
           onSources: _openSources,
           ritual: _ritual,
@@ -519,6 +670,17 @@ class _HomeScreenState extends State<HomeScreen> {
                               MaterialPageRoute<void>(
                                 builder:
                                     (context) => DictionaryScreen(
+                                      onConfusions:
+                                          () => _openConfusedWords(
+                                            _selectedLevel,
+                                          ),
+                                      onWordSets: switch (widget
+                                          .ports
+                                          .wordSets) {
+                                        final store? =>
+                                          () => _openWordSets(store),
+                                        null => null,
+                                      },
                                       items: widget.items,
                                       level: _selectedLevel,
                                       course: widget.course,
@@ -553,26 +715,86 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _chooseCustomGame() async {
+  Future<void> _openWordSets(WordSetsStore store) {
+    final level = _selectedLevel;
+    final vocabulary = _dictionaryVocabulary(level);
+    return Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder:
+            (_) => WordSetsScreen(
+              store: store,
+              course: widget.course,
+              level: level,
+              vocabulary: vocabulary,
+              onPlay: (set) {
+                final items = buildWordSetReviewItems(
+                  vocabulary: vocabulary,
+                  wordIds: set.wordIds,
+                  level: level,
+                );
+                return _choosePracticeGame(
+                  level: level,
+                  items: items,
+                  vocabulary: items,
+                  optionKeyPrefix: 'set-game',
+                );
+              },
+            ),
+      ),
+    );
+  }
+
+  Future<void> _chooseCustomGame() {
+    final level = _selectedLevel;
+    final personal = _customItems(level);
+    return _choosePracticeGame(
+      level: level,
+      items: personal,
+      vocabulary: _levelItems(level, personal),
+      optionKeyPrefix: 'custom-game',
+    );
+  }
+
+  Future<void> _choosePracticeGame({
+    required CefrLevel level,
+    required List<ReviewItem> items,
+    required List<ReviewItem> vocabulary,
+    required String optionKeyPrefix,
+  }) async {
+    if (items.isEmpty || widget.games.isEmpty) return;
     final strings = context.strings;
-    final game = await showArcadeChoice<GameEntry>(
+    final choice = await showArcadeChoice<({GameEntry game, bool listening})>(
       context,
       title: strings.chooseGame,
-      choices: widget.games,
-      selected: _selectedGame,
-      label: (game) => game.titleFor(strings),
-      optionKey: (game) => ValueKey('custom-game.${game.id}'),
+      choices: [
+        for (final game in widget.games) ...[
+          (game: game, listening: false),
+          if (game.id == fallingWordsEntry.id) (game: game, listening: true),
+        ],
+      ],
+      selected: (game: _selectedGame, listening: false),
+      label:
+          (choice) =>
+              choice.listening
+                  ? '${choice.game.titleFor(strings)} · ${strings.listeningMode}'
+                  : choice.game.titleFor(strings),
+      optionKey:
+          (choice) => ValueKey(
+            '$optionKeyPrefix.${choice.game.id}${choice.listening ? '.listening' : ''}',
+          ),
     );
-    if (game != null && mounted) {
-      final level = _selectedLevel;
+    if (choice != null && mounted) {
       var replay = false;
       do {
         replay = false;
         await _startRound(
-          learning: false,
-          game: game,
+          game: choice.game,
           level: level,
-          replayPersonal: () => replay = true,
+          items: items,
+          vocabulary: vocabulary,
+          practiceAll: true,
+          listeningMode: choice.listening,
+          onReplay: () => replay = true,
         );
       } while (mounted && replay);
     }
@@ -694,6 +916,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _selectFirstAvailableLevel();
     _refreshRitual();
     // «Открыл приложение» — здесь, а не в `main.dart`: оттуда событие не
@@ -702,6 +925,21 @@ class _HomeScreenState extends State<HomeScreen> {
     // события не будет. Битый сид — дефект сборки, играть всё равно нечем.
     _record(AppEventKind.appOpen);
     _refreshReminder();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        StreakDay.of(widget.now()) != _ritualDay) {
+      _refreshRitual();
+      _refreshReminder();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   List<CefrLevel> get _availableLevels {
@@ -749,6 +987,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// чём-либо попросил, было бы хуже.
   void _refreshRitual() {
     final today = StreakDay.of(widget.now());
+    _ritualDay = today;
     final state = switch (widget.ports.streaks.load()) {
       Ok(:final value) => value,
       Err() => null,
@@ -817,15 +1056,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final game = _selectedGame;
     final mode = game.challenge;
     final records = widget.ports.challengeRecords;
-    if (mode == null || records == null) return;
+    if (mode == null) return;
 
     final course = widget.course;
-    final items = _levelItems(_selectedLevel, _customItems(_selectedLevel));
     final key = (gameId: game.id, courseId: course.id, level: _selectedLevel);
-    final best = records.load(key, mode: game.challengeRecordMode);
+    final best = records?.load(key, mode: game.challengeRecordMode);
+    bool? start;
     _selectingChallenge = true;
     try {
-      final start = await showChallengeDialog(
+      start = await showChallengeDialog(
         context,
         game: game,
         mode: mode,
@@ -833,11 +1072,15 @@ class _HomeScreenState extends State<HomeScreen> {
         level: key.level,
         best: best,
       );
-      if (start == true && mounted) {
-        _launchChallenge(game, mode, key, items, records);
-      }
     } finally {
       _selectingChallenge = false;
+    }
+    if (start != true || !mounted) return;
+    if (mode == ArcadeChallenge.continuous) {
+      _start(chosenGame: game, chosenLevel: key.level, continuous: true);
+    } else if (records != null) {
+      final items = _levelItems(key.level, _customItems(key.level));
+      _launchChallenge(game, mode, key, items, records);
     }
   }
 
@@ -887,6 +1130,8 @@ class _HomeScreenState extends State<HomeScreen> {
   /// проверяется без дерева виджетов.
   void _start({
     bool learning = false,
+    bool listeningMode = false,
+    bool continuous = false,
     GameEntry? chosenGame,
     CefrLevel? chosenLevel,
   }) {
@@ -899,29 +1144,47 @@ class _HomeScreenState extends State<HomeScreen> {
     if (widget.games.isEmpty) {
       throw StateError('реестр игр пуст: запускать нечего');
     }
+    final game = chosenGame ?? _selectedGame;
+    final level = chosenLevel ?? _selectedLevel;
+    final items = _levelItems(level, _customItems(level));
     unawaited(
       _startRound(
         learning: learning,
-        game: chosenGame ?? _selectedGame,
-        level: chosenLevel ?? _selectedLevel,
+        listeningMode: listeningMode,
+        continuous: continuous,
+        practiceAll: listeningMode,
+        game: game,
+        level: level,
+        items: items,
+        vocabulary: items,
+        onReplay:
+            () => _start(
+              learning: learning,
+              listeningMode: listeningMode,
+              continuous: continuous,
+              chosenGame: game,
+              chosenLevel: level,
+            ),
       ),
     );
   }
 
   Future<void> _startRound({
-    required bool learning,
     required GameEntry game,
     required CefrLevel level,
-    VoidCallback? replayPersonal,
+    required List<ReviewItem> items,
+    required List<ReviewItem> vocabulary,
+    required VoidCallback onReplay,
+    bool learning = false,
+    bool practiceAll = false,
+    bool listeningMode = false,
+    bool continuous = false,
   }) async {
     // Последнее состояние, приехавшее из сессии: по нему считается строка
     // итогов. До первого ответа это то, что прочитано из хранилища.
     var latest = <String, LeitnerCard>{};
-    final customOnly = replayPersonal != null;
-    final personal = _customItems(level);
-    if (customOnly && personal.isEmpty) return;
-    final vocabulary = _levelItems(level, personal);
-    var roundItems = customOnly ? personal : vocabulary;
+    var roundItems = items;
+    final target = game.roundLimit ?? sessionTarget;
     if (learning) {
       switch (widget.ports.cards.load()) {
         case Err(:final failure):
@@ -934,7 +1197,7 @@ class _HomeScreenState extends State<HomeScreen> {
             cards: value,
             level: level,
             now: widget.now(),
-            target: sessionTarget,
+            target: target,
           );
           roundItems = plan.selectedItems;
           if (plan.newWords.isNotEmpty) {
@@ -962,12 +1225,14 @@ class _HomeScreenState extends State<HomeScreen> {
       cards: widget.ports.cards,
       streaks: widget.ports.streaks,
       now: widget.now,
-      target: sessionTarget,
+      target: target,
       answerLog: widget.ports.answers,
     )(
       items: roundItems,
       level: level,
-      practiceAll: customOnly,
+      practiceAll: practiceAll,
+      continuousShuffle:
+          continuous ? Random(widget.now().microsecondsSinceEpoch) : null,
       gameId: game.id,
       onCardsChanged: (changed) => latest = changed,
       observers: [mistakes],
@@ -984,17 +1249,13 @@ class _HomeScreenState extends State<HomeScreen> {
         await _play(
           game,
           value,
-          () => customOnly ? '' : _footer(latest, vocabulary),
+          () => practiceAll || continuous ? '' : _footer(latest, vocabulary),
           vocabulary: vocabulary,
           mistakes: mistakes,
           level: level,
-          onReplay:
-              replayPersonal ??
-              () => _start(
-                learning: learning,
-                chosenGame: game,
-                chosenLevel: level,
-              ),
+          onReplay: onReplay,
+          listeningMode: listeningMode,
+          continuous: continuous,
         );
       case Err(:final failure):
         setState(() => _stateFailure = failure);
@@ -1023,6 +1284,8 @@ class _HomeScreenState extends State<HomeScreen> {
     required CefrLevel level,
     required VoidCallback onReplay,
     required List<ReviewItem> vocabulary,
+    bool listeningMode = false,
+    bool continuous = false,
     Widget Function(int score)? onChallengeComplete,
   }) async {
     final navigator = Navigator.of(context);
@@ -1057,6 +1320,8 @@ class _HomeScreenState extends State<HomeScreen> {
             (context) => game.build(
               GameLaunch(
                 session: session,
+                listeningMode: listeningMode,
+                continuous: continuous,
                 course: widget.course,
                 level: level,
                 vocabulary: vocabulary.map((item) => item.word),
@@ -1072,16 +1337,40 @@ class _HomeScreenState extends State<HomeScreen> {
                             game.tracksRoundScore &&
                             records != null
                         ? (score) => ChallengeRecordLine(
-                          best: records.submit(recordKey, score),
+                          best: records.submit(
+                            recordKey,
+                            score,
+                            mode:
+                                continuous ? ArcadeChallenge.continuous : null,
+                          ),
                         )
                         : null,
                 mistakeCount: () => mistakes.mistakes.length,
                 onReviewMistakes: () {
+                  late final pairs = loadConfusedWordPairs(
+                    answers: widget.ports.answers,
+                    vocabulary: _dictionaryVocabulary(level),
+                    level: level,
+                  );
                   unawaited(
                     navigator.push(
                       MaterialPageRoute<void>(
                         builder:
                             (context) => MistakesReviewScreen(
+                              confusionPairs:
+                                  mistakes.mistakes.isEmpty ? null : pairs,
+                              onConfusions:
+                                  () => _openConfusedWords(
+                                    level,
+                                    initialPairs: pairs,
+                                  ),
+                              onPractisePair:
+                                  (pair) => openConfusionPractice(
+                                    context,
+                                    pair,
+                                    course: widget.course,
+                                    returnLabel: context.strings.reviewMistakes,
+                                  ),
                               words: mistakes.mistakes,
                               outcomes: mistakes.outcomes,
                               level: level,
@@ -1096,14 +1385,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   finished = true;
                   _finishRound(sessionId);
                 },
-                // Выключённый звук приходит в игру нулевым объектом,
-                // а не флагом: «выключено» тогда значит «никто не
-                // зовёт», а не «зовут и молчат». Настройка читается в
-                // момент запуска партии — ровно как очередь слов.
+                // Вход «На слух» — явный запрос на произношение, как в словаре.
+                // Звуковые эффекты подчиняются настройке во всех режимах.
                 sounds:
                     settings.soundOn ? widget.ports.sounds : const NoopSounds(),
                 speech:
-                    settings.soundOn
+                    listeningMode || settings.soundOn
                         ? widget.ports.speech
                         : const NoopWordSpeech(),
               ),

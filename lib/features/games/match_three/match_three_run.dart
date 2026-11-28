@@ -5,6 +5,8 @@ import 'package:arcadelingo/domain/review/review_contract.dart';
 
 enum MatchGem { aqua, rose, amber, plum, mint, sapphire, charged }
 
+enum MatchChargeKind { row, cross }
+
 enum MatchThreePhase {
   ready,
   swapping,
@@ -23,10 +25,15 @@ typedef GemTravel = ({int rows, int columns});
 class MatchThreeRun {
   MatchThreeRun(this.session, this._random)
     : phase =
-          session.isFinished ? MatchThreePhase.finished : MatchThreePhase.ready;
+          session.isFinished
+              ? MatchThreePhase.finished
+              : MatchThreePhase.ready {
+    _openBoard();
+  }
 
   static const size = 6;
   static const moveLimit = 18;
+  static const chargeGoal = 3;
   static const guideFrom = 9;
   static const guideTo = 15;
   static const _colors = [
@@ -37,56 +44,21 @@ class MatchThreeRun {
     MatchGem.mint,
     MatchGem.sapphire,
   ];
-  static const _startingPattern = [
-    0,
-    4,
-    3,
-    5,
-    2,
-    1,
-    1,
-    2,
-    4,
-    0,
-    3,
-    5,
-    5,
-    0,
-    0,
-    1,
-    0,
-    4,
-    3,
-    2,
-    1,
-    4,
-    5,
-    0,
-    4,
-    5,
-    2,
-    3,
-    0,
-    1,
-    2,
-    3,
-    4,
-    5,
-    1,
-    4,
-  ];
-
   final ReviewSession session;
   final Random _random;
-  final _cells = <MatchGem?>[
-    for (final index in _startingPattern) _colors[index],
-  ];
+  final _cells = List<MatchGem?>.filled(size * size, null);
   late final List<MatchGem?> cells = UnmodifiableListView(_cells);
   MatchThreePhase phase;
   int moves = moveLimit;
   int score = 0;
   int correctCount = 0;
   int bestCombo = 0;
+  int chargeProgress = 0;
+  MatchChargeKind? chargeKind;
+  int cascadeDepth = 0;
+  int? blastOrigin;
+
+  int get cascadeMultiplier => cascadeDepth.clamp(1, 3);
   int _combo = 0;
   ReviewItem? item;
   List<String> choices = const [];
@@ -131,6 +103,7 @@ class MatchThreeRun {
     _from = from;
     _to = to;
     _canCharge = true;
+    cascadeDepth = 0;
     invalidMove = false;
     rowCleared = false;
     _swapCells(from, to);
@@ -186,10 +159,18 @@ class MatchThreeRun {
         travel = const {};
         phase = MatchThreePhase.ready;
       case MatchThreePhase.clearing:
-        if (_scoreClear) score += 10 * clearing.length;
+        if (_scoreClear) {
+          final multiplier = blastOrigin == null ? cascadeMultiplier : 1;
+          score += 10 * clearing.length * multiplier;
+        }
         for (final index in clearing) {
+          if (_cells[index] == MatchGem.charged) {
+            chargeKind = null;
+            chargeProgress = 0;
+          }
           _cells[index] = index == _createCharge ? MatchGem.charged : null;
         }
+        blastOrigin = null;
         _createCharge = null;
         clearing = const {};
         _dropGems();
@@ -203,10 +184,16 @@ class MatchThreeRun {
       case MatchThreePhase.feedback:
         final index = _cells.indexOf(MatchGem.charged);
         final start = row(index) * size;
+        cascadeDepth = 0;
         rowCleared = answerCorrect;
         if (rowCleared) {
+          blastOrigin = index;
           score += 60;
-          clearing = {for (var i = 0; i < size; i++) start + i};
+          clearing = {
+            for (var i = 0; i < size; i++) start + i,
+            if (chargeKind == MatchChargeKind.cross)
+              for (var i = 0; i < size; i++) column(index) + i * size,
+          };
         } else {
           clearing = {index};
         }
@@ -221,13 +208,17 @@ class MatchThreeRun {
   }
 
   void _swapCells(int a, int b) {
-    final gem = _cells[a];
-    _cells[a] = _cells[b];
-    _cells[b] = gem;
+    _exchange(a, b);
     travel = {
       a: (rows: row(b) - row(a), columns: column(b) - column(a)),
       b: (rows: row(a) - row(b), columns: column(a) - column(b)),
     };
+  }
+
+  void _exchange(int a, int b) {
+    final gem = _cells[a];
+    _cells[a] = _cells[b];
+    _cells[b] = gem;
   }
 
   List<List<int>> _matches() {
@@ -252,15 +243,32 @@ class MatchThreeRun {
   }
 
   void _prepareMatches(List<List<int>> lines) {
-    if (_canCharge) {
-      for (final group in lines) {
-        if (group.length < 4) continue;
-        _createCharge = group.contains(_to) ? _to : group[group.length ~/ 2];
-        _canCharge = false;
-        break;
+    cascadeDepth++;
+    final matched = <int>{};
+    int? junction;
+    var longest = lines.first;
+    for (final line in lines) {
+      if (line.length > longest.length) longest = line;
+      for (final index in line) {
+        if (!matched.add(index)) junction ??= index;
       }
     }
-    clearing = {for (final line in lines) ...line};
+    final cross = junction != null || longest.length >= 5;
+    if (_canCharge) {
+      chargeProgress += lines.length;
+      if (cross || longest.length >= 4 || chargeProgress >= chargeGoal) {
+        chargeProgress = chargeGoal;
+        chargeKind = cross ? MatchChargeKind.cross : MatchChargeKind.row;
+        _createCharge =
+            junction ??
+            (longest.contains(_to) ? _to : longest[longest.length ~/ 2]);
+        _canCharge = false;
+      }
+    } else if (cross && chargeKind == MatchChargeKind.row) {
+      // A later cascade can upgrade the same word crystal before it opens.
+      chargeKind = MatchChargeKind.cross;
+    }
+    clearing = matched;
     travel = const {};
     _scoreClear = true;
     phase = MatchThreePhase.clearing;
@@ -296,26 +304,29 @@ class MatchThreeRun {
     travel = const {};
     if (_cells.contains(MatchGem.charged)) {
       final next = session.nextItem();
-      if (next != null) {
-        item = next;
-        selectedAnswer = null;
-        final correct = next.word.translation;
-        final distractors =
-            next.distractors
-                .where((value) => value.trim().isNotEmpty && value != correct)
-                .toSet()
-                .toList()
-              ..shuffle(_random);
-        choices = [correct, ...distractors.take(2)]..shuffle(_random);
-        phase = MatchThreePhase.question;
+      if (next == null) {
+        phase = MatchThreePhase.finished;
         return;
       }
+      item = next;
+      selectedAnswer = null;
+      final correct = next.word.translation;
+      final distractors =
+          next.distractors
+              .where((value) => value.trim().isNotEmpty && value != correct)
+              .toSet()
+              .toList()
+            ..shuffle(_random);
+      choices = [correct, ...distractors.take(2)]..shuffle(_random);
+      phase = MatchThreePhase.question;
+      return;
     }
     if (moves == 0 || session.isFinished) {
       phase = MatchThreePhase.finished;
       return;
     }
     if (!_hasLegalMove()) _replaceBoard();
+    cascadeDepth = 0;
     phase = MatchThreePhase.ready;
   }
 
@@ -323,13 +334,9 @@ class MatchThreeRun {
     for (var a = 0; a < _cells.length; a++) {
       for (final b in [a + 1, a + size]) {
         if (!adjacent(a, b) || _cells[a] == _cells[b]) continue;
-        final first = _cells[a];
-        final second = _cells[b];
-        _cells[a] = second;
-        _cells[b] = first;
+        _exchange(a, b);
         final match = _matches().isNotEmpty;
-        _cells[a] = first;
-        _cells[b] = second;
+        _exchange(a, b);
         if (match) return true;
       }
     }
@@ -338,16 +345,37 @@ class MatchThreeRun {
 
   void _replaceBoard() {
     do {
-      for (var i = 0; i < _cells.length; i++) {
-        final options = [..._colors];
-        if (column(i) >= 2 && _cells[i - 1] == _cells[i - 2]) {
-          options.remove(_cells[i - 1]);
-        }
-        if (row(i) >= 2 && _cells[i - size] == _cells[i - 2 * size]) {
-          options.remove(_cells[i - size]);
-        }
-        _cells[i] = options[_random.nextInt(options.length)];
-      }
+      _fillBoard();
     } while (!_hasLegalMove());
+  }
+
+  /// Keep a teachable first move without replaying the same puzzle every round.
+  void _openBoard() {
+    while (true) {
+      _fillBoard();
+      final guideGem = _cells[guideFrom];
+      if (_cells[guideTo] == guideGem) continue;
+      for (final offset in const [-2, -1, 1]) {
+        _cells[guideTo + offset] = guideGem;
+      }
+      if (_matches().isNotEmpty) continue;
+      _exchange(guideFrom, guideTo);
+      final matches = _matches();
+      _exchange(guideFrom, guideTo);
+      if (matches.length == 1 && matches.single.length == 4) return;
+    }
+  }
+
+  void _fillBoard() {
+    for (var i = 0; i < _cells.length; i++) {
+      final options = [..._colors];
+      if (column(i) >= 2 && _cells[i - 1] == _cells[i - 2]) {
+        options.remove(_cells[i - 1]);
+      }
+      if (row(i) >= 2 && _cells[i - size] == _cells[i - 2 * size]) {
+        options.remove(_cells[i - size]);
+      }
+      _cells[i] = options[_random.nextInt(options.length)];
+    }
   }
 }

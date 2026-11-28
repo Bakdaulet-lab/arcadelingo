@@ -31,6 +31,7 @@ class AnswerRecord {
     required this.hintsUsed,
     required this.gameId,
     required this.sessionId,
+    this.selectedAnswer,
   });
 
   /// Проекция события ответа в строку журнала.
@@ -49,6 +50,10 @@ class AnswerRecord {
     hintsUsed: event.outcome.hintsUsed,
     gameId: event.gameId,
     sessionId: event.sessionId,
+    selectedAnswer:
+        event.outcome.correct || event.outcome.timedOut
+            ? null
+            : event.outcome.selectedAnswer,
   );
 
   /// Слово, по которому пришёл ответ. Само слово в журнале не лежит: оно
@@ -91,6 +96,9 @@ class AnswerRecord {
   /// Партия, внутри которой случился ответ.
   final String sessionId;
 
+  /// Текст ошибочного выбора. У пропусков и записей до схемы v3 его нет.
+  final String? selectedAnswer;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -104,7 +112,8 @@ class AnswerRecord {
           timeLimit == other.timeLimit &&
           hintsUsed == other.hintsUsed &&
           gameId == other.gameId &&
-          sessionId == other.sessionId;
+          sessionId == other.sessionId &&
+          selectedAnswer == other.selectedAnswer;
 
   @override
   int get hashCode => Object.hash(
@@ -118,6 +127,7 @@ class AnswerRecord {
     hintsUsed,
     gameId,
     sessionId,
+    selectedAnswer,
   );
 
   @override

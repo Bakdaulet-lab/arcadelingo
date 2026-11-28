@@ -30,6 +30,7 @@ library;
 import 'dart:async';
 import 'dart:math';
 
+import 'package:arcadelingo/domain/ports/word_speech.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/paper_rules.dart';
@@ -56,10 +57,16 @@ class FallingWordsGame extends StatefulWidget {
     this.onChallengeComplete,
     this.mistakeCount,
     this.onReviewMistakes,
-  });
+    this.listeningMode = false,
+    this.speech = const NoopWordSpeech(),
+    this.studyLanguage = 'en',
+  }) : assert(!listeningMode || session is BoardReviewSession);
 
   final ReviewSession session;
   final int? seed;
+  final bool listeningMode;
+  final WordSpeech speech;
+  final String studyLanguage;
 
   /// «Ещё раз»: новую сессию строит хост — игра не знает ни про хранилище,
   /// ни про размер сессии.
@@ -126,6 +133,13 @@ class _FallingWordsGameState extends State<FallingWordsGame>
   /// одной строкой.
   bool _windingUp = false;
 
+  late bool _listening = widget.listeningMode;
+  bool _leaving = false;
+  bool _speaking = false;
+  bool _heard = false;
+  SpeechResult? _audioProblem;
+  int _audioRequest = 0;
+
   /// Ответ хоста на «что дальше», взятый на входе в итоги. Не в `build`:
   /// на итогах ничего не меняется, а хост считал бы очередь заново на
   /// каждую перестройку экрана.
@@ -139,6 +153,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
       session: widget.session,
       random: Random(widget.seed),
       sprint: widget.onChallengeComplete != null,
+      previewBeforeAnswer: widget.listeningMode,
     );
     _windUp = AnimationController(
       vsync: this,
@@ -160,8 +175,14 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     _lifecycle = AppLifecycleListener(onStateChange: _onLifecycle);
     _run.start();
     if (_run.phase == FallingPhase.falling) {
-      _windingUp = true;
-      _windUp.forward(from: 0);
+      if (_listening) {
+        final lifecycle = WidgetsBinding.instance.lifecycleState;
+        _paused = lifecycle != null && lifecycle != AppLifecycleState.resumed;
+        _prepareListeningWord();
+      } else {
+        _windingUp = true;
+        _windUp.forward(from: 0);
+      }
     }
   }
 
@@ -170,7 +191,13 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     // Игрок ушёл с невыданным ответом: доложить неответ, пока контроллер
     // ещё жив и по нему можно прочитать прожитое время. Сам страж фазы —
     // внутри abandon().
-    _run.abandon(_elapsed);
+    if (!_listening || (_heard && _audioProblem == null)) {
+      _run.abandon(_elapsed);
+    }
+    if (_speaking) {
+      _audioRequest++;
+      unawaited(widget.speech.stop());
+    }
     _lifecycle.dispose();
     _windUp.dispose();
     _fall.dispose();
@@ -192,7 +219,47 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     _fall.forward(from: 0);
   }
 
+  void _prepareListeningWord() {
+    _heard = false;
+    _audioProblem = null;
+    _fall.duration = _run.timeLimit;
+    _fall.value = 0;
+    if (!_paused) unawaited(_speakWord());
+  }
+
+  Future<void> _speakWord() async {
+    if (_paused || _run.phase != FallingPhase.falling) return;
+    final request = ++_audioRequest;
+    _fall.stop();
+    setState(() {
+      _speaking = true;
+      _audioProblem = null;
+    });
+    final result = await widget.speech.speak(_run.item!.word.text);
+    if (!mounted || request != _audioRequest) return;
+    setState(() {
+      _speaking = false;
+      if (result == SpeechResult.completed) {
+        _heard = true;
+      } else {
+        _audioProblem = result;
+      }
+    });
+    if (_audioProblem == null) unawaited(_fall.forward());
+  }
+
+  void _useText() {
+    if (_paused || _audioProblem == null) return;
+    setState(() {
+      _listening = false;
+      _audioProblem = null;
+    });
+    _startFall();
+  }
+
   void _startReveal() {
+    // Listening reveals advance on a tap, so even long spellings can be read.
+    if (_listening) return;
     final duration = _run.revealTime;
     if (duration == Duration.zero) {
       _advance();
@@ -233,7 +300,9 @@ class _FallingWordsGameState extends State<FallingWordsGame>
       widget.onRoundOver?.call();
     }
     setState(() {});
-    if (_run.phase == FallingPhase.falling) _startFall();
+    if (_run.phase == FallingPhase.falling) {
+      _listening ? _prepareListeningWord() : _startFall();
+    }
   }
 
   void _onTap(int index) {
@@ -242,7 +311,10 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     // здесь тап перезапустил бы контроллеры и снял бы паузу де-факто —
     // при `_paused == true` игра поехала бы дальше, а ядру ушёл бы
     // таймаут по слову, которого никто не видел.
-    if (_paused) return;
+    if (_paused ||
+        (_listening && (_speaking || !_heard || _audioProblem != null))) {
+      return;
+    }
     // 700 мс взвода даны на то, чтобы найти кнопки, а не ответить: тап в
     // этом окне — рефлекс, а не ответ (`SPEC.md`).
     if (_windingUp) return;
@@ -279,6 +351,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
   }
 
   void _onLifecycle(AppLifecycleState state) {
+    if (_leaving) return;
     if (state == AppLifecycleState.resumed) {
       _resume();
     } else {
@@ -295,6 +368,10 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     _windUp.stop();
     _fall.stop();
     _reveal.stop();
+    if (_speaking) {
+      _audioRequest++;
+      unawaited(widget.speech.stop());
+    }
   }
 
   void _resume() {
@@ -302,10 +379,15 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     _paused = false;
     switch (_run.phase) {
       case FallingPhase.falling:
+        if (_listening && _audioProblem != null) return;
+        if (_listening && (_speaking || !_heard)) {
+          unawaited(_speakWord());
+          return;
+        }
         // Взвод пауз не боится: 700 мс не сгорают в фоне.
         _windingUp ? _windUp.forward() : _fall.forward();
       case FallingPhase.reveal:
-        _reveal.forward();
+        if (!_listening) _reveal.forward();
       case FallingPhase.over:
       case FallingPhase.nothingToday:
         break;
@@ -332,7 +414,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     // Масштаб текста зажат сверху: при системном увеличении втрое четыре
     // кнопки по две строки и HUD на телефонный экран уже не помещаются, и
     // выбор стоит между обрезанным текстом и уменьшенным. Здесь — второе.
-    return MediaQuery.withClampedTextScaling(
+    final page = MediaQuery.withClampedTextScaling(
       maxScaleFactor: 2,
       child: Scaffold(
         body: switch (_run.phase) {
@@ -356,12 +438,24 @@ class _FallingWordsGameState extends State<FallingWordsGame>
         },
       ),
     );
+    if (!widget.listeningMode) return page;
+    return PopScope<void>(
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) return;
+        _leaving = true;
+        _pause();
+        _speaking = false;
+      },
+      child: page,
+    );
   }
 
   Widget _playfield(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final juicy = !MediaQuery.disableAnimationsOf(context);
     final revealing = _run.phase == FallingPhase.reveal;
+    final questionIndex = _run.answeredCount - (revealing ? 1 : 0);
+    final answersKey = ValueKey((_run.item?.word.id, questionIndex));
     // Во время падения меняется только поле. Счётчики строим один раз на слово.
     final stableHud =
         !revealing && _run.sprintRemaining == null
@@ -373,31 +467,52 @@ class _FallingWordsGameState extends State<FallingWordsGame>
       // четыре виджета заново шестьдесят раз в секунду незачем. Обёртка
       // Transform вокруг них при этом новая на каждый кадр — она и есть
       // тряска.
-      child: AnimatedBuilder(
-        animation: Listenable.merge([_fall, _reveal]),
-        child: _answers(revealing),
-        builder: (context, answers) {
-          final shake = _shake(juicy: juicy, revealing: revealing);
-          return Column(
-            children: [
-              Transform.translate(
-                offset: Offset(shake, 0),
-                child:
-                    stableHud ??
-                    (_run.sprintRemaining != null
-                        ? _sprintHud(context, revealing)
-                        : _hud(
-                          revealing: revealing,
-                          pulse: _pulse(juicy: juicy, revealing: revealing),
-                        )),
-              ),
-              Expanded(
-                child: _field(scheme, juicy: juicy, revealing: revealing),
-              ),
-              Transform.translate(offset: Offset(shake, 0), child: answers),
-            ],
-          );
-        },
+      child: LayoutBuilder(
+        builder:
+            (context, screen) => AnimatedBuilder(
+              animation: Listenable.merge([_fall, _reveal]),
+              child:
+                  _listening
+                      ? _listeningActions(revealing)
+                      : _answers(revealing),
+              builder: (context, answers) {
+                final shake = _shake(juicy: juicy, revealing: revealing);
+                return Column(
+                  children: [
+                    Transform.translate(
+                      offset: Offset(shake, 0),
+                      child:
+                          stableHud ??
+                          (_run.sprintRemaining != null
+                              ? _sprintHud(context, revealing)
+                              : _hud(
+                                revealing: revealing,
+                                pulse: _pulse(
+                                  juicy: juicy,
+                                  revealing: revealing,
+                                ),
+                              )),
+                    ),
+                    Expanded(
+                      child: _field(scheme, juicy: juicy, revealing: revealing),
+                    ),
+                    Transform.translate(
+                      offset: Offset(shake, 0),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: screen.maxHeight * .60,
+                        ),
+                        child: SingleChildScrollView(
+                          key: answersKey,
+                          primary: false,
+                          child: answers,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
       ),
     );
   }
@@ -488,7 +603,9 @@ class _FallingWordsGameState extends State<FallingWordsGame>
               children: [
                 if (scheme.brightness == Brightness.light)
                   const Positioned.fill(child: PaperRules()),
-                if (missed)
+                if (_listening)
+                  Positioned.fill(child: _listeningField(revealing))
+                else if (missed)
                   RevealPair(
                     word: _run.item!.word.text,
                     answer: _run.item!.word.translation,
@@ -501,7 +618,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
                   ),
                 // Positioned.fill, а не обычный ребёнок: прилёт очков не
                 // должен участвовать в том, какого размера получится поле.
-                if (juicy && revealing && _run.lastPoints > 0)
+                if (!_listening && juicy && revealing && _run.lastPoints > 0)
                   Positioned.fill(
                     child: ScorePop(
                       points: _run.lastPoints,
@@ -519,14 +636,59 @@ class _FallingWordsGameState extends State<FallingWordsGame>
     );
   }
 
-  Widget _answers(bool revealing) {
+  Widget _listeningField(bool revealing) {
+    if (revealing) {
+      final word = _run.item!.word;
+      return ListeningReveal(
+        word: word.text,
+        answer: word.translation,
+        verdict: _run.verdict!,
+      );
+    }
+    if (_audioProblem case final problem?) {
+      return ListeningAudioError(
+        error: problem,
+        studyLanguage: widget.studyLanguage,
+        onRetry: _speakWord,
+        onUseText: _useText,
+      );
+    }
+    return ListeningField(
+      progress: _fall.value,
+      speaking: _speaking,
+      initialPlayback: !_heard,
+      onReplay: _speaking || _paused ? null : _speakWord,
+    );
+  }
+
+  Widget _listeningActions(bool revealing) {
+    if (revealing) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            key: const Key('falling.listening.next'),
+            onPressed: () {
+              if (!_paused && _run.phase == FallingPhase.reveal) _advance();
+            },
+            child: Text(context.strings.next),
+          ),
+        ),
+      );
+    }
+    if (!_heard || _audioProblem != null) return const SizedBox.shrink();
+    return _answers(false, blocked: _speaking);
+  }
+
+  Widget _answers(bool revealing, {bool blocked = false}) {
     return Padding(
       key: FallingWordsKeys.answers,
       padding: const EdgeInsets.all(16),
       child: IgnorePointer(
         // Страховка поверх стража фазы в run: тап по кнопке во время
         // подсветки не должен даже пытаться пройти.
-        ignoring: revealing,
+        ignoring: revealing || blocked,
         child: Column(
           children: [
             for (var i = 0; i < _run.options.length; i++) ...[
@@ -534,7 +696,7 @@ class _FallingWordsGameState extends State<FallingWordsGame>
               AnswerButton(
                 label: _run.options[i],
                 state: _stateFor(i, revealing: revealing),
-                onTap: revealing ? null : () => _onTap(i),
+                onTap: revealing || blocked ? null : () => _onTap(i),
               ),
             ],
           ],

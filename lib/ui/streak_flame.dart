@@ -1,13 +1,5 @@
-/// Решения про пламя стрик-карточки: какого размера и какого настроения.
-///
-/// Здесь нет ни одной команды рисования — только ответы на два вопроса,
-/// которые задаёт `CustomPaint`. Разделение не церемония: пороги ступеней
-/// проверяются таблицей за миллисекунды, а картинка — голденом, который
-/// снимается на другой машине и принимается человеком. Смешав их, пришлось бы
-/// проверять арифметику порогов картинками.
-///
-/// Числа — из `SPEC.md`, раздел «Стрик-карточка», и написаны там до этого
-/// файла.
+/// Размер счётчика и состояние сегодняшнего дня для карточек серии.
+/// Иллюстрацию и движение для каждого из 21 этапа выбирает CampfireStage.
 library;
 
 import 'package:arcadelingo/domain/streak/streak_view.dart';
@@ -69,8 +61,9 @@ const double flameHaloRadius = 1.35;
 /// Прозрачность ореола в центре.
 const double flameHaloAlpha = 0.18;
 
-/// Насколько край уходит к малиновому, когда серия под угрозой.
-const double flameRiskBlend = 0.55;
+/// Светлое ядро зрелого костра и золотая середина маленького огня.
+const flameCoreColor = Color(0xFFFFE0A1);
+const flameSparkCoreColor = Color(0xFFFFCB6D);
 
 /// Ступень по длине серии [days].
 ///
@@ -97,17 +90,25 @@ FlameMood flameMood(StreakView view) {
   return FlameMood.unlit;
 }
 
-/// Цвет края пламени: янтарь, а под угрозой — сведённый к малиновому.
-Color flameEdgeColor(ColorScheme scheme, FlameMood mood) =>
-    mood == FlameMood.atRisk
-        ? Color.lerp(scheme.tertiary, scheme.error, flameRiskBlend)!
-        : scheme.tertiary;
+/// Внешний слой костра и контур угасшего пламени.
+Color flameEdgeColor(
+  ColorScheme scheme,
+  FlameMood mood, {
+  FlameTier tier = FlameTier.blaze,
+}) => switch (mood) {
+  FlameMood.unlit => scheme.onSurfaceVariant,
+  FlameMood.atRisk => const Color(0xFFB3495A),
+  FlameMood.lit =>
+    tier == FlameTier.spark ? const Color(0xFFA84142) : const Color(0xFFBD4D43),
+};
 
 /// Цвет числа дней.
 ///
-/// На горящем пламени — цвет фона: число вырезано из огня, а не положено
-/// сверху. На незажжённом заливки нет, вырезать не из чего, и число берёт
-/// цвет обычной подписи — иначе оно стало бы невидимым на тёмной карточке.
-/// Пробел найден при рисовании и дописан в SPEC отдельной строкой.
-Color flameDigitColor(ColorScheme scheme, FlameMood mood) =>
-    mood == FlameMood.unlit ? scheme.onSurfaceVariant : scheme.surface;
+/// Светлое ядро требует тёмных цифр в обеих темах. Внутри контура цифра
+/// лежит прямо на карточке и получает обычный цвет подписи этой темы.
+Color flameDigitColor(ColorScheme scheme, FlameMood mood) {
+  if (mood == FlameMood.unlit) return scheme.onSurfaceVariant;
+  return scheme.brightness == Brightness.dark
+      ? scheme.surface
+      : scheme.onSurface;
+}

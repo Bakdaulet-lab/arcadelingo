@@ -3,8 +3,12 @@ import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/domain/stories/situation_story.dart';
+import 'package:arcadelingo/ui/campfire_stage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+
+part 'candy_delivery_strings.dart';
+part 'space_word_strings.dart';
 
 const russianStrings = AppStrings(InterfaceLanguage.russian);
 
@@ -29,14 +33,167 @@ class AppStrings {
   String get challenge =>
       _text(en: 'Challenge', ru: 'Испытание', es: 'Desafío');
 
+  String get dailyWord =>
+      _text(en: 'Word of the day', ru: 'Слово дня', es: 'Palabra del día');
+  String get dailyWordHomeHint => _text(
+    en: 'Guess today’s word in six tries.',
+    ru: 'Угадай сегодняшнее слово за шесть попыток.',
+    es: 'Adivina la palabra de hoy en seis intentos.',
+  );
+  String get dailyWordUnavailable => _text(
+    en: 'Today’s word is unavailable for this course and level.',
+    ru: 'Слово дня недоступно для этого курса и уровня.',
+    es: 'La palabra de hoy no está disponible para este curso y nivel.',
+  );
+  String get dailyWordCopied => _text(
+    en: 'Result copied to clipboard.',
+    ru: 'Результат скопирован в буфер обмена.',
+    es: 'Resultado copiado al portapapeles.',
+  );
+  String get dailyWordShareFailed => _text(
+    en: 'Couldn’t share the result. Try again.',
+    ru: 'Не удалось поделиться результатом. Попробуй ещё раз.',
+    es: 'No se ha podido compartir el resultado. Inténtalo de nuevo.',
+  );
+  String get dailyWordClue =>
+      _text(en: 'Translation', ru: 'Перевод', es: 'Traducción');
+  String dailyWordAttempt(int n, int total) => _text(
+    en: 'Try $n of $total',
+    ru: 'Попытка $n из $total',
+    es: 'Intento $n de $total',
+  );
+  String get dailyWordExact =>
+      _text(en: 'Right spot', ru: 'На месте', es: 'En su lugar');
+  String get dailyWordPresent =>
+      _text(en: 'Different spot', ru: 'В другом месте', es: 'En otro lugar');
+  String get dailyWordAbsent =>
+      _text(en: 'Absent', ru: 'Нет в слове', es: 'No aparece');
+  String dailyWordEntry(int length) => _text(
+    en: 'Enter a $length-letter word',
+    ru: 'Введи слово из $length букв',
+    es: 'Escribe una palabra de $length letras',
+  );
+  String dailyWordWrongLength(int length) => _text(
+    en: 'Use exactly $length letters.',
+    ru: 'Нужная длина слова — $length.',
+    es: 'La palabra debe tener $length letras.',
+  );
+  String get dailyWordInvalidLetters => _text(
+    en: 'Use letters from the language you’re learning.',
+    ru: 'Используй буквы языка, который изучаешь.',
+    es: 'Usa letras del idioma que estás aprendiendo.',
+  );
+  String get dailyWordUnknown => _text(
+    en: 'Try a word from this course’s dictionary.',
+    ru: 'Попробуй слово из словаря этого курса.',
+    es: 'Prueba con una palabra del diccionario de este curso.',
+  );
+  String get dailyWordRepeated => _text(
+    en: 'You’ve already tried that word.',
+    ru: 'Это слово уже было.',
+    es: 'Ya has probado esa palabra.',
+  );
+  String get dailyWordSaveFailed => _text(
+    en: 'Couldn’t save your guess. Try again.',
+    ru: 'Не удалось сохранить попытку. Попробуй ещё раз.',
+    es: 'No se ha podido guardar tu intento. Inténtalo de nuevo.',
+  );
+  String get dailyWordUpdated => _text(
+    en: 'Another guess was saved. The board is up to date.',
+    ru: 'За это время сохранился другой ход. Поле обновлено.',
+    es: 'Se ha guardado otro intento. El tablero está actualizado.',
+  );
+  String get dailyWordWon => _text(
+    en: 'You found it!',
+    ru: 'Слово угадано!',
+    es: '¡Lo has adivinado!',
+  );
+  String get dailyWordLost => _text(
+    en: 'Out of guesses',
+    ru: 'Попытки закончились',
+    es: 'Se acabaron los intentos',
+  );
+  String get dailyWordShare => _text(
+    en: 'Share result',
+    ru: 'Поделиться результатом',
+    es: 'Compartir resultado',
+  );
+
   String get situationStories => _text(
     en: 'On the way home',
     ru: 'Пока ехал домой',
     es: 'De camino a casa',
   );
 
+  String get orderKitchen =>
+      _text(en: 'Café Orders', ru: 'Кухня заказов', es: 'Pedidos de cafetería');
+  String get orderKitchenHint => _text(
+    en: 'Read each order and make the guest’s drink.',
+    ru: 'Прочитай заказ и приготовь гостю напиток.',
+    es: 'Lee cada pedido y prepara la bebida.',
+  );
+
   String get activeRecall =>
       _text(en: 'Recall it', ru: 'Вспомни сам', es: 'Recuerda la palabra');
+
+  String get confusedWords => _text(
+    en: 'Words I mix up',
+    ru: 'Слова, которые я путаю',
+    es: 'Palabras que confundo',
+  );
+  String get noConfusedPairs => _text(
+    en: 'No repeated mix-ups yet',
+    ru: 'Пока нет повторяющихся пар',
+    es: 'Aún no hay confusiones repetidas',
+  );
+  String get confusionThreshold => _text(
+    en:
+        'A pair appears here when you choose one word instead of the other twice.',
+    ru:
+        'Пара появится здесь, когда ты дважды выберешь одно слово вместо другого.',
+    es:
+        'Aquí aparecerá una pareja cuando elijas dos veces una palabra en lugar de la otra.',
+  );
+  String confusionCount(int count) => _text(
+    en: 'Mix-ups: $count',
+    ru: 'Ошибок с этой парой — $count',
+    es: 'Confusiones: $count',
+  );
+  String get practisePair => _text(
+    en: 'Practise this pair',
+    ru: 'Разобрать пару',
+    es: 'Practicar esta pareja',
+  );
+  String get completeSentence => _text(
+    en: 'Complete the sentence',
+    ru: 'Дополни фразу',
+    es: 'Completa la frase',
+  );
+  String get pickByMeaning => _text(
+    en: 'Choose the matching word',
+    ru: 'Выбери слово по значению',
+    es: 'Elige la palabra que corresponde',
+  );
+  String get tryOtherWord => _text(
+    en: 'Try the other word',
+    ru: 'Попробуй другое слово',
+    es: 'Prueba con la otra palabra',
+  );
+  String get pairComplete => _text(
+    en: 'Pair practised',
+    ru: 'Пара разобрана',
+    es: 'Práctica completada',
+  );
+  String confusionScore(int score, int total) => _text(
+    en: 'Correct on the first try: $score of $total',
+    ru: 'С первой попытки — $score из $total',
+    es: 'A la primera: $score de $total',
+  );
+  String get backToPairs => _text(
+    en: 'Back to word pairs',
+    ru: 'К парам слов',
+    es: 'Volver a las parejas',
+  );
 
   String get recallHomeHint => _text(
     en: 'Recall the word, then spell it with letters',
@@ -151,6 +308,7 @@ class AppStrings {
   );
 
   String challengeName(ArcadeChallenge mode) => switch (mode) {
+    ArcadeChallenge.continuous => continuousMode,
     ArcadeChallenge.sprint => _text(
       en: '60-second sprint',
       ru: '60 секунд',
@@ -174,6 +332,14 @@ class AppStrings {
   };
 
   String challengeRules(ArcadeChallenge mode) => switch (mode) {
+    ArcadeChallenge.continuous => _text(
+      en:
+          'A new word appears after every answer. Keep playing for a high score, or pause to finish your run.',
+      ru:
+          'После каждого ответа сразу появляется новое слово. Набирай очки, пока хочется играть. Завершить партию можно на паузе.',
+      es:
+          'Después de cada respuesta aparece otra palabra. Sigue sumando puntos o pausa el juego para terminar la partida.',
+    ),
     ArcadeChallenge.sprint => _text(
       en:
           'Score as many points as you can in 60 seconds. A wrong or missed answer costs 5 seconds.',
@@ -295,6 +461,38 @@ class AppStrings {
   );
   String get fallingWords =>
       _text(en: 'Falling Words', ru: 'Падающие слова', es: 'Palabras que caen');
+  String get listeningMode =>
+      _text(en: 'Listening', ru: 'На слух', es: 'De oído');
+  String get listeningModeHint => _text(
+    en: 'Listen and choose the translation in Falling Words',
+    ru: 'Послушай слово и выбери перевод в «Падающих словах»',
+    es: 'Escucha y elige la traducción en Palabras que caen',
+  );
+  String get listenToWord => _text(
+    en: 'Listen to the word',
+    ru: 'Слушай слово',
+    es: 'Escucha la palabra',
+  );
+  String get chooseListeningTranslation => _text(
+    en: 'Choose the translation',
+    ru: 'Выбери перевод',
+    es: 'Elige la traducción',
+  );
+  String get listeningChoicesAfterAudio => _text(
+    en: 'The translations will appear when the word finishes playing.',
+    ru: 'Когда слово прозвучит, появятся варианты перевода.',
+    es: 'Las traducciones aparecerán cuando termines de oír la palabra.',
+  );
+  String get replayWord => _text(
+    en: 'Listen again',
+    ru: 'Прослушать снова',
+    es: 'Escuchar de nuevo',
+  );
+  String get useWrittenWords => _text(
+    en: 'Play with written words',
+    ru: 'Играть с текстом',
+    es: 'Jugar con palabras escritas',
+  );
   String get fallingInstruction => _text(
     en: 'Tap the correct translation',
     ru: 'Нажми на верный перевод',
@@ -334,27 +532,70 @@ class AppStrings {
     es: 'Desliza la gema resaltada hacia abajo para alinear cuatro gemas.',
   );
   String get matchHint => _text(
-    en: 'Match four gems in a row to unlock a word.',
-    ru: 'Собери четыре кристалла в ряд, чтобы открыть слово.',
-    es: 'Alinea cuatro gemas para descubrir una palabra.',
+    en:
+        'Three matches charge a word crystal. Four gems in a line charge it instantly.',
+    ru:
+        'Три совпадения заряжают кристалл слова. Четыре в ряд дают полный заряд сразу.',
+    es:
+        'Con tres combinaciones desbloqueas una palabra. Una línea de cuatro la desbloquea al instante.',
   );
   String get matchInvalidMove => _text(
-    en: 'Swap two gems to line up three of the same kind.',
-    ru: 'Поменяй два кристалла местами, чтобы собрать три одинаковых в ряд.',
-    es: 'Intercambia dos gemas para alinear tres del mismo tipo.',
+    en: 'Try another swap. That move was free.',
+    ru: 'Попробуй другой обмен. Ход сохранился.',
+    es: 'Prueba otro intercambio. Conservas el movimiento.',
   );
   String get matchBonus => _text(
-    en: 'Clear a row',
-    ru: 'Бонус «Очистить строку»',
-    es: 'Bono «Limpia una fila»',
+    en: 'Translate to clear a row',
+    ru: 'Переведи слово, чтобы очистить ряд',
+    es: 'Traduce para despejar una fila',
   );
-  String get matchCleared => _text(
-    en: 'Row cleared. Correct translation +60.',
-    ru: 'Строка очищена. За верный перевод +60.',
-    es: 'Fila eliminada. Traducción correcta +60.',
+  String get matchCrossBonus => _text(
+    en: 'Translate to clear a row and a column',
+    ru: 'Переведи слово, чтобы очистить ряд и столбец',
+    es: 'Traduce para despejar una fila y una columna',
   );
-  String matchMoves(int count) =>
-      _text(en: 'Moves: $count', ru: 'Ходы: $count', es: 'Movimientos: $count');
+  String get matchRowBurst => _text(
+    en: 'Row blast · +60',
+    ru: 'Разряд по ряду · +60',
+    es: 'Descarga en fila · +60',
+  );
+  String get matchCrossBurst => _text(
+    en: 'Cross blast · +60',
+    ru: 'Крестовой разряд · +60',
+    es: 'Descarga en cruz · +60',
+  );
+  String get matchChargeLabel =>
+      _text(en: 'Word charge', ru: 'Заряд слова', es: 'Carga de la gema');
+  String get matchScoreLabel => _text(en: 'Score', ru: 'Очки', es: 'Puntos');
+  String get matchMovesLabel =>
+      _text(en: 'Moves', ru: 'Ходы', es: 'Movimientos');
+  String get matchLastCharge => _text(
+    en: 'One more match unlocks a word.',
+    ru: 'Ещё одно совпадение откроет слово.',
+    es: 'Una combinación más desbloquea una palabra.',
+  );
+  String get matchHowTo =>
+      _text(en: 'How to play', ru: 'Как играть', es: 'Cómo jugar');
+  String get matchSwapRule => _text(
+    en: 'Swipe a gem or tap two neighbors to line up three of the same shape.',
+    ru:
+        'Сдвинь кристалл или нажми на два соседних, чтобы выстроить три одинаковых в ряд.',
+    es:
+        'Desliza una gema o toca dos gemas vecinas para alinear tres de la misma forma.',
+  );
+  String get matchCrossRule => _text(
+    en:
+        'A line of five or a T or L shape earns a cross. Translate the word to clear both a row and a column.',
+    ru:
+        'Пять в ряд или фигура в форме T или L дают крестовой разряд. Верный перевод очистит и ряд, и столбец.',
+    es:
+        'Una línea de cinco o una figura en T o en L forma una cruz. Acierta la traducción para despejar una fila y una columna.',
+  );
+  String matchCascade(int multiplier) => _text(
+    en: 'Cascade · points ×$multiplier',
+    ru: 'Каскад · очки ×$multiplier',
+    es: 'Cascada · puntos ×$multiplier',
+  );
   String matchGem(int kind, int row, int column) {
     final names = _text(
       en:
@@ -413,6 +654,71 @@ class AppStrings {
   );
 
   String get snake => _text(en: 'Snake', ru: 'Змейка', es: 'Serpiente');
+  String get continuousMode =>
+      _text(en: 'Endless play', ru: 'Непрерывная игра', es: 'Juego sin fin');
+  String continuousProgress(int number) =>
+      _text(en: 'Word $number', ru: 'Слово $number', es: 'Palabra $number');
+  String get finishRun =>
+      _text(en: 'Finish run', ru: 'Завершить партию', es: 'Terminar partida');
+  String get snakeObstacle => _text(
+    en: 'The snake hit a rock.',
+    ru: 'Змейка врезалась в камень.',
+    es: 'La serpiente chocó con una roca.',
+  );
+  String get snakeContinuousGuide => _text(
+    en:
+        'Swipe to steer around rocks. The snake gets faster as you collect words.',
+    ru:
+        'Обводи камни свайпом. Чем больше слов поймаешь, тем быстрее ползёт змейка.',
+    es:
+        'Desliza el dedo para esquivar las rocas. La serpiente acelera a medida que recoges palabras.',
+  );
+  String get wordMaze =>
+      _text(en: 'Word maze', ru: 'Лабиринт', es: 'Laberinto de palabras');
+  String get mazeInstruction => _text(
+    en: 'Dodge the ghosts and reach the gate with the right word',
+    ru: 'Обойди привидений и найди ворота с нужным словом',
+    es: 'Esquiva a los fantasmas y llega a la puerta con la palabra correcta',
+  );
+  String get mazeBoard => _text(
+    en: 'Maze with word gates',
+    ru: 'Лабиринт с воротами',
+    es: 'Laberinto con puertas',
+  );
+  String get mazeSteering => _text(
+    en: 'Swipe to steer. You can turn before a corner.',
+    ru: 'Веди пальцем по полю. Поворот можно задать заранее.',
+    es:
+        'Desliza el dedo para girar. Puedes indicar el giro antes de llegar a la esquina.',
+  );
+  String get mazeReadyGuide => _text(
+    en:
+        'Swipe toward the gate with the right word. Collect dots and dodge the ghosts.',
+    ru:
+        'Веди пальцем к воротам с нужным словом. Собирай точки и обходи привидений.',
+    es:
+        'Desliza el dedo hacia la puerta con la palabra correcta. Recoge los puntos y esquiva a los fantasmas.',
+  );
+  String get mazeContinueSwipe => _text(
+    en: 'Swipe the board to keep playing.',
+    ru: 'Проведи по полю, чтобы продолжить.',
+    es: 'Desliza el dedo por el tablero para seguir.',
+  );
+  String get mazeCaught => _text(
+    en: 'A ghost caught you',
+    ru: 'Привидение тебя поймало',
+    es: 'Te ha atrapado un fantasma',
+  );
+  String get mazeTryAgain => _text(
+    en: 'Try another route',
+    ru: 'Попробовать другой путь',
+    es: 'Probar otro camino',
+  );
+  String mazeProgress(int number, int total) => _text(
+    en: 'Word $number of $total',
+    ru: 'Слово $number из $total',
+    es: 'Palabra $number de $total',
+  );
   String get snakeInstruction => _text(
     en: 'Catch the apple with the right translation',
     ru: 'Поймай яблоко с нужным переводом',
@@ -424,12 +730,11 @@ class AppStrings {
     es: 'Busca la traducción',
   );
   String get snakeGuide => _text(
-    en:
-        'Swipe anywhere on the board to steer. Keep your finger down to turn again.',
+    en: 'Swipe to steer around rocks. Keep your finger down to turn again.',
     ru:
-        'Веди пальцем по полю. Чтобы повернуть ещё раз, просто смени направление.',
+        'Обходи камни. Чтобы повернуть ещё раз, смени направление, не отрывая пальца.',
     es:
-        'Desliza el dedo por el tablero. Para volver a girar, cambia de dirección sin levantarlo.',
+        'Esquiva las rocas deslizando el dedo. Para volver a girar, cambia de dirección sin levantarlo.',
   );
   String get snakeBoard => _text(
     en: 'Snake board',
@@ -487,6 +792,11 @@ class AppStrings {
     ru: 'Веди пальцем влево или вправо',
     es: 'Desliza el dedo a los lados para mover la pala',
   );
+  String get brickTapToAim => _text(
+    en: 'Tap a card to move the paddle under it',
+    ru: 'Коснись карточки, чтобы подвести под неё платформу',
+    es: 'Toca una tarjeta para colocar la pala debajo',
+  );
   String get brickLaunch =>
       _text(en: 'Launch', ru: 'Пустить мяч', es: 'Lanzar');
   String get brickPause => _text(en: 'Pause', ru: 'Пауза', es: 'Pausar');
@@ -528,6 +838,78 @@ class AppStrings {
   );
   String get cancel => _text(en: 'Cancel', ru: 'Отмена', es: 'Cancelar');
   String get save => _text(en: 'Save', ru: 'Сохранить', es: 'Guardar');
+
+  String get wordSets =>
+      _text(en: 'My word sets', ru: 'Мои наборы', es: 'Mis listas');
+  String get createWordSet =>
+      _text(en: 'Create a set', ru: 'Создать набор', es: 'Crear una lista');
+  String get emptyWordSets => _text(
+    en: 'Group words by topic and play with the ones you choose.',
+    ru: 'Собери слова по теме и сыграй с ними в аркаду.',
+    es: 'Agrupa palabras por tema y juega con las que elijas.',
+  );
+  String get wordSetName =>
+      _text(en: 'Set name', ru: 'Название набора', es: 'Nombre de la lista');
+  String get wordSetSearch => _text(
+    en: 'Search words or translations',
+    ru: 'Поиск по слову или переводу',
+    es: 'Buscar palabras o traducciones',
+  );
+  String get wordSetNoMatches => _text(
+    en: 'No matching words',
+    ru: 'Подходящих слов нет',
+    es: 'No hay palabras que coincidan',
+  );
+  String wordSetCount(int count) => _text(
+    en: '$count ${count == 1 ? "word" : "words"}',
+    ru: switch ((count % 10, count % 100)) {
+      (1, != 11) => '$count слово',
+      (>= 2 && <= 4, < 12 || > 14) => '$count слова',
+      _ => '$count слов',
+    },
+    es: '$count ${count == 1 ? "palabra" : "palabras"}',
+  );
+  String selectedWordSetCount(int count) => _text(
+    en: 'Selected ($count)',
+    ru: 'Выбрано ($count)',
+    es: 'Seleccionadas ($count)',
+  );
+  String get editWordSet =>
+      _text(en: 'Edit set', ru: 'Изменить набор', es: 'Editar lista');
+  String get edit => _text(en: 'Edit', ru: 'Изменить', es: 'Editar');
+  String get delete => _text(en: 'Delete', ru: 'Удалить', es: 'Eliminar');
+  String deleteWordSet(String name) => _text(
+    en: 'Delete “$name”?',
+    ru: 'Удалить «$name»?',
+    es: '¿Eliminar «$name»?',
+  );
+  String get deletingSetKeepsWords => _text(
+    en: 'Your words will stay in the dictionary.',
+    ru: 'Слова останутся в словаре.',
+    es: 'Las palabras seguirán en el diccionario.',
+  );
+  String get addWordsToSet =>
+      _text(en: 'Add words', ru: 'Добавить слова', es: 'Añadir palabras');
+  String get wordSetNeedsName => _text(
+    en: 'Enter a name for this set.',
+    ru: 'Введи название набора.',
+    es: 'Escribe un nombre para la lista.',
+  );
+  String get duplicateWordSet => _text(
+    en: 'A set with this name already exists.',
+    ru: 'Набор с таким названием уже есть.',
+    es: 'Ya existe una lista con este nombre.',
+  );
+  String get missingWordSet => _text(
+    en: 'This set has been deleted.',
+    ru: 'Этот набор уже удалён.',
+    es: 'Esta lista ya se ha eliminado.',
+  );
+  String get wordSetWriteFailed => _text(
+    en: 'Couldn’t save the changes. Try again.',
+    ru: 'Не удалось сохранить изменения. Попробуй ещё раз.',
+    es: 'No se pudieron guardar los cambios. Inténtalo de nuevo.',
+  );
   String get hours => _text(en: 'Hour', ru: 'Часы', es: 'Hora');
   String get minutes => _text(en: 'Minute', ru: 'Минуты', es: 'Minutos');
   String get dailyReminder => _text(
@@ -857,6 +1239,125 @@ class AppStrings {
   String get listen => _text(en: 'Listen', ru: 'Послушать', es: 'Escuchar');
   String get listenAgain =>
       _text(en: 'Listen again', ru: 'Ещё раз', es: 'Escuchar de nuevo');
+  String get openCampfire => _text(
+    en: 'View the campfire',
+    ru: 'Посмотреть костёр',
+    es: 'Ver la hoguera',
+  );
+  String get replayCampfire => _text(
+    en: 'Replay the campfire animation',
+    ru: 'Повторить анимацию костра',
+    es: 'Volver a ver la animación de la hoguera',
+  );
+
+  String campfireStageName(CampfireStage stage) => switch (stage) {
+    CampfireStage.smoke => _text(
+      en: 'A wisp of smoke',
+      ru: 'Дымок',
+      es: 'Hilo de humo',
+    ),
+    CampfireStage.ember => _text(
+      en: 'Glowing ember',
+      ru: 'Розжиг',
+      es: 'Brasa encendida',
+    ),
+    CampfireStage.spark => _text(
+      en: 'First spark',
+      ru: 'Первая искра',
+      es: 'Primera chispa',
+    ),
+    CampfireStage.firstFlame => _text(
+      en: 'First flame',
+      ru: 'Первый огонёк',
+      es: 'Primera llama',
+    ),
+    CampfireStage.kindling => _text(
+      en: 'The kindling catches',
+      ru: 'Занялась растопка',
+      es: 'La yesca prende',
+    ),
+    CampfireStage.campfire => _text(
+      en: 'Campfire',
+      ru: 'Походный костёр',
+      es: 'Fogata',
+    ),
+    CampfireStage.hotCoals => _text(
+      en: 'Glowing coals',
+      ru: 'Жаркие угли',
+      es: 'Brasas vivas',
+    ),
+    CampfireStage.flyingSparks => _text(
+      en: 'Sparks from the fire',
+      ru: 'Костёр с искрами',
+      es: 'Hoguera con chispas',
+    ),
+    CampfireStage.kneeHighFlames => _text(
+      en: 'Knee-high flames',
+      ru: 'По колено',
+      es: 'Llamas hasta las rodillas',
+    ),
+    CampfireStage.tallFlame => _text(
+      en: 'Towering flame',
+      ru: 'Высокое пламя',
+      es: 'Llama alta',
+    ),
+    CampfireStage.fireWhirl => _text(
+      en: 'Fire whirl',
+      ru: 'Огненный вихрь',
+      es: 'Remolino de fuego',
+    ),
+    CampfireStage.forestEdge => _text(
+      en: 'Firelight at the forest’s edge',
+      ru: 'Жар у опушки',
+      es: 'Resplandor al borde del bosque',
+    ),
+    CampfireStage.burningBranches => _text(
+      en: 'Burning branches',
+      ru: 'Огненные ветви',
+      es: 'Ramas en llamas',
+    ),
+    CampfireStage.blazingTree => _text(
+      en: 'Blazing tree',
+      ru: 'Пылающее дерево',
+      es: 'Árbol en llamas',
+    ),
+    CampfireStage.burningTreetops => _text(
+      en: 'Blazing treetops',
+      ru: 'Огненные кроны',
+      es: 'Copas en llamas',
+    ),
+    CampfireStage.ragingForest => _text(
+      en: 'Forest ablaze',
+      ru: 'Бушующий лес',
+      es: 'Bosque en llamas',
+    ),
+    CampfireStage.goldenRiver => _text(
+      en: 'Golden river',
+      ru: 'Золотая река',
+      es: 'Río dorado',
+    ),
+    CampfireStage.horizonLights => _text(
+      en: 'Lights on the horizon',
+      ru: 'Огни на горизонте',
+      es: 'Luces en el horizonte',
+    ),
+    CampfireStage.firefall => _text(
+      en: 'Waterfall of fire',
+      ru: 'Огненный водопад',
+      es: 'Cascada de fuego',
+    ),
+    CampfireStage.flameCrown => _text(
+      en: 'Crown of flame',
+      ru: 'Корона пламени',
+      es: 'Corona de fuego',
+    ),
+    CampfireStage.forestHeart => _text(
+      en: 'Heart of the fiery forest',
+      ru: 'Сердце огненного леса',
+      es: 'Corazón del bosque de fuego',
+    ),
+  };
+
   String get noStreak => _text(
     en: 'No streak yet',
     ru: 'Серии нет',

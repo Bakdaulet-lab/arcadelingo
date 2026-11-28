@@ -12,6 +12,7 @@
 library;
 
 import 'dart:async';
+import 'dart:math';
 
 import '../core/result.dart';
 import '../log/logging_observer.dart';
@@ -64,6 +65,7 @@ class StartSession {
     required String gameId,
     CefrLevel? level,
     bool practiceAll = false,
+    Random? continuousShuffle,
     void Function(Map<String, LeitnerCard> cards)? onCardsChanged,
     List<ReviewObserver> observers = const [],
   }) {
@@ -86,22 +88,32 @@ class StartSession {
         return Err(failure);
     }
     final startedAt = _now();
-    final inner = LeitnerReviewSession.start(
-      cards: cards,
-      items:
-          level == null
-              ? items
-              : items.where((item) => item.word.level == level).toList(),
-      target: _target,
-      practiceAll: practiceAll,
-      now: _now,
-      onCardsChanged: (changed) {
-        // Ответ уже принят, ждать записи некому: report() не async, а
-        // сохранение кодирует состояние синхронно, до первого await.
-        unawaited(_cards.save(changed));
-        onCardsChanged?.call(changed);
-      },
-    );
+    final scopedItems =
+        level == null
+            ? items
+            : items.where((item) => item.word.level == level).toList();
+    void save(Map<String, LeitnerCard> changed) {
+      unawaited(_cards.save(changed));
+      onCardsChanged?.call(changed);
+    }
+
+    final inner =
+        continuousShuffle != null
+            ? LeitnerReviewSession.continuous(
+              cards: cards,
+              items: scopedItems,
+              random: continuousShuffle,
+              now: _now,
+              onCardsChanged: save,
+            )
+            : LeitnerReviewSession.start(
+              cards: cards,
+              items: scopedItems,
+              target: _target,
+              practiceAll: practiceAll,
+              now: _now,
+              onCardsChanged: save,
+            );
     return Ok(
       ObservedBoardSession(
         board: inner,

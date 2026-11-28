@@ -54,7 +54,9 @@ class RecallExercise {
 
   bool get complete => tiles.isNotEmpty && _selected.length == tiles.length;
   bool get correct =>
-      complete && _courseLabel(slots.join()) == _courseLabel(item.word.text);
+      complete &&
+      normalizedCourseSpelling(slots.join()) ==
+          normalizedCourseSpelling(item.word.text);
 
   void selectTile(int index) {
     if (index >= 0 && index < tiles.length && !_selected.contains(index)) {
@@ -77,20 +79,22 @@ List<String> _choices(
   Random random,
 ) {
   final target = item.word;
-  final meanings = translationMeanings(_courseLabel(target.translation));
-  final unavailable = {_courseLabel(target.text)};
-  final curated = item.distractors.map(_courseLabel).toSet();
+  final meanings = translationMeanings(
+    normalizedCourseSpelling(target.translation),
+  );
+  final unavailable = {normalizedCourseSpelling(target.text)};
+  final curated = item.distractors.map(normalizedCourseSpelling).toSet();
   final preferred = <String>[];
   final matchingPart = <String>[];
   final other = <String>[];
 
   for (final candidate in vocabulary) {
     if (candidate.level != target.level) continue;
-    final translation = _courseLabel(candidate.translation);
+    final translation = normalizedCourseSpelling(candidate.translation);
     if (translationMeanings(translation).any(meanings.contains)) {
       // A spelling can have multiple cards. One correct sense rules out
       // presenting that spelling as wrong, regardless of source order.
-      unavailable.add(_courseLabel(candidate.text));
+      unavailable.add(normalizedCourseSpelling(candidate.text));
     } else if (curated.contains(translation)) {
       preferred.add(candidate.text);
     } else if (target.partOfSpeech != null &&
@@ -104,7 +108,7 @@ List<String> _choices(
   for (final pool in [preferred, matchingPart, other]) {
     pool.shuffle(random);
     for (final spelling in pool) {
-      if (unavailable.add(_courseLabel(spelling))) {
+      if (unavailable.add(normalizedCourseSpelling(spelling))) {
         result.add(spelling.trim());
         if (result.length == 4) break;
       }
@@ -113,26 +117,3 @@ List<String> _choices(
   }
   return List.unmodifiable(result..shuffle(random));
 }
-
-// Keyboards can enter accented letters either as one code point or as a base
-// plus a combining mark. Keep the original tiles and compare equivalent
-// spellings in the course languages without discarding meaningful accents.
-const _accentLetters = {
-  '\u0300': ('aeiou', 'àèìòù'),
-  '\u0301': ('aeiouy', 'áéíóúý'),
-  '\u0302': ('aeiou', 'âêîôû'),
-  '\u0303': ('ano', 'ãñõ'),
-  '\u0306': ('и', 'й'),
-  '\u0308': ('aeiouyе', 'äëïöüÿё'),
-  '\u030a': ('a', 'å'),
-  '\u0327': ('c', 'ç'),
-};
-final _combiningLetter = RegExp(r'([a-zеи])(\p{M})', unicode: true);
-
-String _courseLabel(String value) =>
-    normalizedWordLabel(value).replaceAllMapped(_combiningLetter, (match) {
-      final forms = _accentLetters[match[2]];
-      if (forms == null) return match[0]!;
-      final index = forms.$1.indexOf(match[1]!);
-      return index < 0 ? match[0]! : forms.$2[index];
-    });

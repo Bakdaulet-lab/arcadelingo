@@ -4,6 +4,7 @@ library;
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:arcadelingo/features/recall/recall_screen.dart';
+import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +23,64 @@ void main() {
     Word(id: 'es_bolsa', text: 'bolsa', translation: 'сумка'),
   ];
   for (final brightness in Brightness.values) {
+    testWidgets(
+      'recall preserves word boundaries on 320dp in ${brightness.name}',
+      (tester) async {
+        tester.view.physicalSize = const Size(640, 1560);
+        tester.view.devicePixelRatio = 2;
+        tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+        addTearDown(tester.view.reset);
+        addTearDown(tester.platformDispatcher.clearAllTestValues);
+        const phrase = Word(
+          id: 'take_notice',
+          text: 'take notice',
+          translation: 'обратить особое внимание',
+          level: CefrLevel.b2,
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: wordarcadeTheme(
+              brightness: brightness,
+              platform: TargetPlatform.android,
+            ),
+            home: RecallScreen(
+              session: FakeReviewSession([const ReviewItem(word: phrase)]),
+              vocabulary: const [phrase],
+              course: StudyCourse.englishFromRussian,
+              level: CefrLevel.b2,
+              seed: 17,
+              onComplete: () {},
+              onExit: () {},
+            ),
+          ),
+        );
+        await tester.tap(find.byKey(const Key('recall.spell')));
+        await tester.pumpAndSettle();
+        final tiles = find.byKey(const Key('recall.tiles'));
+        for (final letter in 'take'.split('')) {
+          final choice = find.descendant(
+            of: tiles,
+            matching: find.text(letter),
+          );
+          final button =
+              find
+                  .ancestor(of: choice, matching: find.byType(OutlinedButton))
+                  .first;
+          await tester.ensureVisible(button);
+          await tester.tap(button);
+          await tester.pumpAndSettle();
+        }
+        final prompt = find.ancestor(
+          of: find.text(phrase.translation),
+          matching: find.byType(ArcadePanel),
+        );
+        await tester.ensureVisible(prompt.first);
+        await tester.pumpAndSettle();
+        await peek(tester, 'readable_recall_${brightness.name}');
+      },
+    );
+
     testWidgets('recall a Spanish word in ${brightness.name}', (tester) async {
       tester.view.physicalSize = peekPhysicalSize;
       tester.view.devicePixelRatio = peekDevicePixelRatio;

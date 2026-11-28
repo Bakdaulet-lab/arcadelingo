@@ -17,11 +17,13 @@ class ArcadeBrick {
   ArcadeBrick(this.bounds, this.row);
 
   final Rect bounds;
+  late final Rect collisionBounds = bounds.inflate(BrickBreakerRun.ballRadius);
   final int row;
   bool gold = false;
 }
 
 typedef BrickImpact = ({ArcadeBrick brick, Duration time});
+typedef _BallHit = ({double time, bool side, bool paddle, ArcadeBrick? brick});
 
 /// Simulates the field in fixed logical coordinates. A bonus retains its
 /// pending review item until a catch, including across a missed drop.
@@ -47,8 +49,7 @@ class BrickBreakerRun {
   static const _seconds = 0.008333;
   static const _baseReadingTime = Duration(milliseconds: 850);
   static const _fallTime = Duration(milliseconds: 2600);
-  static const _feedbackTime = Duration(milliseconds: 850);
-  static const _dropStart = 138.0;
+  static const dropStart = 138.0;
   static const _layouts = [
     ['.######.', '########', '########', '.##..##.', '...##...'],
     ['########', '..####..', '###..###', '.##..##.', '...##...'],
@@ -64,6 +65,8 @@ class BrickBreakerRun {
   final bricks = <ArcadeBrick>[];
   final balls = <BrickBall>[];
   final impacts = <BrickImpact>[];
+  ({Offset point, Duration time})? paddleContact;
+  double? _caughtX;
   List<String> choices = const [];
   ReviewItem? item;
   String? lastAnswer;
@@ -88,11 +91,19 @@ class BrickBreakerRun {
 
   int get lifeLimit => challenge ? 1 : startingLives;
 
+  Duration get _feedbackTime {
+    if (caughtCorrect) return const Duration(milliseconds: 850);
+    final length = item?.word.translation.runes.length ?? 0;
+    return Duration(milliseconds: 1200 + min(2100, 28 * length));
+  }
+
   double get dropY {
     final progress =
         (_phaseTime + _remainder - _readingTime).inMicroseconds /
         _fallTime.inMicroseconds;
-    return _dropStart + (paddleY - _dropStart) * progress.clamp(0, 1);
+    final t = progress.clamp(0.0, 1.0);
+    final eased = t * t * (3 - 2 * t);
+    return dropStart + (paddleY - dropStart) * eased;
   }
 
   /// Субкадровое положение между двумя уже проверенными физикой точками.
@@ -106,7 +117,20 @@ class BrickBreakerRun {
           : ball.position;
 
   double impactProgress(BrickImpact impact) =>
-      (_clock - impact.time).inMicroseconds / impactLifetime.inMicroseconds;
+      (_clock + _remainder - impact.time).inMicroseconds /
+      impactLifetime.inMicroseconds;
+
+  double? get paddleContactProgress {
+    final hit = paddleContact;
+    if (hit == null || phase != BrickPhase.flying) return null;
+    final progress = (_clock + _remainder - hit.time).inMicroseconds / 230000;
+    return progress < 1 ? progress : null;
+  }
+
+  double get catchProgress =>
+      ((_phaseTime + _remainder).inMicroseconds / 500000).clamp(0.0, 1.0);
+
+  double? get caughtX => phase == BrickPhase.feedback ? _caughtX : null;
 
   double get laneSpacing => min(96.0, width / max(1, choices.length));
 
@@ -123,7 +147,9 @@ class BrickBreakerRun {
   }
 
   void movePaddle(double x) {
-    paddle = x.clamp(paddleHalfWidth, width - paddleHalfWidth);
+    final next = x.clamp(paddleHalfWidth, width - paddleHalfWidth);
+    if (paddle == next) return;
+    paddle = next;
     if (phase == BrickPhase.serve) _parkBalls();
   }
 
@@ -200,6 +226,7 @@ class BrickBreakerRun {
   }
 
   void _serve([int count = 1]) {
+    paddleContact = null;
     if (bricks.isEmpty) {
       field++;
       _buildField();
@@ -224,45 +251,40 @@ class BrickBreakerRun {
 
   void _fly() {
     for (final ball in balls) {
-      final previous = ball.position;
-      ball._previous = previous;
-      var next = previous + ball.velocity * _seconds;
-      if (next.dx < ballRadius || next.dx > width - ballRadius) {
-        next = Offset(next.dx.clamp(ballRadius, width - ballRadius), next.dy);
-        ball.velocity = Offset(-ball.velocity.dx, ball.velocity.dy);
-      }
-      if (next.dy < ballRadius) {
-        next = Offset(next.dx, ballRadius);
-        ball.velocity = Offset(ball.velocity.dx, ball.velocity.dy.abs());
-      }
-      if (ball.velocity.dy > 0 &&
-          previous.dy <= paddleY - ballRadius &&
-          next.dy >= paddleY - ballRadius &&
-          (next.dx - paddle).abs() <= paddleHalfWidth + ballRadius) {
-        final aim = ((next.dx - paddle) / paddleHalfWidth).clamp(-1, 1);
-        final aimedSpeed = aim.toDouble() * 225;
-        // Даже точный удар центром немного уводит мяч из пустого столбца.
-        final horizontal =
-            aimedSpeed.abs() < 34
-                ? (aimedSpeed < 0 ? -34.0 : 34.0)
-                : aimedSpeed;
-        ball.velocity = Offset(
-          horizontal,
-          -sqrt(280 * 280 - horizontal * horizontal),
-        );
-        next = Offset(next.dx, paddleY - ballRadius - .1);
-      }
-      ball.position = next;
-      for (var i = 0; i < bricks.length; i++) {
-        final brick = bricks[i];
-        final box = brick.bounds.inflate(ballRadius);
-        if (!box.contains(next)) continue;
-        ball.velocity =
-            previous.dx < box.left || previous.dx >= box.right
-                ? Offset(-ball.velocity.dx, ball.velocity.dy)
-                : Offset(ball.velocity.dx, -ball.velocity.dy);
-        ball.position = previous;
-        bricks.removeAt(i);
+      ball._previous = ball.position;
+      var remaining = _seconds;
+      // A tick travels at most three world units. A corner can still produce
+      // two contacts; continue with the unused time after each one.
+      for (var contacts = 0; contacts < 4 && remaining > 0; contacts++) {
+        final hit = _nextHit(ball, remaining);
+        if (hit == null) break;
+        ball.position += ball.velocity * hit.time;
+        remaining -= hit.time;
+        if (hit.paddle) {
+          paddleContact = (
+            point: Offset(ball.position.dx, paddleY),
+            time: _clock,
+          );
+          final aim = ((ball.position.dx - paddle) / paddleHalfWidth).clamp(
+            -1,
+            1,
+          );
+          final aimedSpeed = aim.toDouble() * 225;
+          // Leave even a perfectly centred shot a way out of an empty column.
+          final dx =
+              aimedSpeed.abs() < 34
+                  ? (aimedSpeed < 0 ? -34.0 : 34.0)
+                  : aimedSpeed;
+          ball.velocity = Offset(dx, -sqrt(280 * 280 - dx * dx));
+        } else {
+          ball.velocity =
+              hit.side
+                  ? Offset(-ball.velocity.dx, ball.velocity.dy)
+                  : Offset(ball.velocity.dx, -ball.velocity.dy);
+        }
+        final brick = hit.brick;
+        if (brick == null) continue;
+        bricks.remove(brick);
         impacts.add((brick: brick, time: _clock));
         score += 10;
         if (brick.gold) {
@@ -270,8 +292,8 @@ class BrickBreakerRun {
           _openBonus();
           return;
         }
-        break;
       }
+      ball.position += ball.velocity * remaining;
     }
     balls.removeWhere((ball) => ball.position.dy > height + ballRadius);
     if (balls.isNotEmpty) return;
@@ -281,6 +303,70 @@ class BrickBreakerRun {
     } else {
       _serve();
     }
+  }
+
+  _BallHit? _nextHit(BrickBall ball, double remaining) {
+    final p = ball.position;
+    final v = ball.velocity;
+    _BallHit? hit;
+    if (v.dx != 0) {
+      final wall = v.dx < 0 ? ballRadius : width - ballRadius;
+      final time = (wall - p.dx) / v.dx;
+      if (time >= 0 && time <= remaining) {
+        hit = (time: time, side: true, paddle: false, brick: null);
+        remaining = time;
+      }
+    }
+    if (v.dy != 0) {
+      final descending = v.dy > 0;
+      final edge = descending ? paddleY - ballRadius : ballRadius;
+      final time = (edge - p.dy) / v.dy;
+      if (time >= 0 && time <= remaining) {
+        final x = p.dx + v.dx * time;
+        if (!descending || (x - paddle).abs() <= paddleHalfWidth + ballRadius) {
+          hit = (time: time, side: false, paddle: descending, brick: null);
+          remaining = time;
+        }
+      }
+    }
+    final end = p + v * remaining;
+    // The bricks are ordered by row. Most ticks are in open space.
+    if (bricks.isEmpty ||
+        min(p.dy, end.dy) > bricks.last.collisionBounds.bottom) {
+      return hit;
+    }
+    for (final brick in bricks) {
+      final box = brick.collisionBounds;
+      if (max(p.dx, end.dx) < box.left ||
+          min(p.dx, end.dx) > box.right ||
+          max(p.dy, end.dy) < box.top ||
+          min(p.dy, end.dy) > box.bottom) {
+        continue;
+      }
+      // Intersect the swept centre with the brick expanded by the ball radius.
+      final xEnter =
+          v.dx == 0
+              ? double.negativeInfinity
+              : ((v.dx > 0 ? box.left : box.right) - p.dx) / v.dx;
+      final yEnter =
+          v.dy == 0
+              ? double.negativeInfinity
+              : ((v.dy > 0 ? box.top : box.bottom) - p.dy) / v.dy;
+      final time = max(xEnter, yEnter);
+      if (time < 0 || time > remaining) continue;
+      final xExit =
+          v.dx == 0
+              ? double.infinity
+              : ((v.dx > 0 ? box.right : box.left) - p.dx) / v.dx;
+      final yExit =
+          v.dy == 0
+              ? double.infinity
+              : ((v.dy > 0 ? box.bottom : box.top) - p.dy) / v.dy;
+      if (time > min(xExit, yExit)) continue;
+      hit = (time: time, side: xEnter > yEnter, paddle: false, brick: brick);
+      remaining = time;
+    }
+    return hit;
   }
 
   void _markNextGold(double previousX) {
@@ -318,13 +404,15 @@ class BrickBreakerRun {
             .toList()
           ..shuffle(_random);
     choices = [correct, ...distractors.take(2)]..shuffle(_random);
-    final longestLabel = [
+    final lengths = [
       current.word.text,
       ...choices,
-    ].map((text) => text.runes.length).reduce(max);
-    _readingTime =
-        _baseReadingTime +
-        Duration(milliseconds: ((longestLabel - 19) * 45).clamp(0, 1100));
+    ].map((text) => text.runes.length);
+    // Players scan the prompt and all the lanes before committing to a catch.
+    final total = lengths.fold(0, (count, length) => count + length);
+    final extra =
+        max(0, lengths.reduce(max) - 19) * 25 + max(0, total - 36) * 26;
+    _readingTime = _baseReadingTime + Duration(milliseconds: min(extra, 6000));
     lastAnswer = null;
     missedDrop = false;
     _changePhase(BrickPhase.bonus);
@@ -340,6 +428,7 @@ class BrickBreakerRun {
       _serve(_parkedBalls);
       return;
     }
+    _caughtX = lane == null ? null : laneCenter(lane);
     lastAnswer = lane == null ? null : choices[lane];
     if (caughtCorrect) {
       score += 100;

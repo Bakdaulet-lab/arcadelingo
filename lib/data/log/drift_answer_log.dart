@@ -35,6 +35,7 @@ class DriftAnswerLog implements AnswerLog {
           hintsUsed: record.hintsUsed,
           gameId: record.gameId,
           sessionId: record.sessionId,
+          selectedAnswer: Value(record.selectedAnswer),
         ),
       );
 
@@ -133,5 +134,6 @@ class DriftAnswerLog implements AnswerLog {
     hintsUsed: row.hintsUsed,
     gameId: row.gameId,
     sessionId: row.sessionId,
+    selectedAnswer: row.selectedAnswer,
   );
 }

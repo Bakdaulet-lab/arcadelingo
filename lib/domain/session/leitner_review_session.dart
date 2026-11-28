@@ -14,8 +14,10 @@
 library;
 
 import 'dart:collection';
+import 'dart:math';
 
 import '../review/review_contract.dart';
+import '../review/word_choices.dart';
 import '../srs/grade_outcome.dart';
 import '../srs/leitner.dart';
 
@@ -34,11 +36,35 @@ class LeitnerReviewSession implements BoardReviewSession {
     required List<ReviewItem> queue,
     required DateTime Function() now,
     required void Function(Map<String, LeitnerCard>) onCardsChanged,
+    List<ReviewItem> cycle = const [],
+    Random? shuffle,
   }) : _cards = cards,
+       _cycle = cycle,
+       _shuffle = shuffle,
        _queue = queue,
        _now = now,
        _onCardsChanged = onCardsChanged,
        total = queue.length;
+
+  /// Free play covers the whole selected deck once per pass, including cards
+  /// that are already scheduled for another day. Only answers update a card.
+  factory LeitnerReviewSession.continuous({
+    required Map<String, LeitnerCard> cards,
+    required List<ReviewItem> items,
+    required Random random,
+    required DateTime Function() now,
+    required void Function(Map<String, LeitnerCard>) onCardsChanged,
+  }) => LeitnerReviewSession._(
+    cards: Map.of(cards),
+    queue: List.of(items)..shuffle(random),
+    now: now,
+    onCardsChanged: onCardsChanged,
+    cycle: List.unmodifiable(items),
+    shuffle: random,
+  );
+
+  final List<ReviewItem> _cycle;
+  final Random? _shuffle;
 
   /// Собирает очередь по состоянию [cards] и сиду [items] на момент `now()`.
   ///
@@ -191,7 +217,15 @@ class LeitnerReviewSession implements BoardReviewSession {
     // Коробка 1 — это `due == now`: again, а также hard на карточке коробки 1.
     // Правило по карточке, не по оценке: при SM-2, где ничего не бывает
     // готово немедленно, оно исчезнет само.
-    if (repeatsInQueue && !after.due.isAfter(now)) _requeue(item);
+    final random = _shuffle;
+    if (random != null) {
+      if (_queue.isEmpty) {
+        _queue.addAll(_cycle);
+        shuffleWordCycle(_queue, random, previous: item);
+      }
+    } else if (repeatsInQueue && !after.due.isAfter(now)) {
+      _requeue(item);
+    }
     // Колбэк последним: если он бросит, сессия уже в согласованном
     // состоянии, а не «в полёте» с неотвеченным словом.
     _onCardsChanged(UnmodifiableMapView(_cards));

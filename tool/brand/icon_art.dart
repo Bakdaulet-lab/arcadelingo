@@ -1,16 +1,8 @@
 /// Рисунок иконки лаунчера. Только геометрия — файлы пишет
 /// `tool/brand/render_icons.dart`.
 ///
-/// Цвета берутся из `lib/ui/theme.dart`, а не переписываются сюда числами.
-/// Иконка и экран обязаны быть одного цвета, а вторая копия `#0D0A12`
-/// разъехалась бы с первой молча: иконку никто не пересматривает при смене
-/// палитры.
-///
-/// Три варианта — три способа сказать «падает», а не три оттенка одного:
-/// блок с вырезанной буквой, стробоскопический след, луч-градиент. Общего у
-/// них ровно одно — мятная полоса пола внизу: у падения в игре пола пока нет
-/// (задача Р3), а в иконке он есть намеренно, потому что без пола падение
-/// читается как «висит».
+/// «Словомат» использует собственную палитру из `cabinet.dart`.
+/// Архивные варианты с падающей буквой используют цвета и шрифт темы игры.
 library;
 
 import 'dart:typed_data';
@@ -18,6 +10,11 @@ import 'dart:ui' as ui;
 
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/material.dart';
+
+import 'cabinet.dart';
+
+Color launcherBackground(BrandIcon variant) =>
+    variant == BrandIcon.cabinet ? cabinetBackdrop : brandSurface;
 
 /// Фон: тот же `surface`, что у экрана игры.
 final Color brandSurface = wordarcadeColors.surface;
@@ -42,6 +39,9 @@ enum BrandIcon {
 
   /// Буква в мятном луче-градиенте: цитата комбо-тона из SPEC.
   beam,
+
+  /// «Словомат»: аркадный автомат с буквой на экране.
+  cabinet,
 }
 
 /// Слой, для которого рисуем. От него зависит и масштаб, и прозрачность.
@@ -59,7 +59,10 @@ enum IconLayer {
 
   /// Монохром для тем Android 13: система смотрит только на альфу и красит
   /// сама. Ужат сильнее — поверх него система накладывает свой отступ.
-  monochrome(artScale: 0.62, opaque: false);
+  monochrome(artScale: 0.62, opaque: false),
+
+  /// Window icons have no system-provided mask.
+  desktop(artScale: 0.86, opaque: false);
 
   const IconLayer({required this.artScale, required this.opaque});
 
@@ -142,6 +145,15 @@ void paintIcon(
   GlyphInk ink,
 ) {
   final full = Rect.fromLTWH(0, 0, size, size);
+  if (layer == IconLayer.desktop) {
+    canvas.save();
+    canvas.clipRRect(
+      RRect.fromRectAndRadius(full, Radius.circular(size * 0.21)),
+    );
+    paintIcon(canvas, size, variant, IconLayer.legacy, ink);
+    canvas.restore();
+    return;
+  }
   if (layer.opaque) {
     canvas.drawRect(full, Paint()..color = brandSurface);
   }
@@ -156,6 +168,13 @@ void paintIcon(
       _trail(art);
     case BrandIcon.beam:
       _beam(art);
+    case BrandIcon.cabinet:
+      paintCabinet(
+        canvas,
+        size,
+        opaque: layer.opaque,
+        monochrome: layer == IconLayer.monochrome,
+      );
   }
   canvas.restore();
 }

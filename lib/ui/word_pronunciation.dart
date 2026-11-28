@@ -39,6 +39,17 @@ class _WordPronunciationState extends State<WordPronunciation>
   }
 
   @override
+  void didUpdateWidget(covariant WordPronunciation oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.enabled && !widget.enabled) {
+      // The card stops its voice before changing word or opening a review
+      // exercise. A late completion must not reactivate the old indicator.
+      _request++;
+      _speaking = false;
+    }
+  }
+
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _stop();

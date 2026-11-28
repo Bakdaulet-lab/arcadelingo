@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:arcadelingo/ui/app_strings.dart';
 import 'package:arcadelingo/ui/arcade_field_swipe.dart';
+import 'package:arcadelingo/ui/arcade_panel.dart';
 import 'package:arcadelingo/ui/theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,17 +12,105 @@ import 'snake_run.dart';
 
 const _labelPadding = EdgeInsets.symmetric(horizontal: 7, vertical: 3);
 
-class SnakeField extends StatelessWidget {
-  const SnakeField({
+TextStyle _appleLabelStyle(BuildContext context, {required double size}) {
+  final theme = Theme.of(context);
+  return withWeight(
+    theme.textTheme.titleSmall!,
+    FontWeight.w600,
+  ).copyWith(color: theme.colorScheme.onSurface, fontSize: size, height: 1.25);
+}
+
+/// Keeps the steering surface free when the words need more room than the grid.
+class SnakePlayfield extends StatelessWidget {
+  const SnakePlayfield({
     required this.run,
     required this.motion,
     required this.onTurn,
+    required this.fieldKey,
+    this.overlay,
     super.key,
   });
 
   final SnakeRun run;
   final ValueListenable<double> motion;
   final ValueChanged<SnakeDirection>? onTurn;
+  final Key fieldKey;
+  final Widget? overlay;
+
+  @override
+  Widget build(BuildContext context) => ArcadePanel(
+    padding: const EdgeInsets.all(7),
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final apples = run.apples;
+        final labels = _placeLabels(
+          apples,
+          run.rocks,
+          constraints.maxWidth,
+          _appleLabelStyle(context, size: 14),
+          MediaQuery.textScalerOf(context),
+          Directionality.of(context),
+          Localizations.localeOf(context),
+        );
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SnakeField(
+                  key: fieldKey,
+                  run: run,
+                  motion: motion,
+                  onTurn: onTurn,
+                  labels: labels ?? const [],
+                ),
+                if (overlay case final overlay?)
+                  Positioned.fill(child: overlay),
+              ],
+            ),
+            if (labels == null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(5, 10, 5, 3),
+                child: Column(
+                  spacing: 6,
+                  children: [
+                    for (final (index, apple) in apples.indexed)
+                      Row(
+                        children: [
+                          _AppleBadge(index: index, size: 24),
+                          const SizedBox(width: 9),
+                          Expanded(
+                            child: Text(
+                              apple.word.text,
+                              style: _appleLabelStyle(context, size: 16),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
+    ),
+  );
+}
+
+class SnakeField extends StatelessWidget {
+  const SnakeField({
+    required this.run,
+    required this.motion,
+    required this.onTurn,
+    this.labels,
+    super.key,
+  });
+
+  final SnakeRun run;
+  final ValueListenable<double> motion;
+  final ValueChanged<SnakeDirection>? onTurn;
+  final List<Rect>? labels;
 
   void _turn(Offset _, Offset delta) {
     final direction =
@@ -39,12 +128,7 @@ class SnakeField extends StatelessWidget {
             ? _FieldPalette.night
             : _FieldPalette.paper;
     final apples = run.apples;
-    final labelStyle = withWeight(
-      theme.textTheme.labelMedium!,
-      FontWeight.w600,
-    ).copyWith(color: theme.colorScheme.onSurface, height: 1.1);
-    final scaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.4);
-    final textDirection = Directionality.of(context);
+    final labelStyle = _appleLabelStyle(context, size: 14);
     final fieldMotion =
         MediaQuery.disableAnimationsOf(context)
             ? const AlwaysStoppedAnimation(1.0)
@@ -60,18 +144,26 @@ class SnakeField extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final side = constraints.maxWidth;
-              final labels = _placeLabels(
-                apples,
-                side,
-                labelStyle,
-                scaler,
-                textDirection,
-              );
+              final labels =
+                  this.labels ??
+                  _placeLabels(
+                    apples,
+                    run.rocks,
+                    side,
+                    labelStyle,
+                    MediaQuery.textScalerOf(context),
+                    Directionality.of(context),
+                    Localizations.localeOf(context),
+                  ) ??
+                  const [];
+              final unit = side / SnakeRun.size;
               return Stack(
                 fit: StackFit.expand,
                 children: [
                   RepaintBoundary(
-                    child: CustomPaint(painter: _BoardPainter(palette)),
+                    child: CustomPaint(
+                      painter: _BoardPainter(palette, run.rocks),
+                    ),
                   ),
                   RepaintBoundary(
                     child: CustomPaint(
@@ -89,7 +181,7 @@ class SnakeField extends StatelessWidget {
                       painter: _ApplePainter(palette, apples, labels),
                     ),
                   ),
-                  for (var i = 0; i < apples.length; i++)
+                  for (var i = 0; i < labels.length; i++)
                     Positioned.fromRect(
                       rect: labels[i],
                       child: DecoratedBox(
@@ -110,12 +202,28 @@ class SnakeField extends StatelessWidget {
                           child: Text(
                             apples[i].word.text,
                             textAlign: TextAlign.center,
-                            textScaler: scaler,
+                            textWidthBasis: TextWidthBasis.longestLine,
                             style: labelStyle,
                           ),
                         ),
                       ),
                     ),
+                  if (labels.isEmpty)
+                    for (final (index, apple) in apples.indexed)
+                      Positioned.fromRect(
+                        rect: Rect.fromCenter(
+                          center: _cellCenter(apple.cell, unit),
+                          width: unit * .80,
+                          height: unit * .80,
+                        ),
+                        child: ExcludeSemantics(
+                          child: _AppleBadge(
+                            key: ValueKey('snake.apple.$index'),
+                            index: index,
+                            size: unit * .80,
+                          ),
+                        ),
+                      ),
                 ],
               );
             },
@@ -150,12 +258,14 @@ class SnakeField extends StatelessWidget {
 Offset _cellCenter(SnakeCell cell, double unit) =>
     Offset((cell.x + .5) * unit, (cell.y + .5) * unit);
 
-List<Rect> _placeLabels(
+List<Rect>? _placeLabels(
   List<SnakeApple> apples,
+  Set<SnakeCell> rocks,
   double side,
   TextStyle style,
   TextScaler scaler,
   TextDirection textDirection,
+  Locale locale,
 ) {
   final unit = side / SnakeRun.size;
   final centers = [for (final apple in apples) _cellCenter(apple.cell, unit)];
@@ -163,19 +273,32 @@ List<Rect> _placeLabels(
     for (final center in centers)
       Rect.fromCenter(center: center, width: unit * .94, height: unit),
   ];
+  final rockRects = [
+    for (final rock in rocks)
+      Rect.fromCenter(
+        center: _cellCenter(rock, unit),
+        width: unit * .82,
+        height: unit * .82,
+      ),
+  ];
   final result = <Rect>[];
   for (var i = 0; i < apples.length; i++) {
     final label = apples[i].word.text;
     // Phrases can wrap at spaces. Give single words extra room before
     // Flutter has to break a word across lines at large text sizes.
-    final widthFraction = label.contains(' ') ? .55 : .68;
+    final maxWidth = math.max(1.0, side * .55 - _labelPadding.horizontal);
     final measure = TextPainter(
       text: TextSpan(text: label, style: style),
       textDirection: textDirection,
       textScaler: scaler,
-    )..layout(
-      maxWidth: math.max(1, side * widthFraction - _labelPadding.horizontal),
-    );
+      textWidthBasis: TextWidthBasis.longestLine,
+      locale: locale,
+    )..layout(maxWidth: maxWidth);
+    if (measure.minIntrinsicWidth > maxWidth ||
+        measure.computeLineMetrics().length > 2) {
+      measure.dispose();
+      return null;
+    }
     final width = measure.width.ceilToDouble() + _labelPadding.horizontal;
     final height = measure.height.ceilToDouble() + _labelPadding.vertical;
     measure.dispose();
@@ -200,10 +323,11 @@ List<Rect> _placeLabels(
         width,
         height,
       );
+      if (reserved.any(rect.overlaps)) continue;
       var overlap = 0.0;
-      for (final obstacle in reserved) {
-        final clipped = rect.intersect(obstacle);
-        if (!clipped.isEmpty) overlap += clipped.width * clipped.height;
+      for (final rock in rockRects) {
+        final clipped = rect.intersect(rock);
+        if (!clipped.isEmpty) overlap += clipped.width * clipped.height * .2;
       }
       if (overlap < leastOverlap) {
         best = rect;
@@ -211,16 +335,50 @@ List<Rect> _placeLabels(
         if (overlap == 0) break;
       }
     }
-    result.add(best!);
+    if (best == null) return null;
+    result.add(best);
     reserved.add(best.inflate(3));
   }
   return result;
 }
 
+class _AppleBadge extends StatelessWidget {
+  const _AppleBadge({required this.index, required this.size, super.key});
+
+  final int index;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final night = Theme.of(context).brightness == Brightness.dark;
+    final (color, ink) =
+        night
+            ? (const Color(0xFFFFAB9E), const Color(0xFF401319))
+            : (const Color(0xFF98383D), const Color(0xFFFFFAEE));
+    return SizedBox.square(
+      dimension: size,
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        child: Center(
+          child: Text(
+            '${index + 1}',
+            style: _appleLabelStyle(
+              context,
+              size: size * .66,
+            ).copyWith(color: ink, height: 1),
+            textScaler: TextScaler.noScaling,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _BoardPainter extends CustomPainter {
-  const _BoardPainter(this.palette);
+  const _BoardPainter(this.palette, this.rocks);
 
   final _FieldPalette palette;
+  final Set<SnakeCell> rocks;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -244,6 +402,36 @@ class _BoardPainter extends CustomPainter {
       canvas.drawLine(Offset(0, line), Offset(size.width, line), grid);
     }
     _drawEdgeGuides(canvas, size.width, unit);
+    final fill = Paint()..color = palette.rock;
+    final bevel = Paint()..color = palette.rockBevel;
+    final cutStone =
+        Path()
+          ..moveTo(.14, .21)
+          ..lineTo(.32, .07)
+          ..lineTo(.77, .07)
+          ..lineTo(.93, .28)
+          ..lineTo(.90, .78)
+          ..lineTo(.70, .93)
+          ..lineTo(.22, .91)
+          ..lineTo(.07, .72)
+          ..close();
+    final facet =
+        Path()
+          ..moveTo(.14, .21)
+          ..lineTo(.32, .07)
+          ..lineTo(.77, .07)
+          ..lineTo(.62, .28)
+          ..lineTo(.31, .33)
+          ..lineTo(.07, .72)
+          ..close();
+    for (final rock in rocks) {
+      canvas.save();
+      canvas.translate(rock.x * unit, rock.y * unit);
+      canvas.scale(unit);
+      canvas.drawPath(cutStone, fill);
+      canvas.drawPath(facet, bevel);
+      canvas.restore();
+    }
   }
 
   void _drawEdgeGuides(Canvas canvas, double side, double unit) {
@@ -270,7 +458,7 @@ class _BoardPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_BoardPainter oldDelegate) =>
-      palette != oldDelegate.palette;
+      palette != oldDelegate.palette || rocks != oldDelegate.rocks;
 }
 
 class _SnakePainter extends CustomPainter {
@@ -445,13 +633,15 @@ class _ApplePainter extends CustomPainter {
     final unit = size.width / SnakeRun.size;
     for (var i = 0; i < apples.length; i++) {
       final center = _cellCenter(apples[i].cell, unit);
-      canvas.drawLine(
-        center,
-        labels[i].center,
-        Paint()
-          ..color = palette.labelBorder
-          ..strokeWidth = 1.3,
-      );
+      if (labels.isNotEmpty) {
+        canvas.drawLine(
+          center,
+          labels[i].center,
+          Paint()
+            ..color = palette.labelBorder
+            ..strokeWidth = 1.3,
+        );
+      }
       _drawApple(canvas, center, unit);
     }
   }
@@ -528,6 +718,8 @@ class _FieldPalette {
     required this.stem,
     required this.label,
     required this.labelBorder,
+    required this.rock,
+    required this.rockBevel,
   });
 
   static const night = _FieldPalette(
@@ -545,6 +737,8 @@ class _FieldPalette {
     stem: Color(0xFFDCA65C),
     label: Color(0xFF2C223A),
     labelBorder: Color(0xFF665472),
+    rock: Color(0xFF715767),
+    rockBevel: Color(0xFFAB8993),
   );
 
   static const paper = _FieldPalette(
@@ -562,6 +756,8 @@ class _FieldPalette {
     stem: Color(0xFF754412),
     label: Color(0xFFFFFCF4),
     labelBorder: Color(0xFFC6AA8D),
+    rock: Color(0xFF9A7966),
+    rockBevel: Color(0xFFC4A58A),
   );
 
   final Color field;
@@ -578,4 +774,6 @@ class _FieldPalette {
   final Color stem;
   final Color label;
   final Color labelBorder;
+  final Color rock;
+  final Color rockBevel;
 }

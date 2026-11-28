@@ -155,21 +155,19 @@ void main() {
   });
 
   group('Цвета', () {
-    test('край горящего пламени — янтарь', () {
-      expect(flameEdgeColor(_scheme, FlameMood.lit), _scheme.tertiary);
+    test('край маленького костра отличается от зрелого', () {
+      expect(
+        flameEdgeColor(_scheme, FlameMood.lit, tier: FlameTier.spark),
+        isNot(flameEdgeColor(_scheme, FlameMood.lit)),
+      );
     });
 
     test('край тревожного уходит к малиновому, но не становится им', () {
       final edge = flameEdgeColor(_scheme, FlameMood.atRisk);
 
-      expect(edge, isNot(_scheme.tertiary));
+      expect(edge, isNot(flameEdgeColor(_scheme, FlameMood.lit)));
       expect(edge, isNot(_scheme.error));
       expect(edge.r, greaterThan(0.5), reason: 'это всё ещё огонь, не крест');
-    });
-
-    test('число на горящем пламени — цвета фона: вырезано, а не положено', () {
-      expect(flameDigitColor(_scheme, FlameMood.lit), _scheme.surface);
-      expect(flameDigitColor(_scheme, FlameMood.atRisk), _scheme.surface);
     });
 
     test('число на незажжённом видно на карточке', () {
@@ -182,11 +180,17 @@ void main() {
   });
 
   group('Закон о контрасте', () {
-    test('число на ядре пламени — не ниже 4.5:1', () {
-      expect(
-        _contrast(flameDigitColor(_scheme, FlameMood.lit), _scheme.primary),
-        greaterThanOrEqualTo(4.5),
-      );
+    test('число на золотом и кремовом ядре читается в обеих темах', () {
+      for (final scheme in [wordarcadeColors, warmPaperColors]) {
+        for (final mood in [FlameMood.lit, FlameMood.atRisk]) {
+          for (final core in [flameSparkCoreColor, flameCoreColor]) {
+            expect(
+              _contrast(flameDigitColor(scheme, mood), core),
+              greaterThanOrEqualTo(4.5),
+            );
+          }
+        }
+      }
     });
 
     test('число на незажжённом пламени — не ниже 4.5:1', () {

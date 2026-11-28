@@ -20,12 +20,14 @@ import 'package:arcadelingo/domain/ports/answer_log.dart';
 import 'package:arcadelingo/domain/ports/card_store.dart';
 import 'package:arcadelingo/domain/ports/challenge_records.dart';
 import 'package:arcadelingo/domain/ports/custom_words_store.dart';
+import 'package:arcadelingo/domain/ports/daily_word_store.dart';
 import 'package:arcadelingo/domain/ports/event_log.dart';
 import 'package:arcadelingo/domain/ports/favorites_store.dart';
 import 'package:arcadelingo/domain/ports/reminders.dart';
 import 'package:arcadelingo/domain/ports/settings_store.dart';
 import 'package:arcadelingo/domain/ports/sounds.dart';
 import 'package:arcadelingo/domain/ports/streak_store.dart';
+import 'package:arcadelingo/domain/ports/word_sets_store.dart';
 import 'package:arcadelingo/domain/ports/word_speech.dart';
 
 /// Умолчание для спроса разрешения на уведомления: платформы, у которой
@@ -40,6 +42,8 @@ class AppPorts {
     this.events = const NoopEventLog(),
     this.favorites,
     this.customWords,
+    this.wordSets,
+    this.dailyWord,
     this.reminders = const NoopReminders(),
     this.sounds = const NoopSounds(),
     this.speech = const NoopWordSpeech(),
@@ -53,6 +57,8 @@ class AppPorts {
     answers: deck.answers,
     favorites: deck.favorites,
     customWords: deck.customWords,
+    wordSets: deck.wordSets,
+    dailyWord: deck.dailyWord,
     speech: deck.speech,
     streaks: deck.streaks,
     events: deck.events,
@@ -79,6 +85,8 @@ class AppPorts {
 
   final FavoritesStore? favorites;
   final CustomWordsStore? customWords;
+  final WordSetsStore? wordSets;
+  final DailyWordStore? dailyWord;
 
   /// Напоминания.
   final Reminders reminders;
