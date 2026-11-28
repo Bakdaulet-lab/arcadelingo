@@ -72,10 +72,10 @@ void main() {
   }
 
   test(
-    '20 course directions reload independent word and streak progress',
+    '24 course directions reload independent word and streak progress',
     () async {
       final courses = StudyCourse.multilingualCourses;
-      expect(courses.length, 20);
+      expect(courses.length, 24);
       final histories = [for (final _ in courses) newHistory()];
       final at = DateTime.utc(2026, 11, 28, 10);
       final wordIds = <String, String>{};
@@ -172,6 +172,24 @@ void main() {
       },
     );
   }
+
+  test('Turkish speech prefers the installed tr-TR voice', () async {
+    final calls = mockVoices(installed: ['tr', 'tr-TR'], online: ['tr-TR']);
+    final course = StudyCourse.multilingualCourses.firstWhere(
+      (course) => course.id == 'ru-tr',
+    );
+    final deck = await load(course, newHistory());
+    const spelling = 'ışık';
+    expect(await deck.speech.speak(spelling), SpeechResult.completed);
+    expect(calls.singleWhere((call) => call.method == 'setVoice').arguments, {
+      'name': 'local tr-TR',
+      'locale': 'tr-TR',
+    });
+    expect(
+      calls.singleWhere((call) => call.method == 'speak').arguments,
+      spelling,
+    );
+  });
 
   test(
     'Japanese speech uses the installed ja-JP voice and the card reading',
