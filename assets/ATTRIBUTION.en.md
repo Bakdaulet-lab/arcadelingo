@@ -1,5 +1,11 @@
 # Sources and third-party materials
 
+## Korean A1–C1
+
+The Standard South Korean vocabulary, translations, and answer choices were written for ArcadeLingo. Levels follow the app's learning sequence. Editorial references include the [National Institute of Korean Language's Korean Basic Dictionary](https://krdict.korean.go.kr/) and [King Sejong Institute Foundation's learning materials](https://app.ksif.or.kr/eng/index.do).
+
+Arcade Korean is derived from [Noto Sans KR](https://github.com/google/fonts/tree/main/ofl/notosanskr) and renders Hangul offline. The SIL Open Font License 1.1 is available in the app.
+
 ## A1–B2 levels — CEFR-J Wordlist
 
 ArcadeLingo uses the CEFR-J dataset for its A1–B2 English headwords and levels.

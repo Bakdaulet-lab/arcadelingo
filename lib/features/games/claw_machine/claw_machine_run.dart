@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:arcadelingo/domain/review/hangul.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/word_labels.dart';
 import 'package:flutter/widgets.dart' show StringCharacters;
@@ -10,7 +11,7 @@ class ClawMachineRun {
     this.session,
     this.random, {
     int? hintLimit,
-    String studyLanguage = 'en',
+    this.studyLanguage = 'en',
   }) : _hintsRemaining = hintLimit,
        _alphabet = switch (studyLanguage) {
          'ru' => 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ',
@@ -18,6 +19,7 @@ class ClawMachineRun {
          'fr' => 'ABCDEFGHIJKLMNOPQRSTUVWXYZÀÂÆÇÉÈÊËÎÏÔŒÙÛÜŸ',
          'zh' => '你我他她它们的这那有在去来看学说听写吃喝水火木土山上下中大小日月人心东西南北',
          'ar' => 'ابتثجحخدذرزسشصضطظعغفقكلمنهويأإآؤئةىء',
+         'ko' => '가나다라마바사아자차카타파하',
          _ => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
        };
 
@@ -26,7 +28,11 @@ class ClawMachineRun {
 
   final ReviewSession session;
   final Random random;
+  final String studyLanguage;
   final String _alphabet;
+  HangulSpelling? _hangul;
+  String? get hangulPreview => _hangul?.completedAt(collected);
+  String get _tileAlphabet => _hangul == null ? _alphabet : hangulTileAlphabet;
   int? _hintsRemaining;
   int? get hintsRemaining => _hintsRemaining;
 
@@ -50,7 +56,8 @@ class ClawMachineRun {
     final word = item?.word;
     if (word == null) return;
     answer = uppercaseWordLetters(word.text);
-    slots = answer.characters.toList(growable: false);
+    _hangul = studyLanguage == 'ko' ? HangulSpelling.forWord(answer) : null;
+    slots = _hangul?.tiles ?? answer.characters.toList(growable: false);
     separators = {
       for (final (i, slot) in slots.indexed)
         if (!_letterOrDigit.hasMatch(slot)) i,
@@ -72,7 +79,7 @@ class ClawMachineRun {
               if (!separators.contains(i)) slot,
           }.toList()
           ..shuffle(random);
-    final pool = [...letters, ..._alphabet.split('')]..shuffle(random);
+    final pool = [...letters, ..._tileAlphabet.split('')]..shuffle(random);
     stacks
       ..clear()
       ..addAll(List.generate(columnCount, (_) => [pool.removeLast()]));
@@ -136,7 +143,7 @@ class ClawMachineRun {
     if (_targetColumn == -1) {
       stack.add(slots[collected]);
     } else if (stack.isEmpty) {
-      stack.add(_alphabet[random.nextInt(_alphabet.length)]);
+      stack.add(_tileAlphabet[random.nextInt(_tileAlphabet.length)]);
     }
   }
 

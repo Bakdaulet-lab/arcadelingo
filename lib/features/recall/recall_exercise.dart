@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:arcadelingo/domain/review/hangul.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/word_labels.dart';
 import 'package:flutter/widgets.dart' show StringCharacters;
@@ -12,7 +13,10 @@ class RecallExercise {
     required Iterable<Word> vocabulary,
     required Random random,
   }) {
-    final graphemes = item.word.text.characters.toList();
+    final hangul = HangulSpelling.forWord(item.word.text);
+    _hangul = hangul != null;
+    spelling = hangul?.tiles ?? item.word.text.characters.toList();
+    final graphemes = spelling;
     final hasLetters = graphemes.any(_letterOrDigit.hasMatch);
     _template = [
       for (final glyph in graphemes)
@@ -39,6 +43,8 @@ class RecallExercise {
   final ReviewItem item;
   late final List<String> tiles;
   late final List<String> choices;
+  late final List<String> spelling;
+  late final bool _hangul;
   late final List<String?> _template;
   final _selected = <int>[];
 
@@ -55,8 +61,12 @@ class RecallExercise {
   bool get complete => tiles.isNotEmpty && _selected.length == tiles.length;
   bool get correct =>
       complete &&
-      normalizedCourseSpelling(slots.join()) ==
-          normalizedCourseSpelling(item.word.text);
+      (_hangul
+          ? slots.join() == spelling.join()
+          : normalizedCourseSpelling(slots.join()) ==
+              normalizedCourseSpelling(item.word.text));
+
+  String get answerText => _hangul && correct ? item.word.text : slots.join();
 
   void selectTile(int index) {
     if (index >= 0 && index < tiles.length && !_selected.contains(index)) {

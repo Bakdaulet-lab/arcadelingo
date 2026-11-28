@@ -19,6 +19,7 @@ final _latinLetters = RegExp(r'^[a-záéíóúñü]+$');
 final _germanLetters = RegExp(r'^[a-zäöüß]+$');
 final _frenchLetters = RegExp(r'^[a-zàâæçéèêëîïôœùûüÿ]+$');
 final _hanCharacters = RegExp(r'^[\u3400-\u9fff]+$');
+final _hangulSyllables = RegExp(r'^[\uac00-\ud7a3]+$');
 final _arabicLetters = RegExp(r'^[\u0621-\u063a\u0641-\u064a]+$');
 final _russianLetters = RegExp(r'^[а-яё]+$');
 final _clueWords = RegExp(r'\p{L}+', unicode: true);
@@ -28,6 +29,7 @@ RegExp _lettersFor(StudyCourse course) => switch (course.studyLanguage) {
   'de' => _germanLetters,
   'fr' => _frenchLetters,
   'zh' => _hanCharacters,
+  'ko' => _hangulSyllables,
   'ar' => _arabicLetters,
   _ => _latinLetters,
 };
@@ -61,7 +63,11 @@ DailyWordPuzzle? selectDailyWord({
   String? targetId,
 }) {
   final letters = _lettersFor(course);
-  final (minLength, maxLength) = course.studyLanguage == 'zh' ? (2, 4) : (4, 7);
+  final (minLength, maxLength) = switch (course.studyLanguage) {
+    'zh' => (2, 4),
+    'ko' => (2, 5),
+    _ => (4, 7),
+  };
   final clear = <String, Word>{};
   final revealing = <String, Word>{};
   final allowed = <String>{};

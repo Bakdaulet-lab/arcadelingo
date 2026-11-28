@@ -8,13 +8,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const _courses = [
+final _courses = [
   StudyCourse.spanishFromRussian,
   StudyCourse.spanishFromEnglish,
   StudyCourse.englishFromRussian,
   StudyCourse.englishFromSpanish,
   ...StudyCourse.kazakhCourses,
   ...StudyCourse.germanCourses,
+  ...StudyCourse.multilingualCourses.where(
+    (course) => course.studyLanguage == 'ko',
+  ),
 ];
 
 Finder _control(String name) => find.byKey(ValueKey('candy.$name'));
@@ -110,7 +113,7 @@ void main() {
           expect(_control('replay'), findsOneWidget);
         }
       }
-      expect(combinations, 52);
+      expect(combinations, 72);
       expect(tester.takeException(), isNull);
     },
   );

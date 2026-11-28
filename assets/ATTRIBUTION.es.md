@@ -1,5 +1,11 @@
 # Fuentes y materiales de terceros
 
+## Coreano de A1 a C1
+
+El vocabulario del coreano estándar de Corea del Sur, las traducciones y las opciones de respuesta se prepararon para ArcadeLingo. Los niveles siguen la secuencia didáctica de la aplicación. Se consultaron el [Diccionario básico de coreano del Instituto Nacional de la Lengua Coreana](https://krdict.korean.go.kr/) y los [materiales didácticos de la Fundación Instituto Rey Sejong](https://app.ksif.or.kr/eng/index.do).
+
+Arcade Korean deriva de [Noto Sans KR](https://github.com/google/fonts/tree/main/ofl/notosanskr) y permite mostrar el alfabeto hangul sin conexión. La licencia SIL Open Font License 1.1 está disponible en la aplicación.
+
 ## Niveles A1–B2 de inglés
 
 Las palabras en inglés y los niveles A1–B2 de ArcadeLingo proceden de la lista de vocabulario CEFR-J.

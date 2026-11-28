@@ -116,34 +116,48 @@ class AppStrings {
   );
   String get dailyWordAbsent =>
       _text(en: 'Absent', ru: 'Нет в слове', es: 'No aparece', kk: 'Сөзде жоқ');
-  String dailyWordEntry(int length, {bool characters = false}) =>
-      characters
-          ? _text(
-            en: 'Enter $length Chinese characters',
-            ru: 'Введи $length иероглифа',
-            es: 'Escribe $length caracteres chinos',
-            kk: '$length қытай иероглифін енгіз',
-          )
-          : _text(
-            en: 'Enter a $length-letter word',
-            ru: 'Введи слово из $length букв',
-            es: 'Escribe una palabra de $length letras',
-            kk: '$length әріптен тұратын сөз енгіз',
-          );
-  String dailyWordWrongLength(int length, {bool characters = false}) =>
-      characters
-          ? _text(
-            en: 'Use exactly $length Chinese characters.',
-            ru: 'Нужное число иероглифов — $length.',
-            es: 'Usa exactamente $length caracteres chinos.',
-            kk: 'Дәл $length қытай иероглифін енгіз.',
-          )
-          : _text(
-            en: 'Use exactly $length letters.',
-            ru: 'Нужная длина слова — $length.',
-            es: 'La palabra debe tener $length letras.',
-            kk: 'Сөз дәл $length әріптен тұруы керек.',
-          );
+  String dailyWordEntry(int length, {String studyLanguage = 'en'}) =>
+      switch (studyLanguage) {
+        'ko' => _text(
+          en: 'Enter $length Hangul syllables',
+          ru: 'Введи $length ${length == 5 ? 'слогов' : 'слога'} хангыля',
+          es: 'Escribe $length sílabas en hangul',
+          kk: 'Хангыльмен $length буын енгіз',
+        ),
+        'zh' => _text(
+          en: 'Enter $length Chinese characters',
+          ru: 'Введи $length иероглифа',
+          es: 'Escribe $length caracteres chinos',
+          kk: '$length қытай иероглифін енгіз',
+        ),
+        _ => _text(
+          en: 'Enter a $length-letter word',
+          ru: 'Введи слово из $length букв',
+          es: 'Escribe una palabra de $length letras',
+          kk: '$length әріптен тұратын сөз енгіз',
+        ),
+      };
+  String dailyWordWrongLength(int length, {String studyLanguage = 'en'}) =>
+      switch (studyLanguage) {
+        'ko' => _text(
+          en: 'Use exactly $length Hangul syllables.',
+          ru: 'Нужное количество слогов — $length.',
+          es: 'Usa exactamente $length sílabas en hangul.',
+          kk: 'Хангыльмен дәл $length буын енгіз.',
+        ),
+        'zh' => _text(
+          en: 'Use exactly $length Chinese characters.',
+          ru: 'Нужное число иероглифов — $length.',
+          es: 'Usa exactamente $length caracteres chinos.',
+          kk: 'Дәл $length қытай иероглифін енгіз.',
+        ),
+        _ => _text(
+          en: 'Use exactly $length letters.',
+          ru: 'Нужная длина слова — $length.',
+          es: 'La palabra debe tener $length letras.',
+          kk: 'Сөз дәл $length әріптен тұруы керек.',
+        ),
+      };
   String get dailyWordInvalidLetters => _text(
     en: 'Use letters from the language you’re learning.',
     ru: 'Используй буквы языка, который изучаешь.',
@@ -155,6 +169,12 @@ class AppStrings {
     ru: 'Используй упрощённые китайские иероглифы.',
     es: 'Usa caracteres chinos simplificados.',
     kk: 'Қытайдың жеңілдетілген иероглифтерін қолдан.',
+  );
+  String get dailyWordInvalidHangul => _text(
+    en: 'Enter your guess in Hangul.',
+    ru: 'Введи слово на хангыле.',
+    es: 'Escribe la palabra en hangul.',
+    kk: 'Сөзді хангыльмен жаз.',
   );
   String get dailyWordUnknown => _text(
     en: 'Try a word from this course’s dictionary.',
@@ -311,6 +331,7 @@ class AppStrings {
       'es' => 'Как это сказать по-испански?',
       'ru' => 'Как это сказать по-русски?',
       'de' => 'Как это сказать по-немецки?',
+      'ko' => 'Как это сказать по-корейски?',
       _ => 'Как это сказать на изучаемом языке?',
     },
     es: '¿Cómo se dice en ${languageName(tag).toLowerCase()}?',
@@ -319,6 +340,7 @@ class AppStrings {
       'es' => 'Мұны испанша қалай айтады?',
       'ru' => 'Мұны орысша қалай айтады?',
       'de' => 'Мұны немісше қалай айтады?',
+      'ko' => 'Мұны корейше қалай айтады?',
       _ => 'Мұны үйреніп жүрген тіліңде қалай айтады?',
     },
   );
@@ -2068,6 +2090,12 @@ class AppStrings {
       kk: 'Қытай тілі (мандарин)',
     ),
     'ar' => _text(en: 'Arabic', ru: 'Арабский', es: 'Árabe', kk: 'Араб тілі'),
+    'ko' => _text(
+      en: 'Korean',
+      ru: 'Корейский',
+      es: 'Coreano',
+      kk: 'Корей тілі',
+    ),
     'de' => _text(en: 'German', ru: 'Немецкий', es: 'Alemán', kk: 'Неміс тілі'),
     'en' => _text(
       en: 'English',
@@ -2101,6 +2129,7 @@ class AppStrings {
       'fr' => 'Уровень французского',
       'zh' => 'Уровень китайского',
       'ar' => 'Уровень арабского',
+      'ko' => 'Уровень корейского',
       _ => 'Уровень языка ($tag)',
     },
     es: 'Nivel de ${languageName(tag).toLowerCase()}',
@@ -2112,6 +2141,7 @@ class AppStrings {
       'fr' => 'Француз тілінің деңгейі',
       'zh' => 'Қытай тілінің деңгейі',
       'ar' => 'Араб тілінің деңгейі',
+      'ko' => 'Корей тілінің деңгейі',
       'kk' => 'Қазақ тілінің деңгейі',
       _ => 'Тіл деңгейі',
     },

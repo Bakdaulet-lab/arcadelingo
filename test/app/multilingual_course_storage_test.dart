@@ -72,10 +72,10 @@ void main() {
   }
 
   test(
-    '12 course directions reload independent word and streak progress',
+    '16 course directions reload independent word and streak progress',
     () async {
       final courses = StudyCourse.multilingualCourses;
-      expect(courses.length, 12);
+      expect(courses.length, 16);
       final histories = [for (final _ in courses) newHistory()];
       final at = DateTime.utc(2026, 11, 28, 10);
       final wordIds = <String, String>{};
@@ -120,7 +120,7 @@ void main() {
 
   for (final mandarin in ['cmn-CN', 'zh-CN']) {
     test(
-      'course speech prefers installed fr-FR, $mandarin and ar-SA',
+      'course speech prefers installed fr-FR, $mandarin, ar-SA and ko-KR',
       () async {
         final calls = mockVoices(
           installed: [
@@ -132,10 +132,17 @@ void main() {
             'fr-FR',
             mandarin,
             'ar-SA',
+            'ko',
+            'ko-KR',
           ],
-          online: ['fr-FR', mandarin, 'ar-SA'],
+          online: ['fr-FR', mandarin, 'ar-SA', 'ko-KR'],
         );
-        final locales = {'fr': 'fr-FR', 'zh': mandarin, 'ar': 'ar-SA'};
+        final locales = {
+          'fr': 'fr-FR',
+          'zh': mandarin,
+          'ar': 'ar-SA',
+          'ko': 'ko-KR',
+        };
         final spoken = <String>[];
         for (final language in locales.keys) {
           final course = StudyCourse.multilingualCourses.firstWhere(

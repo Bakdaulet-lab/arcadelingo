@@ -262,5 +262,9 @@ void _registerFontLicense() {
       'assets/fonts/NotoSansSC-OFL.txt',
     );
     yield LicenseEntryWithLineBreaks([chineseFont], chinese);
+    final korean = await rootBundle.loadString(
+      'assets/fonts/NotoSansKR-OFL.txt',
+    );
+    yield LicenseEntryWithLineBreaks([koreanFont], korean);
   });
 }

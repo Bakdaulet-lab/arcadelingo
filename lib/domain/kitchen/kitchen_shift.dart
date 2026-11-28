@@ -4,12 +4,42 @@ import '../review/review_contract.dart';
 import '../review/study_course.dart';
 
 enum KitchenIngredient {
-  coffee('Coffee', 'Café', 'Кофе', 'Кофе', 'Kaffee', 'Café', '咖啡', 'قهوة'),
-  tea('Tea', 'Té', 'Чай', 'Шай', 'Tee', 'Thé', '茶', 'شاي'),
-  milk('Milk', 'Leche', 'Молоко', 'Сүт', 'Milch', 'Lait', '牛奶', 'حليب'),
-  sugar('Sugar', 'Azúcar', 'Сахар', 'Қант', 'Zucker', 'Sucre', '糖', 'سكر'),
-  lemon('Lemon', 'Limón', 'Лимон', 'Лимон', 'Zitrone', 'Citron', '柠檬', 'ليمون'),
-  honey('Honey', 'Miel', 'Мёд', 'Бал', 'Honig', 'Miel', '蜂蜜', 'عسل');
+  coffee(
+    'Coffee',
+    'Café',
+    'Кофе',
+    'Кофе',
+    'Kaffee',
+    'Café',
+    '咖啡',
+    'قهوة',
+    '커피',
+  ),
+  tea('Tea', 'Té', 'Чай', 'Шай', 'Tee', 'Thé', '茶', 'شاي', '차'),
+  milk('Milk', 'Leche', 'Молоко', 'Сүт', 'Milch', 'Lait', '牛奶', 'حليب', '우유'),
+  sugar(
+    'Sugar',
+    'Azúcar',
+    'Сахар',
+    'Қант',
+    'Zucker',
+    'Sucre',
+    '糖',
+    'سكر',
+    '설탕',
+  ),
+  lemon(
+    'Lemon',
+    'Limón',
+    'Лимон',
+    'Лимон',
+    'Zitrone',
+    'Citron',
+    '柠檬',
+    'ليمون',
+    '레몬',
+  ),
+  honey('Honey', 'Miel', 'Мёд', 'Бал', 'Honig', 'Miel', '蜂蜜', 'عسل', '꿀');
 
   const KitchenIngredient(
     this._english,
@@ -20,6 +50,7 @@ enum KitchenIngredient {
     this._french,
     this._chinese,
     this._arabic,
+    this._korean,
   );
   final String _english;
   final String _spanish;
@@ -29,6 +60,7 @@ enum KitchenIngredient {
   final String _french;
   final String _chinese;
   final String _arabic;
+  final String _korean;
 
   String label(String language) => switch (language) {
     'es' => _spanish,
@@ -38,6 +70,7 @@ enum KitchenIngredient {
     'fr' => _french,
     'zh' => _chinese,
     'ar' => _arabic,
+    'ko' => _korean,
     _ => _english,
   };
 }
@@ -53,6 +86,7 @@ class KitchenOrder {
     this._french,
     this._chinese,
     this._arabic,
+    this._korean,
   );
 
   final Set<KitchenIngredient> ingredients;
@@ -64,6 +98,7 @@ class KitchenOrder {
   final String _french;
   final String _chinese;
   final String _arabic;
+  final String _korean;
 
   String phrase(String language) => switch (language) {
     'es' => _spanish,
@@ -73,6 +108,7 @@ class KitchenOrder {
     'fr' => _french,
     'zh' => _chinese,
     'ar' => _arabic,
+    'ko' => _korean,
     _ => _english,
   };
 
@@ -91,6 +127,7 @@ const _plain = [
     'Un thé, s’il vous plaît.',
     '请给我一杯茶。',
     'شاي، من فضلك.',
+    '차 한 잔 주세요.',
   ),
   KitchenOrder._(
     {KitchenIngredient.coffee},
@@ -102,6 +139,7 @@ const _plain = [
     'Un café, s’il vous plaît.',
     '请给我一杯咖啡。',
     'قهوة، من فضلك.',
+    '커피 한 잔 주세요.',
   ),
 ];
 
@@ -116,6 +154,7 @@ const _withOneExtra = [
     'Un thé au miel, s’il vous plaît.',
     '请给我一杯加蜂蜜的茶。',
     'شاي بالعسل، من فضلك.',
+    '꿀을 넣은 차 주세요.',
   ),
   KitchenOrder._(
     {KitchenIngredient.coffee, KitchenIngredient.sugar},
@@ -127,6 +166,7 @@ const _withOneExtra = [
     'Un café avec du sucre, s’il vous plaît.',
     '请给我一杯加糖的咖啡。',
     'قهوة مع السكر، من فضلك.',
+    '설탕을 넣은 커피 주세요.',
   ),
   KitchenOrder._(
     {KitchenIngredient.tea, KitchenIngredient.lemon},
@@ -138,6 +178,7 @@ const _withOneExtra = [
     'Je voudrais un thé au citron.',
     '我想要一杯柠檬茶。',
     'أريد شايًا بالليمون.',
+    '레몬을 넣은 차를 주세요.',
   ),
   KitchenOrder._(
     {KitchenIngredient.tea, KitchenIngredient.milk},
@@ -149,6 +190,7 @@ const _withOneExtra = [
     'Un thé avec du lait, s’il vous plaît.',
     '请给我一杯加牛奶的茶。',
     'شاي مع الحليب، من فضلك.',
+    '우유를 넣은 차 주세요.',
   ),
   KitchenOrder._(
     {KitchenIngredient.coffee, KitchenIngredient.milk},
@@ -160,6 +202,7 @@ const _withOneExtra = [
     'Je voudrais un café au lait.',
     '我想要一杯加牛奶的咖啡。',
     'أريد قهوة بالحليب.',
+    '우유를 넣은 커피를 주세요.',
   ),
   KitchenOrder._(
     {KitchenIngredient.tea, KitchenIngredient.sugar},
@@ -171,6 +214,7 @@ const _withOneExtra = [
     'Un thé avec du sucre, s’il vous plaît.',
     '请给我一杯加糖的茶。',
     'شاي مع السكر، من فضلك.',
+    '설탕을 넣은 차 주세요.',
   ),
 ];
 
@@ -192,6 +236,7 @@ const _contrasts = [
       'Un café avec du lait et du sucre, s’il vous plaît.',
       '请给我一杯加牛奶和糖的咖啡。',
       'قهوة بالحليب والسكر، من فضلك.',
+      '커피에 우유와 설탕을 넣어 주세요.',
     ),
     KitchenOrder._(
       {KitchenIngredient.coffee, KitchenIngredient.milk},
@@ -203,6 +248,7 @@ const _contrasts = [
       'Un café avec du lait, sans sucre, s’il vous plaît.',
       '请给我一杯加牛奶的咖啡，不加糖。',
       'قهوة بالحليب من دون سكر، من فضلك.',
+      '커피에 우유는 넣고 설탕은 빼 주세요.',
     ),
   ),
   (
@@ -216,6 +262,7 @@ const _contrasts = [
       'Un thé au citron et au miel, s’il vous plaît.',
       '请给我一杯加柠檬和蜂蜜的茶。',
       'شاي بالليمون والعسل، من فضلك.',
+      '차에 레몬과 꿀을 넣어 주세요.',
     ),
     KitchenOrder._(
       {KitchenIngredient.tea, KitchenIngredient.lemon},
@@ -227,6 +274,7 @@ const _contrasts = [
       'Un thé au citron, sans miel, s’il vous plaît.',
       '请给我一杯柠檬茶，不加蜂蜜。',
       'شاي بالليمون من دون عسل، من فضلك.',
+      '차에 레몬은 넣고 꿀은 빼 주세요.',
     ),
   ),
   (
@@ -240,6 +288,7 @@ const _contrasts = [
       'Un thé avec du lait et du sucre, s’il vous plaît.',
       '请给我一杯加牛奶和糖的茶。',
       'شاي بالحليب والسكر، من فضلك.',
+      '차에 우유와 설탕을 넣어 주세요.',
     ),
     KitchenOrder._(
       {KitchenIngredient.tea, KitchenIngredient.sugar},
@@ -251,6 +300,7 @@ const _contrasts = [
       'Un thé avec du sucre, mais sans lait, s’il vous plaît.',
       '请给我一杯加糖的茶，但不要加牛奶。',
       'شاي بالسكر، لكن من دون حليب، من فضلك.',
+      '차에 설탕은 넣고 우유는 빼 주세요.',
     ),
   ),
   (
@@ -264,6 +314,7 @@ const _contrasts = [
       'Un thé au citron avec du sucre, s’il vous plaît.',
       '请给我一杯加糖的柠檬茶。',
       'شاي بالليمون والسكر، من فضلك.',
+      '차에 레몬과 설탕을 넣어 주세요.',
     ),
     KitchenOrder._(
       {KitchenIngredient.tea, KitchenIngredient.lemon},
@@ -275,6 +326,7 @@ const _contrasts = [
       'Un thé au citron, mais sans sucre, s’il vous plaît.',
       '请给我一杯柠檬茶，但不要加糖。',
       'شاي بالليمون، لكن من دون سكر، من فضلك.',
+      '차에 레몬은 넣고 설탕은 빼 주세요.',
     ),
   ),
 ];

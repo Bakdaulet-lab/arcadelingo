@@ -101,6 +101,12 @@ C1/C2 Version 1.0**, Octanove Labs. Исходный набор:
 
 Noto Sans Arabic и Arcade Chinese (подмножество Noto Sans SC) обеспечивают отображение арабского письма и китайских иероглифов офлайн. Оба шрифта распространяются под SIL Open Font License 1.1, тексты лицензий доступны в приложении. Исходные файлы: <https://github.com/google/fonts/tree/main/ofl/notosansarabic> и <https://github.com/google/fonts/tree/main/ofl/notosanssc>.
 
+## Корейский язык A1–C1
+
+Словарь стандартного южнокорейского языка, переводы и варианты ответов составлены для ArcadeLingo. Уровни отражают учебную последовательность приложения. Справочные материалы — [Корейский базовый словарь Национального института корейского языка](https://krdict.korean.go.kr/) и [учебные материалы Фонда короля Седжона](https://app.ksif.or.kr/eng/index.do).
+
+Arcade Korean создан на основе [Noto Sans KR](https://github.com/google/fonts/tree/main/ofl/notosanskr) и позволяет отображать хангыль без интернета. Лицензия SIL Open Font License 1.1 доступна в приложении.
+
 ## Звуковые эффекты «Ниндзя-слэша»
 
 - **Автор:** Kenney (Kenney Vleugels).

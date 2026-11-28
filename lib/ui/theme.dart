@@ -31,7 +31,8 @@ const String wordarcadeFont = 'Rubik';
 const String warmPaperFont = 'Lora';
 const String chineseFont = 'Arcade Chinese';
 const String arabicFont = 'Noto Sans Arabic';
-const arcadeFontFallback = [arabicFont, chineseFont];
+const koreanFont = 'Arcade Korean';
+const arcadeFontFallback = [arabicFont, chineseFont, koreanFont];
 
 /// Палитра «ночной автомат»: глубокий тёмный фон и два неоновых акцента.
 ///

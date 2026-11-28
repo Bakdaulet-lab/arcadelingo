@@ -103,6 +103,10 @@ flutter:
     - assets/words_zh_en/
     - assets/words_zh_es/
     - assets/words_zh_kk/
+    - assets/words_ko_ru/
+    - assets/words_ko_en/
+    - assets/words_ko_es/
+    - assets/words_ko_kk/
     - assets/words_ar_ru/
     - assets/words_ar_en/
     - assets/words_ar_es/
@@ -128,6 +132,7 @@ flutter:
     - assets/fonts/Lora-OFL.txt
     - assets/fonts/NotoSansArabic-OFL.txt
     - assets/fonts/NotoSansSC-OFL.txt
+    - assets/fonts/NotoSansKR-OFL.txt
 
   fonts:
     # Один вариативный файл вместо трёх статических: Google Fonts статические
@@ -150,6 +155,9 @@ flutter:
     - family: 'Arcade Chinese'
       fonts:
         - asset: assets/fonts/ArcadeChinese-Regular.ttf
+    - family: 'Arcade Korean'
+      fonts:
+        - asset: assets/fonts/ArcadeKorean-Regular.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
