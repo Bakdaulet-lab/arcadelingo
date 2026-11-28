@@ -15,12 +15,12 @@ const _levels = [
   CefrLevel.b2,
   CefrLevel.c1,
 ];
-const _wordsPerLevel = 300;
+const _wordsPerLevel = 500;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('twelve offline courses each include 300 words per level', () async {
+  test('twelve offline courses each include 500 words per level', () async {
     final courses = StudyCourse.multilingualCourses;
     expect(
       courses.map((course) => course.id),
