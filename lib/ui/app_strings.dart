@@ -206,6 +206,7 @@ class AppStrings {
     ru: switch (tag) {
       'en' => 'Как это сказать по-английски?',
       'es' => 'Как это сказать по-испански?',
+      'ru' => 'Как это сказать по-русски?',
       _ => 'Как это сказать на изучаемом языке?',
     },
     es: '¿Cómo se dice en ${languageName(tag).toLowerCase()}?',
@@ -1205,6 +1206,7 @@ class AppStrings {
       _text(en: 'Interjection', ru: 'Междометие', es: 'Interjección');
   String get determiner =>
       _text(en: 'Determiner', ru: 'Определитель', es: 'Determinante');
+  String get phrase => _text(en: 'Phrase', ru: 'Выражение', es: 'Expresión');
   String voiceUnavailable(String studyLanguage) => switch (studyLanguage) {
     'en' => _text(
       en:
@@ -1439,6 +1441,7 @@ class AppStrings {
     'en' => _text(en: 'English', ru: 'Английский', es: 'Inglés'),
     'ru' => _text(en: 'Russian', ru: 'Русский', es: 'Ruso'),
     'es' => _text(en: 'Spanish', ru: 'Испанский', es: 'Español'),
+    'kk' => _text(en: 'Kazakh', ru: 'Казахский', es: 'Kazajo'),
     _ => tag,
   };
 

@@ -58,6 +58,17 @@ Future<void> main() async {
       history: HistoryDatabase(driftDatabase(name: 'wordarcade_answers_en_es')),
       speech: speech,
     ),
+    for (final course in StudyCourse.kazakhCourses)
+      loadKazakhCourse(
+        course: course,
+        prefs: prefs,
+        history: HistoryDatabase(
+          driftDatabase(
+            name: 'wordarcade_answers_${course.id.replaceAll('-', '_')}',
+          ),
+        ),
+        speech: speech,
+      ),
   ]);
   final additionalDecks = <CourseDeck>[];
   for (final result in extraCourses) {
@@ -141,6 +152,19 @@ Future<Result<CourseDeck>> loadSpanishFromEnglishCourse({
 }) async => _buildCourseDeck(
   StudyCourse.spanishFromEnglish,
   await loadSpanishFromEnglishSeed(),
+  prefs: prefs,
+  history: history,
+  speech: speech,
+);
+
+Future<Result<CourseDeck>> loadKazakhCourse({
+  required StudyCourse course,
+  required SharedPreferences prefs,
+  required HistoryDatabase history,
+  required DeviceWordSpeech speech,
+}) async => _buildCourseDeck(
+  course,
+  await loadKazakhSeed(course),
   prefs: prefs,
   history: history,
   speech: speech,

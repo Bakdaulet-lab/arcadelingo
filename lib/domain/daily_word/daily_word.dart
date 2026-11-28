@@ -15,8 +15,12 @@ enum DailyGuessError {
   finished,
 }
 
-final _letters = RegExp(r'^[a-záéíóúñü]+$');
+final _latinLetters = RegExp(r'^[a-záéíóúñü]+$');
+final _russianLetters = RegExp(r'^[а-яё]+$');
 final _clueWords = RegExp(r'\p{L}+', unicode: true);
+
+RegExp _lettersFor(StudyCourse course) =>
+    course.studyLanguage == 'ru' ? _russianLetters : _latinLetters;
 
 class DailyWordPuzzle {
   DailyWordPuzzle._(
@@ -46,6 +50,7 @@ DailyWordPuzzle? selectDailyWord({
   required Iterable<Word> vocabulary,
   String? targetId,
 }) {
+  final letters = _lettersFor(course);
   final clear = <String, Word>{};
   final revealing = <String, Word>{};
   final allowed = <String>{};
@@ -54,7 +59,7 @@ DailyWordPuzzle? selectDailyWord({
     final spelling = normalizedCourseSpelling(word.text);
     if (spelling.length < 4 ||
         spelling.length > 7 ||
-        !_letters.hasMatch(spelling)) {
+        !letters.hasMatch(spelling)) {
       continue;
     }
     allowed.add(spelling);
@@ -137,7 +142,7 @@ class DailyWordRound {
     if (!_validHistory || status != DailyWordStatus.playing) {
       return DailyGuessError.finished;
     }
-    if (spelling.isNotEmpty && !_letters.hasMatch(spelling)) {
+    if (spelling.isNotEmpty && !_lettersFor(puzzle.course).hasMatch(spelling)) {
       return DailyGuessError.invalidLetters;
     }
     if (spelling.length != puzzle.length) return DailyGuessError.wrongLength;

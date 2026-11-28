@@ -28,6 +28,7 @@ class ClawMachineGame extends StatefulWidget {
     this.sounds = const NoopSounds(),
     this.mistakeCount,
     this.onReviewMistakes,
+    this.studyLanguage = 'en',
     this.now,
     this.seed,
     super.key,
@@ -42,6 +43,7 @@ class ClawMachineGame extends StatefulWidget {
   final String Function()? summaryFooter;
   final int Function()? mistakeCount;
   final VoidCallback? onReviewMistakes;
+  final String studyLanguage;
   final DateTime Function()? now;
   final int? seed;
 
@@ -86,6 +88,7 @@ class _ClawMachineGameState extends State<ClawMachineGame>
       widget.session,
       Random(widget.seed),
       hintLimit: widget.onChallengeComplete == null ? null : 1,
+      studyLanguage: widget.studyLanguage,
     )..advance();
     _motion = AnimationController(
       vsync: this,

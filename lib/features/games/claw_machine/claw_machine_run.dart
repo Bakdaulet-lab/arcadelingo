@@ -5,15 +5,23 @@ import 'package:flutter/widgets.dart' show StringCharacters;
 
 /// Партия хранит только раскладку и попытку по выданному слову.
 class ClawMachineRun {
-  ClawMachineRun(this.session, this.random, {int? hintLimit})
-    : _hintsRemaining = hintLimit;
+  ClawMachineRun(
+    this.session,
+    this.random, {
+    int? hintLimit,
+    String studyLanguage = 'en',
+  }) : _hintsRemaining = hintLimit,
+       _alphabet =
+           studyLanguage == 'ru'
+               ? 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'
+               : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
   static const columnCount = 5;
-  static const _alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   static final _letterOrDigit = RegExp(r'[\p{L}\p{N}]', unicode: true);
 
   final ReviewSession session;
   final Random random;
+  final String _alphabet;
   int? _hintsRemaining;
   int? get hintsRemaining => _hintsRemaining;
 

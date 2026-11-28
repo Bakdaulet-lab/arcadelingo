@@ -98,5 +98,6 @@ String _partOfSpeechLabel(String partOfSpeech, AppStrings strings) =>
       'conjunction' => strings.conjunction,
       'interjection' => strings.interjection,
       'determiner' => strings.determiner,
+      'phrase' => strings.phrase,
       _ => partOfSpeech,
     };

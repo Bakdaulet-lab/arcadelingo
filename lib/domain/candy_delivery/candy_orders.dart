@@ -29,7 +29,11 @@ bool candyAvailableFor(StudyCourse course, CefrLevel level) {
   return switch (course.id) {
     'ru-en' => true,
     'es-en' => level == CefrLevel.a1,
-    'ru-es' || 'en-es' => level != CefrLevel.c2,
+    'ru-es' ||
+    'en-es' ||
+    'kk-ru' ||
+    'kk-en' ||
+    'kk-es' => level != CefrLevel.c2,
     _ => false,
   };
 }
@@ -74,17 +78,19 @@ const _layouts = [
 ];
 
 class _Cue {
-  const _Cue(this.target, this.en, this.ru, [this.es]);
+  const _Cue(this.target, this.en, this.ru, [this.es, this.kk]);
   final int target;
   final String en;
   final String ru;
   // The only C2 deck is Russian → English.
   final String? es;
+  final String? kk;
 
   String inLanguage(String language) => switch (language) {
     'en' => en,
     'ru' => ru,
     'es' => es!,
+    'kk' => kk!,
     _ => throw ArgumentError.value(language, 'language'),
   };
 }
@@ -97,40 +103,64 @@ const _cues = {
       'For the rabbit with the scarf.',
       'Для кролика в шарфе.',
       'Para el conejo con bufanda.',
+      'Шарф таққан қоянға.',
     ),
     _Cue(
       _scarf,
       'Look for a green scarf.',
       'Ищи зелёный шарф.',
       'Busca una bufanda verde.',
+      'Жасыл шарфты ізде.',
     ),
     _Cue(
       _scarf,
       'Who has a scarf?',
       'У кого шарф?',
       '¿Quién tiene una bufanda?',
+      'Шарф кімде?',
     ),
     _Cue(
       _sleep,
       'For the sleeping rabbit.',
       'Для спящего кролика.',
       'Para el conejo dormido.',
+      'Ұйықтап жатқан қоянға.',
     ),
-    _Cue(_sleep, 'Look for the blanket.', 'Ищи одеяло.', 'Busca la manta.'),
-    _Cue(_sleep, 'Who is asleep?', 'Кто спит?', '¿Quién está dormido?'),
+    _Cue(
+      _sleep,
+      'Look for the blanket.',
+      'Ищи одеяло.',
+      'Busca la manta.',
+      'Көрпені ізде.',
+    ),
+    _Cue(
+      _sleep,
+      'Who is asleep?',
+      'Кто спит?',
+      '¿Quién está dormido?',
+      'Кім ұйықтап жатыр?',
+    ),
     _Cue(
       _flower,
       'For the rabbit with the flower.',
       'Для кролика с цветком.',
       'Para el conejo con la flor.',
+      'Гүлі бар қоянға.',
     ),
     _Cue(
       _flower,
       'Look for a pink flower.',
       'Ищи розовый цветок.',
       'Busca una flor rosa.',
+      'Қызғылт гүлді ізде.',
     ),
-    _Cue(_flower, 'Who has a book?', 'У кого книга?', '¿Quién tiene un libro?'),
+    _Cue(
+      _flower,
+      'Who has a book?',
+      'У кого книга?',
+      '¿Quién tiene un libro?',
+      'Кітап кімде?',
+    ),
   ],
   CefrLevel.a2: [
     _Cue(
@@ -138,54 +168,63 @@ const _cues = {
       'Give it to the rabbit in the green scarf.',
       'Отдай конфету кролику в зелёном шарфе.',
       'Dale el caramelo al conejo de la bufanda verde.',
+      'Кәмпитті жасыл шарф таққан қоянға бер.',
     ),
     _Cue(
       _scarf,
       'One rabbit is wearing a scarf today. This is for him.',
       'Один кролик сегодня в шарфе. Это для него.',
       'Hoy uno de los conejos lleva bufanda. Esto es para él.',
+      'Бүгін бір қоян шарф тағып алыпты. Кәмпит соған арналған.',
     ),
     _Cue(
       _scarf,
       'Which rabbit has a scarf around his neck?',
       'У какого кролика на шее шарф?',
       '¿Qué conejo tiene una bufanda al cuello?',
+      'Қай қоянның мойнында шарф бар?',
     ),
     _Cue(
       _sleep,
       'For the rabbit who is sleeping.',
       'Для кролика, который спит.',
       'Para el conejo que duerme.',
+      'Ұйықтап жатқан қоянға арналған.',
     ),
     _Cue(
       _sleep,
       'Leave it by the rabbit under the blanket.',
       'Оставь конфету рядом с кроликом под одеялом.',
       'Deja el caramelo al lado del conejo que está bajo la manta.',
+      'Кәмпитті көрпенің астында жатқан қоянның жанына қалдыр.',
     ),
     _Cue(
       _sleep,
       'Can you find the rabbit with his eyes closed?',
       'Можешь найти кролика с закрытыми глазами?',
       '¿Puedes encontrar al conejo que tiene los ojos cerrados?',
+      'Көзін жұмып жатқан қоянды таба аласың ба?',
     ),
     _Cue(
       _flower,
       'Give it to the rabbit with a flower by his ear.',
       'Отдай конфету кролику с цветком у уха.',
       'Dale el caramelo al conejo que lleva una flor junto a la oreja.',
+      'Кәмпитті құлағының тұсына гүл қыстырған қоянға бер.',
     ),
     _Cue(
       _flower,
       'This rabbit has an open book. Find him.',
       'У этого кролика открытая книга. Найди его.',
       'Este conejo tiene un libro abierto. Búscalo.',
+      'Бұл қоянның кітабы ашық. Сол қоянды тап.',
     ),
     _Cue(
       _flower,
       'Which rabbit is reading a book?',
       'Какой кролик читает книгу?',
       '¿Qué conejo está leyendo un libro?',
+      'Қай қоян кітап оқып отыр?',
     ),
   ],
   CefrLevel.b1: [
@@ -194,54 +233,63 @@ const _cues = {
       'The reader can wait. Look for the other rabbit who is still awake.',
       'Читатель может подождать. Ищи другого кролика, который ещё не спит.',
       'El lector puede esperar. Busca al otro conejo que sigue despierto.',
+      'Кітап оқып отырған қоян күте тұрсын. Ояу отырған басқа қоянды ізде.',
     ),
     _Cue(
       _scarf,
       'Give it to the one who put on a scarf to keep warm.',
       'Отдай конфету тому, кто надел шарф, чтобы согреться.',
       'Dáselo al que se puso una bufanda para entrar en calor.',
+      'Кәмпитті жылыну үшін шарф таққан қоянға бер.',
     ),
     _Cue(
       _scarf,
       'You can tell which rabbit it is by the green scarf around his neck.',
       'Нужного кролика можно узнать по зелёному шарфу на шее.',
       'Puedes reconocer al conejo por la bufanda verde que lleva al cuello.',
+      'Ол қоянды мойнындағы жасыл шарфынан танисың.',
     ),
     _Cue(
       _sleep,
       'Leave it where the rabbit will find it when he wakes up.',
       'Оставь конфету там, где кролик найдёт её, когда проснётся.',
       'Déjalo donde el conejo lo encuentre al despertarse.',
+      'Кәмпитті қоян оянғанда тауып алатындай жерге қалдыр.',
     ),
     _Cue(
       _sleep,
       'While the others are awake, this rabbit is having a nap.',
       'Пока остальные бодрствуют, этот кролик дремлет.',
       'Mientras los demás están despiertos, este conejo está echando una siesta.',
+      'Басқалары ояу отырғанда, бұл қоян мызғып жатыр.',
     ),
     _Cue(
       _sleep,
       'Put it next to the blanket so the sleeping rabbit can have it later.',
       'Положи конфету рядом с одеялом, чтобы спящий кролик мог съесть её потом.',
       'Déjalo junto a la manta para que el conejo dormido pueda comérselo después.',
+      'Ұйықтап жатқан қоян кәмпитті кейін жесін десең, оны көрпенің жанына қой.',
     ),
     _Cue(
       _flower,
       'The rabbit this is for has a flower by his ear and a book in his paws.',
       'У кролика, которому предназначена конфета, цветок у уха и книга в лапах.',
       'El conejo al que va dirigido el caramelo tiene una flor junto a la oreja y un libro entre las patas.',
+      'Кәмпит алатын қоянның құлағының тұсында гүл, ал табандарында кітап бар.',
     ),
     _Cue(
       _flower,
       'Take it to the reader before he turns the page.',
       'Отнеси конфету читателю, пока он не перевернул страницу.',
       'Llévaselo al lector antes de que pase la página.',
+      'Кітап оқып отырған қоян парақты аудармай тұрып, кәмпитті соған апар.',
     ),
     _Cue(
       _flower,
       'Look for the rabbit who has chosen to read instead of taking a nap.',
       'Ищи кролика, который решил почитать вместо того, чтобы вздремнуть.',
       'Busca al conejo que ha decidido leer en vez de echarse una siesta.',
+      'Мызғып алудың орнына кітап оқуды таңдаған қоянды ізде.',
     ),
   ],
   CefrLevel.b2: [
@@ -250,54 +298,63 @@ const _cues = {
       'If you ruled out both the reader and the sleeper, who would be left?',
       'Если исключить и читателя, и соню, кто останется?',
       'Si descartaras tanto al lector como al que duerme, ¿quién quedaría?',
+      'Кітап оқып отырған қоян мен ұйықтап жатқан қоянды есептемесек, кім қалады?',
     ),
     _Cue(
       _scarf,
       'The candy was meant for the rabbit whose scarf is wrapped around his neck.',
       'Конфета предназначалась кролику, у которого шея укутана шарфом.',
       'El caramelo iba destinado al conejo que lleva la bufanda enrollada al cuello.',
+      'Кәмпит мойнына шарф ораған қоянға арналған.',
     ),
     _Cue(
       _scarf,
       'Of the two rabbits keeping warm, choose the one who is wide awake.',
       'Из двух кроликов, которые укутались от холода, выбери того, который совсем не сонный.',
       'De los dos conejos que se abrigan, elige al que está bien despierto.',
+      'Жылы оранған екі қоянның ішінен көзі ашық, сергек отырғанын таңда.',
     ),
     _Cue(
       _sleep,
       'Even if the rabbit never opens his eyes, leave the candy beside his blanket.',
       'Даже если кролик так и не откроет глаза, оставь конфету рядом с его одеялом.',
       'Aunque el conejo no abra los ojos en ningún momento, deja el caramelo junto a su manta.',
+      'Қоян көзін ашпаса да, кәмпитті көрпесінің жанына қалдыр.',
     ),
     _Cue(
       _sleep,
       'The rabbit would see you coming if he weren’t fast asleep.',
       'Этот кролик увидел бы, как ты подходишь, если бы не спал так крепко.',
       'El conejo te vería venir si no estuviera profundamente dormido.',
+      'Қоян қатты ұйықтамағанда, сенің келе жатқаныңды көрер еді.',
     ),
     _Cue(
       _sleep,
       'Choose the one who has drifted off while the other two are still awake.',
       'Выбери того, кто уже задремал, пока двое других ещё бодрствуют.',
       'Elige al que se ha quedado dormido mientras los otros dos siguen despiertos.',
+      'Қалған екеуі әлі ояу отырғанда мызғып кеткен қоянды таңда.',
     ),
     _Cue(
       _flower,
       'Give it to whoever is reading, whether or not you can see the flower.',
       'Отдай конфету тому, кто читает, даже если ты не видишь цветка.',
       'Dáselo a quien esté leyendo, tanto si ves la flor como si no.',
+      'Гүлді көрсең де, көрмесең де, кәмпитті кітап оқып отырған қоянға бер.',
     ),
     _Cue(
       _flower,
       'If the reader put his book down, you could still recognise him by his flower.',
       'Даже если бы читатель отложил книгу, его всё равно можно было бы узнать по цветку.',
       'Si el lector dejara el libro, aún podrías reconocerlo por la flor.',
+      'Оқып отырған қоян кітабын қоя тұрса да, оны гүлінен тануға болады.',
     ),
     _Cue(
       _flower,
       'The rabbit you are looking for seems more interested in his book than in the candy.',
       'Кролика, которого ты ищешь, книга, похоже, интересует больше, чем конфета.',
       'Al conejo que buscas parece interesarle más el libro que el caramelo.',
+      'Сен іздеген қоян кәмпиттен гөрі кітабына көбірек қызығатын сияқты.',
     ),
   ],
   CefrLevel.c1: [
@@ -306,54 +363,63 @@ const _cues = {
       'Neither buried in a book nor tucked up under a blanket, the intended recipient is easy to spot.',
       'Адресата легко узнать по тому, что он не погрузился в книгу и не укутался в одеяло.',
       'Reconocerás enseguida al destinatario porque ni está enfrascado en un libro ni se ha arropado con una manta.',
+      'Кәмпит алатын қоянды тану оңай: ол кітапқа үңіліп те, көрпеге оранып та отырған жоқ.',
     ),
     _Cue(
       _scarf,
       'Were it not for the scarf, you might overlook the one with nothing in his paws and his eyes wide open.',
       'Если бы не шарф, ты мог бы не заметить кролика с пустыми лапами и широко открытыми глазами.',
       'De no ser por la bufanda, quizá se te pasaría por alto el conejo que tiene las patas vacías y los ojos bien abiertos.',
+      'Шарфы болмаса, көзі бақырайып ашық, қолында ештеңе жоқ қоянды байқамай қалуың мүмкін.',
     ),
     _Cue(
       _scarf,
       'Should the book catch your eye, keep looking for the scarf that singles out the recipient.',
       'Даже если твой взгляд привлечёт книга, продолжай искать шарф, по которому можно узнать адресата.',
       'Si el libro te llama la atención, sigue buscando la bufanda que distingue al destinatario.',
+      'Көзің кітапқа түссе де, кімге апару керегін білдіретін шарфты іздей бер.',
     ),
     _Cue(
       _sleep,
       'Set it within reach of the one who, to judge by his closed eyes, is oblivious to your arrival.',
       'Положи конфету поближе к тому, кто, судя по закрытым глазам, не замечает твоего появления.',
       'Déjalo al alcance del que, a juzgar por sus ojos cerrados, no se ha percatado de tu llegada.',
+      'Көзін жұмып жатқанына қарағанда, келгеніңді сезбеген қоянға кәмпитті қолы жететіндей жерге қой.',
     ),
     _Cue(
       _sleep,
       'The reader may be absorbed in the story, but the rabbit you want is lost in a dream.',
       'Пусть читатель и поглощён историей, тебе нужен кролик, который погрузился в сон.',
       'Por muy absorto que esté el lector en la historia, el conejo que buscas está sumido en un sueño.',
+      'Кітап оқып отырған қоян оқиғаға беріліп кетсе де, саған керегі — түс көріп жатқан қоян.',
     ),
     _Cue(
       _sleep,
       'Deliver it discreetly, lest the rabbit curled up under the blanket should stir.',
       'Доставь конфету тихонько, как бы кролик, свернувшийся под одеялом, не проснулся.',
       'Entrégalo con sigilo, no sea que se despierte el conejo acurrucado bajo la manta.',
+      'Көрпенің астында бүрісіп жатқан қоян оянып кетпесін, кәмпитті білдіртпей жеткіз.',
     ),
     _Cue(
       _flower,
       'Absorbed though he is in his reading, the rabbit with the flower is the one expecting a delivery.',
       'Хотя кролик с цветком и поглощён чтением, доставку ждёт именно он.',
       'Por muy enfrascado que esté en la lectura, es el conejo de la flor quien espera la entrega.',
+      'Гүлі бар қоян кітапқа қанша беріліп кетсе де, кәмпитті күтіп отырған — сол.',
     ),
     _Cue(
       _flower,
       'Let the open pages guide you, should the blossom by the reader’s ear escape your notice.',
       'Если ты не заметишь цветок у уха читателя, ориентируйся по раскрытым страницам.',
       'Guíate por las páginas abiertas en caso de que se te pase por alto la flor junto a la oreja del lector.',
+      'Егер кітап оқып отырған қоянның құлағының тұсындағы гүлді байқамасаң, ашық беттерге қара.',
     ),
     _Cue(
       _flower,
       'The intended recipient has his paws full, quite literally, with a book.',
       'Лапы адресата в самом буквальном смысле заняты книгой.',
       'El destinatario tiene las patas ocupadas, en el sentido más literal, con un libro.',
+      'Кәмпит алатын қоянның қолы бос емес деген осы: алдыңғы екі аяғымен кітап ұстап отыр.',
     ),
   ],
   CefrLevel.c2: [

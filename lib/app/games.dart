@@ -316,6 +316,7 @@ Widget _buildNinjaSlash(GameLaunch launch) => NinjaSlashGame(
 
 Widget _buildClawMachine(GameLaunch launch) => ClawMachineGame(
   session: launch.session,
+  studyLanguage: launch.course?.studyLanguage ?? 'en',
   sounds: launch.sounds,
   summaryFooter:
       launch.onChallengeComplete == null ? launch.summaryFooter : null,

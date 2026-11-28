@@ -41,8 +41,11 @@ void main() {
           expect(metadata['target_lang'], 'kk');
           final batch =
               items.where((item) => item.word.level == level).toList();
-          expect(batch.length, greaterThanOrEqualTo(80), reason: prefix);
-          final glossary = batch.map((item) => item.word.translation).toSet();
+          expect(batch, hasLength(100), reason: prefix);
+          final glossary = {
+            for (final item in batch)
+              item.word.translation: item.word.partOfSpeech,
+          };
           expect(glossary, hasLength(batch.length), reason: prefix);
           for (final item in batch) {
             final word = item.word;
@@ -59,7 +62,7 @@ void main() {
             expect(item.distractors.toSet(), hasLength(3), reason: word.id);
             final accepted = translationMeanings(word.translation);
             for (final option in item.distractors) {
-              expect(glossary, contains(option), reason: word.id);
+              expect(glossary[option], word.partOfSpeech, reason: word.id);
               expect(
                 translationMeanings(option).intersection(accepted),
                 isEmpty,

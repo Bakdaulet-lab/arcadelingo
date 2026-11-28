@@ -46,6 +46,20 @@ C1/C2 Version 1.0**, Octanove Labs. Исходный набор:
 распространяются по **Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)**:
 <https://creativecommons.org/licenses/by-sa/4.0/>.
 
+## Курсы с казахского A1–C1
+
+Казахские переводы и варианты ответов составлены для ArcadeLingo. Английская
+и русская подборки составлены по темам и навыкам уровней A1–C1. Для испанского
+использованы уровни слов из существующих испанских курсов ArcadeLingo.
+
+- Ориентиры по уровням — [шкала CEFR Совета Европы](https://www.coe.int/en/web/common-european-framework-reference-languages/table-1-cefr-3.3-common-reference-levels-global-scale),
+  [план Института Сервантеса](https://cvc.cervantes.es/ensenanza/biblioteca_ele/plan_curricular/indice.htm)
+  и [уровни ТРКИ](https://bgu.ru/rki/default.aspx).
+- Для сверки значений и написания использованы [Oxford Learner’s Dictionaries](https://www.oxfordlearnersdictionaries.com/about/wordlists/oxford3000-5000),
+  [Diccionario de la lengua española](https://dle.rae.es/),
+  [Emle](https://emle.kz/), [Сөздікқор](https://sozdikqor.kz/)
+  и [Termincom](https://termincom.kz/).
+
 ## Шрифт Rubik
 
 - **Автор:** Hubert & Fischer (Philipp Hubert, Sebastian Fischer).
