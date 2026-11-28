@@ -51,6 +51,43 @@ class StudyCourse {
     spanishFromKazakh,
   ];
 
+  static const germanFromRussian = StudyCourse(
+    id: 'ru-de',
+    studyLanguage: 'de',
+    translationLanguage: 'ru',
+  );
+  static const germanFromEnglish = StudyCourse(
+    id: 'en-de',
+    studyLanguage: 'de',
+    translationLanguage: 'en',
+  );
+  static const germanFromSpanish = StudyCourse(
+    id: 'es-de',
+    studyLanguage: 'de',
+    translationLanguage: 'es',
+  );
+  static const germanFromKazakh = StudyCourse(
+    id: 'kk-de',
+    studyLanguage: 'de',
+    translationLanguage: 'kk',
+  );
+  static const germanCourses = [
+    germanFromRussian,
+    germanFromEnglish,
+    germanFromSpanish,
+    germanFromKazakh,
+  ];
+
+  static final multilingualCourses = List<StudyCourse>.unmodifiable([
+    for (final study in ['fr', 'zh', 'ar'])
+      for (final bridge in ['ru', 'en', 'es', 'kk'])
+        StudyCourse(
+          id: '$bridge-$study',
+          studyLanguage: study,
+          translationLanguage: bridge,
+        ),
+  ]);
+
   final String id;
   final String studyLanguage;
   final String translationLanguage;

@@ -115,6 +115,39 @@ Future<Result<List<ReviewItem>>> loadKazakhSeed(
   return _loadLeveledSeed(sources, bundle);
 }
 
+Future<Result<List<ReviewItem>>> loadGermanSeed(
+  StudyCourse course, {
+  AssetBundle? bundle,
+}) => _loadTargetLanguageSeed(course, StudyCourse.germanCourses, bundle);
+
+Future<Result<List<ReviewItem>>> loadMultilingualSeed(
+  StudyCourse course, {
+  AssetBundle? bundle,
+}) => _loadTargetLanguageSeed(course, StudyCourse.multilingualCourses, bundle);
+
+Future<Result<List<ReviewItem>>> _loadTargetLanguageSeed(
+  StudyCourse course,
+  List<StudyCourse> available,
+  AssetBundle? bundle,
+) async {
+  final study = course.studyLanguage;
+  final bridge = course.translationLanguage;
+  if (!available.any(
+    (entry) =>
+        entry.id == course.id &&
+        entry.studyLanguage == study &&
+        entry.translationLanguage == bridge,
+  )) {
+    return Err(Failure('Неизвестный курс: ${course.id}'));
+  }
+  final sources = [
+    for (final level in CefrLevel.values)
+      if (level != CefrLevel.c2)
+        ('assets/words_${study}_$bridge/${level.name}.json', level),
+  ];
+  return _loadLeveledSeed(sources, bundle);
+}
+
 Future<Result<List<ReviewItem>>> _loadLeveledSeed(
   List<(String, CefrLevel)> sources,
   AssetBundle? bundle,

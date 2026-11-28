@@ -371,6 +371,8 @@ class _OrderTicket extends StatelessWidget {
               child: Text(
                 order.phrase,
                 key: const Key('candy.phrase'),
+                textDirection:
+                    order.courseId.endsWith('-ar') ? TextDirection.rtl : null,
                 style: withWeight(
                   theme.textTheme.headlineSmall!,
                   FontWeight.w600,

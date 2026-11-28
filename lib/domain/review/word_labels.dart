@@ -1,8 +1,13 @@
 final _spaces = RegExp(r'\s+');
 final _separators = RegExp(r'\s*[,;/]\s*');
+final _arabicVowels = RegExp(r'[\u0640\u064b-\u0652\u0670]');
 
 String normalizedWordLabel(String value) =>
-    value.trim().toLowerCase().replaceAll(_spaces, ' ');
+    value.trim().replaceAll('ẞ', 'ß').toLowerCase().replaceAll(_spaces, ' ');
+
+/// Letter tiles stay one glyph per letter, including German ß.
+String uppercaseWordLetters(String value) =>
+    value.replaceAll('ß', 'ẞ').toUpperCase();
 
 /// Course entries may list several accepted meanings for the same word.
 Set<String> translationMeanings(String translation) {
@@ -28,8 +33,15 @@ const _accentLetters = {
 };
 final _combiningLetter = RegExp(r'([a-zеи])(\p{M})', unicode: true);
 
-String normalizedCourseSpelling(String value) =>
-    normalizedWordLabel(value).replaceAllMapped(_combiningLetter, (match) {
+String normalizedCourseSpelling(String value) => normalizedWordLabel(value)
+    .replaceAll('’', "'")
+    .replaceAll('ا\u0653', 'آ')
+    .replaceAll('ا\u0654', 'أ')
+    .replaceAll('ا\u0655', 'إ')
+    .replaceAll('و\u0654', 'ؤ')
+    .replaceAll('ي\u0654', 'ئ')
+    .replaceAll(_arabicVowels, '')
+    .replaceAllMapped(_combiningLetter, (match) {
       final forms = _accentLetters[match[2]];
       if (forms == null) return match[0]!;
       final index = forms.$1.indexOf(match[1]!);

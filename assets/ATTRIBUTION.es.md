@@ -27,6 +27,18 @@ Conjunto de datos original <https://github.com/openlanguageprofiles/olp-en-cefrj
 
 Se seleccionaron entradas de una sola palabra, se eliminaron duplicados y se añadieron las traducciones al ruso y las opciones de respuesta. Los diccionarios `assets/words_c1.json` y `assets/words_c2.json` se distribuyen bajo la licencia **Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)** <https://creativecommons.org/licenses/by-sa/4.0/>.
 
+## Cursos de alemán A1–C1
+
+El vocabulario, las traducciones y las opciones de respuesta se prepararon
+para ArcadeLingo. Los materiales del Goethe-Institut sirvieron de referencia
+para los temas y la dificultad. Se consultó Duden para revisar la ortografía,
+los artículos y las acepciones.
+
+- A1–B1: <https://www.goethe.de/prj/dvt/de/index.html>
+- B2 y C1: <https://www.goethe.de/ins/de/de/prf/gzb2.cfm> y
+  <https://www.goethe.de/ins/de/de/prf/gzc1.cfm>
+- Duden: <https://www.duden.de/woerterbuch>
+
 ## Tipografía Rubik
 
 - **Autores.** Hubert & Fischer (Philipp Hubert y Sebastian Fischer). El equipo de Cyreal (Alexei Vanyashin y Nikita Kanarev) revisó y amplió los caracteres cirílicos.
@@ -35,6 +47,14 @@ Se seleccionaron entradas de una sola palabra, se eliminaron duplicados y se añ
 - **Archivo.** `assets/fonts/Rubik-Variable.ttf`. Fuente variable con pesos de 300 a 900. El peso predeterminado es 300. Se cambió el nombre del archivo para incluirlo en el paquete de recursos.
 
 El tema claro utiliza Lora, de The Lora Project Authors, para los títulos. La licencia SIL Open Font License 1.1 se incluye en `assets/fonts/Lora-OFL.txt`. Origen <https://github.com/google/fonts/tree/main/ofl/lora>.
+
+## Francés, chino y árabe de A1 a C1
+
+ArcadeLingo ha seleccionado las palabras, las traducciones y las opciones de respuesta en cuatro idiomas. El francés se ha revisado con las referencias de la Académie française y France Éducation international. El chino mandarín utiliza caracteres simplificados y pinyin con marcas de tono según GB/T 16159. El curso de árabe emplea el árabe estándar moderno. Los niveles de chino y árabe siguen la progresión didáctica de ArcadeLingo.
+
+Referencias: <https://www.dictionnaire-academie.fr/9e_edition>, <https://www.france-education-international.fr/document/cecrl>, <https://www.moe.gov.cn/jyb_xwfb/gzdt_gzdt/s5987/202103/t20210329_523304.html>, <https://dictionary.ksaa.gov.sa/about>.
+
+Noto Sans Arabic y Arcade Chinese, un subconjunto de Noto Sans SC, permiten mostrar la escritura árabe y china sin conexión. La licencia SIL Open Font License 1.1 de ambas fuentes está disponible en la aplicación. Fuentes: <https://github.com/google/fonts/tree/main/ofl/notosansarabic> y <https://github.com/google/fonts/tree/main/ofl/notosanssc>.
 
 ## Efectos de sonido de Corte ninja
 

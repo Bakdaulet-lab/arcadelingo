@@ -60,6 +60,18 @@ C1/C2 Version 1.0**, Octanove Labs. Исходный набор:
   [Emle](https://emle.kz/), [Сөздікқор](https://sozdikqor.kz/)
   и [Termincom](https://termincom.kz/).
 
+## Немецкий язык A1–C1
+
+Слова и выражения отобраны для ArcadeLingo. Переводы и варианты ответов
+составлены для русского, английского, испанского и казахского курсов.
+Для выбора тем и сложности использованы материалы Goethe-Institut.
+Написание, артикли и спорные значения сверены по Duden.
+
+- Уровни A1–B1: <https://www.goethe.de/prj/dvt/de/index.html>
+- Уровни B2 и C1: <https://www.goethe.de/ins/de/de/prf/gzb2.cfm> и
+  <https://www.goethe.de/ins/de/de/prf/gzc1.cfm>
+- Duden: <https://www.duden.de/woerterbuch>
+
 ## Шрифт Rubik
 
 - **Автор:** Hubert & Fischer (Philipp Hubert, Sebastian Fischer).
@@ -80,6 +92,14 @@ C1/C2 Version 1.0**, Octanove Labs. Исходный набор:
 тире и многоточие — всё, что встречается на экранах.
 
 Шрифт Lora используется в заголовках светлой темы. Авторы — The Lora Project Authors. Лицензия SIL Open Font License 1.1 входит в приложение в файле `assets/fonts/Lora-OFL.txt`. Источник <https://github.com/google/fonts/tree/main/ofl/lora>.
+
+## Французский, китайский и арабский A1–C1
+
+Словари и варианты ответов составлены для ArcadeLingo на четырёх языках перевода. Французский проверен по словарю Académie française и материалам France Éducation international. Для китайского использованы упрощённые иероглифы и пиньинь с тонами по стандарту GB/T 16159. Арабский курс использует современный литературный арабский. Для уровней китайского и арабского использована учебная последовательность ArcadeLingo.
+
+Источники: <https://www.dictionnaire-academie.fr/9e_edition>, <https://www.france-education-international.fr/document/cecrl>, <https://www.moe.gov.cn/jyb_xwfb/gzdt_gzdt/s5987/202103/t20210329_523304.html>, <https://dictionary.ksaa.gov.sa/about>.
+
+Noto Sans Arabic и Arcade Chinese (подмножество Noto Sans SC) обеспечивают отображение арабского письма и китайских иероглифов офлайн. Оба шрифта распространяются под SIL Open Font License 1.1, тексты лицензий доступны в приложении. Исходные файлы: <https://github.com/google/fonts/tree/main/ofl/notosansarabic> и <https://github.com/google/fonts/tree/main/ofl/notosanssc>.
 
 ## Звуковые эффекты «Ниндзя-слэша»
 

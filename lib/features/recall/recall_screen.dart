@@ -185,6 +185,10 @@ class _RecallScreenState extends State<RecallScreen> {
               if (_phase == _Phase.spelling) ...[
                 _LetterBoard(
                   exercise: exercise,
+                  textDirection:
+                      widget.course.studyLanguage == 'ar'
+                          ? TextDirection.rtl
+                          : null,
                   onChange: () => setState(() {}),
                 ),
                 const SizedBox(height: 18),
@@ -254,10 +258,15 @@ class _RecallScreenState extends State<RecallScreen> {
 }
 
 class _LetterBoard extends StatelessWidget {
-  const _LetterBoard({required this.exercise, required this.onChange});
+  const _LetterBoard({
+    required this.exercise,
+    required this.onChange,
+    required this.textDirection,
+  });
 
   final RecallExercise exercise;
   final VoidCallback onChange;
+  final TextDirection? textDirection;
 
   @override
   Widget build(BuildContext context) {
@@ -282,6 +291,7 @@ class _LetterBoard extends StatelessWidget {
             excludeSemantics: true,
             child: ArcadeLetterWrap(
               spelling: exercise.item.word.text.characters.toList(),
+              textDirection: textDirection,
               spacing: 4,
               runSpacing: 8,
               slot:

@@ -23,6 +23,18 @@ import '../support/bundled_fonts.dart';
 import '../support/in_memory_answer_log.dart';
 import '../support/in_memory_stores.dart';
 
+final _courses = [
+  ...StudyCourse.kazakhCourses,
+  ...StudyCourse.germanCourses,
+  ...StudyCourse.multilingualCourses,
+];
+const _languages = [
+  InterfaceLanguage.russian,
+  InterfaceLanguage.english,
+  InterfaceLanguage.spanish,
+  InterfaceLanguage.kazakh,
+];
+
 Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.ensureVisible(finder);
   await tester.pump();
@@ -40,6 +52,11 @@ void main() {
     catalogues = {
       for (final course in StudyCourse.kazakhCourses)
         course: (await loadKazakhSeed(course) as Ok<List<ReviewItem>>).value,
+      for (final course in StudyCourse.germanCourses)
+        course: (await loadGermanSeed(course) as Ok<List<ReviewItem>>).value,
+      for (final course in StudyCourse.multilingualCourses)
+        course:
+            (await loadMultilingualSeed(course) as Ok<List<ReviewItem>>).value,
     };
   });
 
@@ -66,13 +83,23 @@ void main() {
     }
   });
 
-  for (final (index, course) in StudyCourse.kazakhCourses.indexed) {
-    final language =
-        [
-          InterfaceLanguage.russian,
-          InterfaceLanguage.english,
-          InterfaceLanguage.spanish,
-        ][index];
+  testWidgets(
+    'a German learning card shows the article as part of the heading',
+    (tester) async {
+      final apple =
+          catalogues[StudyCourse.germanFromRussian]!
+              .singleWhere((item) => item.word.id == 'de_apfel')
+              .word;
+      await tester.pumpWidget(
+        MaterialApp(home: Scaffold(body: WordPanel(word: apple))),
+      );
+      expect(find.text('der Apfel'), findsOneWidget);
+      expect(find.text('яблоко'), findsOneWidget);
+    },
+  );
+
+  for (final (index, course) in _courses.indexed) {
+    final language = _languages[index % _languages.length];
     for (final level in CefrLevel.values.take(5)) {
       testWidgets(
         '${course.id} ${level.name} routes its own words into arcade games',
@@ -137,7 +164,7 @@ void main() {
           await tester.pumpAndSettle();
           await _tap(tester, find.byKey(AppKeys.course));
           final strings = AppStrings(language);
-          for (final option in StudyCourse.kazakhCourses) {
+          for (final option in _courses) {
             expect(find.text(strings.courseName(option)), findsOneWidget);
           }
           await _tap(tester, find.byKey(ValueKey('course.${course.id}')));
@@ -158,8 +185,7 @@ void main() {
             for (final item in catalogues[course]!)
               if (item.word.level == level) item.word,
           ];
-          // Every game actually opens in each of the three courses. Levels A1–B2
-          // also exercise the normal home path with a rotating selection.
+          // Open every game at C1 and rotate through the registry for A1–B2.
           final entries =
               level == CefrLevel.c1
                   ? games
@@ -172,14 +198,21 @@ void main() {
             expect(last?.level, level);
             expect(last?.vocabulary, unorderedEquals(authorized));
             expect(last?.session.total, entry.roundLimit ?? sessionTarget);
-            if (entry.id == 'claw_machine' &&
-                course == StudyCourse.russianFromKazakh) {
+            final script = switch (course.studyLanguage) {
+              'ru' => r'^[А-ЯЁ0-9]$',
+              'de' => r'^[A-ZÄÖÜẞ0-9]$',
+              'fr' => r'^[A-ZÀÂÆÇÉÈÊËÎÏÔŒÙÛÜŸ0-9]$',
+              'zh' => r'^[\u3400-\u9fff]$',
+              'ar' => r'^[\u0621-\u063a\u0641-\u064a][\u064b-\u0652\u0670]*$',
+              _ => null,
+            };
+            if (entry.id == 'claw_machine' && script != null) {
               final field = tester.widget<ClawMachineField>(
                 find.byType(ClawMachineField),
               );
               expect(
                 field.stacks.expand((stack) => stack),
-                everyElement(matches(RegExp(r'^[А-ЯЁ0-9]$'))),
+                everyElement(matches(RegExp(script))),
               );
             }
             expect(tester.takeException(), isNull);
@@ -210,7 +243,10 @@ void main() {
               );
             }
             await _tap(tester, find.byKey(const Key('kitchen.serve')));
-            expect(find.text(order.phrase('kk')), findsOneWidget);
+            expect(
+              find.text(order.phrase(course.translationLanguage)),
+              findsOneWidget,
+            );
           } else {
             expect(kitchen, findsNothing);
           }

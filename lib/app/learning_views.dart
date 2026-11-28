@@ -332,7 +332,7 @@ class _LearningDeckState extends State<_LearningDeck>
               const SizedBox(height: 16),
               WordPronunciation(
                 key: ValueKey(word.id),
-                text: word.text,
+                text: word.headword,
                 speech: widget.speech,
                 studyLanguage: widget.studyLanguage,
                 enabled: enabled,

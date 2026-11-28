@@ -91,6 +91,22 @@ flutter:
     - assets/words_kk_ru/
     - assets/words_kk_en/
     - assets/words_kk_es/
+    - assets/words_de_ru/
+    - assets/words_de_en/
+    - assets/words_de_es/
+    - assets/words_de_kk/
+    - assets/words_fr_ru/
+    - assets/words_fr_en/
+    - assets/words_fr_es/
+    - assets/words_fr_kk/
+    - assets/words_zh_ru/
+    - assets/words_zh_en/
+    - assets/words_zh_es/
+    - assets/words_zh_kk/
+    - assets/words_ar_ru/
+    - assets/words_ar_en/
+    - assets/words_ar_es/
+    - assets/words_ar_kk/
     - assets/words_en_a1_es.json
     - assets/words_c1.json
     - assets/words_c1.LICENSE.md
@@ -110,6 +126,8 @@ flutter:
     # LicenseRegistry, чтобы она была видна в showLicensePage.
     - assets/fonts/OFL.txt
     - assets/fonts/Lora-OFL.txt
+    - assets/fonts/NotoSansArabic-OFL.txt
+    - assets/fonts/NotoSansSC-OFL.txt
 
   fonts:
     # Один вариативный файл вместо трёх статических: Google Fonts статические
@@ -126,6 +144,12 @@ flutter:
     - family: Lora
       fonts:
         - asset: assets/fonts/Lora-Variable.ttf
+    - family: 'Noto Sans Arabic'
+      fonts:
+        - asset: assets/fonts/NotoSansArabic-Variable.ttf
+    - family: 'Arcade Chinese'
+      fonts:
+        - asset: assets/fonts/ArcadeChinese-Regular.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

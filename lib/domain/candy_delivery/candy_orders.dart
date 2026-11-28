@@ -34,6 +34,12 @@ bool candyAvailableFor(StudyCourse course, CefrLevel level) {
     'kk-ru' ||
     'kk-en' ||
     'kk-es' => level != CefrLevel.c2,
+    _
+        when [
+          ...StudyCourse.germanCourses,
+          ...StudyCourse.multilingualCourses,
+        ].any((entry) => entry.id == course.id) =>
+      level != CefrLevel.c2,
     _ => false,
   };
 }
@@ -78,19 +84,37 @@ const _layouts = [
 ];
 
 class _Cue {
-  const _Cue(this.target, this.en, this.ru, [this.es, this.kk]);
+  const _Cue(
+    this.target,
+    this.en,
+    this.ru, [
+    this.es,
+    this.kk,
+    this.de,
+    this.fr,
+    this.zh,
+    this.ar,
+  ]);
   final int target;
   final String en;
   final String ru;
   // The only C2 deck is Russian → English.
   final String? es;
   final String? kk;
+  final String? de;
+  final String? fr;
+  final String? zh;
+  final String? ar;
 
   String inLanguage(String language) => switch (language) {
     'en' => en,
     'ru' => ru,
     'es' => es!,
     'kk' => kk!,
+    'de' => de!,
+    'fr' => fr!,
+    'zh' => zh!,
+    'ar' => ar!,
     _ => throw ArgumentError.value(language, 'language'),
   };
 }
@@ -104,6 +128,10 @@ const _cues = {
       'Для кролика в шарфе.',
       'Para el conejo con bufanda.',
       'Шарф таққан қоянға.',
+      'Für das Kaninchen mit dem Schal.',
+      'Pour le lapin à l’écharpe.',
+      '给戴围巾的兔子。',
+      'للأرنب الذي يلبس وشاحًا.',
     ),
     _Cue(
       _scarf,
@@ -111,6 +139,10 @@ const _cues = {
       'Ищи зелёный шарф.',
       'Busca una bufanda verde.',
       'Жасыл шарфты ізде.',
+      'Such den grünen Schal.',
+      'Cherche l’écharpe verte.',
+      '找绿色的围巾。',
+      'ابحث عن الوشاح الأخضر.',
     ),
     _Cue(
       _scarf,
@@ -118,6 +150,10 @@ const _cues = {
       'У кого шарф?',
       '¿Quién tiene una bufanda?',
       'Шарф кімде?',
+      'Wer hat einen Schal?',
+      'Qui porte une écharpe ?',
+      '谁戴着围巾？',
+      'من يلبس وشاحًا؟',
     ),
     _Cue(
       _sleep,
@@ -125,6 +161,10 @@ const _cues = {
       'Для спящего кролика.',
       'Para el conejo dormido.',
       'Ұйықтап жатқан қоянға.',
+      'Für das schlafende Kaninchen.',
+      'Pour le lapin qui dort.',
+      '给睡觉的兔子。',
+      'للأرنب النائم.',
     ),
     _Cue(
       _sleep,
@@ -132,6 +172,10 @@ const _cues = {
       'Ищи одеяло.',
       'Busca la manta.',
       'Көрпені ізде.',
+      'Such die Decke.',
+      'Cherche la couverture.',
+      '找那条毯子。',
+      'ابحث عن البطانية.',
     ),
     _Cue(
       _sleep,
@@ -139,6 +183,10 @@ const _cues = {
       'Кто спит?',
       '¿Quién está dormido?',
       'Кім ұйықтап жатыр?',
+      'Wer schläft?',
+      'Qui dort ?',
+      '谁在睡觉？',
+      'من ينام؟',
     ),
     _Cue(
       _flower,
@@ -146,6 +194,10 @@ const _cues = {
       'Для кролика с цветком.',
       'Para el conejo con la flor.',
       'Гүлі бар қоянға.',
+      'Für das Kaninchen mit der Blume.',
+      'Pour le lapin à la fleur.',
+      '给戴花的兔子。',
+      'للأرنب الذي لديه زهرة.',
     ),
     _Cue(
       _flower,
@@ -153,6 +205,10 @@ const _cues = {
       'Ищи розовый цветок.',
       'Busca una flor rosa.',
       'Қызғылт гүлді ізде.',
+      'Such die rosa Blume.',
+      'Cherche la fleur rose.',
+      '找粉红色的花。',
+      'ابحث عن الزهرة الوردية.',
     ),
     _Cue(
       _flower,
@@ -160,6 +216,10 @@ const _cues = {
       'У кого книга?',
       '¿Quién tiene un libro?',
       'Кітап кімде?',
+      'Wer hat ein Buch?',
+      'Qui a un livre ?',
+      '谁有一本书？',
+      'من معه كتاب؟',
     ),
   ],
   CefrLevel.a2: [
@@ -169,6 +229,10 @@ const _cues = {
       'Отдай конфету кролику в зелёном шарфе.',
       'Dale el caramelo al conejo de la bufanda verde.',
       'Кәмпитті жасыл шарф таққан қоянға бер.',
+      'Gib das Bonbon dem Kaninchen mit dem grünen Schal.',
+      'Donne le bonbon au lapin à l’écharpe verte.',
+      '把糖果给戴绿色围巾的兔子。',
+      'أعط الحلوى للأرنب الذي يلبس الوشاح الأخضر.',
     ),
     _Cue(
       _scarf,
@@ -176,6 +240,10 @@ const _cues = {
       'Один кролик сегодня в шарфе. Это для него.',
       'Hoy uno de los conejos lleva bufanda. Esto es para él.',
       'Бүгін бір қоян шарф тағып алыпты. Кәмпит соған арналған.',
+      'Ein Kaninchen trägt heute einen Schal. Für dieses Kaninchen ist das Bonbon.',
+      'Un lapin porte une écharpe aujourd’hui. Ce bonbon est pour lui.',
+      '今天有只兔子戴着围巾。这颗糖是给它的。',
+      'أحد الأرانب يلبس وشاحًا اليوم. هذه الحلوى له.',
     ),
     _Cue(
       _scarf,
@@ -183,6 +251,10 @@ const _cues = {
       'У какого кролика на шее шарф?',
       '¿Qué conejo tiene una bufanda al cuello?',
       'Қай қоянның мойнында шарф бар?',
+      'Welches Kaninchen hat einen Schal um den Hals?',
+      'Quel lapin a une écharpe autour du cou ?',
+      '哪只兔子脖子上围着围巾？',
+      'أي أرنب يلبس وشاحًا حول عنقه؟',
     ),
     _Cue(
       _sleep,
@@ -190,6 +262,10 @@ const _cues = {
       'Для кролика, который спит.',
       'Para el conejo que duerme.',
       'Ұйықтап жатқан қоянға арналған.',
+      'Für das Kaninchen, das gerade schläft.',
+      'Pour le lapin qui est en train de dormir.',
+      '给正在睡觉的兔子。',
+      'للأرنب الذي ينام الآن.',
     ),
     _Cue(
       _sleep,
@@ -197,6 +273,10 @@ const _cues = {
       'Оставь конфету рядом с кроликом под одеялом.',
       'Deja el caramelo al lado del conejo que está bajo la manta.',
       'Кәмпитті көрпенің астында жатқан қоянның жанына қалдыр.',
+      'Ein Kaninchen liegt unter der Decke. Leg das Bonbon daneben.',
+      'Laisse le bonbon près du lapin sous la couverture.',
+      '把糖果放在盖着毯子的兔子旁边。',
+      'اترك الحلوى بجانب الأرنب المستلقي تحت البطانية.',
     ),
     _Cue(
       _sleep,
@@ -204,6 +284,10 @@ const _cues = {
       'Можешь найти кролика с закрытыми глазами?',
       '¿Puedes encontrar al conejo que tiene los ojos cerrados?',
       'Көзін жұмып жатқан қоянды таба аласың ба?',
+      'Findest du das Kaninchen, das die Augen geschlossen hat?',
+      'Tu peux trouver le lapin qui a les yeux fermés ?',
+      '你能找到闭着眼睛的兔子吗？',
+      'هل تستطيع أن تجد الأرنب الذي أغمض عينيه؟',
     ),
     _Cue(
       _flower,
@@ -211,6 +295,10 @@ const _cues = {
       'Отдай конфету кролику с цветком у уха.',
       'Dale el caramelo al conejo que lleva una flor junto a la oreja.',
       'Кәмпитті құлағының тұсына гүл қыстырған қоянға бер.',
+      'Gib das Bonbon dem Kaninchen mit der Blume am Ohr.',
+      'Donne le bonbon au lapin qui a une fleur près de l’oreille.',
+      '把糖果给耳边别着一朵花的兔子。',
+      'أعط الحلوى للأرنب الذي بجانب أذنه زهرة.',
     ),
     _Cue(
       _flower,
@@ -218,6 +306,10 @@ const _cues = {
       'У этого кролика открытая книга. Найди его.',
       'Este conejo tiene un libro abierto. Búscalo.',
       'Бұл қоянның кітабы ашық. Сол қоянды тап.',
+      'Ein Kaninchen hat ein offenes Buch vor sich. Such dieses Kaninchen.',
+      'Ce lapin a un livre ouvert. Trouve-le.',
+      '这只兔子面前有本打开的书。找到它。',
+      'ابحث عن الأرنب الذي أمامه كتاب مفتوح.',
     ),
     _Cue(
       _flower,
@@ -225,6 +317,10 @@ const _cues = {
       'Какой кролик читает книгу?',
       '¿Qué conejo está leyendo un libro?',
       'Қай қоян кітап оқып отыр?',
+      'Welches Kaninchen liest gerade ein Buch?',
+      'Quel lapin est en train de lire ?',
+      '哪只兔子正在看书？',
+      'أي أرنب يقرأ كتابًا الآن؟',
     ),
   ],
   CefrLevel.b1: [
@@ -234,6 +330,10 @@ const _cues = {
       'Читатель может подождать. Ищи другого кролика, который ещё не спит.',
       'El lector puede esperar. Busca al otro conejo que sigue despierto.',
       'Кітап оқып отырған қоян күте тұрсын. Ояу отырған басқа қоянды ізде.',
+      'Das lesende Kaninchen kann warten. Such das andere Kaninchen, das noch wach ist.',
+      'Le lapin qui lit peut attendre. Cherche l’autre lapin qui est encore réveillé.',
+      '看书的兔子可以等一等。去找另一只还没睡的兔子。',
+      'يمكن للأرنب الذي يقرأ أن ينتظر. ابحث عن الأرنب الآخر الذي ما زال مستيقظًا.',
     ),
     _Cue(
       _scarf,
@@ -241,6 +341,10 @@ const _cues = {
       'Отдай конфету тому, кто надел шарф, чтобы согреться.',
       'Dáselo al que se puso una bufanda para entrar en calor.',
       'Кәмпитті жылыну үшін шарф таққан қоянға бер.',
+      'Gib das Bonbon dem Kaninchen, das sich einen Schal umgebunden hat, damit es nicht friert.',
+      'Donne le bonbon à celui qui a mis une écharpe pour avoir chaud.',
+      '把糖果给那只戴围巾保暖的兔子。',
+      'أعط الحلوى لمن لبس وشاحًا ليتدفأ.',
     ),
     _Cue(
       _scarf,
@@ -248,6 +352,10 @@ const _cues = {
       'Нужного кролика можно узнать по зелёному шарфу на шее.',
       'Puedes reconocer al conejo por la bufanda verde que lleva al cuello.',
       'Ол қоянды мойнындағы жасыл шарфынан танисың.',
+      'Am grünen Schal um den Hals erkennst du das richtige Kaninchen.',
+      'Tu reconnaîtras le bon lapin à l’écharpe verte qu’il porte autour du cou.',
+      '看脖子上的绿色围巾，就知道是哪只兔子了。',
+      'ستتعرف على الأرنب المطلوب من وشاحه الأخضر حول عنقه.',
     ),
     _Cue(
       _sleep,
@@ -255,6 +363,10 @@ const _cues = {
       'Оставь конфету там, где кролик найдёт её, когда проснётся.',
       'Déjalo donde el conejo lo encuentre al despertarse.',
       'Кәмпитті қоян оянғанда тауып алатындай жерге қалдыр.',
+      'Leg das Bonbon so hin, dass das Kaninchen es nach dem Aufwachen findet.',
+      'Laisse le bonbon là où le lapin le trouvera en se réveillant.',
+      '把糖果放在那只兔子一醒来就能找到的地方。',
+      'اترك الحلوى حيث يجدها الأرنب حين يستيقظ.',
     ),
     _Cue(
       _sleep,
@@ -262,6 +374,10 @@ const _cues = {
       'Пока остальные бодрствуют, этот кролик дремлет.',
       'Mientras los demás están despiertos, este conejo está echando una siesta.',
       'Басқалары ояу отырғанда, бұл қоян мызғып жатыр.',
+      'Während die anderen wach sind, macht dieses Kaninchen ein Nickerchen.',
+      'Pendant que les autres sont réveillés, ce lapin fait la sieste.',
+      '别的兔子都醒着，这只却在打盹儿。',
+      'بينما الآخرون مستيقظون، يأخذ هذا الأرنب قيلولة.',
     ),
     _Cue(
       _sleep,
@@ -269,6 +385,10 @@ const _cues = {
       'Положи конфету рядом с одеялом, чтобы спящий кролик мог съесть её потом.',
       'Déjalo junto a la manta para que el conejo dormido pueda comérselo después.',
       'Ұйықтап жатқан қоян кәмпитті кейін жесін десең, оны көрпенің жанына қой.',
+      'Leg das Bonbon neben die Decke, damit das schlafende Kaninchen es später essen kann.',
+      'Pose le bonbon à côté de la couverture pour que le lapin endormi puisse le manger plus tard.',
+      '把糖果放在毯子旁，好让睡着的兔子待会儿吃。',
+      'ضع الحلوى بجوار البطانية ليأكلها الأرنب النائم لاحقًا.',
     ),
     _Cue(
       _flower,
@@ -276,6 +396,10 @@ const _cues = {
       'У кролика, которому предназначена конфета, цветок у уха и книга в лапах.',
       'El conejo al que va dirigido el caramelo tiene una flor junto a la oreja y un libro entre las patas.',
       'Кәмпит алатын қоянның құлағының тұсында гүл, ал табандарында кітап бар.',
+      'Das Bonbon ist für das Kaninchen bestimmt, das eine Blume am Ohr und ein Buch in den Pfoten hat.',
+      'Le lapin qui doit recevoir le bonbon a une fleur près de l’oreille et un livre entre les pattes.',
+      '该收糖果的那只兔子耳边别着一朵花，正用两只爪子捧着一本书。',
+      'ستجد زهرة بجانب أذن الأرنب الذي سيتلقى الحلوى، وكتابًا بين كفّيه.',
     ),
     _Cue(
       _flower,
@@ -283,6 +407,10 @@ const _cues = {
       'Отнеси конфету читателю, пока он не перевернул страницу.',
       'Llévaselo al lector antes de que pase la página.',
       'Кітап оқып отырған қоян парақты аудармай тұрып, кәмпитті соған апар.',
+      'Bring das Bonbon dem lesenden Kaninchen, bevor es umblättert.',
+      'Apporte le bonbon au lapin qui lit avant qu’il ne tourne la page.',
+      '趁那只看书的兔子还没翻页，把糖果送给它。',
+      'أوصل الحلوى إلى الأرنب القارئ قبل أن يقلب الصفحة.',
     ),
     _Cue(
       _flower,
@@ -290,6 +418,10 @@ const _cues = {
       'Ищи кролика, который решил почитать вместо того, чтобы вздремнуть.',
       'Busca al conejo que ha decidido leer en vez de echarse una siesta.',
       'Мызғып алудың орнына кітап оқуды таңдаған қоянды ізде.',
+      'Such das Kaninchen, das lieber liest, als ein Nickerchen zu machen.',
+      'Cherche le lapin qui a préféré lire plutôt que de faire la sieste.',
+      '找那只选择看书而不是打盹的兔子。',
+      'ابحث عن الأرنب الذي اختار القراءة بدلًا من القيلولة.',
     ),
   ],
   CefrLevel.b2: [
@@ -299,6 +431,10 @@ const _cues = {
       'Если исключить и читателя, и соню, кто останется?',
       'Si descartaras tanto al lector como al que duerme, ¿quién quedaría?',
       'Кітап оқып отырған қоян мен ұйықтап жатқан қоянды есептемесек, кім қалады?',
+      'Wenn du sowohl das lesende als auch das schlafende Kaninchen ausschließt, welches bleibt dann übrig?',
+      'Si tu écartais à la fois le lapin qui lit et celui qui dort, lequel resterait ?',
+      '如果把看书的和睡着的都排除，还剩哪只兔子？',
+      'لو استبعدت الأرنب القارئ والأرنب النائم معًا، فمن يبقى؟',
     ),
     _Cue(
       _scarf,
@@ -306,6 +442,10 @@ const _cues = {
       'Конфета предназначалась кролику, у которого шея укутана шарфом.',
       'El caramelo iba destinado al conejo que lleva la bufanda enrollada al cuello.',
       'Кәмпит мойнына шарф ораған қоянға арналған.',
+      'Das Bonbon war für das Kaninchen bestimmt, das einen Schal um den Hals gewickelt hat.',
+      'Le bonbon était destiné au lapin dont l’écharpe est enroulée autour du cou.',
+      '这颗糖本来就是给脖子上裹着围巾的兔子的。',
+      'كانت الحلوى مخصصة للأرنب الذي لف وشاحًا حول عنقه.',
     ),
     _Cue(
       _scarf,
@@ -313,6 +453,10 @@ const _cues = {
       'Из двух кроликов, которые укутались от холода, выбери того, который совсем не сонный.',
       'De los dos conejos que se abrigan, elige al que está bien despierto.',
       'Жылы оранған екі қоянның ішінен көзі ашық, сергек отырғанын таңда.',
+      'Von den beiden Kaninchen, die sich warm eingepackt haben, wähle dasjenige, das hellwach ist.',
+      'Parmi les deux lapins qui se tiennent au chaud, choisis celui qui est bien réveillé.',
+      '两只兔子都在保暖，选其中清醒的那一只。',
+      'من بين الأرنبين اللذين يحافظان على دفئهما، اختر المستيقظ تمامًا.',
     ),
     _Cue(
       _sleep,
@@ -320,6 +464,10 @@ const _cues = {
       'Даже если кролик так и не откроет глаза, оставь конфету рядом с его одеялом.',
       'Aunque el conejo no abra los ojos en ningún momento, deja el caramelo junto a su manta.',
       'Қоян көзін ашпаса да, кәмпитті көрпесінің жанына қалдыр.',
+      'Selbst wenn das Kaninchen die Augen gar nicht öffnet, lass das Bonbon neben seiner Decke liegen.',
+      'Même si le lapin n’ouvre pas les yeux, laisse le bonbon à côté de sa couverture.',
+      '即使兔子始终不睁眼，也把糖果留在它的毯子旁边。',
+      'حتى لو لم يفتح الأرنب عينيه، اترك الحلوى بجانب بطانيته.',
     ),
     _Cue(
       _sleep,
@@ -327,6 +475,10 @@ const _cues = {
       'Этот кролик увидел бы, как ты подходишь, если бы не спал так крепко.',
       'El conejo te vería venir si no estuviera profundamente dormido.',
       'Қоян қатты ұйықтамағанда, сенің келе жатқаныңды көрер еді.',
+      'Das Kaninchen würde dich kommen sehen, wenn es nicht tief und fest schliefe.',
+      'Le lapin te verrait venir s’il ne dormait pas si profondément.',
+      '要不是睡得那么沉，那只兔子就能看到你走过来。',
+      'لرآك الأرنب تقترب لو لم يكن غارقًا في النوم.',
     ),
     _Cue(
       _sleep,
@@ -334,6 +486,10 @@ const _cues = {
       'Выбери того, кто уже задремал, пока двое других ещё бодрствуют.',
       'Elige al que se ha quedado dormido mientras los otros dos siguen despiertos.',
       'Қалған екеуі әлі ояу отырғанда мызғып кеткен қоянды таңда.',
+      'Wähle das Kaninchen, das eingenickt ist, während die anderen beiden noch wach sind.',
+      'Choisis le lapin qui s’est assoupi alors que les deux autres sont toujours réveillés.',
+      '另外两只还醒着，选已经打起瞌睡的那只兔子。',
+      'اختر الأرنب الذي غفا فيما لا يزال الآخران مستيقظين.',
     ),
     _Cue(
       _flower,
@@ -341,6 +497,10 @@ const _cues = {
       'Отдай конфету тому, кто читает, даже если ты не видишь цветка.',
       'Dáselo a quien esté leyendo, tanto si ves la flor como si no.',
       'Гүлді көрсең де, көрмесең де, кәмпитті кітап оқып отырған қоянға бер.',
+      'Gib das Bonbon dem Kaninchen, das gerade liest, ganz gleich, ob du die Blume siehst oder nicht.',
+      'Donne le bonbon à celui qui lit, que tu voies la fleur ou non.',
+      '不管你看不看得见那朵花，都把糖果给正在看书的兔子。',
+      'أعط الحلوى لمن يقرأ، سواء رأيت الزهرة أم لم ترها.',
     ),
     _Cue(
       _flower,
@@ -348,6 +508,10 @@ const _cues = {
       'Даже если бы читатель отложил книгу, его всё равно можно было бы узнать по цветку.',
       'Si el lector dejara el libro, aún podrías reconocerlo por la flor.',
       'Оқып отырған қоян кітабын қоя тұрса да, оны гүлінен тануға болады.',
+      'Selbst wenn das lesende Kaninchen sein Buch weglegen würde, könntest du es noch an seiner Blume erkennen.',
+      'Même si le lapin posait son livre, tu pourrais encore le reconnaître à sa fleur.',
+      '就算那只看书的兔子放下书，你也能凭它戴的花认出它。',
+      'حتى لو وضع الأرنب القارئ كتابه جانبًا، لأمكنك أن تتعرف عليه من زهرته.',
     ),
     _Cue(
       _flower,
@@ -355,6 +519,10 @@ const _cues = {
       'Кролика, которого ты ищешь, книга, похоже, интересует больше, чем конфета.',
       'Al conejo que buscas parece interesarle más el libro que el caramelo.',
       'Сен іздеген қоян кәмпиттен гөрі кітабына көбірек қызығатын сияқты.',
+      'Das Kaninchen, das du suchst, scheint sich mehr für sein Buch als für das Bonbon zu interessieren.',
+      'Le lapin que tu cherches paraît s’intéresser davantage à son livre qu’au bonbon.',
+      '比起糖果，你要找的那只兔子似乎对手里的书更感兴趣。',
+      'يبدو أن الأرنب الذي تبحث عنه مهتم بكتابه أكثر من الحلوى.',
     ),
   ],
   CefrLevel.c1: [
@@ -364,6 +532,10 @@ const _cues = {
       'Адресата легко узнать по тому, что он не погрузился в книгу и не укутался в одеяло.',
       'Reconocerás enseguida al destinatario porque ni está enfrascado en un libro ni se ha arropado con una manta.',
       'Кәмпит алатын қоянды тану оңай: ол кітапқа үңіліп те, көрпеге оранып та отырған жоқ.',
+      'Das gesuchte Kaninchen ist leicht auszumachen: Es hat sich weder in ein Buch vertieft noch unter eine Decke gekuschelt.',
+      'Ni plongé dans un livre ni blotti sous une couverture, le destinataire est facile à repérer.',
+      '收糖的兔子既没埋头看书，也没缩在毯子里，很容易认出来。',
+      'يسهل تمييز متلقي الحلوى، فهو لا يستغرق في القراءة ولا يتدثر ببطانية.',
     ),
     _Cue(
       _scarf,
@@ -371,6 +543,10 @@ const _cues = {
       'Если бы не шарф, ты мог бы не заметить кролика с пустыми лапами и широко открытыми глазами.',
       'De no ser por la bufanda, quizá se te pasaría por alto el conejo que tiene las patas vacías y los ojos bien abiertos.',
       'Шарфы болмаса, көзі бақырайып ашық, қолында ештеңе жоқ қоянды байқамай қалуың мүмкін.',
+      'Wäre da nicht der Schal, könntest du das Kaninchen mit leeren Pfoten und weit geöffneten Augen glatt übersehen.',
+      'Sans l’écharpe, on risquerait de ne pas remarquer le lapin aux pattes vides et aux yeux grands ouverts.',
+      '若非围巾，你或许会忽略那只双眼睁得大大的、两爪空空的兔子。',
+      'لولا الوشاح، لربما لم تنتبه إلى الأرنب الذي ليس في كفّيه شيء وعيناه مفتوحتان على اتّساعهما.',
     ),
     _Cue(
       _scarf,
@@ -378,6 +554,10 @@ const _cues = {
       'Даже если твой взгляд привлечёт книга, продолжай искать шарф, по которому можно узнать адресата.',
       'Si el libro te llama la atención, sigue buscando la bufanda que distingue al destinatario.',
       'Көзің кітапқа түссе де, кімге апару керегін білдіретін шарфты іздей бер.',
+      'Sollte dir das Buch ins Auge fallen, halte dennoch nach dem Schal Ausschau. An ihm erkennst du, für wen das Bonbon bestimmt ist.',
+      'Si le livre attire ton regard, poursuis néanmoins ta recherche : c’est l’écharpe qui révèle l’identité du destinataire.',
+      '纵使那本书吸引了你的目光，也要继续找围巾，那才是辨认收糖果的兔子的线索。',
+      'إن استوقفك الكتاب، فواصل البحث عن الوشاح، فهو ما يميز متلقي الحلوى.',
     ),
     _Cue(
       _sleep,
@@ -385,6 +565,10 @@ const _cues = {
       'Положи конфету поближе к тому, кто, судя по закрытым глазам, не замечает твоего появления.',
       'Déjalo al alcance del que, a juzgar por sus ojos cerrados, no se ha percatado de tu llegada.',
       'Көзін жұмып жатқанына қарағанда, келгеніңді сезбеген қоянға кәмпитті қолы жететіндей жерге қой.',
+      'Leg das Bonbon in Reichweite des Kaninchens, das, nach seinen geschlossenen Augen zu urteilen, von deiner Ankunft nichts mitbekommen hat.',
+      'Pose le bonbon à portée de celui qui, à en juger par ses yeux fermés, ne s’est pas aperçu de ton arrivée.',
+      '把糖果放在那只兔子够得着的地方。看它双眼紧闭，想必没察觉你来了。',
+      'ضع الحلوى في متناول من لم يلحظ قدومك، على ما تشي به عيناه المغمضتان.',
     ),
     _Cue(
       _sleep,
@@ -392,6 +576,10 @@ const _cues = {
       'Пусть читатель и поглощён историей, тебе нужен кролик, который погрузился в сон.',
       'Por muy absorto que esté el lector en la historia, el conejo que buscas está sumido en un sueño.',
       'Кітап оқып отырған қоян оқиғаға беріліп кетсе де, саған керегі — түс көріп жатқан қоян.',
+      'Mag das lesende Kaninchen auch ganz in seine Geschichte vertieft sein, gesucht ist das Kaninchen, das gerade träumt.',
+      'Le lecteur a beau être absorbé par son histoire, le lapin que tu cherches est en plein rêve.',
+      '看书的兔子固然沉浸在故事里，可你要找的那只正沉浸在梦中。',
+      'قد يكون القارئ مستغرقًا في حكايته، غير أن الأرنب الذي تقصده غارق في حلمه.',
     ),
     _Cue(
       _sleep,
@@ -399,6 +587,10 @@ const _cues = {
       'Доставь конфету тихонько, как бы кролик, свернувшийся под одеялом, не проснулся.',
       'Entrégalo con sigilo, no sea que se despierte el conejo acurrucado bajo la manta.',
       'Көрпенің астында бүрісіп жатқан қоян оянып кетпесін, кәмпитті білдіртпей жеткіз.',
+      'Liefere das Bonbon unauffällig, damit sich das unter der Decke zusammengerollte Kaninchen nicht regt.',
+      'Dépose le bonbon sans bruit, de peur que le lapin recroquevillé sous la couverture ne bouge.',
+      '悄悄放下糖果，免得惊动蜷缩在毯子里的兔子。',
+      'ضع الحلوى بهدوء لئلّا توقظ الأرنب المتكوّر تحت البطانية.',
     ),
     _Cue(
       _flower,
@@ -406,6 +598,10 @@ const _cues = {
       'Хотя кролик с цветком и поглощён чтением, доставку ждёт именно он.',
       'Por muy enfrascado que esté en la lectura, es el conejo de la flor quien espera la entrega.',
       'Гүлі бар қоян кітапқа қанша беріліп кетсе де, кәмпитті күтіп отырған — сол.',
+      'So vertieft das Kaninchen mit der Blume auch in seine Lektüre sein mag, genau dieses Kaninchen erwartet die Lieferung.',
+      'Tout absorbé qu’il soit par sa lecture, le lapin à la fleur est bien celui qui attend la livraison.',
+      '尽管戴花的兔子全神贯注地看书，等着收糖的恰恰就是它。',
+      'على الرغم من انهماكه في القراءة، فإن الأرنب الذي يضع الزهرة هو من ينتظر الحلوى.',
     ),
     _Cue(
       _flower,
@@ -413,6 +609,10 @@ const _cues = {
       'Если ты не заметишь цветок у уха читателя, ориентируйся по раскрытым страницам.',
       'Guíate por las páginas abiertas en caso de que se te pase por alto la flor junto a la oreja del lector.',
       'Егер кітап оқып отырған қоянның құлағының тұсындағы гүлді байқамасаң, ашық беттерге қара.',
+      'Solltest du die Blume am Ohr des lesenden Kaninchens übersehen, orientiere dich an den offenen Buchseiten.',
+      'Si la fleur près de son oreille t’échappe, laisse-toi guider par les pages ouvertes.',
+      '倘若没留意到耳边那朵花，就凭摊开的书页去认吧。',
+      'إن فاتتك الزهرة بجانب أذن القارئ، فاستدل بالصفحات المفتوحة.',
     ),
     _Cue(
       _flower,
@@ -420,6 +620,10 @@ const _cues = {
       'Лапы адресата в самом буквальном смысле заняты книгой.',
       'El destinatario tiene las patas ocupadas, en el sentido más literal, con un libro.',
       'Кәмпит алатын қоянның қолы бос емес деген осы: алдыңғы екі аяғымен кітап ұстап отыр.',
+      'Das gesuchte Kaninchen hat im wahrsten Sinne des Wortes beide Pfoten voll: Es hält ein Buch.',
+      'Le destinataire a les pattes prises, au sens propre : il tient un livre.',
+      '收糖果的兔子可真是腾不出手来：它正捧着一本书。',
+      'كفّا متلقي الحلوى مشغولتان بالمعنى الحرفي، فهو يمسك كتابًا.',
     ),
   ],
   CefrLevel.c2: [

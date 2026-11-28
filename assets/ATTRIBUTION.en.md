@@ -31,6 +31,17 @@ Source: <https://github.com/openlanguageprofiles/olp-en-cefrj/blob/d4e45b75b38f2
 
 ArcadeLingo selected single-word entries, removed duplicates, and added Russian translations and answer choices. The C1 and C2 dictionaries in `assets/words_c1.json` and `assets/words_c2.json` are distributed under **Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)**: <https://creativecommons.org/licenses/by-sa/4.0/>.
 
+## German A1–C1 courses
+
+The German vocabulary, glosses, and answer choices were selected and written
+for ArcadeLingo. Goethe-Institut materials informed the topics and difficulty.
+Duden was used to check spelling, articles, and individual senses.
+
+- A1–B1: <https://www.goethe.de/prj/dvt/de/index.html>
+- B2 and C1: <https://www.goethe.de/ins/de/de/prf/gzb2.cfm> and
+  <https://www.goethe.de/ins/de/de/prf/gzc1.cfm>
+- Duden: <https://www.duden.de/woerterbuch>
+
 ## Rubik font
 
 - **Authors:** Hubert & Fischer (Philipp Hubert and Sebastian Fischer). Cyreal (Alexei Vanyashin and Nikita Kanarev) revised and extended the Cyrillic glyphs.
@@ -39,6 +50,14 @@ ArcadeLingo selected single-word entries, removed duplicates, and added Russian 
 - **File:** `assets/fonts/Rubik-Variable.ttf`, with a weight range of 300–900 and a default of 300. The original variable font file was renamed for compatibility with the asset bundle.
 
 The light theme uses Lora by The Lora Project Authors for headings. The bundled SIL Open Font License 1.1 is in `assets/fonts/Lora-OFL.txt`. Source <https://github.com/google/fonts/tree/main/ofl/lora>.
+
+## French, Chinese and Arabic A1–C1
+
+ArcadeLingo curated these words and their four sets of translations and answer choices. French uses references from the Académie française and France Éducation international. Mandarin uses simplified characters and marked pinyin following GB/T 16159. Arabic uses Modern Standard Arabic. The Chinese and Arabic levels follow ArcadeLingo's learning progression.
+
+References: <https://www.dictionnaire-academie.fr/9e_edition>, <https://www.france-education-international.fr/document/cecrl>, <https://www.moe.gov.cn/jyb_xwfb/gzdt_gzdt/s5987/202103/t20210329_523304.html>, <https://dictionary.ksaa.gov.sa/about>.
+
+Noto Sans Arabic and Arcade Chinese (a subset of Noto Sans SC) render Arabic and Chinese offline. Both fonts are licensed under the SIL Open Font License 1.1, available in the app. Sources: <https://github.com/google/fonts/tree/main/ofl/notosansarabic> and <https://github.com/google/fonts/tree/main/ofl/notosanssc>.
 
 ## Ninja Slash sound effects
 

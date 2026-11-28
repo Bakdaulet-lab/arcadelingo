@@ -3,6 +3,7 @@ import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/daily_word/daily_word.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
+import 'package:arcadelingo/domain/review/word_labels.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Word card(
@@ -27,6 +28,27 @@ DailyWordPuzzle? select(
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('German daily words support umlauts and keep eszett apart from ss', () {
+    final umlaut = card('Bäume', translation: 'деревья');
+    final street = card('Straße', translation: 'улица');
+    DailyWordPuzzle puzzle(Word word) =>
+        selectDailyWord(
+          course: StudyCourse.germanFromRussian,
+          level: CefrLevel.a1,
+          date: DateTime(2026, 12, 4),
+          vocabulary: [umlaut, street],
+          targetId: word.id,
+        )!;
+    final treeRound = DailyWordRound(puzzle(umlaut));
+    expect(treeRound.check('baume'), DailyGuessError.unknownWord);
+    expect(treeRound.submit('Ba\u0308ume'), isNull);
+    expect(treeRound.status, DailyWordStatus.won);
+    final streetRound = DailyWordRound(puzzle(street));
+    expect(streetRound.submit('STRAẞE'), isNull);
+    expect(streetRound.status, DailyWordStatus.won);
+    expect(uppercaseWordLetters('Straße'), 'STRAẞE');
+  });
 
   test('Russian rounds keep ё distinct and accept decomposed input', () {
     final puzzle = selectDailyWord(

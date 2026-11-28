@@ -69,6 +69,28 @@ Future<void> main() async {
         ),
         speech: speech,
       ),
+    for (final course in StudyCourse.germanCourses)
+      loadGermanCourse(
+        course: course,
+        prefs: prefs,
+        history: HistoryDatabase(
+          driftDatabase(
+            name: 'wordarcade_answers_${course.id.replaceAll('-', '_')}',
+          ),
+        ),
+        speech: speech,
+      ),
+    for (final course in StudyCourse.multilingualCourses)
+      loadMultilingualCourse(
+        course: course,
+        prefs: prefs,
+        history: HistoryDatabase(
+          driftDatabase(
+            name: 'wordarcade_answers_${course.id.replaceAll('-', '_')}',
+          ),
+        ),
+        speech: speech,
+      ),
   ]);
   final additionalDecks = <CourseDeck>[];
   for (final result in extraCourses) {
@@ -170,6 +192,32 @@ Future<Result<CourseDeck>> loadKazakhCourse({
   speech: speech,
 );
 
+Future<Result<CourseDeck>> loadGermanCourse({
+  required StudyCourse course,
+  required SharedPreferences prefs,
+  required HistoryDatabase history,
+  required DeviceWordSpeech speech,
+}) async => _buildCourseDeck(
+  course,
+  await loadGermanSeed(course),
+  prefs: prefs,
+  history: history,
+  speech: speech,
+);
+
+Future<Result<CourseDeck>> loadMultilingualCourse({
+  required StudyCourse course,
+  required SharedPreferences prefs,
+  required HistoryDatabase history,
+  required DeviceWordSpeech speech,
+}) async => _buildCourseDeck(
+  course,
+  await loadMultilingualSeed(course),
+  prefs: prefs,
+  history: history,
+  speech: speech,
+);
+
 Result<CourseDeck> _buildCourseDeck(
   StudyCourse course,
   Result<List<ReviewItem>> seed, {
@@ -206,5 +254,13 @@ void _registerFontLicense() {
     yield LicenseEntryWithLineBreaks([wordarcadeFont], text);
     final lora = await rootBundle.loadString('assets/fonts/Lora-OFL.txt');
     yield LicenseEntryWithLineBreaks([warmPaperFont], lora);
+    final arabic = await rootBundle.loadString(
+      'assets/fonts/NotoSansArabic-OFL.txt',
+    );
+    yield LicenseEntryWithLineBreaks([arabicFont], arabic);
+    final chinese = await rootBundle.loadString(
+      'assets/fonts/NotoSansSC-OFL.txt',
+    );
+    yield LicenseEntryWithLineBreaks([chineseFont], chinese);
   });
 }

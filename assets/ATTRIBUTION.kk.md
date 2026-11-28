@@ -65,6 +65,18 @@ ArcadeLingo-ның бұрыннан бар испан тілі курстары�
   Сөздікқор <https://sozdikqor.kz/> және Termincom <https://termincom.kz/>
   пайдаланылды.
 
+## Неміс тілінің A1–C1 курстары
+
+Сөздер мен тіркестер ArcadeLingo үшін іріктелді. Аудармалар мен жауап
+нұсқалары төрт курсқа арнап әзірленді. Тақырыптар мен деңгейлерді белгілеуде
+Goethe-Institut материалдары басшылыққа алынды. Сөздердің жазылуы, артикльдері
+және мағыналары Duden сөздігімен салыстырылды.
+
+- A1–B1 деңгейлері: <https://www.goethe.de/prj/dvt/de/index.html>
+- B2 және C1 деңгейлері: <https://www.goethe.de/ins/de/de/prf/gzb2.cfm> және
+  <https://www.goethe.de/ins/de/de/prf/gzc1.cfm>
+- Duden сөздігі: <https://www.duden.de/woerterbuch>
+
 ## Rubik қарпі
 
 - **Авторлары.** Hubert & Fischer (Philipp Hubert және Sebastian Fischer).
@@ -86,6 +98,14 @@ ArcadeLingo-ның бұрыннан бар испан тілі курстары�
 қолданылады. SIL Open Font License 1.1 лицензиясының мәтіні қолданбамен бірге
 `assets/fonts/Lora-OFL.txt` файлында беріледі. Дереккөзі
 <https://github.com/google/fonts/tree/main/ofl/lora>.
+
+## Француз, қытай және араб тілдері A1–C1
+
+Сөздер, аудармалар және жауап нұсқалары ArcadeLingo үшін төрт аударма тілінде әзірленді. Француз тілі Académie française сөздігі мен France Éducation international материалдары арқылы тексерілді. Қытай курсында жеңілдетілген иероглифтер мен GB/T 16159 стандартына сай тоны белгіленген пиньинь қолданылады. Араб курсы қазіргі әдеби араб тіліне негізделген. Қытай және араб тілдерінің деңгейлері ArcadeLingo оқу ретімен берілген.
+
+Дереккөздер: <https://www.dictionnaire-academie.fr/9e_edition>, <https://www.france-education-international.fr/document/cecrl>, <https://www.moe.gov.cn/jyb_xwfb/gzdt_gzdt/s5987/202103/t20210329_523304.html>, <https://dictionary.ksaa.gov.sa/about>.
+
+Noto Sans Arabic және Noto Sans SC қарпінің негізіндегі Arcade Chinese араб және қытай жазуын интернетсіз көрсетеді. Екі қаріптің SIL Open Font License 1.1 лицензиясы қолданбада берілген. Бастапқы қаріптер: <https://github.com/google/fonts/tree/main/ofl/notosansarabic> және <https://github.com/google/fonts/tree/main/ofl/notosanssc>.
 
 ## «Ниндзяның соққысы» ойынының дыбыс әсерлері
 

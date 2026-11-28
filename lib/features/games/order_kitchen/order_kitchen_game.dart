@@ -219,6 +219,10 @@ class _OrderKitchenGameState extends State<OrderKitchenGame> {
                                     index: _index,
                                     total: _orders.length,
                                     reduced: reduced,
+                                    textDirection:
+                                        course.studyLanguage == 'ar'
+                                            ? TextDirection.rtl
+                                            : null,
                                     phrase: _orders[_index].phrase(
                                       course.studyLanguage,
                                     ),
@@ -319,11 +323,13 @@ class _Ticket extends StatelessWidget {
     required this.total,
     required this.phrase,
     required this.reduced,
+    required this.textDirection,
   });
   final int index;
   final int total;
   final String phrase;
   final bool reduced;
+  final TextDirection? textDirection;
 
   @override
   Widget build(BuildContext context) {
@@ -393,6 +399,7 @@ class _Ticket extends StatelessWidget {
                 child: Text(
                   phrase,
                   key: const ValueKey('kitchen.order'),
+                  textDirection: textDirection,
                   style: withWeight(
                     theme.textTheme.headlineSmall!,
                     FontWeight.w600,

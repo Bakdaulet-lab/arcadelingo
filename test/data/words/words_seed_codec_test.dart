@@ -46,6 +46,31 @@ Map<String, Object?> _appleWith(Map<String, Object?> overrides) {
 }
 
 void main() {
+  test(
+    'a noun article can be shown while the stored lemma stays unchanged',
+    () {
+      final items = ok(
+        parseWordsSeed(
+          _doc([
+            _appleWith({'text': 'Apfel', 'article': 'der'}),
+          ]),
+        ),
+      );
+      final word = items.single.word;
+      expect(word.article, 'der');
+      expect(word.headword, 'der Apfel');
+      expect(word.text, 'Apfel');
+      expect(
+        parseWordsSeed(
+          _doc([
+            _appleWith({'article': 1}),
+          ]),
+        ),
+        _isErr,
+      );
+    },
+  );
+
   group('parseWordsSeed: валидные данные', () {
     test('запись → ReviewItem: слово и дистракторы в исходном порядке', () {
       final items = ok(parseWordsSeed(_doc([_apple])));
