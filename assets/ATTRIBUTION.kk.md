@@ -1,5 +1,9 @@
 # Дереккөздер және үшінші тарап материалдары
 
+## Түрік тілі A1–C1
+
+Түрікше сөздер, аудармалар мен жауап нұсқалары ArcadeLingo үшін дайындалды. Деңгейлер қолданбаның оқу ретіне сай бөлінді. Түрік тілі қоғамының [қазіргі түрік тілінің сөздігі](https://sozluk.gov.tr/) мен [емле ережелері](https://tdk.gov.tr/icerik/yazim-kurallari/duzeltme-isareti/), сондай-ақ Юнус Эмре институтының [Yedi İklim Türkçe](https://yee.org.tr/_next/yayinlar/yedi-iklim-turkce-seti) оқу материалдары пайдаланылды.
+
 ## Жапон тілі A1–C1
 
 Сөздер, олардың оқылуы, аудармалар мен жауап нұсқалары ArcadeLingo үшін дайындалды. Деңгейлер қолданбаның оқу ретіне сай бөлінді. Жапон қорының [JF стандарты](https://www.jfstandard.jpf.go.jp/summaryen/ja/render.do) мен [Marugoto оқу материалдары](https://www.marugoto.jpf.go.jp/en/download/) пайдаланылды.

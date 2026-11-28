@@ -241,6 +241,7 @@ class DeviceWordSpeech implements WordSpeech {
     'fr-fr' ||
     'ko-kr' ||
     'ja-jp' ||
+    'tr-tr' ||
     'ar-sa' ||
     'zh-cn' ||
     'zh-hans-cn' ||

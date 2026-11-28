@@ -1,5 +1,9 @@
 # Fuentes y materiales de terceros
 
+## Turco de A1 a C1
+
+Las palabras, las traducciones y las opciones de respuesta en turco se prepararon para ArcadeLingo. Los niveles siguen la secuencia didáctica de la aplicación. Se consultaron el [Güncel Türkçe Sözlük](https://sozluk.gov.tr/) y las [reglas ortográficas](https://tdk.gov.tr/icerik/yazim-kurallari/duzeltme-isareti/) de la Asociación de la Lengua Turca, así como los materiales [Yedi İklim Türkçe](https://yee.org.tr/_next/yayinlar/yedi-iklim-turkce-seti) del Instituto Yunus Emre.
+
 ## Japonés de A1 a C1
 
 Las palabras, las lecturas, las traducciones y las opciones de respuesta se prepararon para ArcadeLingo. Los niveles siguen la secuencia didáctica de la aplicación. Se consultaron el [Estándar JF](https://www.jfstandard.jpf.go.jp/summaryen/ja/render.do) y los [materiales didácticos de Marugoto](https://www.marugoto.jpf.go.jp/en/download/) de la Fundación Japón.

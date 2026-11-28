@@ -111,6 +111,10 @@ flutter:
     - assets/words_ja_en/
     - assets/words_ja_es/
     - assets/words_ja_kk/
+    - assets/words_tr_ru/
+    - assets/words_tr_en/
+    - assets/words_tr_es/
+    - assets/words_tr_kk/
     - assets/words_ar_ru/
     - assets/words_ar_en/
     - assets/words_ar_es/

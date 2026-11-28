@@ -12,6 +12,7 @@ class RecallExercise {
     required this.item,
     required Iterable<Word> vocabulary,
     required Random random,
+    this.studyLanguage = 'en',
   }) {
     final hangul = HangulSpelling.forWord(item.word.text);
     _hangul = hangul != null;
@@ -36,11 +37,12 @@ class RecallExercise {
       }
     }
     tiles = List.unmodifiable(shuffled);
-    choices = _choices(item, vocabulary, random);
+    choices = _choices(item, vocabulary, random, studyLanguage);
   }
 
   static final _letterOrDigit = RegExp(r'[\p{L}\p{N}]', unicode: true);
   final ReviewItem item;
+  final String studyLanguage;
   late final List<String> tiles;
   late final List<String> choices;
   late final List<String> spelling;
@@ -63,8 +65,14 @@ class RecallExercise {
       complete &&
       (_hangul
           ? slots.join() == spelling.join()
-          : normalizedCourseSpelling(slots.join()) ==
-              normalizedCourseSpelling(item.word.text));
+          : normalizedCourseSpelling(
+                slots.join(),
+                studyLanguage: studyLanguage,
+              ) ==
+              normalizedCourseSpelling(
+                item.word.text,
+                studyLanguage: studyLanguage,
+              ));
 
   String get answerText => _hangul && correct ? item.word.text : slots.join();
 
@@ -87,12 +95,16 @@ List<String> _choices(
   ReviewItem item,
   Iterable<Word> vocabulary,
   Random random,
+  String studyLanguage,
 ) {
+  String spellingOf(String value) =>
+      normalizedCourseSpelling(value, studyLanguage: studyLanguage);
+
   final target = item.word;
   final meanings = translationMeanings(
     normalizedCourseSpelling(target.translation),
   );
-  final unavailable = {normalizedCourseSpelling(target.text)};
+  final unavailable = {spellingOf(target.text)};
   final curated = item.distractors.map(normalizedCourseSpelling).toSet();
   final preferred = <String>[];
   final matchingPart = <String>[];
@@ -104,7 +116,7 @@ List<String> _choices(
     if (translationMeanings(translation).any(meanings.contains)) {
       // A spelling can have multiple cards. One correct sense rules out
       // presenting that spelling as wrong, regardless of source order.
-      unavailable.add(normalizedCourseSpelling(candidate.text));
+      unavailable.add(spellingOf(candidate.text));
     } else if (curated.contains(translation)) {
       preferred.add(candidate.text);
     } else if (target.partOfSpeech != null &&
@@ -118,7 +130,7 @@ List<String> _choices(
   for (final pool in [preferred, matchingPart, other]) {
     pool.shuffle(random);
     for (final spelling in pool) {
-      if (unavailable.add(normalizedCourseSpelling(spelling))) {
+      if (unavailable.add(spellingOf(spelling))) {
         result.add(spelling.trim());
         if (result.length == 4) break;
       }

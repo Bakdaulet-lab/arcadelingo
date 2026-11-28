@@ -365,10 +365,11 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                                 if (const {
                                   'ko',
                                   'ja',
+                                  'tr',
                                 }.contains(widget.studyLanguage)) ...[
                                   const SizedBox(height: 8),
                                   WordPronunciation(
-                                    text: _run.answer,
+                                    text: word.text,
                                     speech: widget.speech,
                                     studyLanguage: widget.studyLanguage,
                                     enabled: !_paused,

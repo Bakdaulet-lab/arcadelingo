@@ -21,6 +21,7 @@ class ClawMachineRun {
          'ar' => 'ابتثجحخدذرزسشصضطظعغفقكلمنهويأإآؤئةىء',
          'ko' => '가나다라마바사아자차카타파하',
          'ja' => 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん',
+         'tr' => 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ',
          _ => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
        };
 
@@ -67,7 +68,7 @@ class ClawMachineRun {
     item = session.nextItem();
     final word = item?.word;
     if (word == null) return;
-    answer = uppercaseWordLetters(word.text);
+    answer = uppercaseWordLetters(word.text, studyLanguage: studyLanguage);
     _hangul = studyLanguage == 'ko' ? HangulSpelling.forWord(answer) : null;
     final reading = word.reading;
     kanaReading =

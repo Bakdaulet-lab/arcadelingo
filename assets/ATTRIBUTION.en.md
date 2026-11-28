@@ -1,5 +1,9 @@
 # Sources and third-party materials
 
+## Turkish A1–C1
+
+The Turkish words, translations, and answer choices were written for ArcadeLingo. Levels follow the app’s learning sequence. Editorial references include the Turkish Language Association’s [Güncel Türkçe Sözlük](https://sozluk.gov.tr/) and [spelling rules](https://tdk.gov.tr/icerik/yazim-kurallari/duzeltme-isareti/) and the Yunus Emre Institute’s [Yedi İklim Türkçe](https://yee.org.tr/_next/yayinlar/yedi-iklim-turkce-seti) teaching materials.
+
 ## Japanese A1–C1
 
 The Japanese words, readings, translations, and answer choices were written for ArcadeLingo. Levels reflect the app's learning sequence. Editorial references include the Japan Foundation's [JF Standard](https://www.jfstandard.jpf.go.jp/summaryen/ja/render.do) and [Marugoto learning materials](https://www.marugoto.jpf.go.jp/en/download/).

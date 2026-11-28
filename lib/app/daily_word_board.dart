@@ -21,6 +21,7 @@ class DailyWordBoard extends StatelessWidget {
   Widget build(BuildContext context) {
     final guesses = round.guesses;
     final marks = round.rows;
+    final language = round.puzzle.course.studyLanguage;
     return LayoutBuilder(
       builder: (context, constraints) {
         const gap = 5.0;
@@ -45,14 +46,12 @@ class DailyWordBoard extends StatelessWidget {
                           : '';
                   final letters =
                       uppercaseWordLetters(
-                        normalizedCourseSpelling(word),
+                        normalizedCourseSpelling(word, studyLanguage: language),
+                        studyLanguage: language,
                       ).characters.toList();
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    textDirection:
-                        round.puzzle.course.studyLanguage == 'ar'
-                            ? TextDirection.rtl
-                            : null,
+                    textDirection: language == 'ar' ? TextDirection.rtl : null,
                     children: [
                       for (var col = 0; col < length; col++) ...[
                         if (col > 0) const SizedBox(width: gap),

@@ -63,6 +63,7 @@ class _RecallScreenState extends State<RecallScreen> {
               item: item,
               vocabulary: widget.vocabulary,
               random: _random,
+              studyLanguage: widget.course.studyLanguage,
             );
     _phase = _Phase.prompt;
     _outcome = null;

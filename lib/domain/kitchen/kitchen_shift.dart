@@ -15,8 +15,9 @@ enum KitchenIngredient {
     'قهوة',
     '커피',
     'コーヒー',
+    'Kahve',
   ),
-  tea('Tea', 'Té', 'Чай', 'Шай', 'Tee', 'Thé', '茶', 'شاي', '차', '紅茶'),
+  tea('Tea', 'Té', 'Чай', 'Шай', 'Tee', 'Thé', '茶', 'شاي', '차', '紅茶', 'Çay'),
   milk(
     'Milk',
     'Leche',
@@ -28,6 +29,7 @@ enum KitchenIngredient {
     'حليب',
     '우유',
     'ミルク',
+    'Süt',
   ),
   sugar(
     'Sugar',
@@ -40,6 +42,7 @@ enum KitchenIngredient {
     'سكر',
     '설탕',
     '砂糖',
+    'Şeker',
   ),
   lemon(
     'Lemon',
@@ -52,6 +55,7 @@ enum KitchenIngredient {
     'ليمون',
     '레몬',
     'レモン',
+    'Limon',
   ),
   honey(
     'Honey',
@@ -64,6 +68,7 @@ enum KitchenIngredient {
     'عسل',
     '꿀',
     'はちみつ',
+    'Bal',
   );
 
   const KitchenIngredient(
@@ -77,6 +82,7 @@ enum KitchenIngredient {
     this._arabic,
     this._korean,
     this._japanese,
+    this._turkish,
   );
   final String _english;
   final String _spanish;
@@ -88,6 +94,7 @@ enum KitchenIngredient {
   final String _arabic;
   final String _korean;
   final String _japanese;
+  final String _turkish;
 
   String label(String language) => switch (language) {
     'es' => _spanish,
@@ -99,6 +106,7 @@ enum KitchenIngredient {
     'ar' => _arabic,
     'ko' => _korean,
     'ja' => _japanese,
+    'tr' => _turkish,
     _ => _english,
   };
 }
@@ -116,6 +124,7 @@ class KitchenOrder {
     this._arabic,
     this._korean,
     this._japanese,
+    this._turkish,
   );
 
   final Set<KitchenIngredient> ingredients;
@@ -129,6 +138,7 @@ class KitchenOrder {
   final String _arabic;
   final String _korean;
   final String _japanese;
+  final String _turkish;
 
   String phrase(String language) => switch (language) {
     'es' => _spanish,
@@ -140,6 +150,7 @@ class KitchenOrder {
     'ar' => _arabic,
     'ko' => _korean,
     'ja' => _japanese,
+    'tr' => _turkish,
     _ => _english,
   };
 
@@ -160,6 +171,7 @@ const _plain = [
     'شاي، من فضلك.',
     '차 한 잔 주세요.',
     '紅茶を一杯ください。',
+    'Bir çay, lütfen.',
   ),
   KitchenOrder._(
     {KitchenIngredient.coffee},
@@ -173,6 +185,7 @@ const _plain = [
     'قهوة، من فضلك.',
     '커피 한 잔 주세요.',
     'コーヒーを一杯ください。',
+    'Bir kahve, lütfen.',
   ),
 ];
 
@@ -189,6 +202,7 @@ const _withOneExtra = [
     'شاي بالعسل، من فضلك.',
     '꿀을 넣은 차 주세요.',
     'はちみつ入りの紅茶をください。',
+    'Ballı çay, lütfen.',
   ),
   KitchenOrder._(
     {KitchenIngredient.coffee, KitchenIngredient.sugar},
@@ -202,6 +216,7 @@ const _withOneExtra = [
     'قهوة مع السكر، من فضلك.',
     '설탕을 넣은 커피 주세요.',
     '砂糖入りのコーヒーをください。',
+    'Şekerli bir kahve, lütfen.',
   ),
   KitchenOrder._(
     {KitchenIngredient.tea, KitchenIngredient.lemon},
@@ -215,6 +230,7 @@ const _withOneExtra = [
     'أريد شايًا بالليمون.',
     '레몬을 넣은 차를 주세요.',
     'レモンティーをお願いします。',
+    'Limonlu çay istiyorum.',
   ),
   KitchenOrder._(
     {KitchenIngredient.tea, KitchenIngredient.milk},
@@ -228,6 +244,7 @@ const _withOneExtra = [
     'شاي مع الحليب، من فضلك.',
     '우유를 넣은 차 주세요.',
     'ミルクティーをください。',
+    'Sütlü bir çay, lütfen.',
   ),
   KitchenOrder._(
     {KitchenIngredient.coffee, KitchenIngredient.milk},
@@ -241,6 +258,7 @@ const _withOneExtra = [
     'أريد قهوة بالحليب.',
     '우유를 넣은 커피를 주세요.',
     'ミルク入りのコーヒーをお願いします。',
+    'Sütlü bir kahve istiyorum.',
   ),
   KitchenOrder._(
     {KitchenIngredient.tea, KitchenIngredient.sugar},
@@ -254,6 +272,7 @@ const _withOneExtra = [
     'شاي مع السكر، من فضلك.',
     '설탕을 넣은 차 주세요.',
     '砂糖入りの紅茶をください。',
+    'Şekerli bir çay, lütfen.',
   ),
 ];
 
@@ -277,6 +296,7 @@ const _contrasts = [
       'قهوة بالحليب والسكر، من فضلك.',
       '커피에 우유와 설탕을 넣어 주세요.',
       'コーヒーにミルクと砂糖を入れてください。',
+      'Kahveye süt ve şeker koyun, lütfen.',
     ),
     KitchenOrder._(
       {KitchenIngredient.coffee, KitchenIngredient.milk},
@@ -290,6 +310,7 @@ const _contrasts = [
       'قهوة بالحليب من دون سكر، من فضلك.',
       '커피에 우유는 넣고 설탕은 빼 주세요.',
       'コーヒーにミルクを入れてください。砂糖はいりません。',
+      'Sütlü kahve, lütfen. Şeker olmasın.',
     ),
   ),
   (
@@ -305,6 +326,7 @@ const _contrasts = [
       'شاي بالليمون والعسل، من فضلك.',
       '차에 레몬과 꿀을 넣어 주세요.',
       '紅茶にレモンとはちみつを入れてください。',
+      'Çaya limon ve bal koyun, lütfen.',
     ),
     KitchenOrder._(
       {KitchenIngredient.tea, KitchenIngredient.lemon},
@@ -318,6 +340,7 @@ const _contrasts = [
       'شاي بالليمون من دون عسل، من فضلك.',
       '차에 레몬은 넣고 꿀은 빼 주세요.',
       '紅茶にレモンを入れてください。はちみつはいりません。',
+      'Limonlu çay, lütfen. Bal olmasın.',
     ),
   ),
   (
@@ -333,6 +356,7 @@ const _contrasts = [
       'شاي بالحليب والسكر، من فضلك.',
       '차에 우유와 설탕을 넣어 주세요.',
       '紅茶にミルクと砂糖を入れてください。',
+      'Çaya süt ve şeker koyun, lütfen.',
     ),
     KitchenOrder._(
       {KitchenIngredient.tea, KitchenIngredient.sugar},
@@ -346,6 +370,7 @@ const _contrasts = [
       'شاي بالسكر، لكن من دون حليب، من فضلك.',
       '차에 설탕은 넣고 우유는 빼 주세요.',
       '紅茶に砂糖を入れてください。ミルクはいりません。',
+      'Şekerli çay, lütfen. Süt olmasın.',
     ),
   ),
   (
@@ -361,6 +386,7 @@ const _contrasts = [
       'شاي بالليمون والسكر، من فضلك.',
       '차에 레몬과 설탕을 넣어 주세요.',
       '紅茶にレモンと砂糖を入れてください。',
+      'Çaya limon ve şeker koyun, lütfen.',
     ),
     KitchenOrder._(
       {KitchenIngredient.tea, KitchenIngredient.lemon},
@@ -374,6 +400,7 @@ const _contrasts = [
       'شاي بالليمون، لكن من دون سكر، من فضلك.',
       '차에 레몬은 넣고 설탕은 빼 주세요.',
       '紅茶にレモンを入れてください。砂糖はいりません。',
+      'Limonlu çay, lütfen. Şeker olmasın.',
     ),
   ),
 ];

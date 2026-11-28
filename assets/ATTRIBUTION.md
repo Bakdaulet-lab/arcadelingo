@@ -113,6 +113,10 @@ Arcade Korean создан на основе [Noto Sans KR](https://github.com/g
 
 Arcade Japanese создан на основе [Noto Sans JP](https://github.com/google/fonts/tree/main/ofl/notosansjp) и отображает японское письмо без интернета. Лицензия SIL Open Font License 1.1 доступна в приложении.
 
+## Турецкий язык A1–C1
+
+Словарь, переводы и варианты ответов составлены для ArcadeLingo. Уровни отражают учебную последовательность приложения. Справочные материалы — [Güncel Türkçe Sözlük](https://sozluk.gov.tr/) и [правила орфографии](https://tdk.gov.tr/icerik/yazim-kurallari/duzeltme-isareti/) Института турецкого языка, а также [Yedi İklim Türkçe](https://yee.org.tr/_next/yayinlar/yedi-iklim-turkce-seti) Института Юнуса Эмре.
+
 ## Звуковые эффекты «Ниндзя-слэша»
 
 - **Автор:** Kenney (Kenney Vleugels).
