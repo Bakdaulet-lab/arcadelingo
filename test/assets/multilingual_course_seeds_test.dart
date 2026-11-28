@@ -15,11 +15,12 @@ const _levels = [
   CefrLevel.b2,
   CefrLevel.c1,
 ];
+const _wordsPerLevel = 300;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('offline catalogue includes twelve courses through C1', () async {
+  test('twelve offline courses each include 300 words per level', () async {
     final courses = StudyCourse.multilingualCourses;
     expect(
       courses.map((course) => course.id),
@@ -34,11 +35,12 @@ void main() {
       expect(result, isA<Ok<List<ReviewItem>>>(), reason: course.id);
       final catalogue = (result as Ok<List<ReviewItem>>).value;
       final words = catalogue.map((item) => item.word).toList();
-      expect(words, hasLength(500));
-      expect(words.map((word) => word.id).toSet(), hasLength(500));
+      final catalogueSize = _levels.length * _wordsPerLevel;
+      expect(words, hasLength(catalogueSize));
+      expect(words.map((word) => word.id).toSet(), hasLength(catalogueSize));
       expect(
         words.map((word) => normalizedCourseSpelling(word.text)).toSet(),
-        hasLength(500),
+        hasLength(catalogueSize),
       );
       final lexical = <String, Object>{
         for (final word in words)
@@ -57,12 +59,16 @@ void main() {
       );
       for (final level in _levels) {
         final items = catalogue.where((item) => item.word.level == level);
-        expect(items, hasLength(100), reason: '${course.id}/${level.name}');
+        expect(
+          items,
+          hasLength(_wordsPerLevel),
+          reason: '${course.id}/${level.name}',
+        );
         final translations = {
           for (final item in items)
             item.word.translation: item.word.partOfSpeech,
         };
-        expect(translations, hasLength(100));
+        expect(translations, hasLength(_wordsPerLevel));
         for (final item in items) {
           final word = item.word;
           expect(word.id, startsWith('${course.studyLanguage}_'));
