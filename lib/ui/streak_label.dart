@@ -13,6 +13,7 @@ String streakLabel(int days, {AppStrings strings = russianStrings}) =>
     switch (strings.language) {
       InterfaceLanguage.english => 'Streak: $days ${englishDayWord(days)}',
       InterfaceLanguage.spanish => 'Racha: $days ${spanishDayWord(days)}',
+      InterfaceLanguage.kazakh => '$days күндік серия',
       InterfaceLanguage.russian ||
       InterfaceLanguage.system => 'Серия: $days ${dayWord(days)}',
     };

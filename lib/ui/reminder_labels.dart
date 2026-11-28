@@ -26,6 +26,7 @@ import 'package:arcadelingo/ui/streak_label.dart';
       InterfaceLanguage.english => 'Your ${plan.days}-day streak is at risk',
       InterfaceLanguage.spanish =>
         'Tu racha de ${plan.days} ${spanishDayWord(plan.days)} está en riesgo',
+      InterfaceLanguage.kazakh => '${plan.days} күндік серия үзілуі мүмкін',
       InterfaceLanguage.russian ||
       InterfaceLanguage.system => '${streakLabel(plan.days)} под угрозой',
     },
