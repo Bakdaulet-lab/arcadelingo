@@ -205,6 +205,7 @@ void main() {
               'zh' => r'^[\u3400-\u9fff]$',
               'ar' => r'^[\u0621-\u063a\u0641-\u064a][\u064b-\u0652\u0670]*$',
               'ko' => r'^[\u3131-\u3163\uac00-\ud7a3]$',
+              'ja' => r'^[ぁ-ゖァ-ヺーゝゞヽヾ々\u3400-\u9fff]$',
               _ => null,
             };
             if (entry.id == 'claw_machine' && script != null) {

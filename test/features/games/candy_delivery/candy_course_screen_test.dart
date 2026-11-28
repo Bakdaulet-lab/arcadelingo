@@ -16,7 +16,7 @@ final _courses = [
   ...StudyCourse.kazakhCourses,
   ...StudyCourse.germanCourses,
   ...StudyCourse.multilingualCourses.where(
-    (course) => course.studyLanguage == 'ko',
+    (course) => const {'ko', 'ja'}.contains(course.studyLanguage),
   ),
 ];
 
@@ -113,7 +113,7 @@ void main() {
           expect(_control('replay'), findsOneWidget);
         }
       }
-      expect(combinations, 72);
+      expect(combinations, 92);
       expect(tester.takeException(), isNull);
     },
   );

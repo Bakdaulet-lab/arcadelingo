@@ -72,10 +72,10 @@ void main() {
   }
 
   test(
-    '16 course directions reload independent word and streak progress',
+    '20 course directions reload independent word and streak progress',
     () async {
       final courses = StudyCourse.multilingualCourses;
-      expect(courses.length, 16);
+      expect(courses.length, 20);
       final histories = [for (final _ in courses) newHistory()];
       final at = DateTime.utc(2026, 11, 28, 10);
       final wordIds = <String, String>{};
@@ -172,6 +172,30 @@ void main() {
       },
     );
   }
+
+  test(
+    'Japanese speech uses the installed ja-JP voice and the card reading',
+    () async {
+      final calls = mockVoices(installed: ['ja', 'ja-JP'], online: ['ja-JP']);
+      final course = StudyCourse.multilingualCourses.firstWhere(
+        (course) => course.id == 'ru-ja',
+      );
+      final deck = await load(course, newHistory());
+      final word =
+          deck.items.firstWhere((item) {
+            return item.word.text == '学校';
+          }).word;
+      expect(await deck.speech.speak(word.text), SpeechResult.completed);
+      expect(calls.singleWhere((call) => call.method == 'setVoice').arguments, {
+        'name': 'local ja-JP',
+        'locale': 'ja-JP',
+      });
+      expect(
+        calls.singleWhere((call) => call.method == 'speak').arguments,
+        'がっこう',
+      );
+    },
+  );
 
   test(
     'Mandarin reports unavailable with only Cantonese and cloud Mandarin',
