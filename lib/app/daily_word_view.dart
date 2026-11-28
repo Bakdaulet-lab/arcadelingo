@@ -203,6 +203,11 @@ class _DailyWordScreenState extends State<DailyWordScreen> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final puzzle = widget.puzzle;
+    final extraLetters = switch (puzzle.course.studyLanguage) {
+      'es' => const ['á', 'é', 'í', 'ó', 'ú', 'ü', 'ñ'],
+      'ru' => const ['ё'],
+      _ => const <String>[],
+    };
     final playing = _round.status == DailyWordStatus.playing;
     final won = _round.status == DailyWordStatus.won;
     final notice = _notice(s);
@@ -369,25 +374,19 @@ class _DailyWordScreenState extends State<DailyWordScreen> {
                         onChanged: (_) => _edited(),
                         onSubmitted: (_) => _submit(),
                       ),
-                      if (puzzle.course.studyLanguage == 'es')
+                      if (extraLetters.isNotEmpty)
                         TextFieldTapRegion(
                           child: LayoutBuilder(
                             builder:
                                 (context, constraints) => Wrap(
                                   alignment: WrapAlignment.center,
                                   children: [
-                                    for (final letter in [
-                                      'á',
-                                      'é',
-                                      'í',
-                                      'ó',
-                                      'ú',
-                                      'ü',
-                                      'ñ',
-                                    ])
+                                    for (final letter in extraLetters)
                                       SizedBox(
                                         width:
-                                            constraints.maxWidth / 7 >= 44
+                                            extraLetters.length == 1
+                                                ? 44
+                                                : constraints.maxWidth / 7 >= 44
                                                 ? constraints.maxWidth / 7
                                                 : constraints.maxWidth / 4,
                                         child: TextButton(

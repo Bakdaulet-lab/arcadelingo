@@ -88,6 +88,9 @@ flutter:
     - assets/words_es_b1_en.json
     - assets/words_es_b2_en.json
     - assets/words_es_c1_en.json
+    - assets/words_kk_ru/
+    - assets/words_kk_en/
+    - assets/words_kk_es/
     - assets/words_en_a1_es.json
     - assets/words_c1.json
     - assets/words_c1.LICENSE.md

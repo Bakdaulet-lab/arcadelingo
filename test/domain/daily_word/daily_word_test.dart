@@ -28,6 +28,22 @@ DailyWordPuzzle? select(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('Russian rounds keep ё distinct and accept decomposed input', () {
+    final puzzle = selectDailyWord(
+      course: StudyCourse.russianFromKazakh,
+      level: CefrLevel.a1,
+      date: DateTime(2026, 12, 1),
+      vocabulary: [card('ёлка', translation: 'шырша'), card('поле')],
+      targetId: 'ёлка',
+    );
+    expect(puzzle, isNotNull);
+    final round = DailyWordRound(puzzle!);
+    expect(round.check('olka'), DailyGuessError.invalidLetters);
+    expect(round.check('елка'), DailyGuessError.unknownWord);
+    expect(round.submit('е\u0308лка'), isNull);
+    expect(round.status, DailyWordStatus.won);
+  });
+
   test(
     'a full rotation uses every eligible spelling once in a stable order',
     () {

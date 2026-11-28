@@ -120,6 +120,10 @@ ConfusionQuestion _question(
       index == 0
           ? 'En una conversación quieres decir «$gloss». ¿Qué palabra usarías?'
           : '¿Cómo dirías «$gloss» en un mensaje a un amigo?',
+    'kk' =>
+      index == 0
+          ? 'Әңгімеде «$gloss» дегенді қалай айтасың?'
+          : 'Досыңа «$gloss» дегенді қалай жазар едің?',
     _ =>
       index == 0
           ? 'You want to say “$gloss” in a conversation. Which word would you use?'

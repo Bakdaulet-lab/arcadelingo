@@ -13,6 +13,7 @@ const _courses = [
   StudyCourse.spanishFromEnglish,
   StudyCourse.englishFromRussian,
   StudyCourse.englishFromSpanish,
+  ...StudyCourse.kazakhCourses,
 ];
 
 Finder _control(String name) => find.byKey(ValueKey('candy.$name'));
@@ -108,7 +109,7 @@ void main() {
           expect(_control('replay'), findsOneWidget);
         }
       }
-      expect(combinations, 17);
+      expect(combinations, 32);
       expect(tester.takeException(), isNull);
     },
   );

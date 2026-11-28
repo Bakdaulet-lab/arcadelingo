@@ -30,6 +30,26 @@ class StudyCourse {
     studyLanguage: 'es',
     translationLanguage: 'en',
   );
+  static const russianFromKazakh = StudyCourse(
+    id: 'kk-ru',
+    studyLanguage: 'ru',
+    translationLanguage: 'kk',
+  );
+  static const englishFromKazakh = StudyCourse(
+    id: 'kk-en',
+    studyLanguage: 'en',
+    translationLanguage: 'kk',
+  );
+  static const spanishFromKazakh = StudyCourse(
+    id: 'kk-es',
+    studyLanguage: 'es',
+    translationLanguage: 'kk',
+  );
+  static const kazakhCourses = [
+    russianFromKazakh,
+    englishFromKazakh,
+    spanishFromKazakh,
+  ];
 
   final String id;
   final String studyLanguage;

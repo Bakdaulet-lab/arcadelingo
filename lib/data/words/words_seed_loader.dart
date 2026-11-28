@@ -9,6 +9,7 @@ library;
 import 'package:arcadelingo/data/words/words_seed_codec.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
+import 'package:arcadelingo/domain/review/study_course.dart';
 import 'package:flutter/services.dart';
 
 /// Пути ассетов, зарегистрированные в `pubspec.yaml`.
@@ -73,7 +74,7 @@ Future<Result<List<ReviewItem>>> loadSpanishSeed({AssetBundle? bundle}) {
     (wordsSpanishB2AssetPath, CefrLevel.b2),
     (wordsSpanishC1AssetPath, CefrLevel.c1),
   ];
-  return _loadSpanishSeed(sources, bundle);
+  return _loadLeveledSeed(sources, bundle);
 }
 
 Future<Result<List<ReviewItem>>> loadEnglishA1FromSpanishSeed({
@@ -90,10 +91,31 @@ Future<Result<List<ReviewItem>>> loadSpanishFromEnglishSeed({
     (wordsSpanishB2FromEnglishAssetPath, CefrLevel.b2),
     (wordsSpanishC1FromEnglishAssetPath, CefrLevel.c1),
   ];
-  return _loadSpanishSeed(sources, bundle);
+  return _loadLeveledSeed(sources, bundle);
 }
 
-Future<Result<List<ReviewItem>>> _loadSpanishSeed(
+Future<Result<List<ReviewItem>>> loadKazakhSeed(
+  StudyCourse course, {
+  AssetBundle? bundle,
+}) async {
+  final study = course.studyLanguage;
+  if (!StudyCourse.kazakhCourses.any(
+    (entry) =>
+        entry.id == course.id &&
+        entry.studyLanguage == study &&
+        entry.translationLanguage == course.translationLanguage,
+  )) {
+    return Err(Failure('Неизвестное направление с казахского: ${course.id}'));
+  }
+  final sources = [
+    for (final level in CefrLevel.values)
+      if (level != CefrLevel.c2)
+        ('assets/words_kk_$study/${level.name}.json', level),
+  ];
+  return _loadLeveledSeed(sources, bundle);
+}
+
+Future<Result<List<ReviewItem>>> _loadLeveledSeed(
   List<(String, CefrLevel)> sources,
   AssetBundle? bundle,
 ) async {
