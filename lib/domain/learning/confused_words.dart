@@ -103,7 +103,7 @@ class _WordIndex {
       'brick_breaker' ||
       'word_mahjong' => translations[label],
       'snake' => apples[label],
-      'word_maze' => spellings[label],
+      'word_maze' || 'space_word' => spellings[label],
       'active_recall' when answer.hintsUsed == 1 => spellings[label],
       _ => null,
     };

@@ -10,6 +10,7 @@ import 'package:arcadelingo/data/words/words_seed_loader.dart';
 import 'package:arcadelingo/domain/core/result.dart';
 import 'package:arcadelingo/domain/review/review_contract.dart';
 import 'package:arcadelingo/domain/review/study_course.dart';
+import 'package:arcadelingo/domain/review/word_labels.dart';
 import 'package:arcadelingo/domain/settings/app_settings.dart';
 import 'package:arcadelingo/domain/srs/leitner.dart';
 import 'package:arcadelingo/features/games/space_word/space_field.dart';
@@ -19,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/bundled_fonts.dart';
 import '../support/in_memory_answer_log.dart';
 import '../support/in_memory_stores.dart';
 import '../support/space_actions.dart';
@@ -32,11 +34,37 @@ Future<void> _tap(WidgetTester tester, Finder target) async {
   await tester.pump();
 }
 
+// Fly this storage-and-routing scenario with three unambiguous real signs.
+// Other levels and courses stay in the fixture to catch scope leaks.
+List<Word> _missionWords(List<ReviewItem> items, CefrLevel level) {
+  final candidates = [
+    for (final item in items)
+      if (item.word.level == level) item.word,
+  ]..sort((a, b) {
+    final byWidth = a.text.length.compareTo(b.text.length);
+    return byWidth != 0 ? byWidth : a.id.compareTo(b.id);
+  });
+  final words = <Word>[];
+  final meanings = <String>{};
+  for (final word in candidates) {
+    final senses = translationMeanings(word.translation);
+    if (senses.any(meanings.contains) ||
+        words.any((w) => w.text == word.text)) {
+      continue;
+    }
+    words.add(word);
+    meanings.addAll(senses);
+    if (words.length == 3) break;
+  }
+  return words;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final now = DateTime(2026, 11, 25);
   late Map<StudyCourse, List<ReviewItem>> catalogues;
   setUpAll(() async {
+    await loadBundledFonts();
     catalogues = {
       StudyCourse.englishFromRussian:
           (await loadWordsSeed() as Ok<List<ReviewItem>>).value,
@@ -83,16 +111,22 @@ void main() {
               interfaceLanguage: language,
             ),
           );
-          final words = [
-            for (final item in catalogues[course]!)
-              if (item.word.level == level) item.word,
-          ];
+          final words = _missionWords(catalogues[course]!, level);
+          expect(words, hasLength(3));
           final target = words.first;
           final decks = {
             for (final catalogue in catalogues.entries)
               catalogue.key: CourseDeck(
                 course: catalogue.key,
-                items: catalogue.value,
+                items:
+                    catalogue.key == course
+                        ? [
+                          for (final item in catalogue.value)
+                            if (item.word.level != level ||
+                                words.contains(item.word))
+                              item,
+                        ]
+                        : catalogue.value,
                 cards: InMemoryCardStore({
                   if (catalogue.key == course)
                     for (final word in words.skip(1))
@@ -189,14 +223,12 @@ void main() {
           );
           final anotherLevel =
               level == CefrLevel.a1 ? CefrLevel.a2 : CefrLevel.a1;
-          expect(
-            records.load((
-              gameId: 'space_word',
-              courseId: course.id,
-              level: anotherLevel,
-            )),
-            isNull,
+          final otherLevelKey = (
+            gameId: 'space_word',
+            courseId: course.id,
+            level: anotherLevel,
           );
+          expect(records.load(otherLevelKey), isNull);
           for (final deck in decks.values.where((d) => d != selected)) {
             expect((deck.answers as InMemoryAnswerLog).records, isEmpty);
             final otherCourse = (

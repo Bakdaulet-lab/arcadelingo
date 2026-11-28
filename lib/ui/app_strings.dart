@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 part 'candy_delivery_strings.dart';
+part 'space_word_strings.dart';
 
 const russianStrings = AppStrings(InterfaceLanguage.russian);
 

@@ -1184,6 +1184,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // итогов. До первого ответа это то, что прочитано из хранилища.
     var latest = <String, LeitnerCard>{};
     var roundItems = items;
+    final target = game.roundLimit ?? sessionTarget;
     if (learning) {
       switch (widget.ports.cards.load()) {
         case Err(:final failure):
@@ -1196,7 +1197,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             cards: value,
             level: level,
             now: widget.now(),
-            target: sessionTarget,
+            target: target,
           );
           roundItems = plan.selectedItems;
           if (plan.newWords.isNotEmpty) {
@@ -1224,7 +1225,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       cards: widget.ports.cards,
       streaks: widget.ports.streaks,
       now: widget.now,
-      target: sessionTarget,
+      target: target,
       answerLog: widget.ports.answers,
     )(
       items: roundItems,

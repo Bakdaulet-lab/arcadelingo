@@ -12,6 +12,7 @@ import 'package:arcadelingo/features/games/match_three/match_three_field.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_run.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_views.dart';
 import 'package:arcadelingo/features/games/snake/snake_game.dart';
+import 'package:arcadelingo/features/games/space_word/space_word_game.dart';
 import 'package:arcadelingo/features/games/word_mahjong/word_mahjong_field.dart';
 import 'package:arcadelingo/features/games/word_maze/word_maze_game.dart';
 import 'package:arcadelingo/ui/theme.dart';
@@ -83,9 +84,11 @@ void main() {
         }
         Future<void> tap(Key key) => tester.tap(find.byKey(key));
         TestGesture? snakeGesture;
+        TestGesture? spaceGesture;
         final frames = game == snakeEntry ? 41 : 21;
         for (var frame = 0; frame < frames; frame++) {
           if (frame == 2) {
+            if (game == spaceWordEntry) await tap(SpaceWordKeys.start);
             if (game == wordMazeEntry) {
               await tester.drag(
                 find.byKey(MazeKeys.field),
@@ -108,6 +111,11 @@ void main() {
             }
           }
           if (frame == 7) {
+            if (game == spaceWordEntry) {
+              spaceGesture = await tester.startGesture(
+                tester.getCenter(find.byKey(SpaceWordKeys.field)),
+              );
+            }
             if (game == fallingWordsEntry) {
               await tester.tap(find.text('яблоко').last);
             }
@@ -136,6 +144,9 @@ void main() {
           if (game == wordMazeEntry && frame == 12) {
             await tester.drag(find.byKey(MazeKeys.field), const Offset(48, 0));
           }
+          if (game == spaceWordEntry && frame > 7) {
+            await spaceGesture!.moveBy(const Offset(2, -1));
+          }
           if (game == snakeEntry && frame == 19) {
             await snakeGesture!.moveBy(const Offset(24, 0));
           }
@@ -143,6 +154,7 @@ void main() {
           await peek(tester, '${game.id}_${brightness.name}_$frame');
         }
         await snakeGesture?.up();
+        await spaceGesture?.up();
         await tester.pumpWidget(const SizedBox());
       });
     }

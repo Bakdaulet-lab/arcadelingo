@@ -25,6 +25,7 @@ import 'package:arcadelingo/features/games/falling_words/falling_words_game.dart
 import 'package:arcadelingo/features/games/match_three/match_three_game.dart';
 import 'package:arcadelingo/features/games/ninja_slash/ninja_slash_game.dart';
 import 'package:arcadelingo/features/games/snake/snake_game.dart';
+import 'package:arcadelingo/features/games/space_word/space_word_game.dart';
 import 'package:arcadelingo/features/games/word_mahjong/word_mahjong_game.dart';
 import 'package:arcadelingo/features/games/word_maze/word_maze_game.dart';
 import 'package:arcadelingo/ui/app_strings.dart';
@@ -112,6 +113,7 @@ class GameEntry {
     this.instruction,
     this.challenge,
     this.tracksRoundScore = false,
+    this.roundLimit,
   });
 
   /// Идентификатор в событиях ответа.
@@ -128,6 +130,7 @@ class GameEntry {
   final String? instruction;
   final ArcadeChallenge? challenge;
   final bool tracksRoundScore;
+  final int? roundLimit;
 
   ArcadeChallenge? get challengeRecordMode =>
       tracksRoundScore ? challenge : null;
@@ -153,6 +156,7 @@ class GameEntry {
     'word_mahjong' => strings.mahjongInstruction,
     'snake' => strings.snakeInstruction,
     'word_maze' => strings.mazeInstruction,
+    'space_word' => strings.spaceWordInstruction,
     _ => instruction,
   };
 
@@ -242,6 +246,15 @@ const wordMazeEntry = GameEntry(
   tracksRoundScore: true,
 );
 
+const spaceWordEntry = GameEntry(
+  id: 'space_word',
+  title: 'Space Word',
+  build: _buildSpaceWord,
+  artwork: 'assets/images/home/space-word.webp',
+  roundLimit: SpaceWordGame.maxWaves,
+  tracksRoundScore: true,
+);
+
 /// Все игры приложения.
 ///
 /// Порядок значим: первая запись — умолчание домашнего экрана. Выбор другой
@@ -255,7 +268,23 @@ const List<GameEntry> wordarcadeGames = [
   wordMahjongEntry,
   snakeEntry,
   wordMazeEntry,
+  spaceWordEntry,
 ];
+
+Widget _buildSpaceWord(GameLaunch launch) => SpaceWordGame(
+  session: launch.session,
+  course: launch.course,
+  level: launch.level,
+  vocabulary: launch.vocabulary,
+  sounds: launch.sounds,
+  summaryFooter: launch.summaryFooter,
+  onRoundScore: launch.onRoundScore,
+  mistakeCount: launch.mistakeCount,
+  onReviewMistakes: launch.onReviewMistakes,
+  onPlayAgain: launch.onPlayAgain,
+  onExit: launch.onExit,
+  onRoundOver: launch.onRoundOver,
+);
 
 Widget _buildFallingWords(GameLaunch launch) => FallingWordsGame(
   session: launch.session,

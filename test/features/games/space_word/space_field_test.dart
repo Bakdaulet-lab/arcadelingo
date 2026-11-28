@@ -33,6 +33,46 @@ Future<void> step(WidgetTester tester, int frames) async {
 }
 
 void main() {
+  testWidgets('upward piloting keeps an overflowing screen stationary', (
+    tester,
+  ) async {
+    final flight =
+        SpaceFlight()..startWave(options: labels, correctIndex: 2, wave: 1);
+    final scroll = ScrollController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SingleChildScrollView(
+          controller: scroll,
+          child: Column(
+            children: [
+              SizedBox(
+                width: 360,
+                height: 420,
+                child: SpaceField(
+                  flight: flight,
+                  labels: labels,
+                  playing: true,
+                  reducedMotion: false,
+                  onEvent: (_) {},
+                  onPause: () {},
+                  semanticsLabel: 'Space Word',
+                ),
+              ),
+              const SizedBox(height: 900),
+            ],
+          ),
+        ),
+      ),
+    );
+    final initial = flight.ship;
+    await tester.drag(find.byType(SpaceField), const Offset(0, -130));
+    await step(tester, 8);
+    expect(scroll.offset, 0);
+    expect(flight.ship.dy, lessThan(initial.dy - 50));
+    await tester.pumpWidget(const SizedBox());
+    scroll.dispose();
+  });
+
   testWidgets('Space fires during flight and activates buttons while paused', (
     tester,
   ) async {
