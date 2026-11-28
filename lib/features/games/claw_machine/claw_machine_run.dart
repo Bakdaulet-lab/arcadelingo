@@ -20,19 +20,31 @@ class ClawMachineRun {
          'zh' => '你我他她它们的这那有在去来看学说听写吃喝水火木土山上下中大小日月人心东西南北',
          'ar' => 'ابتثجحخدذرزسشصضطظعغفقكلمنهويأإآؤئةىء',
          'ko' => '가나다라마바사아자차카타파하',
+         'ja' => 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん',
          _ => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
        };
 
   static const columnCount = 5;
   static final _letterOrDigit = RegExp(r'[\p{L}\p{N}]', unicode: true);
+  static final _shortKana = RegExp(r'^[ぁ-ゖァ-ヺーゝゞヽヾ]{1,8}$');
+  static final _katakana = RegExp(r'^[ァ-ヺーヽヾ]+$');
+  static const _katakanaTiles = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン';
 
   final ReviewSession session;
   final Random random;
   final String studyLanguage;
   final String _alphabet;
   HangulSpelling? _hangul;
+  String? kanaReading;
   String? get hangulPreview => _hangul?.completedAt(collected);
-  String get _tileAlphabet => _hangul == null ? _alphabet : hangulTileAlphabet;
+  String get _tileAlphabet {
+    if (_hangul != null) return hangulTileAlphabet;
+    if (studyLanguage == 'ja' && _katakana.hasMatch(kanaReading ?? answer)) {
+      return _katakanaTiles;
+    }
+    return _alphabet;
+  }
+
   int? _hintsRemaining;
   int? get hintsRemaining => _hintsRemaining;
 
@@ -57,7 +69,14 @@ class ClawMachineRun {
     if (word == null) return;
     answer = uppercaseWordLetters(word.text);
     _hangul = studyLanguage == 'ko' ? HangulSpelling.forWord(answer) : null;
-    slots = _hangul?.tiles ?? answer.characters.toList(growable: false);
+    final reading = word.reading;
+    kanaReading =
+        studyLanguage == 'ja' && reading != null && _shortKana.hasMatch(reading)
+            ? reading
+            : null;
+    slots =
+        _hangul?.tiles ??
+        (kanaReading ?? answer).characters.toList(growable: false);
     separators = {
       for (final (i, slot) in slots.indexed)
         if (!_letterOrDigit.hasMatch(slot)) i,

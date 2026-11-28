@@ -82,7 +82,8 @@ class _MazeFieldState extends State<MazeField> {
   Widget build(BuildContext context) {
     final turn = widget.onTurn;
     final strings = context.strings;
-    final dark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
     return Center(
       child: AspectRatio(
         aspectRatio: MazeRun.columns / MazeRun.rows,
@@ -122,6 +123,9 @@ class _MazeFieldState extends State<MazeField> {
                           run: widget.run,
                           dark: dark,
                           labels: widget.gateLabels,
+                          fontFallback:
+                              theme.textTheme.bodyMedium?.fontFamilyFallback ??
+                              arcadeFontFallback,
                           textScale:
                               MediaQuery.textScalerOf(context).scale(12) / 12,
                         ),

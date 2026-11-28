@@ -1,5 +1,11 @@
 # Sources and third-party materials
 
+## Japanese A1–C1
+
+The Japanese words, readings, translations, and answer choices were written for ArcadeLingo. Levels reflect the app's learning sequence. Editorial references include the Japan Foundation's [JF Standard](https://www.jfstandard.jpf.go.jp/summaryen/ja/render.do) and [Marugoto learning materials](https://www.marugoto.jpf.go.jp/en/download/).
+
+Arcade Japanese is derived from [Noto Sans JP](https://github.com/google/fonts/tree/main/ofl/notosansjp) and renders Japanese script offline. The SIL Open Font License 1.1 is available in the app.
+
 ## Korean A1–C1
 
 The Standard South Korean vocabulary, translations, and answer choices were written for ArcadeLingo. Levels follow the app's learning sequence. Editorial references include the [National Institute of Korean Language's Korean Basic Dictionary](https://krdict.korean.go.kr/) and [King Sejong Institute Foundation's learning materials](https://app.ksif.or.kr/eng/index.do).

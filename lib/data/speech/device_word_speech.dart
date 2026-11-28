@@ -32,7 +32,10 @@ class DeviceWordSpeech implements WordSpeech {
       _platform != TargetPlatform.fuchsia;
 
   /// Binds a course to this engine without creating another native channel.
-  WordSpeech forLanguage(String language) => _CourseSpeech(this, language);
+  WordSpeech forLanguage(
+    String language, {
+    Map<String, String> readings = const {},
+  }) => _CourseSpeech(this, language, readings);
 
   @override
   Future<SpeechResult> speak(String text) => _speak(text, 'en');
@@ -237,6 +240,7 @@ class DeviceWordSpeech implements WordSpeech {
     'de-de' ||
     'fr-fr' ||
     'ko-kr' ||
+    'ja-jp' ||
     'ar-sa' ||
     'zh-cn' ||
     'zh-hans-cn' ||
@@ -254,13 +258,15 @@ class DeviceWordSpeech implements WordSpeech {
 }
 
 class _CourseSpeech implements WordSpeech {
-  const _CourseSpeech(this._engine, this._language);
+  const _CourseSpeech(this._engine, this._language, this._readings);
 
   final DeviceWordSpeech _engine;
   final String _language;
+  final Map<String, String> _readings;
 
   @override
-  Future<SpeechResult> speak(String text) => _engine._speak(text, _language);
+  Future<SpeechResult> speak(String text) =>
+      _engine._speak(_readings[text] ?? text, _language);
 
   @override
   Future<void> stop() => _engine.stop();

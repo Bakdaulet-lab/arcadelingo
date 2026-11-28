@@ -1,5 +1,11 @@
 # Fuentes y materiales de terceros
 
+## Japonés de A1 a C1
+
+Las palabras, las lecturas, las traducciones y las opciones de respuesta se prepararon para ArcadeLingo. Los niveles siguen la secuencia didáctica de la aplicación. Se consultaron el [Estándar JF](https://www.jfstandard.jpf.go.jp/summaryen/ja/render.do) y los [materiales didácticos de Marugoto](https://www.marugoto.jpf.go.jp/en/download/) de la Fundación Japón.
+
+Arcade Japanese deriva de [Noto Sans JP](https://github.com/google/fonts/tree/main/ofl/notosansjp) y permite mostrar la escritura japonesa sin conexión. La licencia SIL Open Font License 1.1 está disponible en la aplicación.
+
 ## Coreano de A1 a C1
 
 El vocabulario del coreano estándar de Corea del Sur, las traducciones y las opciones de respuesta se prepararon para ArcadeLingo. Los niveles siguen la secuencia didáctica de la aplicación. Se consultaron el [Diccionario básico de coreano del Instituto Nacional de la Lengua Coreana](https://krdict.korean.go.kr/) y los [materiales didácticos de la Fundación Instituto Rey Sejong](https://app.ksif.or.kr/eng/index.do).

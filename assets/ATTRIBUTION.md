@@ -107,6 +107,12 @@ Noto Sans Arabic и Arcade Chinese (подмножество Noto Sans SC) об�
 
 Arcade Korean создан на основе [Noto Sans KR](https://github.com/google/fonts/tree/main/ofl/notosanskr) и позволяет отображать хангыль без интернета. Лицензия SIL Open Font License 1.1 доступна в приложении.
 
+## Японский язык A1–C1
+
+Словарь, чтения, переводы и варианты ответов составлены для ArcadeLingo. Разбивка отражает учебную последовательность приложения. При вычитке использовались [JF Standard](https://www.jfstandard.jpf.go.jp/summaryen/ja/render.do) и [учебные материалы Marugoto](https://www.marugoto.jpf.go.jp/en/download/) Японского фонда.
+
+Arcade Japanese создан на основе [Noto Sans JP](https://github.com/google/fonts/tree/main/ofl/notosansjp) и отображает японское письмо без интернета. Лицензия SIL Open Font License 1.1 доступна в приложении.
+
 ## Звуковые эффекты «Ниндзя-слэша»
 
 - **Автор:** Kenney (Kenney Vleugels).

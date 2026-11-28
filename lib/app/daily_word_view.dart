@@ -197,6 +197,7 @@ class _DailyWordScreenState extends State<DailyWordScreen> {
           .studyLanguage) {
         'zh' => s.dailyWordInvalidCharacters,
         'ko' => s.dailyWordInvalidHangul,
+        'ja' => s.dailyWordInvalidJapanese,
         _ => s.dailyWordInvalidLetters,
       },
       DailyGuessError.unknownWord => s.dailyWordUnknown,
@@ -242,6 +243,7 @@ class _DailyWordScreenState extends State<DailyWordScreen> {
     final usesInputMethod = const {
       'zh',
       'ko',
+      'ja',
     }.contains(puzzle.course.studyLanguage);
     return ArcadePage(
       title: s.dailyWord,

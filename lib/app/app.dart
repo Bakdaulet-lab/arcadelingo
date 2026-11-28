@@ -175,6 +175,7 @@ class _WordarcadeAppState extends State<WordarcadeApp>
       theme: wordarcadeTheme(
         brightness: paper ? Brightness.light : Brightness.dark,
         reduceMotion: reduceMotion,
+        studyLanguage: deck?.course.studyLanguage,
       ),
       builder:
           (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(

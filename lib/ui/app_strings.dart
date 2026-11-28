@@ -118,6 +118,12 @@ class AppStrings {
       _text(en: 'Absent', ru: 'Нет в слове', es: 'No aparece', kk: 'Сөзде жоқ');
   String dailyWordEntry(int length, {String studyLanguage = 'en'}) =>
       switch (studyLanguage) {
+        'ja' => _text(
+          en: 'Enter $length Japanese characters',
+          ru: 'Введи японское слово из $length знаков',
+          es: 'Escribe $length caracteres japoneses',
+          kk: '$length таңбадан тұратын жапон сөзін енгіз',
+        ),
         'ko' => _text(
           en: 'Enter $length Hangul syllables',
           ru: 'Введи $length ${length == 5 ? 'слогов' : 'слога'} хангыля',
@@ -139,6 +145,12 @@ class AppStrings {
       };
   String dailyWordWrongLength(int length, {String studyLanguage = 'en'}) =>
       switch (studyLanguage) {
+        'ja' => _text(
+          en: 'Use exactly $length Japanese characters.',
+          ru: 'Нужное количество знаков — $length.',
+          es: 'Usa exactamente $length caracteres japoneses.',
+          kk: 'Дәл $length жапон таңбасын енгіз.',
+        ),
         'ko' => _text(
           en: 'Use exactly $length Hangul syllables.',
           ru: 'Нужное количество слогов — $length.',
@@ -175,6 +187,12 @@ class AppStrings {
     ru: 'Введи слово на хангыле.',
     es: 'Escribe la palabra en hangul.',
     kk: 'Сөзді хангыльмен жаз.',
+  );
+  String get dailyWordInvalidJapanese => _text(
+    en: 'Use kana or kanji.',
+    ru: 'Используй кану или кандзи.',
+    es: 'Usa kana o kanji.',
+    kk: 'Кана немесе кандзи таңбаларын қолдан.',
   );
   String get dailyWordUnknown => _text(
     en: 'Try a word from this course’s dictionary.',
@@ -332,6 +350,7 @@ class AppStrings {
       'ru' => 'Как это сказать по-русски?',
       'de' => 'Как это сказать по-немецки?',
       'ko' => 'Как это сказать по-корейски?',
+      'ja' => 'Как это сказать по-японски?',
       _ => 'Как это сказать на изучаемом языке?',
     },
     es: '¿Cómo se dice en ${languageName(tag).toLowerCase()}?',
@@ -341,6 +360,7 @@ class AppStrings {
       'ru' => 'Мұны орысша қалай айтады?',
       'de' => 'Мұны немісше қалай айтады?',
       'ko' => 'Мұны корейше қалай айтады?',
+      'ja' => 'Мұны жапонша қалай айтады?',
       _ => 'Мұны үйреніп жүрген тіліңде қалай айтады?',
     },
   );
@@ -2096,6 +2116,12 @@ class AppStrings {
       es: 'Coreano',
       kk: 'Корей тілі',
     ),
+    'ja' => _text(
+      en: 'Japanese',
+      ru: 'Японский',
+      es: 'Japonés',
+      kk: 'Жапон тілі',
+    ),
     'de' => _text(en: 'German', ru: 'Немецкий', es: 'Alemán', kk: 'Неміс тілі'),
     'en' => _text(
       en: 'English',
@@ -2130,6 +2156,7 @@ class AppStrings {
       'zh' => 'Уровень китайского',
       'ar' => 'Уровень арабского',
       'ko' => 'Уровень корейского',
+      'ja' => 'Уровень японского',
       _ => 'Уровень языка ($tag)',
     },
     es: 'Nivel de ${languageName(tag).toLowerCase()}',
@@ -2142,6 +2169,7 @@ class AppStrings {
       'zh' => 'Қытай тілінің деңгейі',
       'ar' => 'Араб тілінің деңгейі',
       'ko' => 'Корей тілінің деңгейі',
+      'ja' => 'Жапон тілінің деңгейі',
       'kk' => 'Қазақ тілінің деңгейі',
       _ => 'Тіл деңгейі',
     },

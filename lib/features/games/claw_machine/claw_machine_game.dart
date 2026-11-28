@@ -352,7 +352,20 @@ class _ClawMachineGameState extends State<ClawMachineGame>
                                     FontWeight.bold,
                                   ),
                                 ),
-                                if (widget.studyLanguage == 'ko') ...[
+                                if (word.reading case final reading?
+                                    when widget.studyLanguage == 'ja' &&
+                                        reading != _run.answer) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    reading,
+                                    textAlign: TextAlign.center,
+                                    style: theme.textTheme.titleMedium,
+                                  ),
+                                ],
+                                if (const {
+                                  'ko',
+                                  'ja',
+                                }.contains(widget.studyLanguage)) ...[
                                   const SizedBox(height: 8),
                                   WordPronunciation(
                                     text: _run.answer,

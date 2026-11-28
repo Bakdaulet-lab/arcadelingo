@@ -14,9 +14,21 @@ enum KitchenIngredient {
     '咖啡',
     'قهوة',
     '커피',
+    'コーヒー',
   ),
-  tea('Tea', 'Té', 'Чай', 'Шай', 'Tee', 'Thé', '茶', 'شاي', '차'),
-  milk('Milk', 'Leche', 'Молоко', 'Сүт', 'Milch', 'Lait', '牛奶', 'حليب', '우유'),
+  tea('Tea', 'Té', 'Чай', 'Шай', 'Tee', 'Thé', '茶', 'شاي', '차', '紅茶'),
+  milk(
+    'Milk',
+    'Leche',
+    'Молоко',
+    'Сүт',
+    'Milch',
+    'Lait',
+    '牛奶',
+    'حليب',
+    '우유',
+    'ミルク',
+  ),
   sugar(
     'Sugar',
     'Azúcar',
@@ -27,6 +39,7 @@ enum KitchenIngredient {
     '糖',
     'سكر',
     '설탕',
+    '砂糖',
   ),
   lemon(
     'Lemon',
@@ -38,8 +51,20 @@ enum KitchenIngredient {
     '柠檬',
     'ليمون',
     '레몬',
+    'レモン',
   ),
-  honey('Honey', 'Miel', 'Мёд', 'Бал', 'Honig', 'Miel', '蜂蜜', 'عسل', '꿀');
+  honey(
+    'Honey',
+    'Miel',
+    'Мёд',
+    'Бал',
+    'Honig',
+    'Miel',
+    '蜂蜜',
+    'عسل',
+    '꿀',
+    'はちみつ',
+  );
 
   const KitchenIngredient(
     this._english,
@@ -51,6 +76,7 @@ enum KitchenIngredient {
     this._chinese,
     this._arabic,
     this._korean,
+    this._japanese,
   );
   final String _english;
   final String _spanish;
@@ -61,6 +87,7 @@ enum KitchenIngredient {
   final String _chinese;
   final String _arabic;
   final String _korean;
+  final String _japanese;
 
   String label(String language) => switch (language) {
     'es' => _spanish,
@@ -71,6 +98,7 @@ enum KitchenIngredient {
     'zh' => _chinese,
     'ar' => _arabic,
     'ko' => _korean,
+    'ja' => _japanese,
     _ => _english,
   };
 }
@@ -87,6 +115,7 @@ class KitchenOrder {
     this._chinese,
     this._arabic,
     this._korean,
+    this._japanese,
   );
 
   final Set<KitchenIngredient> ingredients;
@@ -99,6 +128,7 @@ class KitchenOrder {
   final String _chinese;
   final String _arabic;
   final String _korean;
+  final String _japanese;
 
   String phrase(String language) => switch (language) {
     'es' => _spanish,
@@ -109,6 +139,7 @@ class KitchenOrder {
     'zh' => _chinese,
     'ar' => _arabic,
     'ko' => _korean,
+    'ja' => _japanese,
     _ => _english,
   };
 
@@ -128,6 +159,7 @@ const _plain = [
     '请给我一杯茶。',
     'شاي، من فضلك.',
     '차 한 잔 주세요.',
+    '紅茶を一杯ください。',
   ),
   KitchenOrder._(
     {KitchenIngredient.coffee},
@@ -140,6 +172,7 @@ const _plain = [
     '请给我一杯咖啡。',
     'قهوة، من فضلك.',
     '커피 한 잔 주세요.',
+    'コーヒーを一杯ください。',
   ),
 ];
 
@@ -155,6 +188,7 @@ const _withOneExtra = [
     '请给我一杯加蜂蜜的茶。',
     'شاي بالعسل، من فضلك.',
     '꿀을 넣은 차 주세요.',
+    'はちみつ入りの紅茶をください。',
   ),
   KitchenOrder._(
     {KitchenIngredient.coffee, KitchenIngredient.sugar},
@@ -167,6 +201,7 @@ const _withOneExtra = [
     '请给我一杯加糖的咖啡。',
     'قهوة مع السكر، من فضلك.',
     '설탕을 넣은 커피 주세요.',
+    '砂糖入りのコーヒーをください。',
   ),
   KitchenOrder._(
     {KitchenIngredient.tea, KitchenIngredient.lemon},
@@ -179,6 +214,7 @@ const _withOneExtra = [
     '我想要一杯柠檬茶。',
     'أريد شايًا بالليمون.',
     '레몬을 넣은 차를 주세요.',
+    'レモンティーをお願いします。',
   ),
   KitchenOrder._(
     {KitchenIngredient.tea, KitchenIngredient.milk},
@@ -191,6 +227,7 @@ const _withOneExtra = [
     '请给我一杯加牛奶的茶。',
     'شاي مع الحليب، من فضلك.',
     '우유를 넣은 차 주세요.',
+    'ミルクティーをください。',
   ),
   KitchenOrder._(
     {KitchenIngredient.coffee, KitchenIngredient.milk},
@@ -203,6 +240,7 @@ const _withOneExtra = [
     '我想要一杯加牛奶的咖啡。',
     'أريد قهوة بالحليب.',
     '우유를 넣은 커피를 주세요.',
+    'ミルク入りのコーヒーをお願いします。',
   ),
   KitchenOrder._(
     {KitchenIngredient.tea, KitchenIngredient.sugar},
@@ -215,6 +253,7 @@ const _withOneExtra = [
     '请给我一杯加糖的茶。',
     'شاي مع السكر، من فضلك.',
     '설탕을 넣은 차 주세요.',
+    '砂糖入りの紅茶をください。',
   ),
 ];
 
@@ -237,6 +276,7 @@ const _contrasts = [
       '请给我一杯加牛奶和糖的咖啡。',
       'قهوة بالحليب والسكر، من فضلك.',
       '커피에 우유와 설탕을 넣어 주세요.',
+      'コーヒーにミルクと砂糖を入れてください。',
     ),
     KitchenOrder._(
       {KitchenIngredient.coffee, KitchenIngredient.milk},
@@ -249,6 +289,7 @@ const _contrasts = [
       '请给我一杯加牛奶的咖啡，不加糖。',
       'قهوة بالحليب من دون سكر، من فضلك.',
       '커피에 우유는 넣고 설탕은 빼 주세요.',
+      'コーヒーにミルクを入れてください。砂糖はいりません。',
     ),
   ),
   (
@@ -263,6 +304,7 @@ const _contrasts = [
       '请给我一杯加柠檬和蜂蜜的茶。',
       'شاي بالليمون والعسل، من فضلك.',
       '차에 레몬과 꿀을 넣어 주세요.',
+      '紅茶にレモンとはちみつを入れてください。',
     ),
     KitchenOrder._(
       {KitchenIngredient.tea, KitchenIngredient.lemon},
@@ -275,6 +317,7 @@ const _contrasts = [
       '请给我一杯柠檬茶，不加蜂蜜。',
       'شاي بالليمون من دون عسل، من فضلك.',
       '차에 레몬은 넣고 꿀은 빼 주세요.',
+      '紅茶にレモンを入れてください。はちみつはいりません。',
     ),
   ),
   (
@@ -289,6 +332,7 @@ const _contrasts = [
       '请给我一杯加牛奶和糖的茶。',
       'شاي بالحليب والسكر، من فضلك.',
       '차에 우유와 설탕을 넣어 주세요.',
+      '紅茶にミルクと砂糖を入れてください。',
     ),
     KitchenOrder._(
       {KitchenIngredient.tea, KitchenIngredient.sugar},
@@ -301,6 +345,7 @@ const _contrasts = [
       '请给我一杯加糖的茶，但不要加牛奶。',
       'شاي بالسكر، لكن من دون حليب، من فضلك.',
       '차에 설탕은 넣고 우유는 빼 주세요.',
+      '紅茶に砂糖を入れてください。ミルクはいりません。',
     ),
   ),
   (
@@ -315,6 +360,7 @@ const _contrasts = [
       '请给我一杯加糖的柠檬茶。',
       'شاي بالليمون والسكر، من فضلك.',
       '차에 레몬과 설탕을 넣어 주세요.',
+      '紅茶にレモンと砂糖を入れてください。',
     ),
     KitchenOrder._(
       {KitchenIngredient.tea, KitchenIngredient.lemon},
@@ -327,6 +373,7 @@ const _contrasts = [
       '请给我一杯柠檬茶，但不要加糖。',
       'شاي بالليمون، لكن من دون سكر، من فضلك.',
       '차에 레몬은 넣고 설탕은 빼 주세요.',
+      '紅茶にレモンを入れてください。砂糖はいりません。',
     ),
   ),
 ];

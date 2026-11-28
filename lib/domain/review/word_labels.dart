@@ -32,8 +32,13 @@ const _accentLetters = {
   '\u0308': ('aeiouyе', 'äëïöüÿё'),
   '\u030a': ('a', 'å'),
   '\u0327': ('c', 'ç'),
+  '\u3099': (
+    'うかきくけこさしすせそたちつてとはひふへほゝウカキクケコサシスセソタチツテトハヒフヘホワヰヱヲヽ',
+    'ゔがぎぐげござじずぜぞだぢづでどばびぶべぼゞヴガギグゲゴザジズゼゾダヂヅデドバビブベボヷヸヹヺヾ',
+  ),
+  '\u309a': ('はひふへほハヒフヘホ', 'ぱぴぷぺぽパピプペポ'),
 };
-final _combiningLetter = RegExp(r'([a-zеи])(\p{M})', unicode: true);
+final _combiningLetter = RegExp(r'([a-zеиぁ-ゖァ-ヺゝヽ])(\p{M})', unicode: true);
 
 String normalizedCourseSpelling(String value) =>
     composeHangul(normalizedWordLabel(value))
